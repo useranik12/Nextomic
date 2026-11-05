@@ -29,6 +29,7 @@ const SHORTCUTS = [
 
 export function DashboardHeader({ userName, userImage }: DashboardHeaderProps) {
   const router = useRouter();
+  const firstName = userName.trim().split(/\s+/)[0] || "User";
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -40,9 +41,24 @@ export function DashboardHeader({ userName, userImage }: DashboardHeaderProps) {
     <header className="flex items-center justify-between border-b border-divider px-8 py-4">
       <div className="flex items-center gap-3">
         <Link href="/dashboard" aria-label="Dashboard home">
-          <Image src={getBrandAsset("name-logo", "dark")} alt="" width={32} height={32} priority />
+          <Image
+            src={getBrandAsset("mascot", "light")}
+            alt=""
+            width={32}
+            height={32}
+            priority
+            className="hidden dark:block"
+          />
+          <Image
+            src={getBrandAsset("mascot", "dark")}
+            alt=""
+            width={32}
+            height={32}
+            priority
+            className="dark:hidden"
+          />
         </Link>
-        <h1 className="text-lg font-semibold text-foreground">Welcome {userName}</h1>
+        <h1 className="text-lg font-semibold text-foreground">Welcome {firstName}</h1>
       </div>
 
       <div className="flex items-center gap-2">

@@ -9,9 +9,9 @@ import { Icon } from "@/lib/icons/Icon";
 //
 // Inputs follow blueprint/pages/editor-supabase.png: pill shape, one 2px outline, label above.
 // Only that outline reacts (hover, focus, error); there is never a second border.
-// Buttons: medium weight, short, and they lift slightly on hover (transform, 300ms). Colour carries
-// meaning: `primary` uses the white shades of the default scale (inverts in light mode), `danger`
-// is red, `ghost` is a quiet text button, `danger-ghost` is a quiet red one.
+// Buttons: medium weight, 14px (12px small), short, and hover only changes colour (300ms). Colour
+// carries meaning: `primary` uses the white shades of the default scale (inverts in light mode),
+// `danger` is red, `ghost` is a quiet text button, `danger-ghost` is a quiet red one.
 
 const INPUT_CLASSES: InputProps["classNames"] = {
   base: "gap-1",
@@ -67,8 +67,8 @@ export function PasswordInput(props: InputProps) {
 export type ActionTone = "primary" | "danger" | "ghost" | "danger-ghost";
 
 const TONE_CLASSES: Record<ActionTone, string> = {
-  primary: "bg-default-800 text-default-50",
-  danger: "bg-danger text-white",
+  primary: "bg-default-800 text-default-50 data-[hover=true]:bg-default-700",
+  danger: "bg-danger text-white data-[hover=true]:bg-danger-600",
   ghost: "bg-transparent text-default-600 data-[hover=true]:bg-default-100",
   "danger-ghost": "bg-transparent text-danger data-[hover=true]:bg-danger/10"
 };
@@ -90,10 +90,7 @@ export function ActionButton({
     <Button
       radius="full"
       className={
-        `${SIZE_CLASSES[size]} ${TONE_CLASSES[tone]} min-w-0 !font-medium ` +
-        "!transition-[transform,background-color,box-shadow] duration-300 ease-out " +
-        "data-[hover=true]:-translate-y-px data-[hover=true]:scale-[1.03] data-[hover=true]:opacity-100 " +
-        "data-[pressed=true]:scale-[0.98] " +
+        `${SIZE_CLASSES[size]} ${TONE_CLASSES[tone]} min-w-0 font-medium transition-colors duration-300 data-[hover=true]:opacity-100 ` +
         (className ?? "")
       }
       {...props}

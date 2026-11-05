@@ -56,7 +56,9 @@ Source images live in `blueprint/`. Use this doc as the index and the images as 
 Never use raw HeroUI `Input` or `Button` for form fields and actions. Use `components/ui/controls.tsx`:
 
 - `FormInput` / `PasswordInput`: pill, 44px high, one 2px outline, label above. Only that outline reacts (hover brightens, focus adds a light ring, error turns it red). No second border, no filled background.
-- `ActionButton`: 40px high (`size="sm"` 32px), medium weight, lifts slightly on hover (translate and scale, 300ms transform). Colour carries meaning through `tone`: `primary` (white shades of the default scale, inverts in light mode) for the main safe action, `danger` (red) for delete/remove/destructive, `ghost` for cancel and quiet actions, `danger-ghost` for quiet destructive actions. Never render a destructive action in a neutral or white tone.
+- `ActionButton`: 40px high (`size="sm"` 32px), 14px text (12px for sm), medium weight on EVERY button, hover changes colour only with a 300ms transition (no movement, no growth; a global rule in `globals.css` applies the weight and transition to all buttons). Colour carries meaning through `tone`: `primary` (white shades of the default scale, inverts in light mode) for the main safe action, `danger` (red) for delete/remove/destructive, `ghost` for cancel and quiet actions, `danger-ghost` for quiet destructive actions. Never render a destructive action in a neutral or white tone.
+- The font is Inter, loaded with `next/font/google` (self-hosted at build). Without it, weight 500 falls back to a regular system face and nothing looks medium.
+- The header logo is the mascot: `mascot-light` on dark mode, `mascot-dark` on light mode. The welcome text shows the first name only, `User` when there is none.
 - Icon-only buttons, segmented toggles and the search field keep their own designed styles from the mocks.
 
 ## 4. Screens
