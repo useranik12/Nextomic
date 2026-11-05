@@ -16,7 +16,13 @@ import { BreakpointManager } from "./breakpoint-manager";
 import { BreakpointGlyph } from "./icons";
 import { PageMenu } from "./page-menu";
 import { PageSettingsModal } from "./page-settings-modal";
-import { breakpointHasStyles, useEditorStore, type SaveStatus } from "./store/editor-store";
+import {
+  breakpointHasStyles,
+  unsavedDraftLabels,
+  useEditorStore,
+  type SaveStatus
+} from "./store/editor-store";
+import { UnsavedDraftsDialog } from "./unsaved-drafts-dialog";
 import type { PageSummary } from "@/server/pages";
 
 const STATUS_LABEL: Record<SaveStatus, string> = {
@@ -185,12 +191,21 @@ function PublishControl({
   const route = useEditorStore((s) => s.doc?.route ?? "/");
   const [busy, setBusy] = useState<"publish" | "unpublish" | null>(null);
   const [message, setMessage] = useState<{ text: string; tone: "ok" | "error" } | null>(null);
+  const [unsaved, setUnsaved] = useState<string[] | null>(null);
 
   useEffect(() => {
     void getPublishStateAction(projectId).then((result) => {
       if (result.error === null) setPublishedAt(result.data.publishedAt);
     });
   }, [projectId, setPublishedAt]);
+
+  // Publishing waits until every edited group is saved with its check icon (or discarded).
+  function requestPublish() {
+    const { pageDrafts, doc } = useEditorStore.getState();
+    const labels = unsavedDraftLabels(pageDrafts, doc?.settings);
+    if (labels.length > 0) setUnsaved(labels);
+    else void run("publish");
+  }
 
   async function run(kind: "publish" | "unpublish") {
     setBusy(kind);
@@ -210,6 +225,17 @@ function PublishControl({
 
   return (
     <div className="flex items-center gap-2">
+      {unsaved ? (
+        <UnsavedDraftsDialog
+          labels={unsaved}
+          onCancel={() => setUnsaved(null)}
+          onDiscard={() => {
+            useEditorStore.getState().clearPageDrafts();
+            setUnsaved(null);
+            void run("publish");
+          }}
+        />
+      ) : null}
       {message ? (
         <span
           role="status"
@@ -244,7 +270,7 @@ function PublishControl({
           className="rounded-r-none"
           isLoading={busy === "publish"}
           isDisabled={busy !== null}
-          onPress={() => void run("publish")}
+          onPress={requestPublish}
         >
           Publish
         </ActionButton>

@@ -1,4 +1,9 @@
-import { CLASS_NAME_PATTERN, type BreakpointDef, type ElementNode } from "@nextomic/schema";
+import {
+  CLASS_NAME_PATTERN,
+  type BreakpointDef,
+  type ElementNode,
+  type StyleMap
+} from "@nextomic/schema";
 import { Fragment, type ReactNode } from "react";
 import { pageCss } from "./css";
 import "./elements";
@@ -7,6 +12,7 @@ import { resolveBoolean, resolveText, type TokenResolver } from "./values";
 
 export interface RenderOptions {
   breakpoints: readonly BreakpointDef[];
+  classes?: Readonly<Record<string, StyleMap>>;
   resolveToken?: TokenResolver;
 }
 
@@ -42,7 +48,7 @@ export function renderNode(node: ElementNode, options: RenderOptions): ReactNode
 
 /** The page tree plus the CSS for every element at every breakpoint. */
 export function PageRenderer({ tree, ...options }: RenderOptions & { tree: ElementNode }) {
-  const css = pageCss(tree, options.breakpoints);
+  const css = pageCss(tree, options.breakpoints, options.classes);
   return (
     <>
       {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}

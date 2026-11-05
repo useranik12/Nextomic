@@ -7,7 +7,11 @@ import {
 import { beforeEach, describe, expect, it } from "vitest";
 import { useEditorStore } from "./editor-store";
 
-const project: ProjectSettings = { breakpoints: DEFAULT_BREAKPOINTS, generateElementIds: true };
+const project: ProjectSettings = {
+  breakpoints: DEFAULT_BREAKPOINTS,
+  generateElementIds: true,
+  classes: {}
+};
 
 function reset() {
   const store = useEditorStore.getState();

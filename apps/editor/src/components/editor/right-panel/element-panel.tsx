@@ -13,7 +13,8 @@ import { useId, useMemo, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
-import { DESIGN_GROUPS } from "./design-groups";
+import { DESIGN_GROUPS, type DesignProperty } from "./design-groups";
+import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
 import { IdentityField } from "./identity-field";
 import { SettingRow, compactFieldClass } from "./setting-row";
@@ -82,13 +83,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
   );
 }
 
-function DesignField({
-  node,
-  property
-}: {
-  node: ElementNode;
-  property: { property: string; label: string; options?: string[]; placeholder?: string };
-}) {
+function DesignField({ node, property }: { node: ElementNode; property: DesignProperty }) {
   const id = useId();
   const bp = useEditorStore((s) => s.activeBreakpointId);
   const state = useEditorStore((s) => s.activeState);
@@ -105,7 +100,28 @@ function DesignField({
       changed={changed}
       onReset={() => setStyle(node.id, property.property, null)}
     >
-      {property.options ? (
+      {property.options && property.icons ? (
+        <div role="group" aria-label={property.label} className="flex flex-wrap gap-1">
+          {property.options.map((o) => (
+            <button
+              key={o}
+              type="button"
+              title={o}
+              aria-label={o}
+              aria-pressed={own === o}
+              onClick={() => setStyle(node.id, property.property, own === o ? null : o)}
+              className={
+                "flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-300 " +
+                (own === o
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-default-100 text-default-600 hover:bg-default-200")
+              }
+            >
+              <DesignIcon id={property.icons?.[o] ?? ""} />
+            </button>
+          ))}
+        </div>
+      ) : property.options ? (
         <SelectField
           compact
           hideLabel
@@ -287,14 +303,23 @@ export function ElementPanel({ node }: { node: ElementNode }) {
               ))}
             </div>
             {groups.map((group) => (
-              <div key={group.id} className="flex flex-col gap-3">
-                <h3 className="text-tiny font-semibold uppercase text-default-500">
+              <details key={group.id} open className="group flex flex-col gap-3">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-small font-medium text-foreground">
+                  <DesignIcon id={group.icon} />
                   {group.label}
-                </h3>
-                {group.properties.map((property) => (
-                  <DesignField key={property.property} node={node} property={property} />
-                ))}
-              </div>
+                  <Icon
+                    name="ph:caret-down"
+                    width={12}
+                    height={12}
+                    className="ml-auto transition-transform group-open:rotate-180"
+                  />
+                </summary>
+                <div className="mt-3 flex flex-col gap-3">
+                  {group.properties.map((property) => (
+                    <DesignField key={property.property} node={node} property={property} />
+                  ))}
+                </div>
+              </details>
             ))}
             {q && groups.length === 0 ? (
               <p className="text-small text-default-500">No settings match.</p>

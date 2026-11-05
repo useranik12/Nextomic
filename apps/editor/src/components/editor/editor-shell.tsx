@@ -2,7 +2,7 @@
 
 import type { ProjectSettings } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
-import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
+import { listPagesAction, saveProjectSettingsAction } from "@/app/(builder)/editor/[id]/actions";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { AppSettings } from "./app-settings";
@@ -84,7 +84,7 @@ export function EditorShell({
   useEffect(() => {
     if (initialised.current) return;
     initialised.current = true;
-    setCollapsed(window.innerWidth < 1400);
+    setCollapsed(true);
     const store = useEditorStore.getState();
     store.init(projectId, project);
     store.loadPage(
@@ -99,13 +99,25 @@ export function EditorShell({
     setReady(true);
   }, [projectId, project, initialPage]);
 
-  // One left panel at a time: selecting an element folds the section rail to its icons and closes
-  // the Elements popup (an insert selects the new element).
+  // One left panel at a time: with the Navigator open the section rail is folded to its icons, and
+  // selecting an element closes the Elements popup (an insert selects the new element). Other
+  // sections keep the rail as the user left it.
   useEffect(() => {
     if (!selectedId) return;
-    setCollapsed(true);
+    if (rail === "navigator") setCollapsed(true);
     setFlyout(false);
-  }, [selectedId]);
+  }, [selectedId, rail]);
+
+  // Class styles live in the project settings; save them shortly after the last change.
+  const classesTick = useEditorStore((s) => s.classesTick);
+  useEffect(() => {
+    if (classesTick === 0) return;
+    const timer = window.setTimeout(() => {
+      const { projectId: id, project: current } = useEditorStore.getState();
+      void saveProjectSettingsAction(id, current);
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [classesTick]);
 
   // Keep the page list (names, routes, home flag) in step with saves.
   const savedTick = useEditorStore((s) => s.savedTick);
@@ -151,6 +163,11 @@ export function EditorShell({
               onSelect={(id) => {
                 setRail(id);
                 setFlyout(false);
+                // The Navigator folds the rail and shows the page settings until an element is picked.
+                if (id === "navigator") {
+                  setCollapsed(true);
+                  useEditorStore.getState().select(null);
+                }
               }}
               onToggleCollapse={() => setCollapsed((v) => !v)}
             />

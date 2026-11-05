@@ -59,6 +59,7 @@ function useViewportSize() {
 export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" | "dark" }) {
   const doc = useEditorStore((s) => s.doc);
   const breakpoints = useEditorStore((s) => s.project.breakpoints);
+  const classes = useEditorStore((s) => s.project.classes);
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
   const select = useEditorStore((s) => s.select);
@@ -187,8 +188,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
 
   useEffect(() => {
     if (!ready || !doc) return;
-    send({ type: "render", tree: doc.tree, breakpoints, mode, selectedId });
-  }, [ready, doc, breakpoints, mode, selectedId, send]);
+    send({ type: "render", tree: doc.tree, breakpoints, classes, mode, selectedId });
+  }, [ready, doc, breakpoints, classes, mode, selectedId, send]);
 
   // Wheel over the canvas surround zooms around the cursor. Native listener: React's is passive.
   useEffect(() => {
@@ -209,6 +210,11 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
 
   // Middle button held down drags the canvas (pointer capture keeps it going over the iframe).
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    // A click on the empty area around the page selects the page (its settings show on the right).
+    if (event.button === 0 && event.target === event.currentTarget) {
+      select(null);
+      return;
+    }
     if (event.button !== 1) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);

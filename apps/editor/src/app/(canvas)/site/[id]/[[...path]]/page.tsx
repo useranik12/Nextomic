@@ -36,5 +36,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function PublishedPage({ params }: { params: Params }) {
   const { id, path } = await params;
   const { page, settings } = await resolve(id, path);
-  return <PageRenderer tree={page.tree} breakpoints={settings.breakpoints} />;
+  return (
+    <PageRenderer tree={page.tree} breakpoints={settings.breakpoints} classes={settings.classes} />
+  );
 }

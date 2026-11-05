@@ -20,6 +20,7 @@ import {
   type BreakpointDef,
   type ElementNode,
   type PageSettings,
+  type StyleMap,
   type ProjectSettings,
   type PropValue,
   type PseudoState
@@ -36,6 +37,13 @@ export interface PageDoc {
 
 export type SaveStatus = "saved" | "dirty" | "saving" | "error" | "conflict";
 
+/** Page parameters and state variables are edited as drafts and only join the page when saved. */
+export interface PageDrafts {
+  params: PageSettings["params"] | null;
+  state: PageSettings["state"] | null;
+}
+export const NO_DRAFTS: PageDrafts = { params: null, state: null };
+
 export interface PageMeta {
   id: string;
   version: number;
@@ -51,6 +59,11 @@ interface EditorState {
   lastEditKey: string | null;
   lastEditAt: number;
   selectedId: string | null;
+  /** The class being edited in the Design tab; null means the element (its ID) is edited. */
+  activeClass: string | null;
+  /** Increments when a class style changes so the shell can save the project settings. */
+  classesTick: number;
+  pageDrafts: PageDrafts;
   activeBreakpointId: string;
   activeState: PseudoState;
   clipboard: ElementNode | null;
@@ -71,6 +84,9 @@ interface EditorState {
 
   setPublishedAt: (at: number | null) => void;
   select: (id: string | null) => void;
+  setActiveClass: (name: string | null) => void;
+  setPageDraft: <K extends keyof PageDrafts>(kind: K, value: PageDrafts[K]) => void;
+  clearPageDrafts: () => void;
   setActiveBreakpoint: (id: string) => void;
   setActiveState: (state: PseudoState) => void;
 
@@ -155,7 +171,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
   return {
     projectId: "",
-    project: { breakpoints: [], generateElementIds: true },
+    project: { breakpoints: [], generateElementIds: true, classes: {} },
     page: null,
     doc: null,
     past: [],
@@ -163,6 +179,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
     lastEditKey: null,
     lastEditAt: 0,
     selectedId: null,
+    activeClass: null,
+    classesTick: 0,
+    pageDrafts: NO_DRAFTS,
     activeBreakpointId: BASE_BREAKPOINT_ID,
     activeState: "default",
     clipboard: null,
@@ -186,6 +205,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
         future: [],
         lastEditKey: null,
         selectedId: null,
+        activeClass: null,
+        pageDrafts: NO_DRAFTS,
         saveStatus: "saved",
         saveError: null,
         conflict: null
@@ -209,7 +230,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     setPublishedAt: (publishedAt) => set({ publishedAt }),
-    select: (id) => set({ selectedId: id }),
+    select: (id) => set({ selectedId: id, activeClass: null }),
+    setActiveClass: (name) => set({ activeClass: name }),
+    setPageDraft: (kind, value) =>
+      set((state) => ({ pageDrafts: { ...state.pageDrafts, [kind]: value } })),
+    clearPageDrafts: () => set({ pageDrafts: NO_DRAFTS }),
     setActiveBreakpoint: (id) => set({ activeBreakpointId: id }),
     setActiveState: (state) => set({ activeState: state }),
 
@@ -321,8 +346,20 @@ export const useEditorStore = create<EditorState>((set, get) => {
         else found.node.htmlId = trimmed;
       }),
 
-    setElementClass: (id, name, replacing) =>
-      void edit(null, (draft) => {
+    setElementClass: (id, name, replacing) => {
+      if (replacing !== undefined && replacing !== name) {
+        const { project, activeClass } = get();
+        const styles = project.classes[replacing];
+        if (styles && !project.classes[name]) {
+          const { [replacing]: _moved, ...rest } = project.classes;
+          set({
+            project: { ...project, classes: { ...rest, [name]: styles } },
+            classesTick: get().classesTick + 1
+          });
+        }
+        if (activeClass === replacing) set({ activeClass: name });
+      }
+      edit(null, (draft) => {
         const found = findNode(draft.tree, id);
         if (!found) return;
         const list = found.node.classIds;
@@ -333,16 +370,30 @@ export const useEditorStore = create<EditorState>((set, get) => {
         }
         if (at >= 0) list[at] = name;
         else list.push(name);
-      }),
+      });
+    },
 
-    removeElementClass: (id, name) =>
-      void edit(null, (draft) => {
+    removeElementClass: (id, name) => {
+      if (get().activeClass === name) set({ activeClass: null });
+      edit(null, (draft) => {
         const found = findNode(draft.tree, id);
         if (found) found.node.classIds = found.node.classIds.filter((c) => c !== name);
-      }),
+      });
+    },
 
     setElementStyle: (id, property, value) => {
-      const { activeBreakpointId, activeState } = get();
+      const { activeBreakpointId, activeState, activeClass, project } = get();
+      if (activeClass) {
+        const styles: StyleMap = structuredClone(
+          project.classes[activeClass] ?? { breakpoints: {} }
+        );
+        setStyle({ styles }, activeBreakpointId, activeState, property, value);
+        const classes = { ...project.classes };
+        if (Object.keys(styles.breakpoints).length === 0) delete classes[activeClass];
+        else classes[activeClass] = styles;
+        set({ project: { ...project, classes }, classesTick: get().classesTick + 1 });
+        return;
+      }
       edit(`style:${id}:${activeBreakpointId}:${activeState}:${property}`, (draft) => {
         const found = findNode(draft.tree, id);
         if (found) setStyle(found.node, activeBreakpointId, activeState, property, value);
@@ -431,4 +482,19 @@ export function countElements(doc: PageDoc | null): number {
   let count = 0;
   if (doc) walkElements(doc.tree, () => (count += 1));
   return count;
+}
+
+const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
+/** Names of the page settings groups whose edits have not been saved with their check icon. */
+export function unsavedDraftLabels(
+  drafts: PageDrafts,
+  settings: PageSettings | undefined
+): string[] {
+  const labels: string[] = [];
+  if (settings && drafts.params && !sameJson(drafts.params, settings.params))
+    labels.push("Page Parameters");
+  if (settings && drafts.state && !sameJson(drafts.state, settings.state))
+    labels.push("Page State Variables");
+  return labels;
 }

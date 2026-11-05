@@ -3,11 +3,15 @@ export interface DesignProperty {
   label: string;
   options?: string[];
   placeholder?: string;
+  /** Option value to DesignIcon key; when set the options are shown as icon buttons. */
+  icons?: Record<string, string>;
 }
 
 export interface DesignGroup {
   id: string;
   label: string;
+  /** DesignIcon key. */
+  icon: string;
   properties: DesignProperty[];
 }
 
@@ -17,6 +21,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
   {
     id: "layout",
     label: "Layout",
+    icon: "group-layout",
     properties: [
       {
         property: "display",
@@ -26,17 +31,37 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       {
         property: "flex-direction",
         label: "Direction",
-        options: ["row", "column", "row-reverse", "column-reverse"]
+        options: ["row", "column", "row-reverse", "column-reverse"],
+        icons: {
+          row: "row",
+          column: "column",
+          "row-reverse": "row-reverse",
+          "column-reverse": "column-reverse"
+        }
       },
       {
         property: "justify-content",
         label: "Justify",
-        options: ["flex-start", "center", "flex-end", "space-between", "space-around"]
+        options: ["flex-start", "center", "flex-end", "space-between", "space-around"],
+        icons: {
+          "flex-start": "start",
+          center: "center",
+          "flex-end": "end",
+          "space-between": "between",
+          "space-around": "around"
+        }
       },
       {
         property: "align-items",
         label: "Align",
-        options: ["stretch", "flex-start", "center", "flex-end", "baseline"]
+        options: ["stretch", "flex-start", "center", "flex-end", "baseline"],
+        icons: {
+          stretch: "stretch",
+          "flex-start": "top",
+          center: "middle",
+          "flex-end": "bottom",
+          baseline: "baseline"
+        }
       },
       { property: "gap", label: "Gap", placeholder: "16px" }
     ]
@@ -44,6 +69,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
   {
     id: "spacing",
     label: "Spacing",
+    icon: "group-spacing",
     properties: [
       { property: "margin", label: "Margin", placeholder: "0 auto" },
       { property: "padding", label: "Padding", placeholder: "24px" }
@@ -52,6 +78,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
   {
     id: "size",
     label: "Size",
+    icon: "group-size",
     properties: [
       { property: "width", label: "Width", placeholder: "100%" },
       { property: "max-width", label: "Max width", placeholder: "1200px" },
@@ -62,6 +89,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
   {
     id: "typography",
     label: "Typography",
+    icon: "group-typography",
     properties: [
       { property: "font-size", label: "Font size", placeholder: "16px" },
       { property: "font-weight", label: "Font weight", options: ["400", "500", "600", "700"] },
@@ -69,7 +97,13 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       {
         property: "text-align",
         label: "Text align",
-        options: ["left", "center", "right", "justify"]
+        options: ["left", "center", "right", "justify"],
+        icons: {
+          left: "text-left",
+          center: "text-center",
+          right: "text-right",
+          justify: "text-justify"
+        }
       },
       { property: "color", label: "Color", placeholder: "#111111" }
     ]
@@ -77,11 +111,13 @@ export const DESIGN_GROUPS: DesignGroup[] = [
   {
     id: "background",
     label: "Background",
+    icon: "group-background",
     properties: [{ property: "background-color", label: "Color", placeholder: "#ffffff" }]
   },
   {
     id: "border",
     label: "Border",
+    icon: "group-border",
     properties: [
       { property: "border", label: "Border", placeholder: "1px solid #ccc" },
       { property: "border-radius", label: "Radius", placeholder: "8px" }
