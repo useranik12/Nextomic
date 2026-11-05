@@ -1,4 +1,15 @@
-import { pgEnum, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
+import type { ElementNode, PageSettings, ProjectSettings } from "@nextomic/schema";
+import {
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex
+} from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 
 export * from "./auth-schema";
@@ -44,8 +55,54 @@ export const projects = pgTable("projects", {
     .references(() => user.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).notNull().defaultNow()
+  lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).notNull().defaultNow(),
+  // Breakpoints and the element-ID toggle. null = defaults (see defaultProjectSettings).
+  settings: jsonb("settings").$type<ProjectSettings>()
 });
+
+export const pages = pgTable(
+  "pages",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    route: text("route").notNull(),
+    settings: jsonb("settings").$type<PageSettings>().notNull(),
+    tree: jsonb("tree").$type<ElementNode>().notNull(),
+    // Incremented on every save; saves send the base version and a mismatch is a conflict.
+    version: integer("version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [uniqueIndex("pages_project_route_idx").on(table.projectId, table.route)]
+);
+
+export const pageVersions = pgTable(
+  "page_versions",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    pageId: text("page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    name: text("name").notNull(),
+    route: text("route").notNull(),
+    settings: jsonb("settings").$type<PageSettings>().notNull(),
+    tree: jsonb("tree").$type<ElementNode>().notNull(),
+    savedBy: text("saved_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("page_versions_page_version_idx").on(table.pageId, table.version),
+    index("page_versions_page_created_idx").on(table.pageId, table.createdAt)
+  ]
+);
 
 export const userPreferences = pgTable("user_preferences", {
   userId: text("user_id")

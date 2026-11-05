@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   colorModeEnum,
+  pages,
+  pageVersions,
   projects,
   userPreferences,
   workspaceMembers,
@@ -22,5 +24,9 @@ describe("db schema", () => {
     expect(workspaceMembers).toBeDefined();
     expect(projects).toBeDefined();
     expect(userPreferences).toBeDefined();
+    expect(pages).toBeDefined();
+    expect(pageVersions).toBeDefined();
+    expect(pages).toBeDefined();
+    expect(pageVersions).toBeDefined();
   });
 });

@@ -1,0 +1,290 @@
+import {
+  defaultPageSettings,
+  defaultProjectSettings,
+  elementNodeSchema,
+  emptyPageTree,
+  pageSettingsSchema,
+  projectSettingsSchema,
+  type ElementNode,
+  type PageSettings,
+  type ProjectSettings,
+  type SavePageInput
+} from "@nextomic/schema";
+import { getDb, pages, pageVersions, projects } from "@nextomic/db";
+import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
+
+// Page persistence. Callers MUST have passed requireProjectAccess for the project first;
+// every query here is also scoped by projectId so a page id from another project never matches.
+
+const MAX_VERSIONS_PER_PAGE = 50;
+
+export interface StoredPage {
+  id: string;
+  projectId: string;
+  name: string;
+  route: string;
+  settings: PageSettings;
+  tree: ElementNode;
+  version: number;
+  updatedAt: Date;
+}
+
+export interface PageSummary {
+  id: string;
+  name: string;
+  route: string;
+  version: number;
+  isHome: boolean;
+}
+
+export type SaveResult =
+  | { ok: true; page: StoredPage }
+  | { ok: false; reason: "conflict"; page: StoredPage }
+  | { ok: false; reason: "route-taken" | "not-found" };
+
+function toStored(row: typeof pages.$inferSelect): StoredPage {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    name: row.name,
+    route: row.route,
+    settings: pageSettingsSchema.parse(row.settings),
+    tree: elementNodeSchema.parse(row.tree),
+    version: row.version,
+    updatedAt: row.updatedAt
+  };
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
+}
+
+export async function getProjectSettings(projectId: string): Promise<ProjectSettings> {
+  const db = getDb();
+  const [row] = await db
+    .select({ settings: projects.settings })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (!row?.settings) return defaultProjectSettings();
+  const parsed = projectSettingsSchema.safeParse(row.settings);
+  return parsed.success ? parsed.data : defaultProjectSettings();
+}
+
+export async function saveProjectSettings(
+  projectId: string,
+  settings: ProjectSettings
+): Promise<ProjectSettings> {
+  const valid = projectSettingsSchema.parse(settings);
+  await getDb()
+    .update(projects)
+    .set({ settings: valid, lastModifiedAt: new Date() })
+    .where(eq(projects.id, projectId));
+  return valid;
+}
+
+export async function listPages(projectId: string): Promise<PageSummary[]> {
+  const rows = await getDb()
+    .select({
+      id: pages.id,
+      name: pages.name,
+      route: pages.route,
+      version: pages.version,
+      settings: pages.settings
+    })
+    .from(pages)
+    .where(eq(pages.projectId, projectId))
+    .orderBy(asc(pages.createdAt));
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    route: row.route,
+    version: row.version,
+    isHome: pageSettingsSchema.parse(row.settings).isHome
+  }));
+}
+
+export async function getPage(projectId: string, pageId: string): Promise<StoredPage | null> {
+  const [row] = await getDb()
+    .select()
+    .from(pages)
+    .where(and(eq(pages.id, pageId), eq(pages.projectId, projectId)))
+    .limit(1);
+  return row ? toStored(row) : null;
+}
+
+export async function getPageByRoute(projectId: string, route: string): Promise<StoredPage | null> {
+  const [row] = await getDb()
+    .select()
+    .from(pages)
+    .where(and(eq(pages.projectId, projectId), eq(pages.route, route)))
+    .limit(1);
+  return row ? toStored(row) : null;
+}
+
+export async function createPage(
+  projectId: string,
+  userId: string,
+  input: { name: string; route: string; isHome?: boolean }
+): Promise<StoredPage | "route-taken"> {
+  const settings = { ...defaultPageSettings(), isHome: input.isHome ?? false };
+  try {
+    return await getDb().transaction(async (tx) => {
+      const [row] = await tx
+        .insert(pages)
+        .values({
+          projectId,
+          name: input.name,
+          route: input.route,
+          settings,
+          tree: emptyPageTree()
+        })
+        .returning();
+      if (!row) throw new Error("Page insert returned no row");
+      await tx.insert(pageVersions).values({
+        pageId: row.id,
+        version: row.version,
+        name: row.name,
+        route: row.route,
+        settings: row.settings,
+        tree: row.tree,
+        savedBy: userId
+      });
+      return toStored(row);
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) return "route-taken";
+    throw error;
+  }
+}
+
+/** The first time a project is opened it gets a Home page at "/". */
+export async function ensureHomePage(projectId: string, userId: string): Promise<void> {
+  const existing = await listPages(projectId);
+  if (existing.length > 0) return;
+  await createPage(projectId, userId, { name: "Home", route: "/", isHome: true });
+}
+
+export async function savePage(
+  projectId: string,
+  pageId: string,
+  userId: string,
+  input: SavePageInput
+): Promise<SaveResult> {
+  try {
+    return await getDb().transaction(async (tx) => {
+      const [current] = await tx
+        .select()
+        .from(pages)
+        .where(and(eq(pages.id, pageId), eq(pages.projectId, projectId)))
+        .for("update")
+        .limit(1);
+      if (!current) return { ok: false, reason: "not-found" } as const;
+      if (current.version !== input.baseVersion) {
+        return { ok: false, reason: "conflict", page: toStored(current) } as const;
+      }
+      const [row] = await tx
+        .update(pages)
+        .set({
+          name: input.name ?? current.name,
+          route: input.route ?? current.route,
+          settings: input.settings ?? current.settings,
+          tree: input.tree ?? current.tree,
+          version: current.version + 1,
+          updatedAt: new Date()
+        })
+        .where(eq(pages.id, pageId))
+        .returning();
+      if (!row) throw new Error("Page update returned no row");
+      await tx.insert(pageVersions).values({
+        pageId,
+        version: row.version,
+        name: row.name,
+        route: row.route,
+        settings: row.settings,
+        tree: row.tree,
+        savedBy: userId
+      });
+      await tx
+        .delete(pageVersions)
+        .where(
+          and(
+            eq(pageVersions.pageId, pageId),
+            lt(pageVersions.version, row.version - MAX_VERSIONS_PER_PAGE + 1)
+          )
+        );
+      await tx
+        .update(projects)
+        .set({ lastModifiedAt: new Date() })
+        .where(eq(projects.id, projectId));
+      return { ok: true, page: toStored(row) } as const;
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) return { ok: false, reason: "route-taken" };
+    throw error;
+  }
+}
+
+export async function deletePage(projectId: string, pageId: string): Promise<boolean> {
+  const removed = await getDb()
+    .delete(pages)
+    .where(and(eq(pages.id, pageId), eq(pages.projectId, projectId)))
+    .returning({ id: pages.id });
+  return removed.length > 0;
+}
+
+export interface VersionSummary {
+  version: number;
+  name: string;
+  savedAt: Date;
+  savedBy: string | null;
+}
+
+export async function listVersions(projectId: string, pageId: string): Promise<VersionSummary[]> {
+  const owned = await getPage(projectId, pageId);
+  if (!owned) return [];
+  const rows = await getDb()
+    .select({
+      version: pageVersions.version,
+      name: pageVersions.name,
+      savedAt: pageVersions.createdAt,
+      savedBy: pageVersions.savedBy
+    })
+    .from(pageVersions)
+    .where(eq(pageVersions.pageId, pageId))
+    .orderBy(desc(pageVersions.version))
+    .limit(MAX_VERSIONS_PER_PAGE);
+  return rows;
+}
+
+/** Restoring writes the old snapshot as a NEW version so history is never rewritten. */
+export async function restoreVersion(
+  projectId: string,
+  pageId: string,
+  userId: string,
+  version: number
+): Promise<SaveResult> {
+  const current = await getPage(projectId, pageId);
+  if (!current) return { ok: false, reason: "not-found" };
+  const [snapshot] = await getDb()
+    .select()
+    .from(pageVersions)
+    .where(and(eq(pageVersions.pageId, pageId), eq(pageVersions.version, version)))
+    .limit(1);
+  if (!snapshot) return { ok: false, reason: "not-found" };
+  return savePage(projectId, pageId, userId, {
+    baseVersion: current.version,
+    name: snapshot.name,
+    route: snapshot.route,
+    settings: pageSettingsSchema.parse(snapshot.settings),
+    tree: elementNodeSchema.parse(snapshot.tree)
+  });
+}
+
+export async function countPages(projectId: string): Promise<number> {
+  const [row] = await getDb()
+    .select({ count: sql<number>`count(*)::int` })
+    .from(pages)
+    .where(eq(pages.projectId, projectId));
+  return row?.count ?? 0;
+}
