@@ -17,7 +17,8 @@
     "icons:build": "bun run scripts/build-icon-set.ts",
     "icons:lint": "bun run scripts/lint-icons.ts",
     "postinstall": "bun run icons:build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "schema:doc": "bun run scripts/gen-schema-doc.ts"
   },
   "devDependencies": {
     "@eslint/js": "9.17.0",
@@ -30,7 +31,8 @@
     "prettier": "3.4.2",
     "typescript": "5.7.2",
     "typescript-eslint": "8.19.0",
-    "vitest": "2.1.8"
+    "vitest": "2.1.8",
+    "zod-to-json-schema": "3.24.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

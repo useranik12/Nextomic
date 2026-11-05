@@ -81,6 +81,7 @@ export function EditorShell({
   useEffect(() => {
     if (initialised.current) return;
     initialised.current = true;
+    setCollapsed(window.innerWidth < 1400);
     const store = useEditorStore.getState();
     store.init(projectId, project);
     store.loadPage(
@@ -122,7 +123,7 @@ export function EditorShell({
         />
         <div className="relative flex min-h-0 flex-1">
           <div
-            className={`${collapsed ? "w-14" : "w-60"} shrink-0 border-r border-divider transition-[width] duration-300`}
+            className={`${collapsed ? "w-14" : "w-52"} shrink-0 border-r border-divider transition-[width] duration-300`}
           >
             <LeftRail
               active={rail}
@@ -134,7 +135,7 @@ export function EditorShell({
               onToggleCollapse={() => setCollapsed((v) => !v)}
             />
           </div>
-          <div className="relative w-64 shrink-0 border-r border-divider">
+          <div className="relative w-60 shrink-0 border-r border-divider">
             {rail === "navigator" ? (
               <>
                 <Navigator onOpenElements={() => setFlyout((v) => !v)} />
@@ -154,7 +155,7 @@ export function EditorShell({
           <main className="min-w-0 flex-1 bg-content1/20">
             <CanvasFrame mode={mode} />
           </main>
-          <div className="w-80 shrink-0 border-l border-divider">
+          <div className="w-72 shrink-0 border-l border-divider">
             <RightPanel />
           </div>
         </div>
