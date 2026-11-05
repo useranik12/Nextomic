@@ -87,7 +87,11 @@ Design sources are in `blueprint/` (see `ui-reference.md` for the index, coverag
 - Built-site fonts and icons: managed in Design System > Fonts & Icons. Fonts are self-hosted by default (no runtime calls to font CDNs). Icon libraries default to inline SVG output with icon-font output as an option, and custom icon fonts and SVG sets can be imported. Licenses and attribution are tracked. Details in `fonts-and-icons.md`.
 - Reusable components are deferred (Phase 14); the schema reserves `componentInstance`.
 
-## Open questions for the owner
+- 2026-11-06 Phase 1: breakpoint defaults are Desktop base (canvas 1440), Tablet and below 991px (canvas 768), Mobile and below 575px (canvas 375). The owner gave 1440/768/375 as the device canvas widths; media-query thresholds stay at the Bricks-style 991/575 so real phones and tablets match. The manager edits both.
+- 2026-11-06 Phase 1: the canvas is a sandboxed iframe (`sandbox="allow-scripts"`, opaque origin, no cookies) loading `/canvas`, which has its own root layout (no builder CSS) and renders trees received by postMessage. The preview route `/preview/[id]` shares that layout. Route groups: `(builder)` for the app, `(canvas)` for canvas and preview.
+- 2026-11-06 Phase 1: pages are stored as jsonb trees with an integer `version`. Saves send `baseVersion`; a mismatch returns a conflict and the editor shows a dialog (keep mine or load newer). Every save writes a `page_versions` row (last 50 kept); restore writes the old snapshot as a new version.
+- 2026-11-06 Phase 1: breakpoint icons are a fixed set (desktop, laptop, tablet, mobile) so `icons:lint` can keep literal icon names.
+  for the owner
 
 1. Confirm "icons.js.com" means Icônes (icones.js.org, the Iconify browser).
 2. Logo click is read as "return to All Projects with the project highlighted". Confirm.

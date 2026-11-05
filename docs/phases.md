@@ -26,17 +26,17 @@ Docs: `spec.md`, `ui-reference.md`, `platform.md`
 
 Docs: `ui-reference.md`, `elements.md`, `design-system.md` (sections 1 to 4), `templates-and-themes.md` (pages)
 
-- [ ] Schema v1: project, page, element node, breakpoints, conditions model (`docs/schema.md` generated)
-- [ ] Editor shell per `ui-reference.md` 4.3: top bar (logo back to projects, page select, add page, Page Settings dialog shell, site dark/light view switch, editing chip, breakpoint switcher with manager menu, view published icon, publish menu with Save and Preview only until Phase 11), left rail (Navigator, State Management, Media, Supabase, API Data, Design System, Custom Codes, Git Connection, Version History, App Settings), Elements flyout, canvas (sandboxed iframe), right panel
-- [ ] Navigator tree (page or template elements only), selection, drag/drop, reorder, nesting, duplicate, delete, copy/paste
-- [ ] Right panel with nothing selected: Page Parameters, Route Settings (including the "Requires Authentication" flag, stored only), Page State Variables. With an element selected: Element / Design / Action tabs and "Search settings"
-- [ ] Breakpoints: user-defined (defaults desktop, tablet, mobile), manager menu (add, edit, delete, reorder, zoom, rotate), cascade rules, change-dot indicators for every breakpoint
-- [ ] Undo/redo, autosave with version number (conflict dialog), Version History basics
-- [ ] Component registry with `bindable` flags + starter elements: section, container, heading, text, button, image
-- [ ] Element IDs (`nxtomc-xxxxxxxx`) and project setting toggle
-- [ ] Save/load pages, page list, routing
-- [ ] Walking skeleton: preview route renders a saved page through `packages/renderer`
-- [ ] Tests: schema, store, registry, renderer
+- [x] Schema v1: project, page, element node, breakpoints, conditions model (`docs/schema.md` generated)
+- [x] Editor shell per `ui-reference.md` 4.3: top bar (logo back to projects, page select, add page, Page Settings dialog shell, site dark/light view switch, editing chip, breakpoint switcher with manager menu, view published icon, publish menu with Save and Preview only until Phase 11), left rail (Navigator, State Management, Media, Supabase, API Data, Design System, Custom Codes, Git Connection, Version History, App Settings), Elements flyout, canvas (sandboxed iframe), right panel _Built: all items. Not built yet: hover popover on the editing chip, the Pages/Templates grouping in the page select (templates arrive with Phase 3)._
+- [x] Navigator tree (page or template elements only), selection, drag/drop, reorder, nesting, duplicate, delete, copy/paste _Copy and paste use Ctrl/Cmd+C and V and the Paste button in the element header; Elements tiles insert by click or by dragging into the tree (dragging onto the canvas is not built)._
+- [x] Right panel with nothing selected: Page Parameters, Route Settings (including the "Requires Authentication" flag, stored only), Page State Variables. With an element selected: Element / Design / Action tabs and "Search settings"
+- [ ] Breakpoints: user-defined (defaults desktop, tablet, mobile), manager menu (add, edit, delete, reorder, zoom, rotate), cascade rules, change-dot indicators for every breakpoint _Built: manager modal (add, edit, delete with move/discard, reorder, reset), cascade, change dots. Remaining: canvas zoom and rotate._
+- [x] Undo/redo, autosave with version number (conflict dialog), Version History basics
+- [x] Component registry with `bindable` flags + starter elements: section, container, heading, text, button, image _Next render only; the Astro render joins the exporter phase._
+- [x] Element IDs (`nxtomc-xxxxxxxx`) and project setting toggle
+- [x] Save/load pages, page list, routing
+- [x] Walking skeleton: preview route renders a saved page through `packages/renderer`
+- [x] Tests: schema, store, registry, renderer
 
 ## Phase 2: Design system and themes
 
