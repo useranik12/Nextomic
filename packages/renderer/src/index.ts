@@ -1,2 +1,7 @@
-// Element JSON -> React/Next and Astro output. Real work starts Phase 1 (walking skeleton).
-export const RENDERER_PACKAGE_READY = false;
+// Element JSON -> React/Next output. Astro output lands with the exporter phase.
+import "./elements";
+
+export * from "./css";
+export * from "./registry";
+export * from "./render";
+export * from "./values";

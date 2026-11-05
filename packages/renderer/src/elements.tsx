@@ -1,0 +1,133 @@
+import { createElement } from "react";
+import { z } from "zod";
+import { registerElement, type ControlDef } from "./registry";
+import { safeUrl } from "./values";
+
+const LAYOUT_TAGS = ["div", "section", "header", "main", "nav", "aside", "article", "footer"];
+
+const tagControl = (tags: string[]): ControlDef => ({
+  key: "htmlTag",
+  label: "HTML tag",
+  kind: "select",
+  options: tags.map((tag) => ({ value: tag, label: `<${tag}>` }))
+});
+
+registerElement({
+  type: "page",
+  label: "Page",
+  category: "layout",
+  icon: "ph:file",
+  hidden: true,
+  canHaveChildren: true,
+  defaults: () => ({ props: {}, name: "Page" }),
+  propsSchema: z.object({}),
+  controls: [],
+  bindable: {},
+  render: ({ attrs, children }) => createElement("div", attrs, children)
+});
+
+registerElement({
+  type: "section",
+  label: "Section",
+  category: "layout",
+  icon: "ph:rows",
+  canHaveChildren: true,
+  htmlTags: ["section", ...LAYOUT_TAGS.filter((tag) => tag !== "section")],
+  defaults: () => ({ props: {}, htmlTag: "section", name: "Section" }),
+  propsSchema: z.object({}),
+  controls: [tagControl(["section", ...LAYOUT_TAGS.filter((tag) => tag !== "section")])],
+  bindable: {},
+  render: ({ node, attrs, children }) => createElement(node.htmlTag ?? "section", attrs, children)
+});
+
+registerElement({
+  type: "container",
+  label: "Container",
+  category: "layout",
+  icon: "ph:square",
+  canHaveChildren: true,
+  htmlTags: LAYOUT_TAGS,
+  defaults: () => ({ props: {}, htmlTag: "div", name: "Container" }),
+  propsSchema: z.object({}),
+  controls: [tagControl(LAYOUT_TAGS)],
+  bindable: {},
+  render: ({ node, attrs, children }) => createElement(node.htmlTag ?? "div", attrs, children)
+});
+
+const HEADING_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6"];
+
+registerElement({
+  type: "heading",
+  label: "Heading",
+  category: "basic",
+  icon: "ph:text-h",
+  canHaveChildren: false,
+  htmlTags: HEADING_TAGS,
+  defaults: () => ({ props: { text: "Heading" }, htmlTag: "h2", name: "Heading" }),
+  propsSchema: z.object({ text: z.string() }),
+  controls: [{ key: "text", label: "Text", kind: "text" }, tagControl(HEADING_TAGS)],
+  bindable: { text: true },
+  render: ({ node, attrs, text }) => createElement(node.htmlTag ?? "h2", attrs, text("text"))
+});
+
+registerElement({
+  type: "text",
+  label: "Simple Text",
+  category: "basic",
+  icon: "ph:text-aa",
+  canHaveChildren: false,
+  htmlTags: ["p", "span", "div"],
+  defaults: () => ({
+    props: { text: "Write something here." },
+    htmlTag: "p",
+    name: "Text"
+  }),
+  propsSchema: z.object({ text: z.string() }),
+  controls: [{ key: "text", label: "Text", kind: "textarea" }, tagControl(["p", "span", "div"])],
+  bindable: { text: true },
+  render: ({ node, attrs, text }) => createElement(node.htmlTag ?? "p", attrs, text("text"))
+});
+
+registerElement({
+  type: "button",
+  label: "Button",
+  category: "basic",
+  icon: "ph:cursor-click",
+  canHaveChildren: false,
+  defaults: () => ({ props: { text: "Button", href: "" }, name: "Button" }),
+  propsSchema: z.object({ text: z.string(), href: z.string() }),
+  controls: [
+    { key: "text", label: "Text", kind: "text" },
+    { key: "href", label: "Link", kind: "url", placeholder: "https:// or /page" }
+  ],
+  bindable: { text: true, href: true },
+  render: ({ attrs, text }) => {
+    const href = safeUrl(text("href"));
+    return href
+      ? createElement("a", { ...attrs, href }, text("text"))
+      : createElement("button", { ...attrs, type: "button" }, text("text"));
+  }
+});
+
+registerElement({
+  type: "image",
+  label: "Image",
+  category: "basic",
+  icon: "ph:image",
+  canHaveChildren: false,
+  defaults: () => ({ props: { src: "", alt: "" }, name: "Image" }),
+  propsSchema: z.object({ src: z.string(), alt: z.string() }),
+  controls: [
+    { key: "src", label: "Source URL", kind: "url", placeholder: "https://..." },
+    { key: "alt", label: "Alt text", kind: "text" }
+  ],
+  bindable: { src: true, alt: true },
+  render: ({ attrs, text }) => {
+    const src = safeUrl(text("src"));
+    return createElement("img", {
+      ...attrs,
+      src: src === "" ? undefined : src,
+      alt: text("alt")
+    });
+  }
+});
