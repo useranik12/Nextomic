@@ -5,6 +5,7 @@ import { propValueSchema, type PropValue } from "./value";
 
 export const HTML_ID_PREFIX = "nxtomc-";
 export const HTML_ID_PATTERN = /^[A-Za-z][A-Za-z0-9_:.-]*$/;
+export const CLASS_NAME_PATTERN = /^-?[_a-zA-Z][_a-zA-Z0-9-]*$/;
 
 export interface ElementNode {
   id: string;
@@ -34,7 +35,7 @@ export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = 
       .regex(/^[a-z][a-z0-9-]*$/)
       .max(32)
       .optional(),
-    classIds: z.array(z.string()).default([]),
+    classIds: z.array(z.string().regex(CLASS_NAME_PATTERN).max(64)).max(50).default([]),
     props: z.record(z.string(), propValueSchema).default({}),
     attributes: z.record(z.string(), propValueSchema).optional(),
     styles: styleMapSchema.default({ breakpoints: {} }),

@@ -7,6 +7,7 @@ import {
   DEFAULT_BREAKPOINTS,
   MAX_BREAKPOINTS,
   breakpointListSchema,
+  sortBreakpoints,
   type BreakpointDef,
   type BreakpointKind
 } from "@nextomic/schema";
@@ -34,7 +35,7 @@ function uniqueId(list: BreakpointDef[]): string {
 export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const project = useEditorStore((s) => s.project);
   const doc = useEditorStore((s) => s.doc);
-  const [draft, setDraft] = useState<BreakpointDef[]>(project.breakpoints);
+  const [draft, setDraft] = useState<BreakpointDef[]>(sortBreakpoints(project.breakpoints));
   const [removed, setRemoved] = useState<BreakpointDef[]>([]);
   const [moves, setMoves] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -56,36 +57,30 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
     setDraft((list) => list.filter((_, i) => i !== index));
   }
 
-  function move(index: number, delta: -1 | 1) {
-    setDraft((list) => {
-      const next = [...list];
-      const target = index + delta;
-      if (target < 1 || target >= next.length) return list;
-      const [item] = next.splice(index, 1);
-      if (item) next.splice(target, 0, item);
-      return next;
-    });
-  }
+  /** Order is derived from width: re-sort whenever a size or kind is settled. */
+  const settle = () => setDraft((list) => sortBreakpoints(list));
 
   function add() {
-    setDraft((list) => [
-      ...list,
-      {
-        id: uniqueId(list),
-        name: `Breakpoint ${list.length}`,
-        icon: "tablet",
-        kind: "down",
-        width: 480,
-        previewWidth: 480
-      }
-    ]);
+    setDraft((list) =>
+      sortBreakpoints([
+        ...list,
+        {
+          id: uniqueId(list),
+          name: `Breakpoint ${list.length}`,
+          icon: "tablet",
+          kind: "down",
+          width: 480,
+          previewWidth: 480
+        }
+      ])
+    );
   }
 
   function reset() {
     const defaults = DEFAULT_BREAKPOINTS.map((b) => ({ ...b }));
     const keep = new Set(defaults.map((b) => b.id));
     setRemoved((list) => [...list, ...draft.filter((b) => !keep.has(b.id))]);
-    setDraft(defaults);
+    setDraft(sortBreakpoints(defaults));
   }
 
   async function save() {
@@ -94,7 +89,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
       setError(parsed.error.issues[0]?.message ?? "Invalid breakpoints.");
       return;
     }
-    const nextSettings = { ...project, breakpoints: parsed.data };
+    const nextSettings = { ...project, breakpoints: sortBreakpoints(parsed.data) };
     setSaving(true);
     const result = await saveProjectSettingsAction(
       useEditorStore.getState().projectId,
@@ -127,8 +122,8 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
         <ModalHeader>Breakpoints</ModalHeader>
         <ModalBody className="gap-4">
           <p className="text-small text-default-500">
-            Desktop is the base. &quot;And below&quot; breakpoints override from the largest to the
-            smallest. Canvas width is only used while editing.
+            Desktop is the base. Breakpoints order themselves by width, larger screens on the left.
+            Canvas width is only used while editing.
           </p>
           <ul className="flex flex-col gap-3">
             {draft.map((bp, index) => {
@@ -159,7 +154,10 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
                       label="Kind"
                       value={bp.kind}
                       options={KIND_OPTIONS}
-                      onValueChange={(kind) => patch(index, { kind: kind as BreakpointKind })}
+                      onValueChange={(kind) => {
+                        patch(index, { kind: kind as BreakpointKind });
+                        queueMicrotask(settle);
+                      }}
                     />
                   )}
                   <FormInput
@@ -169,6 +167,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
                     isDisabled={isBase}
                     value={bp.width === null ? "" : String(bp.width)}
                     onValueChange={(v) => patch(index, { width: v === "" ? null : Number(v) })}
+                    onBlur={settle}
                   />
                   <FormInput
                     compact
@@ -182,24 +181,6 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
                     }}
                   />
                   <div className="flex items-end gap-1">
-                    <button
-                      type="button"
-                      aria-label={`Move ${bp.name} up`}
-                      disabled={isBase || index === 1}
-                      onClick={() => move(index, -1)}
-                      className="rounded p-1.5 text-default-500 hover:text-foreground disabled:opacity-30"
-                    >
-                      <Icon name="ph:arrow-up" width={16} height={16} />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Move ${bp.name} down`}
-                      disabled={isBase || index === draft.length - 1}
-                      onClick={() => move(index, 1)}
-                      className="rounded p-1.5 text-default-500 hover:text-foreground disabled:opacity-30"
-                    >
-                      <Icon name="ph:arrow-down" width={16} height={16} />
-                    </button>
                     <button
                       type="button"
                       aria-label={`Delete ${bp.name}`}

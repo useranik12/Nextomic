@@ -1,4 +1,4 @@
-import type { ElementNode, PageSettings, ProjectSettings } from "@nextomic/schema";
+import type { ElementNode, PageSettings, ProjectSettings, PublishedPage } from "@nextomic/schema";
 import {
   index,
   integer,
@@ -57,7 +57,10 @@ export const projects = pgTable("projects", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).notNull().defaultNow(),
   // Breakpoints and the element-ID toggle. null = defaults (see defaultProjectSettings).
-  settings: jsonb("settings").$type<ProjectSettings>()
+  settings: jsonb("settings").$type<ProjectSettings>(),
+  // Set by Publish, cleared by Unpublish. Visitors only ever see the published snapshots, never the draft.
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  publishedSettings: jsonb("published_settings").$type<ProjectSettings>()
 });
 
 export const pages = pgTable(
@@ -75,6 +78,7 @@ export const pages = pgTable(
     tree: jsonb("tree").$type<ElementNode>().notNull(),
     // Incremented on every save; saves send the base version and a mismatch is a conflict.
     version: integer("version").notNull().default(1),
+    publishedSnapshot: jsonb("published_snapshot").$type<PublishedPage>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },

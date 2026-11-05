@@ -3,7 +3,7 @@
 import { Checkbox } from "@heroui/react";
 import { ROUTE_PATTERN, pageVariableTypeSchema, type PageSettings } from "@nextomic/schema";
 import { useState } from "react";
-import { ActionButton } from "@/components/ui/controls";
+import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { compactFieldClass } from "./setting-row";
@@ -71,18 +71,15 @@ function TypeSelect({
   onChange: (v: (typeof TYPES)[number]) => void;
 }) {
   return (
-    <select
-      aria-label={label}
+    <SelectField
+      compact
+      hideLabel
+      label={label}
       value={value}
-      onChange={(e) => onChange(e.target.value as (typeof TYPES)[number])}
-      className={compactFieldClass + " w-24 shrink-0"}
-    >
-      {TYPES.map((t) => (
-        <option key={t} value={t} className="bg-content1">
-          {t}
-        </option>
-      ))}
-    </select>
+      options={TYPES.map((t) => ({ value: t, label: t }))}
+      onValueChange={(next) => onChange(next as (typeof TYPES)[number])}
+      className="w-28 shrink-0"
+    />
   );
 }
 
@@ -112,33 +109,57 @@ function PageParameters() {
         <p className="text-tiny text-default-500">No parameters.</p>
       ) : null}
       {params.map((param, index) => (
-        <div key={index} className="flex items-start gap-1">
+        <div
+          key={index}
+          className="flex min-w-0 flex-col gap-1.5 rounded-large border border-default-200 p-2"
+        >
           {editing ? (
             <>
-              <NameField
-                label="Parameter name"
-                value={param.name}
-                taken={params.filter((_, i) => i !== index).map((p) => p.name)}
-                onCommit={(name) => set(params.map((p, i) => (i === index ? { ...p, name } : p)))}
-              />
-              <TypeSelect
-                label="Parameter type"
-                value={param.type}
-                onChange={(type) => set(params.map((p, i) => (i === index ? { ...p, type } : p)))}
-              />
-              <button
-                type="button"
-                aria-label={`Remove ${param.name}`}
-                onClick={() => set(params.filter((_, i) => i !== index))}
-                className="mt-1.5 rounded p-0.5 text-default-500 hover:text-danger"
-              >
-                <Icon name="ph:trash" width={14} height={14} />
-              </button>
+              <div className="flex items-start gap-1">
+                <NameField
+                  label="Parameter name"
+                  value={param.name}
+                  taken={params.filter((_, i) => i !== index).map((p) => p.name)}
+                  onCommit={(name) => set(params.map((p, i) => (i === index ? { ...p, name } : p)))}
+                />
+                <button
+                  type="button"
+                  aria-label={`Remove ${param.name}`}
+                  onClick={() => set(params.filter((_, i) => i !== index))}
+                  className="mt-1.5 shrink-0 rounded p-0.5 text-default-500 hover:text-danger"
+                >
+                  <Icon name="ph:trash" width={14} height={14} />
+                </button>
+              </div>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <TypeSelect
+                  label="Parameter type"
+                  value={param.type}
+                  onChange={(type) => set(params.map((p, i) => (i === index ? { ...p, type } : p)))}
+                />
+                <input
+                  aria-label={`Value for ${param.name}`}
+                  placeholder="Value"
+                  value={param.defaultValue}
+                  onChange={(e) =>
+                    set(
+                      params.map((p, i) =>
+                        i === index ? { ...p, defaultValue: e.target.value } : p
+                      )
+                    )
+                  }
+                  className={compactFieldClass + " min-w-0 flex-1"}
+                />
+              </div>
             </>
           ) : (
-            <span className="text-small text-foreground">
-              {param.name} <span className="text-tiny text-default-500">{param.type}</span>
-            </span>
+            <p className="min-w-0 truncate text-small text-foreground">
+              {param.name}
+              <span className="text-tiny text-default-500"> {param.type}</span>
+              {param.defaultValue ? (
+                <span className="text-tiny text-default-500"> = {param.defaultValue}</span>
+              ) : null}
+            </p>
           )}
         </div>
       ))}
@@ -155,7 +176,8 @@ function PageParameters() {
                   params.map((p) => p.name)
                 ),
                 type: "string",
-                required: false
+                required: false,
+                defaultValue: ""
               }
             ])
           }
@@ -254,21 +276,21 @@ function StateVariables() {
               taken={vars.filter((_, i) => i !== index).map((x) => x.name)}
               onCommit={(name) => set(vars.map((x, i) => (i === index ? { ...x, name } : x)))}
             />
+            <button
+              type="button"
+              aria-label={`Remove ${v.name}`}
+              onClick={() => set(vars.filter((_, i) => i !== index))}
+              className="mt-1.5 shrink-0 rounded p-0.5 text-default-500 hover:text-danger"
+            >
+              <Icon name="ph:trash" width={14} height={14} />
+            </button>
+          </div>
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <TypeSelect
               label="Variable type"
               value={v.type}
               onChange={(type) => set(vars.map((x, i) => (i === index ? { ...x, type } : x)))}
             />
-            <button
-              type="button"
-              aria-label={`Remove ${v.name}`}
-              onClick={() => set(vars.filter((_, i) => i !== index))}
-              className="mt-1.5 rounded p-0.5 text-default-500 hover:text-danger"
-            >
-              <Icon name="ph:trash" width={14} height={14} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2">
             <Checkbox
               size="sm"
               isSelected={v.isList}
@@ -285,7 +307,7 @@ function StateVariables() {
               onChange={(e) =>
                 set(vars.map((x, i) => (i === index ? { ...x, defaultValue: e.target.value } : x)))
               }
-              className={compactFieldClass}
+              className={compactFieldClass + " w-full"}
             />
           </div>
         </div>

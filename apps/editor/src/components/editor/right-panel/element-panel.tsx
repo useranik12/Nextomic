@@ -1,60 +1,83 @@
 "use client";
 
-import { Switch } from "@heroui/react";
-import { getElementDefinition, resolveText, type ControlDef } from "@nextomic/renderer";
-import { findNode, getStyle, type ElementNode, type PseudoState } from "@nextomic/schema";
+import { getElementDefinition, type ControlDef } from "@nextomic/renderer";
+import {
+  dynamicTextOf,
+  findNode,
+  getStyle,
+  parseDynamicText,
+  type ElementNode,
+  type PseudoState
+} from "@nextomic/schema";
 import { useId, useMemo, useState } from "react";
-import { ActionButton } from "@/components/ui/controls";
+import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { DESIGN_GROUPS } from "./design-groups";
+import { DynamicBolt } from "./dynamic-bolt";
+import { IdentityField } from "./identity-field";
 import { SettingRow, compactFieldClass } from "./setting-row";
 
 const STATES: PseudoState[] = ["default", "hover", "focus", "active", "disabled"];
 
 type Tab = "element" | "design" | "action";
 
+// HeroUI Select keys cannot be empty, so "no value set" has its own key.
+const DEFAULT_OPTION = "__default";
+
 function ControlField({ node, control }: { node: ElementNode; control: ControlDef }) {
   const id = useId();
   const setProp = useEditorStore((s) => s.setElementProp);
   const setTag = useEditorStore((s) => s.setElementTag);
   const isTag = control.key === "htmlTag";
-  const value = isTag ? (node.htmlTag ?? "") : resolveText(node.props[control.key]);
+  const value = isTag ? (node.htmlTag ?? "") : dynamicTextOf(node.props[control.key]);
   const onChange = (next: string) =>
-    isTag ? setTag(node.id, next) : setProp(node.id, control.key, next);
+    isTag ? setTag(node.id, next) : setProp(node.id, control.key, parseDynamicText(next));
+  const insertToken = (token: string) => onChange(`${value}{{${token}}}`);
+
+  if (control.kind === "select") {
+    return (
+      <SelectField
+        compact
+        label={control.label}
+        value={value}
+        options={control.options ?? []}
+        onValueChange={onChange}
+      />
+    );
+  }
 
   return (
     <SettingRow label={control.label} htmlFor={id}>
-      {control.kind === "select" ? (
-        <select
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={compactFieldClass}
-        >
-          {control.options?.map((o) => (
-            <option key={o.value} value={o.value} className="bg-content1">
-              {o.label}
-            </option>
-          ))}
-        </select>
-      ) : control.kind === "textarea" ? (
-        <textarea
-          id={id}
-          value={value}
-          rows={3}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-large border-2 border-default-200 bg-transparent px-3 py-2 text-small text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
-        />
-      ) : (
-        <input
-          id={id}
-          value={value}
-          placeholder={control.placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          className={compactFieldClass}
-        />
-      )}
+      <div className="relative">
+        {control.kind === "textarea" ? (
+          <textarea
+            id={id}
+            value={value}
+            rows={3}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full rounded-large border-2 border-default-200 bg-transparent py-2 pl-3 pr-9 text-small text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
+          />
+        ) : (
+          <input
+            id={id}
+            value={value}
+            placeholder={control.placeholder}
+            onChange={(e) => onChange(e.target.value)}
+            className={compactFieldClass + " pr-9"}
+          />
+        )}
+        {isTag ? null : (
+          <div
+            className={
+              "absolute right-1.5 " +
+              (control.kind === "textarea" ? "top-2" : "top-1/2 -translate-y-1/2")
+            }
+          >
+            <DynamicBolt label={control.label} onInsert={insertToken} />
+          </div>
+        )}
+      </div>
     </SettingRow>
   );
 }
@@ -83,37 +106,42 @@ function DesignField({
       onReset={() => setStyle(node.id, property.property, null)}
     >
       {property.options ? (
-        <select
-          id={id}
-          value={own ?? ""}
-          onChange={(e) =>
-            setStyle(node.id, property.property, e.target.value === "" ? null : e.target.value)
+        <SelectField
+          compact
+          hideLabel
+          label={property.label}
+          value={own ?? DEFAULT_OPTION}
+          options={[
+            { value: DEFAULT_OPTION, label: inherited ? `${inherited} (inherited)` : "Default" },
+            ...property.options.map((o) => ({ value: o, label: o }))
+          ]}
+          onValueChange={(next) =>
+            setStyle(node.id, property.property, next === DEFAULT_OPTION ? null : next)
           }
-          className={compactFieldClass}
-        >
-          <option value="" className="bg-content1">
-            {inherited ? `${inherited} (inherited)` : "Default"}
-          </option>
-          {property.options.map((o) => (
-            <option key={o} value={o} className="bg-content1">
-              {o}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          id={id}
-          value={own ?? ""}
-          placeholder={inherited ?? property.placeholder}
-          onChange={(e) =>
-            setStyle(
-              node.id,
-              property.property,
-              e.target.value.trim() === "" ? null : e.target.value
-            )
-          }
-          className={compactFieldClass}
         />
+      ) : (
+        <div className="relative">
+          <input
+            id={id}
+            value={own ?? ""}
+            placeholder={inherited ?? property.placeholder}
+            onChange={(e) =>
+              setStyle(
+                node.id,
+                property.property,
+                e.target.value.trim() === "" ? null : e.target.value
+              )
+            }
+            className={compactFieldClass + " pr-9"}
+          />
+          <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+            <DynamicBolt
+              label={property.label}
+              onInsert={() => undefined}
+              disabledReason="Dynamic style values arrive with the dynamic data phase."
+            />
+          </div>
+        </div>
       )}
     </SettingRow>
   );
@@ -123,19 +151,15 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const definition = getElementDefinition(node.type);
   const [tab, setTab] = useState<Tab>("element");
   const [query, setQuery] = useState("");
-  const idFieldId = useId();
   const bp = useEditorStore((s) => s.activeBreakpointId);
   const state = useEditorStore((s) => s.activeState);
   const setState = useEditorStore((s) => s.setActiveState);
   const rename = useEditorStore((s) => s.renameElement);
-  const setHtmlId = useEditorStore((s) => s.setElementHtmlId);
   const duplicate = useEditorStore((s) => s.duplicateElement);
   const copy = useEditorStore((s) => s.copyElement);
   const paste = useEditorStore((s) => s.pasteElement);
   const remove = useEditorStore((s) => s.removeElement);
   const hasClipboard = useEditorStore((s) => s.clipboard !== null);
-  const generateIds = useEditorStore((s) => s.project.generateElementIds);
-  const setGenerate = useEditorStore((s) => s.setGenerateElementIds);
 
   const designDot = useMemo(
     () => Object.values(node.styles.breakpoints[bp] ?? {}).some((d) => Object.keys(d).length > 0),
@@ -195,18 +219,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             Paste copied element
           </ActionButton>
         ) : null}
-        <SettingRow label="ID" htmlFor={idFieldId}>
-          <input
-            id={idFieldId}
-            value={node.htmlId ?? ""}
-            placeholder="nxtomc-xxxxxxxx"
-            onChange={(e) => setHtmlId(node.id, e.target.value)}
-            className={compactFieldClass}
-          />
-        </SettingRow>
-        <Switch size="sm" isSelected={generateIds} onValueChange={setGenerate}>
-          <span className="text-tiny text-default-600">Generate element ID automatically</span>
-        </Switch>
+        <IdentityField key={node.id} node={node} />
         <div role="tablist" aria-label="Element settings" className="flex gap-1">
           {(["element", "design", "action"] as const).map((id) => (
             <button

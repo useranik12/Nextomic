@@ -1,4 +1,4 @@
-import type { BreakpointDef, ElementNode } from "@nextomic/schema";
+import { CLASS_NAME_PATTERN, type BreakpointDef, type ElementNode } from "@nextomic/schema";
 import { Fragment, type ReactNode } from "react";
 import { pageCss } from "./css";
 import "./elements";
@@ -15,6 +15,8 @@ const SAFE_ATTRIBUTE = /^(aria-[a-z-]+|data-[a-z0-9-]+|title|role|tabindex|lang|
 function elementAttrs(node: ElementNode, options: RenderOptions): Record<string, string> {
   const attrs: Record<string, string> = { "data-nid": node.id };
   if (node.htmlId) attrs.id = node.htmlId;
+  const classes = node.classIds.filter((name) => CLASS_NAME_PATTERN.test(name));
+  if (classes.length > 0) attrs.className = classes.join(" ");
   for (const [name, value] of Object.entries(node.attributes ?? {})) {
     if (SAFE_ATTRIBUTE.test(name) && name !== "data-nid") {
       attrs[name] = resolveText(value, options.resolveToken);

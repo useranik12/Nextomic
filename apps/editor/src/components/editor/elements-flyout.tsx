@@ -8,7 +8,7 @@ import {
 } from "@nextomic/renderer";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
-import { NEW_PREFIX } from "./dnd";
+import { NEW_PREFIX, useDragActive } from "./dnd";
 import { ElementIcon } from "./icons";
 import { useEditorStore } from "./store/editor-store";
 
@@ -41,6 +41,8 @@ function Tile({ definition, onInsert }: { definition: ElementDefinition; onInser
 
 export function ElementsFlyout({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
+  // Hidden (not unmounted) while a tile is dragged, so the canvas is clear and the drag survives.
+  const dragging = useDragActive();
   const insert = useEditorStore((s) => s.insertElement);
   const definitions = useMemo(
     () =>
@@ -55,7 +57,10 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-label="Elements"
       onKeyDown={(event) => event.key === "Escape" && onClose()}
-      className="absolute left-full top-3 ml-2 z-30 flex max-h-[calc(100%-24px)] w-[304px] flex-col rounded-large bg-content1 p-4 shadow-xl"
+      className={
+        "absolute left-full top-3 ml-2 z-30 flex max-h-[calc(100%-24px)] w-[304px] flex-col rounded-large bg-content1 p-4 shadow-xl transition-opacity duration-150" +
+        (dragging ? " pointer-events-none opacity-0" : "")
+      }
     >
       <div className="relative mb-3">
         <Icon
