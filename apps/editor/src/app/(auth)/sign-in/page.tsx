@@ -2,14 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  AuthButton,
-  AuthCard,
-  AuthError,
-  AuthInput,
-  AuthLink,
-  PasswordInput
-} from "@/components/auth/auth-ui";
+import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
+import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
 import { authClient } from "@/lib/auth-client";
 
 export default function SignInPage() {
@@ -36,7 +30,7 @@ export default function SignInPage() {
   return (
     <AuthCard title="Welcome back" description="Sign in to continue to Nextomic.">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <AuthInput
+        <FormInput
           name="email"
           type="email"
           label="Email"
@@ -56,7 +50,9 @@ export default function SignInPage() {
           isInvalid={Boolean(error)}
         />
         <AuthError message={error} />
-        <AuthButton isLoading={isPending}>Sign in</AuthButton>
+        <ActionButton type="submit" fullWidth isLoading={isPending}>
+          Sign in
+        </ActionButton>
         <div className="flex justify-between">
           <AuthLink href="/sign-up">Create an account</AuthLink>
           <AuthLink href="/forgot-password">Forgot password?</AuthLink>

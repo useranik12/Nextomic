@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AuthButton, AuthCard, AuthError, AuthInput, AuthLink } from "@/components/auth/auth-ui";
+import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
+import { ActionButton, FormInput } from "@/components/ui/controls";
 import { authClient } from "@/lib/auth-client";
 
 export default function ForgotPasswordPage() {
@@ -43,7 +44,7 @@ export default function ForgotPasswordPage() {
       description="Enter your email and we will send you a reset link."
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        <AuthInput
+        <FormInput
           name="email"
           type="email"
           label="Email"
@@ -54,7 +55,9 @@ export default function ForgotPasswordPage() {
           isInvalid={Boolean(error)}
         />
         <AuthError message={error} />
-        <AuthButton isLoading={isPending}>Send reset link</AuthButton>
+        <ActionButton type="submit" fullWidth isLoading={isPending}>
+          Send reset link
+        </ActionButton>
         <AuthLink href="/sign-in">Back to sign in</AuthLink>
       </form>
     </AuthCard>

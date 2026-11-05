@@ -1,15 +1,8 @@
 "use client";
 
 import type { Project } from "@nextomic/schema";
-import {
-  Button,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader
-} from "@heroui/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ActionButton, FormInput } from "@/components/ui/controls";
 import { useEffect, useState } from "react";
 
 export interface RenameProjectModalProps {
@@ -50,7 +43,7 @@ export function RenameProjectModal({ project, onClose, onRename }: RenameProject
       <ModalContent>
         <ModalHeader>Rename project</ModalHeader>
         <ModalBody>
-          <Input
+          <FormInput
             label="Project name"
             value={name}
             onValueChange={setName}
@@ -61,12 +54,12 @@ export function RenameProjectModal({ project, onClose, onRename }: RenameProject
           />
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+          <ActionButton tone="ghost" onPress={onClose}>
             Cancel
-          </Button>
-          <Button color="primary" onPress={handleSubmit} isLoading={isPending}>
+          </ActionButton>
+          <ActionButton tone="primary" onPress={handleSubmit} isLoading={isPending}>
             Save
-          </Button>
+          </ActionButton>
         </ModalFooter>
       </ModalContent>
     </Modal>

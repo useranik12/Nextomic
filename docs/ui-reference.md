@@ -51,6 +51,14 @@ Source images live in `blueprint/`. Use this doc as the index and the images as 
 - Licenses differ per set and some need attribution (for example Streamline's free sets; Lineicons and Streamline have free and paid tiers). Verify each set before use, record set, license, source URL, and version in `assets/icons/LICENSES.md`, and show required attributions on an About page. Do not ship a set whose license is unclear.
 - Accessibility: decorative icons are `aria-hidden`; icon-only buttons need an accessible name and a tooltip.
 
+### Form controls and buttons (owner rule, applies to every screen added later)
+
+Never use raw HeroUI `Input` or `Button` for form fields and actions. Use `components/ui/controls.tsx`:
+
+- `FormInput` / `PasswordInput`: pill, 44px high, one 2px outline, label above. Only that outline reacts (hover brightens, focus adds a light ring, error turns it red). No second border, no filled background.
+- `ActionButton`: 40px high (`size="sm"` 32px), medium weight, lifts slightly on hover (translate and scale, 300ms transform). Colour carries meaning through `tone`: `primary` (white shades of the default scale, inverts in light mode) for the main safe action, `danger` (red) for delete/remove/destructive, `ghost` for cancel and quiet actions, `danger-ghost` for quiet destructive actions. Never render a destructive action in a neutral or white tone.
+- Icon-only buttons, segmented toggles and the search field keep their own designed styles from the mocks.
+
 ## 4. Screens
 
 ### 4.1 Dashboard (`pages/dashboard.png`)

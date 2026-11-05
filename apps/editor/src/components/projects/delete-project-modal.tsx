@@ -1,7 +1,8 @@
 "use client";
 
 import type { Project } from "@nextomic/schema";
-import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ActionButton } from "@/components/ui/controls";
 import { useState } from "react";
 
 export interface DeleteProjectModalProps {
@@ -39,12 +40,12 @@ export function DeleteProjectModal({ project, onClose, onDelete }: DeleteProject
           {error ? <p className="text-sm text-danger">{error}</p> : null}
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+          <ActionButton tone="ghost" onPress={onClose}>
             Cancel
-          </Button>
-          <Button color="danger" onPress={handleConfirm} isLoading={isPending}>
+          </ActionButton>
+          <ActionButton tone="danger" onPress={handleConfirm} isLoading={isPending}>
             Delete
-          </Button>
+          </ActionButton>
         </ModalFooter>
       </ModalContent>
     </Modal>
