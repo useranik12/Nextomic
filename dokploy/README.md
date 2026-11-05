@@ -25,6 +25,17 @@ start without them), and the app's `DATABASE_URL` is built from the `POSTGRES_*`
 `BETTER_AUTH_URL` and `STORAGE_PUBLIC_BASE_URL` to the public https origin. Never commit a populated
 `.env`; secrets are configured only in Dokploy (or the target host), per CLAUDE.md security rules.
 
+### Email (SMTP)
+
+- **No `SMTP_HOST`:** email verification is NOT required, so the first user can register and is
+  signed straight in. Password reset is unavailable (set `DEV_EMAIL_TO_CONSOLE=true` to have reset
+  links written to the app logs instead).
+- **`SMTP_HOST` set:** verification is required and verification/reset emails are sent through
+  `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM` (`SMTP_SECURE=true` for
+  implicit TLS; it defaults to true only on port 465).
+- Recommended first run: deploy without SMTP, register your owner account, then add SMTP vars and
+  redeploy. Per-workspace SMTP with a settings UI is Phase 12.
+
 ## Create the service (GitHub deploy)
 
 1. Dokploy > Project > Create Service > **Compose**. Provider **GitHub**, pick the repo and branch,

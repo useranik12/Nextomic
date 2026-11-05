@@ -1,8 +1,15 @@
 "use client";
 
-import { Button, Input, Link } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  AuthButton,
+  AuthCard,
+  AuthError,
+  AuthInput,
+  AuthLink,
+  PasswordInput
+} from "@/components/auth/auth-ui";
 import { authClient } from "@/lib/auth-client";
 
 export default function SignInPage() {
@@ -27,38 +34,34 @@ export default function SignInPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-foreground">Welcome back</h1>
-      <Input
-        name="email"
-        type="email"
-        label="Email"
-        isRequired
-        autoComplete="email"
-        value={email}
-        onValueChange={setEmail}
-      />
-      <Input
-        name="password"
-        type="password"
-        label="Password"
-        isRequired
-        autoComplete="current-password"
-        value={password}
-        onValueChange={setPassword}
-      />
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
-      <Button type="submit" color="primary" isLoading={isPending}>
-        Sign in
-      </Button>
-      <div className="flex justify-between text-small text-default-500">
-        <Link href="/sign-up" size="sm">
-          Create an account
-        </Link>
-        <Link href="/forgot-password" size="sm">
-          Forgot password?
-        </Link>
-      </div>
-    </form>
+    <AuthCard title="Welcome back" description="Sign in to continue to Nextomic.">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <AuthInput
+          name="email"
+          type="email"
+          label="Email"
+          isRequired
+          autoComplete="email"
+          value={email}
+          onValueChange={setEmail}
+          isInvalid={Boolean(error)}
+        />
+        <PasswordInput
+          name="password"
+          label="Password"
+          isRequired
+          autoComplete="current-password"
+          value={password}
+          onValueChange={setPassword}
+          isInvalid={Boolean(error)}
+        />
+        <AuthError message={error} />
+        <AuthButton isLoading={isPending}>Sign in</AuthButton>
+        <div className="flex justify-between">
+          <AuthLink href="/sign-up">Create an account</AuthLink>
+          <AuthLink href="/forgot-password">Forgot password?</AuthLink>
+        </div>
+      </form>
+    </AuthCard>
   );
 }

@@ -1,7 +1,14 @@
 "use client";
 
-import { Button, Input, Link } from "@heroui/react";
 import { useActionState } from "react";
+import {
+  AuthButton,
+  AuthCard,
+  AuthError,
+  AuthInput,
+  AuthLink,
+  PasswordInput
+} from "@/components/auth/auth-ui";
 import { signUpAction, type SignUpState } from "./actions";
 
 const initialState: SignUpState = { error: null, success: false };
@@ -11,40 +18,42 @@ export default function SignUpPage() {
 
   if (state.success) {
     return (
-      <div className="flex flex-col gap-3">
-        <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
-        <p className="text-small text-default-500">
-          We sent a verification link to your inbox. Verify your email, then sign in.
-        </p>
-        <Link href="/sign-in" size="sm">
-          Back to sign in
-        </Link>
-      </div>
+      <AuthCard
+        title="Check your email"
+        description="We sent a verification link to your inbox. Verify your email, then sign in."
+      >
+        <AuthLink href="/sign-in">Back to sign in</AuthLink>
+      </AuthCard>
     );
   }
 
+  const hasError = Boolean(state.error);
+
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-foreground">Create your account</h1>
-      <Input name="name" label="Name" isRequired autoComplete="name" />
-      <Input name="email" type="email" label="Email" isRequired autoComplete="email" />
-      <Input
-        name="password"
-        type="password"
-        label="Password"
-        isRequired
-        autoComplete="new-password"
-      />
-      {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
-      <Button type="submit" color="primary" isLoading={isPending}>
-        Sign up
-      </Button>
-      <p className="text-small text-default-500">
-        Already have an account?{" "}
-        <Link href="/sign-in" size="sm">
-          Sign in
-        </Link>
-      </p>
-    </form>
+    <AuthCard title="Create your account" description="Start building with Nextomic.">
+      <form action={formAction} className="flex flex-col gap-5">
+        <AuthInput name="name" label="Name" isRequired autoComplete="name" isInvalid={hasError} />
+        <AuthInput
+          name="email"
+          type="email"
+          label="Email"
+          isRequired
+          autoComplete="email"
+          isInvalid={hasError}
+        />
+        <PasswordInput
+          name="password"
+          label="Password"
+          isRequired
+          autoComplete="new-password"
+          isInvalid={hasError}
+        />
+        <AuthError message={state.error} />
+        <AuthButton isLoading={isPending}>Sign up</AuthButton>
+        <p className="text-small text-default-500">
+          Already have an account? <AuthLink href="/sign-in">Sign in</AuthLink>
+        </p>
+      </form>
+    </AuthCard>
   );
 }

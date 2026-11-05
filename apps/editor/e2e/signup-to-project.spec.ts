@@ -13,10 +13,18 @@ test("sign up, create a project, open its placeholder editor", async ({ page }) 
   await page.goto("/sign-up");
   await page.getByLabel("Name").fill("Test User");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("correct-horse-battery-staple");
+  await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple");
   await page.getByRole("button", { name: "Sign up" }).click();
-  await expect(page.getByText("Check your email")).toBeVisible();
 
-  // Email verification is required before sign-in (see lib/auth.ts), so a real run needs a
-  // way to read the dev-console-logged verification link. Left as a manual step for now.
+  // Without SMTP_HOST, verification is not required (see lib/auth.ts), so sign-up signs the user
+  // straight in. With SMTP configured the page shows "Check your email" instead.
+  await expect(page).toHaveURL(/\/dashboard/);
+});
+
+test("sign in with wrong credentials shows an error", async ({ page }) => {
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill("nobody@example.com");
+  await page.getByLabel("Password", { exact: true }).fill("not-the-password");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("alert")).toBeVisible();
 });

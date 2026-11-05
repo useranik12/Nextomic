@@ -12,6 +12,7 @@ import {
   workspaces
 } from "@nextomic/db";
 import { eq } from "drizzle-orm";
+import { isSmtpConfigured, sendAuthEmail } from "@/lib/mail";
 
 // First user on a fresh install becomes the owner of an auto-created workspace
 // (see docs/platform.md "First user becomes owner on a fresh install" and the Phase 0 plan's
@@ -32,15 +33,9 @@ async function provisionWorkspaceForNewUser(newUser: { id: string; email: string
   await db.insert(userPreferences).values({ userId: newUser.id, colorMode: "dark" });
 }
 
-function logOrSendEmail(kind: string, to: string, url: string) {
-  if (process.env.DEV_EMAIL_TO_CONSOLE === "true") {
-    // Multi-SMTP sending is Phase 12 (docs/platform.md section 4). Dev-only console fallback.
-    // eslint-disable-next-line no-console
-    console.log(`[auth email:${kind}] to=${to} url=${url}`);
-    return;
-  }
-  throw new Error("No email transport configured yet (SMTP ships in Phase 12).");
-}
+// Verification is enforced only when SMTP is configured; otherwise a fresh deploy could never
+// register its first user. Configure SMTP_* to turn verification on.
+const requireEmailVerification = isSmtpConfigured();
 
 export const auth = betterAuth({
   database: drizzleAdapter(getDb(), {
@@ -49,16 +44,16 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification,
     sendResetPassword: async ({ user: resetUser, url }) => {
-      logOrSendEmail("reset-password", resetUser.email, url);
+      await sendAuthEmail({ kind: "reset-password", to: resetUser.email, url });
     }
   },
   emailVerification: {
     sendVerificationEmail: async ({ user: verifyUser, url }) => {
-      logOrSendEmail("verify-email", verifyUser.email, url);
+      await sendAuthEmail({ kind: "verify-email", to: verifyUser.email, url });
     },
-    sendOnSignUp: true
+    sendOnSignUp: requireEmailVerification
   },
   // Admin can disable public signup (env-driven for now; a settings-table control is a later
   // phase). Better Auth has no built-in "disable signup" switch, so sign-up is gated in the

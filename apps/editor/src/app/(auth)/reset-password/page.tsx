@@ -1,8 +1,14 @@
 "use client";
 
-import { Button, Input, Link } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import {
+  AuthButton,
+  AuthCard,
+  AuthError,
+  AuthLink,
+  PasswordInput
+} from "@/components/auth/auth-ui";
 import { authClient } from "@/lib/auth-client";
 
 export default function ResetPasswordPage() {
@@ -39,24 +45,24 @@ function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-foreground">Choose a new password</h1>
-      <Input
-        name="newPassword"
-        type="password"
-        label="New password"
-        isRequired
-        autoComplete="new-password"
-        value={newPassword}
-        onValueChange={setNewPassword}
-      />
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
-      <Button type="submit" color="primary" isLoading={isPending}>
-        Reset password
-      </Button>
-      <Link href="/sign-in" size="sm">
-        Back to sign in
-      </Link>
-    </form>
+    <AuthCard
+      title="Choose a new password"
+      description="Pick a strong password you have not used before."
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <PasswordInput
+          name="newPassword"
+          label="New password"
+          isRequired
+          autoComplete="new-password"
+          value={newPassword}
+          onValueChange={setNewPassword}
+          isInvalid={Boolean(error)}
+        />
+        <AuthError message={error} />
+        <AuthButton isLoading={isPending}>Reset password</AuthButton>
+        <AuthLink href="/sign-in">Back to sign in</AuthLink>
+      </form>
+    </AuthCard>
   );
 }
