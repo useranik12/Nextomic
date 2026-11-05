@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Input, Link } from "@heroui/react";
 import { useState } from "react";
+import { AuthButton, AuthCard, AuthError, AuthInput, AuthLink } from "@/components/auth/auth-ui";
 import { authClient } from "@/lib/auth-client";
 
 export default function ForgotPasswordPage() {
@@ -28,37 +28,35 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="flex flex-col gap-3">
-        <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
-        <p className="text-small text-default-500">
-          If an account exists for {email}, a reset link is on its way.
-        </p>
-        <Link href="/sign-in" size="sm">
-          Back to sign in
-        </Link>
-      </div>
+      <AuthCard
+        title="Check your email"
+        description={`If an account exists for ${email}, a reset link is on its way.`}
+      >
+        <AuthLink href="/sign-in">Back to sign in</AuthLink>
+      </AuthCard>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-foreground">Reset your password</h1>
-      <Input
-        name="email"
-        type="email"
-        label="Email"
-        isRequired
-        autoComplete="email"
-        value={email}
-        onValueChange={setEmail}
-      />
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
-      <Button type="submit" color="primary" isLoading={isPending}>
-        Send reset link
-      </Button>
-      <Link href="/sign-in" size="sm">
-        Back to sign in
-      </Link>
-    </form>
+    <AuthCard
+      title="Reset your password"
+      description="Enter your email and we will send you a reset link."
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <AuthInput
+          name="email"
+          type="email"
+          label="Email"
+          isRequired
+          autoComplete="email"
+          value={email}
+          onValueChange={setEmail}
+          isInvalid={Boolean(error)}
+        />
+        <AuthError message={error} />
+        <AuthButton isLoading={isPending}>Send reset link</AuthButton>
+        <AuthLink href="/sign-in">Back to sign in</AuthLink>
+      </form>
+    </AuthCard>
   );
 }

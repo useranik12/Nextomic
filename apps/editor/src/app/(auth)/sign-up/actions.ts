@@ -1,7 +1,9 @@
 "use server";
 
 import { APIError } from "better-auth/api";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { isSmtpConfigured } from "@/lib/mail";
 
 export interface SignUpState {
   error: string | null;
@@ -36,6 +38,9 @@ export async function signUpAction(
     }
     return { error: "Something went wrong creating your account.", success: false };
   }
+
+  // Without SMTP, verification is not required and sign-up already signed the user in.
+  if (!isSmtpConfigured()) redirect("/dashboard");
 
   return { error: null, success: true };
 }
