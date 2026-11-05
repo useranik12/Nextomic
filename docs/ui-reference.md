@@ -226,7 +226,7 @@ The three-dots menu next to the breakpoint switcher opens a manager:
 
 - List of breakpoints with icon, name, kind, and width; add, edit, delete, reorder, and "Reset to defaults". Also canvas zoom and rotate.
 - Fields: name, icon, kind (Base, "and below" max-width, "and above" min-width), width in px, and canvas preview width (defaults to the width).
-- Defaults: desktop (base, canvas 1440px), tablet (and below 991px, canvas 768px), mobile (and below 575px, canvas 375px). The icon is one of desktop, laptop, tablet, mobile.
+- Defaults: desktop (base, canvas 1440px), tablet (and below 768px, canvas 768px), mobile (and below 414px, canvas 414px). The icon is one of desktop, laptop, tablet, mobile.
 - Rules: exactly one base breakpoint, which cannot be deleted. Maximum 8. Names unique. No two breakpoints of the same kind with the same width.
 - Cascade: base styles apply everywhere; "and above" breakpoints override in ascending width order; "and below" breakpoints override in descending width order (larger first, so the smallest wins on small screens).
 - Deleting a breakpoint that has styles asks to discard them or move them to another breakpoint.

@@ -12,6 +12,7 @@ import { getServerSession } from "@/lib/session";
 import {
   createPage,
   deletePage,
+  duplicatePage,
   getPage,
   listPages,
   listVersions,
@@ -95,6 +96,21 @@ export async function savePageAction(
     return { data: result, error: null };
   } catch (error) {
     return fail(error, "Could not save the page.");
+  }
+}
+
+export async function duplicatePageAction(
+  projectId: string,
+  pageId: string
+): Promise<ActionResult<StoredPage>> {
+  try {
+    const userId = await authorize(projectId);
+    const copy = await duplicatePage(projectId, idSchema.parse(pageId), userId);
+    return copy
+      ? { data: copy, error: null }
+      : { data: null, error: "Could not duplicate the page." };
+  } catch (error) {
+    return fail(error, "Could not duplicate the page.");
   }
 }
 

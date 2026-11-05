@@ -1,23 +1,59 @@
 "use client";
 
 import { breakpointPreviewWidth } from "@nextomic/schema";
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent
+} from "react";
+import { useDragActive } from "../dnd";
 import { useEditorStore } from "../store/editor-store";
-import { canvasMessageSchema } from "./protocol";
+import { setCanvasDropTarget } from "./canvas-drop";
+import { CanvasToolbar } from "./canvas-toolbar";
+import { canvasMessageSchema, type HostMessage } from "./protocol";
 
 const PADDING = 32;
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 4;
+const MIN_HEIGHT = 800;
 
-function useAvailableWidth() {
+interface View {
+  zoom: number;
+  x: number;
+  y: number;
+}
+
+const clampZoom = (zoom: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
+
+/** Zoom by `factor` keeping the point (cx, cy), given in viewport pixels, fixed on screen. */
+function zoomAround(view: View, cx: number, cy: number, factor: number): View {
+  const zoom = clampZoom(view.zoom * factor);
+  const ratio = zoom / view.zoom;
+  return { zoom, x: cx - (cx - view.x) * ratio, y: cy - (cy - view.y) * ratio };
+}
+
+/** Width of a device turned on its side (phones are long, tablets are 4:3). */
+function landscapeWidth(width: number): number {
+  return width >= 600 ? Math.round((width * 4) / 3) : Math.round((width * 19.5) / 9);
+}
+
+function useViewportSize() {
   const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
+  const [size, setSize] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const observer = new ResizeObserver(([entry]) => setWidth(entry?.contentRect.width ?? 0));
+    const observer = new ResizeObserver(([entry]) =>
+      setSize({ width: entry?.contentRect.width ?? 0, height: entry?.contentRect.height ?? 0 })
+    );
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  return { ref, width };
+  return { ref, size };
 }
 
 export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" | "dark" }) {
@@ -26,57 +62,248 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
   const select = useEditorStore((s) => s.select);
+  const dragActive = useDragActive();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
-  const { ref: wrapRef, width: available } = useAvailableWidth();
+  const { ref: viewportRef, size: viewport } = useViewportSize();
+  const [view, setView] = useState<View>({ zoom: 1, x: PADDING, y: PADDING });
+  const [docHeight, setDocHeight] = useState(0);
+  const [rotated, setRotated] = useState(false);
+  const [panning, setPanning] = useState(false);
+  const adjusted = useRef(false);
+  const lastFit = useRef("");
+  const pan = useRef<{ x: number; y: number } | null>(null);
+  const insideCanvas = useRef(false);
 
   const active = breakpoints.find((b) => b.id === activeId) ?? breakpoints[0];
-  const previewWidth = active ? breakpointPreviewWidth(active) : 1440;
-  const usable = Math.max(available - PADDING * 2, 0);
-  const scale = usable > 0 && usable < previewWidth ? usable / previewWidth : 1;
+  const canRotate = active !== undefined && active.id !== "base";
+  const isRotated = rotated && canRotate;
+  const portraitWidth = active ? breakpointPreviewWidth(active) : 1440;
+  const frameWidth = isRotated ? landscapeWidth(portraitWidth) : portraitWidth;
+  const minHeight = isRotated ? portraitWidth : MIN_HEIGHT;
+  const frameHeight = Math.max(docHeight, minHeight);
 
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const frameRef = useRef({ width: frameWidth, height: frameHeight });
+  frameRef.current = { width: frameWidth, height: frameHeight };
+
+  const fit = useCallback(() => {
+    if (viewport.width === 0) return;
+    adjusted.current = false;
+    const zoom = clampZoom(Math.min(1, (viewport.width - PADDING * 2) / frameWidth));
+    setView({ zoom, x: (viewport.width - frameWidth * zoom) / 2, y: PADDING });
+  }, [viewport.width, frameWidth]);
+
+  // Fit on first layout, on a breakpoint or rotation change, and on resize until the user moves it.
+  useEffect(() => {
+    if (viewport.width === 0) return;
+    const key = String(frameWidth);
+    if (!adjusted.current || lastFit.current !== key) fit();
+    lastFit.current = key;
+  }, [viewport.width, frameWidth, fit]);
+
+  const zoomBy = useCallback(
+    (factor: number) => {
+      adjusted.current = true;
+      setView((v) => zoomAround(v, viewport.width / 2, viewport.height / 2, factor));
+    },
+    [viewport.width, viewport.height]
+  );
+
+  const wheelZoom = useCallback((cx: number, cy: number, deltaY: number) => {
+    adjusted.current = true;
+    const delta = Math.max(-200, Math.min(200, deltaY));
+    setView((v) => zoomAround(v, cx, cy, Math.exp(-delta * 0.0025)));
+  }, []);
+
+  const panBy = useCallback((dx: number, dy: number) => {
+    adjusted.current = true;
+    setView((v) => ({ ...v, x: v.x + dx, y: v.y + dy }));
+  }, []);
+
+  const panMove = useCallback(
+    (sx: number, sy: number) => {
+      const last = pan.current;
+      if (!last) return;
+      panBy(sx - last.x, sy - last.y);
+      pan.current = { x: sx, y: sy };
+    },
+    [panBy]
+  );
+
+  // Messages from the sandboxed canvas.
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (event.source !== iframeRef.current?.contentWindow) return;
       const parsed = canvasMessageSchema.safeParse(event.data);
       if (!parsed.success) return;
-      if (parsed.data.type === "ready") setReady(true);
-      else select(parsed.data.id);
+      const message = parsed.data;
+      switch (message.type) {
+        case "ready":
+          setReady(true);
+          break;
+        case "select":
+          select(message.id);
+          break;
+        case "size":
+          setDocHeight(message.height);
+          break;
+        case "wheel": {
+          if (message.shift) panBy(-message.deltaX, -message.deltaY);
+          else {
+            const v = viewRef.current;
+            wheelZoom(
+              v.x + message.clientX * v.zoom,
+              v.y + message.clientY * v.zoom,
+              message.deltaY
+            );
+          }
+          break;
+        }
+        case "pan":
+          if (message.phase === "start") {
+            pan.current = { x: message.screenX, y: message.screenY };
+            setPanning(true);
+          } else if (message.phase === "move") panMove(message.screenX, message.screenY);
+          else {
+            pan.current = null;
+            setPanning(false);
+          }
+          break;
+        case "probe-result":
+          if (insideCanvas.current)
+            setCanvasDropTarget({ id: message.id ?? "", zone: message.zone });
+          break;
+      }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [select]);
+  }, [select, panBy, panMove, wheelZoom]);
 
-  const post = useCallback(() => {
+  const send = useCallback((message: HostMessage) => {
+    iframeRef.current?.contentWindow?.postMessage(message, "*");
+  }, []);
+
+  useEffect(() => {
     if (!ready || !doc) return;
-    iframeRef.current?.contentWindow?.postMessage(
-      { type: "render", tree: doc.tree, breakpoints, mode, selectedId },
-      "*"
-    );
-  }, [ready, doc, breakpoints, mode, selectedId]);
+    send({ type: "render", tree: doc.tree, breakpoints, mode, selectedId });
+  }, [ready, doc, breakpoints, mode, selectedId, send]);
 
-  useEffect(post, [post]);
+  // Wheel over the canvas surround zooms around the cursor. Native listener: React's is passive.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    function onWheel(event: WheelEvent) {
+      event.preventDefault();
+      if (event.shiftKey) {
+        panBy(-event.deltaX, -event.deltaY);
+        return;
+      }
+      const rect = (el as HTMLElement).getBoundingClientRect();
+      wheelZoom(event.clientX - rect.left, event.clientY - rect.top, event.deltaY);
+    }
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [viewportRef, panBy, wheelZoom]);
+
+  // Middle button held down drags the canvas (pointer capture keeps it going over the iframe).
+  function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    pan.current = { x: event.screenX, y: event.screenY };
+    setPanning(true);
+  }
+  function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    if (pan.current) panMove(event.screenX, event.screenY);
+  }
+  function onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 1 || !pan.current) return;
+    pan.current = null;
+    setPanning(false);
+  }
+
+  // While an element is dragged, a shield covers the iframe (it would swallow pointer events) and
+  // the pointer is hit-tested against the page so the drop lands where the marker shows.
+  useEffect(() => {
+    if (!dragActive) return;
+    let raf = 0;
+    function leave() {
+      if (!insideCanvas.current) return;
+      insideCanvas.current = false;
+      setCanvasDropTarget(null);
+      send({ type: "probe-clear" });
+    }
+    function onMove(event: PointerEvent) {
+      const rect = viewportRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const v = viewRef.current;
+      const x = (event.clientX - rect.left - v.x) / v.zoom;
+      const y = (event.clientY - rect.top - v.y) / v.zoom;
+      const frame = frameRef.current;
+      const over =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom &&
+        x >= 0 &&
+        x <= frame.width &&
+        y >= 0 &&
+        y <= frame.height;
+      if (!over) return leave();
+      insideCanvas.current = true;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => send({ type: "probe", x, y }));
+    }
+    window.addEventListener("pointermove", onMove, true);
+    return () => {
+      window.removeEventListener("pointermove", onMove, true);
+      cancelAnimationFrame(raf);
+      leave();
+    };
+  }, [dragActive, send, viewportRef]);
 
   return (
     <div
-      ref={wrapRef}
-      className="flex h-full w-full justify-center overflow-auto bg-content1/40 p-8"
+      ref={viewportRef}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onAuxClick={(event) => event.preventDefault()}
+      className={`relative h-full w-full overflow-hidden bg-content1/40 ${panning ? "cursor-grabbing" : ""}`}
     >
-      <div style={{ width: previewWidth * scale, height: "100%" }} className="shrink-0">
+      <div
+        style={{
+          width: frameWidth,
+          height: frameHeight,
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})`,
+          transformOrigin: "0 0"
+        }}
+        className="absolute left-0 top-0"
+      >
         <iframe
           ref={iframeRef}
           title="Page canvas"
           src="/canvas"
           sandbox="allow-scripts"
-          style={{
-            width: previewWidth,
-            height: scale < 1 ? `calc(100% / ${scale})` : "100%",
-            transform: `scale(${scale})`,
-            transformOrigin: "top left"
-          }}
+          scrolling="no"
+          style={{ width: frameWidth, height: frameHeight }}
           className="block rounded-medium border-0 bg-white shadow-lg"
         />
+        {dragActive ? <div aria-hidden className="absolute inset-0" /> : null}
       </div>
+      <CanvasToolbar
+        zoom={view.zoom}
+        canRotate={canRotate}
+        rotated={isRotated}
+        onZoomOut={() => zoomBy(1 / 1.25)}
+        onZoomIn={() => zoomBy(1.25)}
+        onActualSize={() => zoomBy(1 / viewRef.current.zoom)}
+        onFit={fit}
+        onRotate={() => setRotated((r) => !r)}
+      />
     </div>
   );
 });

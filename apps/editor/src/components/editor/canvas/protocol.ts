@@ -10,18 +10,52 @@ import { z } from "zod";
 // (no allow-same-origin), so it holds no cookies and can only talk through postMessage. Both sides
 // check `event.source` and validate every payload.
 
-export const hostMessageSchema = z.object({
+const finite = z.number().finite();
+
+export const dropZoneSchema = z.enum(["before", "inside", "after"]);
+
+export const renderMessageSchema = z.object({
   type: z.literal("render"),
   tree: elementNodeSchema,
   breakpoints: breakpointListSchema,
   mode: z.enum(["light", "dark"]),
   selectedId: z.string().nullable()
 });
+export type RenderMessage = z.infer<typeof renderMessageSchema>;
+
+export const hostMessageSchema = z.discriminatedUnion("type", [
+  renderMessageSchema,
+  // Drag in progress: find the element under (x, y) in canvas coordinates and show a drop marker.
+  z.object({ type: z.literal("probe"), x: finite, y: finite }),
+  z.object({ type: z.literal("probe-clear") })
+]);
 export type HostMessage = z.infer<typeof hostMessageSchema>;
 
 export const canvasMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ready") }),
-  z.object({ type: z.literal("select"), id: z.string().nullable() })
+  z.object({ type: z.literal("select"), id: z.string().nullable() }),
+  // Document height so the frame can grow to the page and the canvas pans instead of scrolling.
+  z.object({ type: z.literal("size"), height: finite.min(0).max(100_000) }),
+  // Wheel and middle-button gestures happen over the iframe, so it forwards them to the host.
+  z.object({
+    type: z.literal("wheel"),
+    clientX: finite,
+    clientY: finite,
+    deltaX: finite,
+    deltaY: finite,
+    shift: z.boolean()
+  }),
+  z.object({
+    type: z.literal("pan"),
+    phase: z.enum(["start", "move", "end"]),
+    screenX: finite,
+    screenY: finite
+  }),
+  z.object({
+    type: z.literal("probe-result"),
+    id: z.string().nullable(),
+    zone: dropZoneSchema
+  })
 ]);
 export type CanvasMessage = z.infer<typeof canvasMessageSchema>;
 

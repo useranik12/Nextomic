@@ -28,25 +28,59 @@ const STATUS_DOT: Record<SaveStatus, string> = {
   conflict: "bg-danger"
 };
 
+function ChipFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-6">
+      <dt className="text-default-500">{label}</dt>
+      <dd className="font-medium text-foreground">{value}</dd>
+    </div>
+  );
+}
+
+// What applies to this page right now. Theme, header and footer arrive with themes and templates.
+function ChipPopover({ status }: { status: SaveStatus }) {
+  const doc = useEditorStore((s) => s.doc);
+  const version = useEditorStore((s) => s.page?.version);
+  return (
+    <div className="flex flex-col gap-2 px-1 py-2 text-small">
+      <p className="font-medium text-foreground">{doc?.name}</p>
+      <dl className="flex flex-col gap-1">
+        <ChipFact label="Route" value={doc?.route ?? ""} />
+        <ChipFact label="Version" value={version ? String(version) : "—"} />
+        <ChipFact label="Status" value={"Draft · " + STATUS_LABEL[status]} />
+        <ChipFact label="Theme" value="None" />
+        <ChipFact label="Header" value="None" />
+        <ChipFact label="Footer" value="None" />
+      </dl>
+    </div>
+  );
+}
+
 function SaveChip({ saveNow }: { saveNow: () => Promise<void> }) {
   const doc = useEditorStore((s) => s.doc);
   const status = useEditorStore((s) => s.saveStatus);
   const error = useEditorStore((s) => s.saveError);
   return (
-    <div className="flex items-center gap-2 rounded-full bg-default-100 px-3 py-1.5 text-small">
-      <span className="text-default-500">Page</span>
-      <span className="max-w-[160px] truncate font-medium text-foreground">{doc?.name}</span>
-      <span className="text-default-400">{doc?.route}</span>
-      <span role="status" className="flex items-center gap-1.5 text-tiny text-default-600">
-        <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} />
-        {error && status === "error" ? error : STATUS_LABEL[status]}
-      </span>
-      {status === "error" ? (
-        <ActionButton size="sm" tone="ghost" onPress={() => void saveNow()}>
-          Retry
-        </ActionButton>
-      ) : null}
-    </div>
+    <Tooltip content={<ChipPopover status={status} />} placement="bottom" delay={300}>
+      <div
+        tabIndex={0}
+        aria-label="Editing context"
+        className="flex items-center gap-2 rounded-full bg-default-100 px-3 py-1.5 text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/30"
+      >
+        <span className="text-default-500">Page</span>
+        <span className="max-w-[160px] truncate font-medium text-foreground">{doc?.name}</span>
+        <span className="text-default-400">{doc?.route}</span>
+        <span role="status" className="flex items-center gap-1.5 text-tiny text-default-600">
+          <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} />
+          {error && status === "error" ? error : STATUS_LABEL[status]}
+        </span>
+        {status === "error" ? (
+          <ActionButton size="sm" tone="ghost" onPress={() => void saveNow()}>
+            Retry
+          </ActionButton>
+        ) : null}
+      </div>
+    </Tooltip>
   );
 }
 

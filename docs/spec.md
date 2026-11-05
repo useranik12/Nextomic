@@ -76,7 +76,7 @@ Design sources are in `blueprint/` (see `ui-reference.md` for the index, coverag
 - Auth actions are available on every element, not only forms. Built-app providers: Supabase and Custom API. Default session storage: httpOnly cookies set by generated server routes.
 - REST editor syntax follows the designs: `<variable>` in JSON bodies, `[variable]` in headers and URLs. Dynamic data tokens elsewhere use `{{ }}`.
 - Media page and Action flow editor and App Settings: replicate the supplied inspiration structures with Nextomic styling.
-- Breakpoints are user-defined per project (create and manage from the three-dots menu next to the breakpoint switcher). Defaults: desktop (base), tablet (and below 991px), mobile (and below 575px). Kinds: base, "and below" (max-width), "and above" (min-width). Maximum 8.
+- Breakpoints are user-defined per project (create and manage from the three-dots menu next to the breakpoint switcher). Defaults: desktop (base), tablet (and below 768px), mobile (and below 414px). Kinds: base, "and below" (max-width), "and above" (min-width). Maximum 8.
 - Editor top bar and panels are specified in `ui-reference.md` 4.3. The moon/sun switch previews the built site in light or dark; the builder UI's own color mode is a user setting. The Navigator panel holds only the page's elements; pages and templates are chosen from the page select.
 - Left rail: Navigator, State Management, Media, Supabase, API Data, Design System, Custom Codes, Git Connection, Version History, plus App Settings at the bottom. Supabase and API Data are separate items; there is no Data Management group.
 - Right panel with nothing selected shows page options: Page Parameters, Route Settings (with Requires Authentication), and Page State Variables. With an element selected it shows the Element, Design, and Action tabs.
@@ -87,7 +87,7 @@ Design sources are in `blueprint/` (see `ui-reference.md` for the index, coverag
 - Built-site fonts and icons: managed in Design System > Fonts & Icons. Fonts are self-hosted by default (no runtime calls to font CDNs). Icon libraries default to inline SVG output with icon-font output as an option, and custom icon fonts and SVG sets can be imported. Licenses and attribution are tracked. Details in `fonts-and-icons.md`.
 - Reusable components are deferred (Phase 14); the schema reserves `componentInstance`.
 
-- 2026-11-06 Phase 1: breakpoint defaults are Desktop base (canvas 1440), Tablet and below 991px (canvas 768), Mobile and below 575px (canvas 375). The owner gave 1440/768/375 as the device canvas widths; media-query thresholds stay at the Bricks-style 991/575 so real phones and tablets match. The manager edits both.
+- 2026-11-06 Phase 1: breakpoint defaults are final: Desktop base (canvas 1440), Tablet and below 768px, Mobile and below 414px. Media-query width and canvas width are the same by default; the manager edits both.
 - 2026-11-06 Phase 1: the canvas is a sandboxed iframe (`sandbox="allow-scripts"`, opaque origin, no cookies) loading `/canvas`, which has its own root layout (no builder CSS) and renders trees received by postMessage. The preview route `/preview/[id]` shares that layout. Route groups: `(builder)` for the app, `(canvas)` for canvas and preview.
 - 2026-11-06 Phase 1: pages are stored as jsonb trees with an integer `version`. Saves send `baseVersion`; a mismatch returns a conflict and the editor shows a dialog (keep mine or load newer). Every save writes a `page_versions` row (last 50 kept); restore writes the old snapshot as a new version.
 - 2026-11-06 Phase 1: breakpoint icons are a fixed set (desktop, laptop, tablet, mobile) so `icons:lint` can keep literal icon names.
@@ -104,3 +104,7 @@ Design sources are in `blueprint/` (see `ui-reference.md` for the index, coverag
 ## Glossary
 
 Project, Page, Template, Theme, Color mode, Element (node), Class, Variable, Query, Loop, Binding, Condition, Action flow, Connector, Auth provider, Dynamic data, Scope.
+
+- Canvas view: plain mouse wheel zooms around the cursor (0.1x to 4x), Shift+wheel pans, holding the middle button drags. The iframe forwards wheel and middle-button events to the editor through validated postMessage. The frame grows to the page height, so the canvas pans instead of scrolling inside the iframe. Rotate swaps a non-base breakpoint to landscape width (preview only).
+- Dragging onto the canvas: while a drag is active a shield covers the iframe; the editor sends pointer coordinates, the canvas hit-tests with elementFromPoint and draws the drop marker, then the drop uses the last reported target. Nothing from the iframe can read the builder.
+- Exactly one home page per project: saving a page with isHome set clears the flag on all others in the same transaction.

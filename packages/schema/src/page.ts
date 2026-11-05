@@ -37,7 +37,31 @@ export const ROUTE_PATTERN = /^\/([a-z0-9._~-]+(\/[a-z0-9._~-]+)*)?$/i;
 
 export const pageRouteSchema = z.string().max(300).regex(ROUTE_PATTERN, "Use a path like /about");
 
+const safeUrlField = z
+  .string()
+  .max(500)
+  .refine(
+    (v) => v === "" || v.startsWith("/") || /^https?:\/\//i.test(v),
+    "Use an http(s) URL or a path starting with /"
+  );
+
+export const pageSeoSchema = z.object({
+  title: z.string().max(120).default(""),
+  description: z.string().max(300).default(""),
+  canonical: safeUrlField.default(""),
+  robots: z.enum(["index", "noindex"]).default("index"),
+  ogTitle: z.string().max(120).default(""),
+  ogDescription: z.string().max(300).default(""),
+  ogImage: safeUrlField.default("")
+});
+export type PageSeo = z.infer<typeof pageSeoSchema>;
+
 export const pageSettingsSchema = z.object({
+  seo: pageSeoSchema.default({}),
+  locale: z
+    .string()
+    .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, "Use a language code like en or en-US")
+    .default("en"),
   description: z.string().max(500).default(""),
   includeInPublish: z.boolean().default(true),
   isHome: z.boolean().default(false),

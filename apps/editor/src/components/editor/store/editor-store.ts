@@ -55,6 +55,8 @@ interface EditorState {
   clipboard: ElementNode | null;
   saveStatus: SaveStatus;
   saveError: string | null;
+  /** Increments after every successful save so lists (page names, routes) can refresh. */
+  savedTick: number;
   conflict: { page: PageMeta; doc: PageDoc } | null;
 
   init: (projectId: string, project: ProjectSettings) => void;
@@ -159,6 +161,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     clipboard: null,
     saveStatus: "saved",
     saveError: null,
+    savedTick: 0,
     conflict: null,
 
     init: (projectId, project) => set({ projectId, project }),
@@ -180,7 +183,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set((state) => ({
         page: state.page ? { ...state.page, version } : state.page,
         saveStatus: "saved",
-        saveError: null
+        saveError: null,
+        savedTick: state.savedTick + 1
       })),
 
     setSaveStatus: (status, error = null) => set({ saveStatus: status, saveError: error }),
