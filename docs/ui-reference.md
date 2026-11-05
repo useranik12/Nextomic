@@ -40,6 +40,7 @@ Source images live in `blueprint/`. Use this doc as the index and the images as 
 - Colors: primary blue `#006FEE`, secondary purple `#7828C8` (`#9353D3` in dark), success `#17C964`, warning `#F5A524`, danger `#F31260`.
 - Use HeroUI components for the builder UI (see `spec.md` decisions). Components designed so far: Accordion, Alert, Button Group, Buttons, Calendar, Carousel, Chips, PIN (OTP input), Progress, Range Slider, Switch, Table, Toast, Tooltip. Each shows the six semantic colors and multiple variants and sizes. Match the designed variants.
 - The dynamic data bolt icon is amber (`warning`). Use it consistently wherever a value can be dynamic.
+- The bolt opens a large modal (about 80% of the screen) with source groups on the left and a searchable tag list on the right, in the Bricks dynamic tag selector layout with our design system. Page parameters and page state are also bindable inside the page parameter and page state editors.
 - HTTP method badges: GET green, POST purple, PUT orange, PATCH amber, DELETE pink/red. An inactive call shows a muted badge with a red x.
 
 ### Icons (builder UI)
@@ -172,6 +173,7 @@ Cards, top to bottom:
 - Under the header: ID field (`nxtomc-xxxxxxxx`) and class chips (add class, select class as active target; the active target is highlighted).
 - Tabs: **Element**, **Design**, **Action**. A dot next to a tab name means something is changed in that tab at the current breakpoint. (Earlier docs called the first tab "Content"; the owner's name is "Element".)
 - Rows: label, small responsive icon when the property is breakpoint-specific, a yellow dot before the label when the property is set at the current breakpoint, the control, and at the right a bolt button (dynamic data) or a CSS variable button for style values. Reset on right click or a small reset icon.
+- Design groups are collapsible and headed by an icon. Enumerated properties (direction, justify, align) render as icon toggle buttons; pressing the active one resets it.
 - Element tab starts with: Query loop toggle (div-based elements only), HTML tag select, then the element's own content and properties (with data binding), conditional visibility, custom attributes.
 - Bottom: "Search settings" input that filters all settings across tabs, plus a settings gear.
 - Navigator panel (left rail): holds all elements of the page or template. Filter dropdown ("All", or by element type/class), search, tree with expand/collapse, drag to reorder, and per-row indicators for classes, loop, condition, and actions.

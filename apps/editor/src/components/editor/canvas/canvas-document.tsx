@@ -178,7 +178,11 @@ export function CanvasDocument() {
   return (
     <>
       <style>{EDITOR_CSS}</style>
-      <PageRenderer tree={payload.tree} breakpoints={payload.breakpoints} />
+      <PageRenderer
+        tree={payload.tree}
+        breakpoints={payload.breakpoints}
+        classes={payload.classes}
+      />
       <div id="nxt-drop" ref={markerRef} />
     </>
   );

@@ -5,7 +5,7 @@ import {
   walkElements,
   type ElementNode
 } from "./element";
-import type { PseudoState } from "./style";
+import type { PseudoState, StyleMap } from "./style";
 import type { PropValue } from "./value";
 
 // Pure tree operations. They mutate the tree they are given, so the editor store runs them
@@ -119,7 +119,7 @@ export function setProp(node: ElementNode, key: string, value: PropValue): void 
 
 /** Sets a style declaration, or removes it when `value` is null. Empty maps are pruned. */
 export function setStyle(
-  node: ElementNode,
+  node: { styles: StyleMap },
   breakpointId: string,
   state: PseudoState,
   property: string,
@@ -140,7 +140,7 @@ export function setStyle(
 }
 
 export function getStyle(
-  node: ElementNode,
+  node: { styles: StyleMap },
   breakpointId: string,
   state: PseudoState,
   property: string

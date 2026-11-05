@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
+import { DynamicBolt } from "./dynamic-bolt";
 import { compactFieldClass } from "./setting-row";
 
 const TYPES = pageVariableTypeSchema.options;
@@ -83,28 +84,139 @@ function TypeSelect({
   );
 }
 
-function PageParameters() {
-  const params = useEditorStore((s) => s.doc?.settings.params ?? []);
-  const update = useEditorStore((s) => s.updatePageSettings);
-  const [editing, setEditing] = useState(false);
-  const set = (next: Params) => update({ params: next });
+/** Header of a group edited as a draft: pencil to edit, X to discard, check to save. */
+function DraftHeader({
+  title,
+  editing,
+  dirty,
+  onEdit,
+  onCancel,
+  onSave
+}: {
+  title: string;
+  editing: boolean;
+  dirty: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const icon = "rounded-full p-1 text-default-600 transition-colors duration-300 ";
   return (
-    <section aria-label="Page parameters" className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <h3 className="text-small text-default-600">Page Parameters</h3>
+    <div className="flex items-center justify-between">
+      <h3 className="flex items-center gap-1.5 text-small text-default-600">
+        {title}
+        {dirty ? (
+          <span
+            role="img"
+            aria-label="Unsaved changes"
+            className="h-1.5 w-1.5 rounded-full bg-warning"
+          />
+        ) : null}
+      </h3>
+      {editing ? (
+        <div className="flex items-center">
+          <button
+            type="button"
+            aria-label={`Discard changes to ${title}`}
+            onClick={onCancel}
+            className={icon + "hover:text-danger"}
+          >
+            <Icon name="ph:x" width={16} height={16} />
+          </button>
+          <button
+            type="button"
+            aria-label={`Save ${title}`}
+            onClick={onSave}
+            className={icon + "hover:text-success"}
+          >
+            <Icon name="ph:check" width={16} height={16} />
+          </button>
+        </div>
+      ) : (
         <button
           type="button"
-          aria-label={editing ? "Done editing parameters" : "Edit parameters"}
-          onClick={() => setEditing((v) => !v)}
-          className="rounded p-1 text-default-600 hover:text-foreground"
+          aria-label={`Edit ${title}`}
+          onClick={onEdit}
+          className={icon + "hover:text-foreground"}
         >
-          {editing ? (
-            <Icon name="ph:check" width={16} height={16} />
-          ) : (
-            <Icon name="ph:pencil-simple" width={16} height={16} />
-          )}
+          <Icon name="ph:pencil-simple" width={16} height={16} />
         </button>
+      )}
+    </div>
+  );
+}
+
+/** A text field with the dynamic bolt inside on the right. */
+function BoltInput({
+  label,
+  placeholder,
+  value,
+  exclude,
+  onChange,
+  className
+}: {
+  label: string;
+  placeholder: string;
+  value: string;
+  exclude: ("params" | "state")[];
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <div className={"relative min-w-0 " + (className ?? "")}>
+      <input
+        aria-label={label}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={compactFieldClass + " pr-9"}
+      />
+      <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+        <DynamicBolt
+          label={label}
+          exclude={exclude}
+          onInsert={(token) => onChange(`${value}{{${token}}}`)}
+        />
       </div>
+    </div>
+  );
+}
+
+function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={`Remove ${name}`}
+      onClick={onRemove}
+      className="mt-1.5 shrink-0 rounded p-0.5 text-default-500 hover:text-danger"
+    >
+      <Icon name="ph:trash" width={14} height={14} />
+    </button>
+  );
+}
+
+function PageParameters() {
+  const saved = useEditorStore((s) => s.doc?.settings.params ?? []);
+  const draft = useEditorStore((s) => s.pageDrafts.params);
+  const setDraft = useEditorStore((s) => s.setPageDraft);
+  const update = useEditorStore((s) => s.updatePageSettings);
+  const editing = draft !== null;
+  const params = draft ?? saved;
+  const set = (next: Params) => setDraft("params", next);
+  return (
+    <section aria-label="Page parameters" className="flex flex-col gap-2">
+      <DraftHeader
+        title="Page Parameters"
+        editing={editing}
+        dirty={editing && JSON.stringify(draft) !== JSON.stringify(saved)}
+        onEdit={() => setDraft("params", structuredClone(saved))}
+        onCancel={() => setDraft("params", null)}
+        onSave={() => {
+          if (!draft) return;
+          update({ params: draft });
+          setDraft("params", null);
+        }}
+      />
       {params.length === 0 && !editing ? (
         <p className="text-tiny text-default-500">No parameters.</p>
       ) : null}
@@ -122,14 +234,10 @@ function PageParameters() {
                   taken={params.filter((_, i) => i !== index).map((p) => p.name)}
                   onCommit={(name) => set(params.map((p, i) => (i === index ? { ...p, name } : p)))}
                 />
-                <button
-                  type="button"
-                  aria-label={`Remove ${param.name}`}
-                  onClick={() => set(params.filter((_, i) => i !== index))}
-                  className="mt-1.5 shrink-0 rounded p-0.5 text-default-500 hover:text-danger"
-                >
-                  <Icon name="ph:trash" width={14} height={14} />
-                </button>
+                <RemoveButton
+                  name={param.name}
+                  onRemove={() => set(params.filter((_, i) => i !== index))}
+                />
               </div>
               <div className="flex min-w-0 items-center gap-1.5">
                 <TypeSelect
@@ -137,18 +245,15 @@ function PageParameters() {
                   value={param.type}
                   onChange={(type) => set(params.map((p, i) => (i === index ? { ...p, type } : p)))}
                 />
-                <input
-                  aria-label={`Value for ${param.name}`}
+                <BoltInput
+                  label={`Value for ${param.name}`}
                   placeholder="Value"
                   value={param.defaultValue}
-                  onChange={(e) =>
-                    set(
-                      params.map((p, i) =>
-                        i === index ? { ...p, defaultValue: e.target.value } : p
-                      )
-                    )
+                  exclude={["params", "state"]}
+                  className="flex-1"
+                  onChange={(defaultValue) =>
+                    set(params.map((p, i) => (i === index ? { ...p, defaultValue } : p)))
                   }
-                  className={compactFieldClass + " min-w-0 flex-1"}
                 />
               </div>
             </>
@@ -253,13 +358,28 @@ function RouteSettings() {
 }
 
 function StateVariables() {
-  const vars = useEditorStore((s) => s.doc?.settings.state ?? []);
+  const saved = useEditorStore((s) => s.doc?.settings.state ?? []);
+  const draft = useEditorStore((s) => s.pageDrafts.state);
+  const setDraft = useEditorStore((s) => s.setPageDraft);
   const update = useEditorStore((s) => s.updatePageSettings);
-  const set = (next: StateVars) => update({ state: next });
+  const editing = draft !== null;
+  const vars = draft ?? saved;
+  const set = (next: StateVars) => setDraft("state", next);
   return (
     <section aria-label="Page state variables" className="flex flex-col gap-2">
-      <h3 className="text-small text-default-600">Page State Variables</h3>
-      {vars.length === 0 ? (
+      <DraftHeader
+        title="Page State Variables"
+        editing={editing}
+        dirty={editing && JSON.stringify(draft) !== JSON.stringify(saved)}
+        onEdit={() => setDraft("state", structuredClone(saved))}
+        onCancel={() => setDraft("state", null)}
+        onSave={() => {
+          if (!draft) return;
+          update({ state: draft });
+          setDraft("state", null);
+        }}
+      />
+      {vars.length === 0 && !editing ? (
         <p className="text-tiny text-default-500">
           No variables yet. They reset when the page is left.
         </p>
@@ -267,70 +387,85 @@ function StateVariables() {
       {vars.map((v, index) => (
         <div
           key={index}
-          className="flex flex-col gap-1 rounded-large border border-default-200 p-2"
+          className="flex flex-col gap-1.5 rounded-large border border-default-200 p-2"
         >
-          <div className="flex items-start gap-1">
-            <NameField
-              label="Variable name"
-              value={v.name}
-              taken={vars.filter((_, i) => i !== index).map((x) => x.name)}
-              onCommit={(name) => set(vars.map((x, i) => (i === index ? { ...x, name } : x)))}
-            />
-            <button
-              type="button"
-              aria-label={`Remove ${v.name}`}
-              onClick={() => set(vars.filter((_, i) => i !== index))}
-              className="mt-1.5 shrink-0 rounded p-0.5 text-default-500 hover:text-danger"
-            >
-              <Icon name="ph:trash" width={14} height={14} />
-            </button>
-          </div>
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <TypeSelect
-              label="Variable type"
-              value={v.type}
-              onChange={(type) => set(vars.map((x, i) => (i === index ? { ...x, type } : x)))}
-            />
-            <Checkbox
-              size="sm"
-              isSelected={v.isList}
-              onValueChange={(isList) =>
-                set(vars.map((x, i) => (i === index ? { ...x, isList } : x)))
-              }
-            >
-              <span className="text-tiny">List</span>
-            </Checkbox>
-            <input
-              aria-label={`Default value for ${v.name}`}
-              placeholder="Default value"
-              value={typeof v.defaultValue === "string" ? v.defaultValue : ""}
-              onChange={(e) =>
-                set(vars.map((x, i) => (i === index ? { ...x, defaultValue: e.target.value } : x)))
-              }
-              className={compactFieldClass + " w-full"}
-            />
-          </div>
+          {editing ? (
+            <>
+              <div className="flex items-start gap-1">
+                <NameField
+                  label="Variable name"
+                  value={v.name}
+                  taken={vars.filter((_, i) => i !== index).map((x) => x.name)}
+                  onCommit={(name) => set(vars.map((x, i) => (i === index ? { ...x, name } : x)))}
+                />
+                <RemoveButton
+                  name={v.name}
+                  onRemove={() => set(vars.filter((_, i) => i !== index))}
+                />
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                <TypeSelect
+                  label="Variable type"
+                  value={v.type}
+                  onChange={(type) => set(vars.map((x, i) => (i === index ? { ...x, type } : x)))}
+                />
+                <Checkbox
+                  size="sm"
+                  isSelected={v.isList}
+                  onValueChange={(isList) =>
+                    set(vars.map((x, i) => (i === index ? { ...x, isList } : x)))
+                  }
+                >
+                  <span className="text-tiny">List</span>
+                </Checkbox>
+                <BoltInput
+                  label={`Default value for ${v.name}`}
+                  placeholder="Default value"
+                  value={typeof v.defaultValue === "string" ? v.defaultValue : ""}
+                  exclude={["state"]}
+                  className="w-full"
+                  onChange={(defaultValue) =>
+                    set(vars.map((x, i) => (i === index ? { ...x, defaultValue } : x)))
+                  }
+                />
+              </div>
+            </>
+          ) : (
+            <p className="min-w-0 truncate text-small text-foreground">
+              {v.name}
+              <span className="text-tiny text-default-500">
+                {" "}
+                {v.type}
+                {v.isList ? " list" : ""}
+              </span>
+              {typeof v.defaultValue === "string" && v.defaultValue ? (
+                <span className="text-tiny text-default-500"> = {v.defaultValue}</span>
+              ) : null}
+            </p>
+          )}
         </div>
       ))}
-      <ActionButton
-        size="sm"
-        tone="ghost"
-        onPress={() =>
-          set([
-            ...vars,
-            {
-              name: uniqueName(
-                "variable",
-                vars.map((x) => x.name)
-              ),
-              type: "string",
-              isList: false
-            }
-          ])
-        }
-      >
-        Add Variable
-      </ActionButton>
+      {editing ? (
+        <ActionButton
+          size="sm"
+          tone="ghost"
+          onPress={() =>
+            set([
+              ...vars,
+              {
+                name: uniqueName(
+                  "variable",
+                  vars.map((x) => x.name)
+                ),
+                type: "string",
+                isList: false
+              }
+            ])
+          }
+        >
+          Add Variable
+        </ActionButton>
+      ) : null}
     </section>
   );
 }

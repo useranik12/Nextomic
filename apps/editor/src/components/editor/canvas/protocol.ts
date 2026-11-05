@@ -1,8 +1,10 @@
 import {
   breakpointListSchema,
   elementNodeSchema,
+  styleMapSchema,
   type BreakpointDef,
-  type ElementNode
+  type ElementNode,
+  type StyleMap
 } from "@nextomic/schema";
 import { z } from "zod";
 
@@ -18,6 +20,7 @@ export const renderMessageSchema = z.object({
   type: z.literal("render"),
   tree: elementNodeSchema,
   breakpoints: breakpointListSchema,
+  classes: z.record(z.string(), styleMapSchema),
   mode: z.enum(["light", "dark"]),
   selectedId: z.string().nullable()
 });
@@ -62,6 +65,7 @@ export type CanvasMessage = z.infer<typeof canvasMessageSchema>;
 export interface RenderPayload {
   tree: ElementNode;
   breakpoints: BreakpointDef[];
+  classes: Record<string, StyleMap>;
   mode: "light" | "dark";
   selectedId: string | null;
 }

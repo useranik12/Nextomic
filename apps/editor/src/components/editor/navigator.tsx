@@ -122,6 +122,7 @@ export function Navigator({ onOpenElements }: { onOpenElements: () => void }) {
   const tree = useEditorStore((s) => s.doc?.tree ?? null);
   const selectedId = useEditorStore((s) => s.selectedId);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const select = useEditorStore((s) => s.select);
   const rootEnd = useDroppable({ id: ROOT_END_ID });
   const drop = useDropTarget();
 
@@ -152,6 +153,10 @@ export function Navigator({ onOpenElements }: { onOpenElements: () => void }) {
       <div
         role="tree"
         aria-label="Page elements"
+        // Blank space in the tree selects the page.
+        onClick={(event) => {
+          if (!(event.target as HTMLElement).closest("[role=treeitem]")) select(null);
+        }}
         className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
       >
         {rows.map((row) => (

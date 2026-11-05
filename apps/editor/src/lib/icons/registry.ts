@@ -65,7 +65,28 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:clipboard" },
   { id: "ph:arrow-counter-clockwise" },
   { id: "ph:arrow-clockwise" },
-  { id: "ph:minus-circle" }
+  { id: "ph:minus-circle" },
+  { id: "ph:layout" },
+  { id: "ph:arrows-out-cardinal" },
+  { id: "ph:ruler" },
+  { id: "ph:text-aa" },
+  { id: "ph:paint-bucket" },
+  { id: "ph:arrow-right" },
+  { id: "ph:arrow-down" },
+  { id: "ph:arrow-left" },
+  { id: "ph:arrow-up" },
+  { id: "ph:align-left-simple" },
+  { id: "ph:align-center-horizontal-simple" },
+  { id: "ph:align-right-simple" },
+  { id: "ph:arrows-horizontal" },
+  { id: "ph:arrows-out-line-horizontal" },
+  { id: "ph:align-top-simple" },
+  { id: "ph:align-center-vertical-simple" },
+  { id: "ph:align-bottom-simple" },
+  { id: "ph:arrows-vertical" },
+  { id: "ph:text-align-center" },
+  { id: "ph:text-align-right" },
+  { id: "ph:text-align-justify" }
 ] as const;
 
 export const ICON_IDS: readonly string[] = ICON_REGISTRY.map((icon) => icon.id);

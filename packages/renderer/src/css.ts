@@ -3,7 +3,8 @@ import {
   walkElements,
   type BreakpointDef,
   type ElementNode,
-  type PseudoState
+  type PseudoState,
+  type StyleMap
 } from "@nextomic/schema";
 
 const PSEUDO_SELECTOR: Record<PseudoState, string> = {
@@ -38,12 +39,32 @@ function mediaQuery(def: BreakpointDef): string | null {
   return def.kind === "down" ? `(max-width:${def.width}px)` : `(min-width:${def.width}px)`;
 }
 
+export function classSelector(name: string): string {
+  return `.${name.replace(/[^A-Za-z0-9_-]/g, "")}`;
+}
+
 /** CSS for one element: base first, then "up" ascending, then "down" descending (cascade order). */
 export function elementCss(node: ElementNode, breakpoints: readonly BreakpointDef[]): string {
-  const selector = elementSelector(node.id);
+  return stylesCss(elementSelector(node.id), node.styles, breakpoints);
+}
+
+/** CSS for a class, same cascade order as an element. */
+export function classCss(
+  name: string,
+  styles: StyleMap,
+  breakpoints: readonly BreakpointDef[]
+): string {
+  return stylesCss(classSelector(name), styles, breakpoints);
+}
+
+function stylesCss(
+  selector: string,
+  styles: StyleMap,
+  breakpoints: readonly BreakpointDef[]
+): string {
   const out: string[] = [];
   for (const def of breakpointCascade(breakpoints)) {
-    const byState = node.styles.breakpoints[def.id];
+    const byState = styles.breakpoints[def.id];
     if (!byState) continue;
     const media = mediaQuery(def);
     const rules: string[] = [];
@@ -57,8 +78,17 @@ export function elementCss(node: ElementNode, breakpoints: readonly BreakpointDe
   return out.join("");
 }
 
-export function pageCss(root: ElementNode, breakpoints: readonly BreakpointDef[]): string {
+/** Class rules come first so an element's own styles (its ID) win over its classes. */
+export function pageCss(
+  root: ElementNode,
+  breakpoints: readonly BreakpointDef[],
+  classes: Readonly<Record<string, StyleMap>> = {}
+): string {
   const chunks: string[] = [];
+  for (const [name, styles] of Object.entries(classes)) {
+    const css = classCss(name, styles, breakpoints);
+    if (css) chunks.push(css);
+  }
   walkElements(root, (node) => {
     const css = elementCss(node, breakpoints);
     if (css) chunks.push(css);

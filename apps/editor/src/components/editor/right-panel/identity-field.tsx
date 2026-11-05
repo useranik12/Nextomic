@@ -6,90 +6,93 @@ import {
   collectHtmlIds,
   type ElementNode
 } from "@nextomic/schema";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { SettingRow, compactFieldClass } from "./setting-row";
 
-type Kind = "class" | "id";
-interface Active {
-  kind: Kind;
-  value: string;
-}
-
 const CLASS_CHIP = "bg-sky-500/15 text-sky-700 dark:text-sky-300";
-const ID_CHIP = "bg-violet-500/15 text-violet-700 dark:text-violet-300";
-
-/** "#hero" is an ID; anything else is a class (a leading dot is allowed). */
-function parseEntry(text: string): { kind: Kind; value: string } | null {
-  const trimmed = text.trim();
-  if (trimmed === "") return null;
-  if (trimmed.startsWith("#")) return { kind: "id", value: trimmed.slice(1) };
-  return { kind: "class", value: trimmed.replace(/^\./, "") };
-}
+const ID_FIELD = "!border-violet-500/40 bg-violet-500/10 font-mono";
+const CLASS_FIELD = "!border-sky-500/50 bg-sky-500/15 font-mono";
 
 /**
- * One input for classes and the ID. Type a class name, or #name for the ID, and press Enter or
- * Apply: it moves to the chips below. Click a chip to edit it in the input; X leaves that edit.
+ * One input for the element's ID and classes, like Bricks. With no class active the input holds the
+ * ID (`#name`) and Design edits go to the element. Type a plain name and press Enter or Apply to
+ * add a class; double-click a class chip to edit that class (the input holds its name and Design
+ * edits go to the class); X returns to the ID.
  */
 export function IdentityField({ node }: { node: ElementNode }) {
   const inputId = useId();
   const setHtmlId = useEditorStore((s) => s.setElementHtmlId);
   const setClass = useEditorStore((s) => s.setElementClass);
   const removeClass = useEditorStore((s) => s.removeElementClass);
-  const [text, setText] = useState("");
-  const [active, setActive] = useState<Active | null>(null);
+  const activeClass = useEditorStore((s) => s.activeClass);
+  const setActiveClass = useEditorStore((s) => s.setActiveClass);
+  const base = activeClass ?? (node.htmlId ? `#${node.htmlId}` : "");
+  const [text, setText] = useState(base);
   const [error, setError] = useState<string | null>(null);
 
-  function reset() {
-    setText("");
-    setActive(null);
+  // The input follows the active target (ID or class) and the stored ID.
+  useEffect(() => {
+    setText(base);
     setError(null);
+  }, [base]);
+
+  function applyId(raw: string) {
+    const value = raw.slice(1);
+    if (value === "") {
+      setHtmlId(node.id, "");
+      return;
+    }
+    if (!HTML_ID_PATTERN.test(value) || value.length > 64) {
+      setError("An ID starts with a letter, then letters, digits, - _ : .");
+      return;
+    }
+    const doc = useEditorStore.getState().doc;
+    const taken = doc ? collectHtmlIds(doc.tree) : new Set<string>();
+    if (value !== node.htmlId && taken.has(value)) {
+      setError("That ID is already used on this page.");
+      return;
+    }
+    setHtmlId(node.id, value);
+    setError(null);
+  }
+
+  function applyClass(raw: string, replacing?: string) {
+    const name = raw.replace(/^\./, "");
+    if (!CLASS_NAME_PATTERN.test(name) || name.length > 64) {
+      setError("A class uses letters, digits, - and _, does not start with a digit, and has no #.");
+      return;
+    }
+    setClass(node.id, name, replacing);
+    setError(null);
+    if (replacing === undefined) setText(base);
   }
 
   function apply() {
-    const entry = parseEntry(text);
-    if (!entry) return;
-    if (entry.kind === "id") {
-      if (!HTML_ID_PATTERN.test(entry.value) || entry.value.length > 64) {
-        setError("An ID starts with a letter, then letters, digits, - _ : .");
-        return;
-      }
-      const doc = useEditorStore.getState().doc;
-      const taken = doc ? collectHtmlIds(doc.tree) : new Set<string>();
-      if (entry.value !== node.htmlId && taken.has(entry.value)) {
-        setError("That ID is already used on this page.");
-        return;
-      }
-      if (active?.kind === "class") removeClass(node.id, active.value);
-      setHtmlId(node.id, entry.value);
-    } else {
-      if (!CLASS_NAME_PATTERN.test(entry.value) || entry.value.length > 64) {
-        setError("A class uses letters, digits, - and _, and does not start with a digit.");
-        return;
-      }
-      if (active?.kind === "id" && active.value === node.htmlId) setHtmlId(node.id, "");
-      setClass(node.id, entry.value, active?.kind === "class" ? active.value : undefined);
-    }
-    reset();
+    const value = text.trim();
+    if (activeClass) {
+      if (value === "") return removeClassAndLeave(activeClass);
+      applyClass(value, activeClass);
+    } else if (value.startsWith("#")) applyId(value);
+    else if (value === "") applyId("#");
+    else applyClass(value);
   }
 
-  function activate(next: Active) {
-    setActive(next);
-    setText(next.kind === "id" ? `#${next.value}` : next.value);
-    setError(null);
+  function removeClassAndLeave(name: string) {
+    removeClass(node.id, name);
   }
 
-  const hasText = text.trim() !== "";
+  const changed = text.trim() !== base;
 
   return (
     <div className="flex flex-col gap-2">
-      <SettingRow label="Classes and ID" htmlFor={inputId}>
+      <SettingRow label={activeClass ? "Class" : "ID and classes"} htmlFor={inputId}>
         <div className="relative">
           <input
             id={inputId}
             value={text}
-            placeholder="class or #id"
+            placeholder="#id or class"
             aria-invalid={error !== null}
             onChange={(e) => {
               setText(e.target.value);
@@ -99,25 +102,31 @@ export function IdentityField({ node }: { node: ElementNode }) {
               if (e.key === "Enter") {
                 e.preventDefault();
                 apply();
-              } else if (e.key === "Escape" && (active || text)) {
+              } else if (e.key === "Escape" && changed) {
                 e.stopPropagation();
-                reset();
+                setText(base);
+                setError(null);
               }
             }}
-            className={compactFieldClass + " pr-24" + (error ? " !border-danger" : "")}
+            className={
+              compactFieldClass +
+              " pr-24 " +
+              (activeClass ? CLASS_FIELD : ID_FIELD) +
+              (error ? " !border-danger" : "")
+            }
           />
           <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-            {active ? (
+            {activeClass ? (
               <button
                 type="button"
-                aria-label="Clear the active class or ID"
-                onClick={reset}
-                className="flex h-6 w-6 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-200 hover:text-foreground"
+                aria-label="Stop editing the class and return to the ID"
+                onClick={() => setActiveClass(null)}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-200 hover:text-foreground"
               >
                 <Icon name="ph:x" width={12} height={12} />
               </button>
             ) : null}
-            {hasText ? (
+            {changed ? (
               <button
                 type="button"
                 onClick={apply}
@@ -133,32 +142,22 @@ export function IdentityField({ node }: { node: ElementNode }) {
         <p role="alert" className="text-tiny text-danger">
           {error}
         </p>
-      ) : null}
-      {node.htmlId || node.classIds.length > 0 ? (
-        <ul aria-label="Applied classes and ID" className="flex flex-wrap gap-1.5">
-          {node.htmlId ? (
-            <Chip
-              kind="id"
-              value={node.htmlId}
-              active={active?.kind === "id"}
-              onActivate={() => activate({ kind: "id", value: node.htmlId as string })}
-              onRemove={() => {
-                setHtmlId(node.id, "");
-                if (active?.kind === "id") reset();
-              }}
-            />
-          ) : null}
+      ) : (
+        <p className="text-tiny text-default-500">
+          {activeClass
+            ? `Design edits change .${activeClass} for every element that uses it.`
+            : "Design edits change this element only."}
+        </p>
+      )}
+      {node.classIds.length > 0 ? (
+        <ul aria-label="Applied classes" className="flex flex-wrap gap-1.5">
           {node.classIds.map((name) => (
             <Chip
               key={name}
-              kind="class"
               value={name}
-              active={active?.kind === "class" && active.value === name}
-              onActivate={() => activate({ kind: "class", value: name })}
-              onRemove={() => {
-                removeClass(node.id, name);
-                if (active?.kind === "class" && active.value === name) reset();
-              }}
+              active={activeClass === name}
+              onActivate={() => setActiveClass(name)}
+              onRemove={() => removeClass(node.id, name)}
             />
           ))}
         </ul>
@@ -168,39 +167,40 @@ export function IdentityField({ node }: { node: ElementNode }) {
 }
 
 function Chip({
-  kind,
   value,
   active,
   onActivate,
   onRemove
 }: {
-  kind: Kind;
   value: string;
   active: boolean;
   onActivate: () => void;
   onRemove: () => void;
 }) {
-  const label = kind === "id" ? `#${value}` : value;
   return (
     <li
       className={
         "flex h-6 items-center rounded-full text-tiny " +
-        (kind === "id" ? ID_CHIP : CLASS_CHIP) +
-        (active ? " ring-2 ring-default-800" : "")
+        CLASS_CHIP +
+        (active ? " ring-2 ring-sky-500" : "")
       }
     >
       <button
         type="button"
         aria-pressed={active}
-        aria-label={`${kind === "id" ? "ID" : "Class"} ${label}`}
-        onClick={onActivate}
-        className="max-w-[170px] truncate pl-2.5 pr-1 font-medium"
+        aria-label={`Class ${value}. Double-click to edit it`}
+        title="Double-click to edit this class"
+        onDoubleClick={onActivate}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onActivate();
+        }}
+        className="max-w-[170px] truncate pl-2.5 pr-1 font-mono font-medium"
       >
-        {label}
+        {value}
       </button>
       <button
         type="button"
-        aria-label={`Remove ${label}`}
+        aria-label={`Remove ${value}`}
         onClick={onRemove}
         className="mr-1 flex h-4 w-4 items-center justify-center rounded-full opacity-70 transition-opacity duration-300 hover:opacity-100"
       >

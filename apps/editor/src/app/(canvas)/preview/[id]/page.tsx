@@ -73,5 +73,7 @@ export default async function PreviewPage({
   const { id } = await params;
   const { path } = await searchParams;
   const { page, settings } = await resolvePreview(id, path);
-  return <PageRenderer tree={page.tree} breakpoints={settings.breakpoints} />;
+  return (
+    <PageRenderer tree={page.tree} breakpoints={settings.breakpoints} classes={settings.classes} />
+  );
 }
