@@ -86,7 +86,7 @@ export function cloneWithNewIds(
   taken: Set<string>,
   generateElementIds: boolean
 ): ElementNode {
-  const copy = structuredClone(node);
+  const copy: ElementNode = JSON.parse(JSON.stringify(node));
   walkElements(copy, (item) => {
     item.id = newElementId();
     if (item.htmlId) {

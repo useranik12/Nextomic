@@ -29,6 +29,7 @@
         "@heroui/theme": "2.4.18",
         "@iconify/react": "5.2.0",
         "@nextomic/db": "workspace:*",
+        "@nextomic/renderer": "workspace:*",
         "@nextomic/schema": "workspace:*",
         "@nextomic/storage": "workspace:*",
         "better-auth": "1.1.13",
