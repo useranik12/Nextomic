@@ -1,0 +1,6 @@
+[install]
+# Deterministic installs; the committed bun.lock is the source of truth.
+frozenLockfile = false
+
+[test]
+root = "."

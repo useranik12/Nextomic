@@ -1,0 +1,47 @@
+{
+  "name": "nextomic-builder",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter editor dev",
+    "build": "bun run --filter editor build",
+    "lint": "eslint .",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "vitest run",
+    "test:node": "node ./node_modules/.bin/vitest run",
+    "deps:manifest": "bun run scripts/deps-manifest.ts",
+    "icons:build": "bun run scripts/build-icon-set.ts",
+    "icons:lint": "bun run scripts/lint-icons.ts",
+    "postinstall": "bun run icons:build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.17.0",
+    "@iconify-json/ph": "1.2.1",
+    "@iconify/utils": "2.1.33",
+    "eslint": "9.17.0",
+    "eslint-config-prettier": "9.1.0",
+    "husky": "9.1.7",
+    "lint-staged": "15.3.0",
+    "prettier": "3.4.2",
+    "typescript": "5.7.2",
+    "typescript-eslint": "8.19.0",
+    "vitest": "2.1.8"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix"
+    ],
+    "*.{ts,tsx,js,jsx,json,md,css}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=22",
+    "bun": ">=1.1"
+  }
+}
