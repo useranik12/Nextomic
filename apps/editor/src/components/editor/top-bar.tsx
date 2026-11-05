@@ -2,8 +2,14 @@
 
 import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Tooltip } from "@heroui/react";
 import Link from "next/link";
-import { useState } from "react";
-import { getFaviconAsset } from "@/lib/assets";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import {
+  getPublishStateAction,
+  publishAction,
+  unpublishAction
+} from "@/app/(builder)/editor/[id]/actions";
+import { getBrandAsset } from "@/lib/assets";
 import { Icon } from "@/lib/icons/Icon";
 import { ActionButton } from "@/components/ui/controls";
 import { BreakpointManager } from "./breakpoint-manager";
@@ -40,6 +46,7 @@ function ChipFact({ label, value }: { label: string; value: string }) {
 // What applies to this page right now. Theme, header and footer arrive with themes and templates.
 function ChipPopover({ status }: { status: SaveStatus }) {
   const doc = useEditorStore((s) => s.doc);
+  const publishedAt = useEditorStore((s) => s.publishedAt);
   const version = useEditorStore((s) => s.page?.version);
   return (
     <div className="flex flex-col gap-2 px-1 py-2 text-small">
@@ -47,7 +54,10 @@ function ChipPopover({ status }: { status: SaveStatus }) {
       <dl className="flex flex-col gap-1">
         <ChipFact label="Route" value={doc?.route ?? ""} />
         <ChipFact label="Version" value={version ? String(version) : "—"} />
-        <ChipFact label="Status" value={"Draft · " + STATUS_LABEL[status]} />
+        <ChipFact
+          label="Status"
+          value={(publishedAt ? "Published" : "Draft") + " · " + STATUS_LABEL[status]}
+        />
         <ChipFact label="Theme" value="None" />
         <ChipFact label="Header" value="None" />
         <ChipFact label="Footer" value="None" />
@@ -159,6 +169,133 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
   );
 }
 
+// Publish and the arrow are one joined control. Publish puts the saved pages live for everyone;
+// the arrow holds Save, Unpublish and the draft tools. Drafts are only visible to signed-in members.
+function PublishControl({
+  projectId,
+  saveNow,
+  onOpenHistory
+}: {
+  projectId: string;
+  saveNow: () => Promise<void>;
+  onOpenHistory: () => void;
+}) {
+  const publishedAt = useEditorStore((s) => s.publishedAt);
+  const setPublishedAt = useEditorStore((s) => s.setPublishedAt);
+  const route = useEditorStore((s) => s.doc?.route ?? "/");
+  const [busy, setBusy] = useState<"publish" | "unpublish" | null>(null);
+  const [message, setMessage] = useState<{ text: string; tone: "ok" | "error" } | null>(null);
+
+  useEffect(() => {
+    void getPublishStateAction(projectId).then((result) => {
+      if (result.error === null) setPublishedAt(result.data.publishedAt);
+    });
+  }, [projectId, setPublishedAt]);
+
+  async function run(kind: "publish" | "unpublish") {
+    setBusy(kind);
+    setMessage(null);
+    if (kind === "publish") await saveNow();
+    const result =
+      kind === "publish" ? await publishAction(projectId) : await unpublishAction(projectId);
+    setBusy(null);
+    if (result.error !== null) {
+      setMessage({ text: result.error, tone: "error" });
+      return;
+    }
+    setPublishedAt(result.data.publishedAt);
+    setMessage({ text: kind === "publish" ? "Published" : "Unpublished", tone: "ok" });
+    window.setTimeout(() => setMessage(null), 3000);
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      {message ? (
+        <span
+          role="status"
+          className={`text-tiny ${message.tone === "error" ? "text-danger" : "text-success"}`}
+        >
+          {message.text}
+        </span>
+      ) : null}
+      <Tooltip
+        content={
+          publishedAt
+            ? "Open the published page"
+            : "Not published yet. Only published pages are public."
+        }
+      >
+        <span>
+          <button
+            type="button"
+            aria-label="View published page"
+            disabled={!publishedAt}
+            onClick={() =>
+              window.open(`/site/${projectId}${route === "/" ? "" : route}`, "_blank", "noopener")
+            }
+            className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground disabled:text-default-300 disabled:hover:bg-transparent"
+          >
+            <Icon name="ph:arrow-square-out" width={20} height={20} />
+          </button>
+        </span>
+      </Tooltip>
+      <div className="flex items-center">
+        <ActionButton
+          className="rounded-r-none"
+          isLoading={busy === "publish"}
+          isDisabled={busy !== null}
+          onPress={() => void run("publish")}
+        >
+          Publish
+        </ActionButton>
+        <Dropdown placement="bottom-end">
+          <DropdownTrigger>
+            <ActionButton
+              isIconOnly
+              aria-label="More publish options"
+              className="w-9 rounded-l-none border-l border-default-50/20 px-0"
+              isDisabled={busy === "publish"}
+            >
+              <Icon name="ph:caret-down" width={14} height={14} />
+            </ActionButton>
+          </DropdownTrigger>
+          <DropdownMenu
+            aria-label="Publish menu"
+            disabledKeys={publishedAt ? [] : ["unpublish"]}
+            onAction={(key) => {
+              if (key === "save") void saveNow();
+              if (key === "unpublish") void run("unpublish");
+              if (key === "preview")
+                window.open(
+                  `/preview/${projectId}?path=${encodeURIComponent(route)}`,
+                  "_blank",
+                  "noopener"
+                );
+              if (key === "history") onOpenHistory();
+            }}
+          >
+            <DropdownItem key="save" description="Saves the draft. Only signed-in members see it">
+              Save
+            </DropdownItem>
+            <DropdownItem key="preview" description="Opens the saved draft in a new tab">
+              Preview draft
+            </DropdownItem>
+            <DropdownItem key="history">Version history</DropdownItem>
+            <DropdownItem
+              key="unpublish"
+              color="danger"
+              className="text-danger"
+              description="Takes the site offline for everyone"
+            >
+              Unpublish
+            </DropdownItem>
+          </DropdownMenu>
+        </Dropdown>
+      </div>
+    </div>
+  );
+}
+
 export function TopBar({
   projectId,
   pages,
@@ -180,7 +317,6 @@ export function TopBar({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const pageId = useEditorStore((s) => s.page?.id);
   const status = useEditorStore((s) => s.saveStatus);
-  const route = useEditorStore((s) => s.doc?.route ?? "/");
 
   function confirmLeave(event: React.MouseEvent) {
     if (
@@ -198,9 +334,24 @@ export function TopBar({
           href="/projects"
           aria-label="Back to All Projects"
           onClick={confirmLeave}
-          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-medium bg-white"
+          className="flex h-9 w-9 items-center justify-center"
         >
-          <img src={getFaviconAsset("svg")} alt="" width={36} height={36} />
+          <Image
+            src={getBrandAsset("mascot", "light")}
+            alt=""
+            width={32}
+            height={32}
+            priority
+            className="hidden dark:block"
+          />
+          <Image
+            src={getBrandAsset("mascot", "dark")}
+            alt=""
+            width={32}
+            height={32}
+            priority
+            className="dark:hidden"
+          />
         </Link>
         <PageMenu pages={pages} onPagesChange={onPagesChange} saveNow={saveNow} />
         <button
@@ -233,48 +384,7 @@ export function TopBar({
 
       <BreakpointSwitcher onManage={() => setManagerOpen(true)} />
 
-      <div className="flex items-center gap-2">
-        <Tooltip content="Open the published page (publish the project first)">
-          <span>
-            <button
-              type="button"
-              aria-label="View published page"
-              disabled
-              className="rounded-full p-2 text-default-400"
-            >
-              <Icon name="ph:arrow-square-out" width={20} height={20} />
-            </button>
-          </span>
-        </Tooltip>
-        <Dropdown>
-          <DropdownTrigger>
-            <ActionButton endContent={<Icon name="ph:caret-down" width={14} height={14} />}>
-              Publish
-            </ActionButton>
-          </DropdownTrigger>
-          <DropdownMenu
-            aria-label="Publish menu"
-            onAction={(key) => {
-              if (key === "save") void saveNow();
-              if (key === "preview")
-                window.open(
-                  `/preview/${projectId}?path=${encodeURIComponent(route)}`,
-                  "_blank",
-                  "noopener"
-                );
-              if (key === "history") onOpenHistory();
-            }}
-          >
-            <DropdownItem key="save" description="Stores a version snapshot of the draft">
-              Save
-            </DropdownItem>
-            <DropdownItem key="preview" description="Opens the saved draft in a new tab">
-              Preview draft
-            </DropdownItem>
-            <DropdownItem key="history">Version history</DropdownItem>
-          </DropdownMenu>
-        </Dropdown>
-      </div>
+      <PublishControl projectId={projectId} saveNow={saveNow} onOpenHistory={onOpenHistory} />
 
       {managerOpen ? <BreakpointManager isOpen onClose={() => setManagerOpen(false)} /> : null}
       {settingsOpen && pageId ? (

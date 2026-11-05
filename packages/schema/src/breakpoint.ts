@@ -110,3 +110,16 @@ export function breakpointCascade(list: readonly BreakpointDef[]): BreakpointDef
     .sort((a, b) => (b.width ?? 0) - (a.width ?? 0));
   return [...base, ...up, ...down];
 }
+
+/**
+ * Display order, left to right: larger-than-base ("up") breakpoints from the widest, then the
+ * base, then "down" breakpoints from the widest. Order is derived from width, never set by hand.
+ */
+export function sortBreakpoints(list: readonly BreakpointDef[]): BreakpointDef[] {
+  const base = list.filter((b) => b.kind === "base");
+  const up = list.filter((b) => b.kind === "up").sort((a, b) => (b.width ?? 0) - (a.width ?? 0));
+  const down = list
+    .filter((b) => b.kind === "down")
+    .sort((a, b) => (b.width ?? 0) - (a.width ?? 0));
+  return [...up, ...base, ...down];
+}

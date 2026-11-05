@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
+import { AppSettings } from "./app-settings";
 import { ConflictDialog } from "./conflict-dialog";
 import { EditorDndProvider } from "./dnd";
 import { ElementsFlyout } from "./elements-flyout";
@@ -75,6 +76,7 @@ export function EditorShell({
   const [flyout, setFlyout] = useState(false);
   const [mode, setMode] = useState<"light" | "dark">("light");
   const { saveNow } = useAutosave();
+  const selectedId = useEditorStore((s) => s.selectedId);
   useShortcuts();
 
   // Initialise once. A later server refresh must never replace the document being edited.
@@ -96,6 +98,14 @@ export function EditorShell({
     );
     setReady(true);
   }, [projectId, project, initialPage]);
+
+  // One left panel at a time: selecting an element folds the section rail to its icons and closes
+  // the Elements popup (an insert selects the new element).
+  useEffect(() => {
+    if (!selectedId) return;
+    setCollapsed(true);
+    setFlyout(false);
+  }, [selectedId]);
 
   // Keep the page list (names, routes, home flag) in step with saves.
   const savedTick = useEditorStore((s) => s.savedTick);
@@ -153,6 +163,8 @@ export function EditorShell({
               </>
             ) : rail === "history" ? (
               <VersionHistory saveNow={saveNow} />
+            ) : rail === "app-settings" ? (
+              <AppSettings />
             ) : (
               <div className="p-4">
                 <h2 className="text-small font-medium">{railLabel}</h2>

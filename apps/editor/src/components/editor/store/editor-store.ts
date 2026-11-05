@@ -1,6 +1,7 @@
 import { getElementDefinition } from "@nextomic/renderer";
 import {
   BASE_BREAKPOINT_ID,
+  sortBreakpoints,
   anyStylesAt,
   assignMissingHtmlIds,
   cloneWithNewIds,
@@ -57,6 +58,8 @@ interface EditorState {
   saveError: string | null;
   /** Increments after every successful save so lists (page names, routes) can refresh. */
   savedTick: number;
+  /** Epoch ms of the last publish, null when the project is not published. */
+  publishedAt: number | null;
   conflict: { page: PageMeta; doc: PageDoc } | null;
 
   init: (projectId: string, project: ProjectSettings) => void;
@@ -66,6 +69,7 @@ interface EditorState {
   setConflict: (page: PageMeta, doc: PageDoc) => void;
   resolveConflictWithServer: () => void;
 
+  setPublishedAt: (at: number | null) => void;
   select: (id: string | null) => void;
   setActiveBreakpoint: (id: string) => void;
   setActiveState: (state: PseudoState) => void;
@@ -80,6 +84,9 @@ interface EditorState {
   setElementProp: (id: string, key: string, value: PropValue) => void;
   setElementTag: (id: string, tag: string) => void;
   setElementHtmlId: (id: string, htmlId: string) => void;
+  /** Adds a class name, or swaps `replacing` for it; duplicates are ignored. */
+  setElementClass: (id: string, name: string, replacing?: string) => void;
+  removeElementClass: (id: string, name: string) => void;
   setElementStyle: (id: string, property: string, value: string | null) => void;
   updatePageMeta: (patch: Partial<Pick<PageDoc, "name" | "route">>) => void;
   updatePageSettings: (patch: Partial<PageSettings>) => void;
@@ -162,9 +169,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
     saveStatus: "saved",
     saveError: null,
     savedTick: 0,
+    publishedAt: null,
     conflict: null,
 
-    init: (projectId, project) => set({ projectId, project }),
+    init: (projectId, project) =>
+      set({
+        projectId,
+        project: { ...project, breakpoints: sortBreakpoints(project.breakpoints) }
+      }),
 
     loadPage: (page, doc) =>
       set({
@@ -196,6 +208,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (conflict) get().loadPage(conflict.page, conflict.doc);
     },
 
+    setPublishedAt: (publishedAt) => set({ publishedAt }),
     select: (id) => set({ selectedId: id }),
     setActiveBreakpoint: (id) => set({ activeBreakpointId: id }),
     setActiveState: (state) => set({ activeState: state }),
@@ -308,6 +321,26 @@ export const useEditorStore = create<EditorState>((set, get) => {
         else found.node.htmlId = trimmed;
       }),
 
+    setElementClass: (id, name, replacing) =>
+      void edit(null, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (!found) return;
+        const list = found.node.classIds;
+        const at = replacing === undefined ? -1 : list.indexOf(replacing);
+        if (list.includes(name)) {
+          if (at >= 0 && replacing !== name) list.splice(at, 1);
+          return;
+        }
+        if (at >= 0) list[at] = name;
+        else list.push(name);
+      }),
+
+    removeElementClass: (id, name) =>
+      void edit(null, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (found) found.node.classIds = found.node.classIds.filter((c) => c !== name);
+      }),
+
     setElementStyle: (id, property, value) => {
       const { activeBreakpointId, activeState } = get();
       edit(`style:${id}:${activeBreakpointId}:${activeState}:${property}`, (draft) => {
@@ -339,7 +372,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }
       const ids = new Set(breakpoints.map((b) => b.id));
       set((state) => ({
-        project: { ...project, breakpoints },
+        project: { ...project, breakpoints: sortBreakpoints(breakpoints) },
         activeBreakpointId: ids.has(state.activeBreakpointId)
           ? state.activeBreakpointId
           : BASE_BREAKPOINT_ID

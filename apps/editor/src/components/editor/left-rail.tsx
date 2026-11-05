@@ -96,7 +96,7 @@ export function LeftRail({
         {RAIL_ITEMS.map((i) => item(i.id, i.label, i.ready))}
       </div>
       <div className="flex flex-col gap-1">
-        {item("app-settings", "App Settings", false)}
+        {item("app-settings", "App Settings", true)}
         <button
           type="button"
           onClick={onToggleCollapse}

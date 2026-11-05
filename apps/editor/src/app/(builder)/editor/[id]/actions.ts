@@ -24,6 +24,12 @@ import {
   type StoredPage,
   type VersionSummary
 } from "@/server/pages";
+import {
+  getPublishState,
+  publishProject,
+  unpublishProject,
+  type PublishState
+} from "@/server/publish";
 
 export type ActionResult<T> = { data: T; error: null } | { data: null; error: string };
 
@@ -170,5 +176,45 @@ export async function saveProjectSettingsAction(
     return { data: await saveProjectSettings(projectId, parsed), error: null };
   } catch (error) {
     return fail(error, "Could not save project settings.");
+  }
+}
+
+export interface PublishInfo {
+  /** Epoch milliseconds of the last publish, null when the project is not published. */
+  publishedAt: number | null;
+  publishedPages: number;
+}
+
+function toInfo(state: PublishState): PublishInfo {
+  return {
+    publishedAt: state.publishedAt?.getTime() ?? null,
+    publishedPages: state.publishedPages
+  };
+}
+
+export async function getPublishStateAction(projectId: string): Promise<ActionResult<PublishInfo>> {
+  try {
+    await authorize(projectId);
+    return { data: toInfo(await getPublishState(projectId)), error: null };
+  } catch (error) {
+    return fail(error, "Could not read the publish state.");
+  }
+}
+
+export async function publishAction(projectId: string): Promise<ActionResult<PublishInfo>> {
+  try {
+    await authorize(projectId);
+    return { data: toInfo(await publishProject(projectId)), error: null };
+  } catch (error) {
+    return fail(error, "Could not publish the project.");
+  }
+}
+
+export async function unpublishAction(projectId: string): Promise<ActionResult<PublishInfo>> {
+  try {
+    await authorize(projectId);
+    return { data: toInfo(await unpublishProject(projectId)), error: null };
+  } catch (error) {
+    return fail(error, "Could not unpublish the project.");
   }
 }

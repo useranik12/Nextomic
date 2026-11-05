@@ -1,7 +1,15 @@
 "use client";
 
-import { Button, Input, type ButtonProps, type InputProps } from "@heroui/react";
-import { useId, useState, type SelectHTMLAttributes } from "react";
+import {
+  Button,
+  Input,
+  Select,
+  SelectItem,
+  type ButtonProps,
+  type InputProps,
+  type SelectProps
+} from "@heroui/react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 
 // The builder's text fields and buttons. Use these everywhere instead of raw HeroUI Input/Button
@@ -52,58 +60,97 @@ export function FormInput({ compact, ...props }: InputProps & { compact?: boolea
   );
 }
 
-export interface SelectFieldProps
-  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "onChange"> {
+export interface SelectOption {
+  value: string;
   label: string;
-  options: { value: string; label: string }[];
+}
+
+// Modern dropdown (HeroUI Select): pill trigger with the same 2px outline as the inputs, and a
+// rounded popover with soft highlighting. Selection is controlled by `value`.
+const SELECT_CLASSES = (compact: boolean): SelectProps["classNames"] => ({
+  base: "gap-1",
+  label: compact
+    ? "pb-0.5 text-tiny font-medium !text-default-600"
+    : "pb-1 text-small font-medium !text-foreground",
+  trigger:
+    (compact ? "h-8 min-h-8 px-3 " : "h-11 min-h-11 px-5 ") +
+    "rounded-full border-2 border-default-200 bg-transparent shadow-none transition-colors " +
+    "data-[hover=true]:border-default-400 data-[focus=true]:border-default-800 " +
+    "data-[open=true]:border-default-800 data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-default-800/10",
+  value: (compact ? "text-small " : "text-base ") + "text-foreground",
+  selectorIcon: "text-default-500",
+  popoverContent: "min-w-[160px] rounded-large border border-default-200 bg-content1 p-1 shadow-xl",
+  listbox: "gap-0.5 p-0"
+});
+
+const ITEM_CLASSES = {
+  base:
+    "rounded-medium px-3 py-1.5 text-small text-default-700 transition-colors " +
+    "data-[hover=true]:bg-default-100 data-[hover=true]:text-foreground " +
+    "data-[selected=true]:bg-default-200 data-[selected=true]:font-medium data-[selected=true]:text-foreground " +
+    "data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-default-800/20"
+};
+
+export interface SelectFieldProps {
+  /** Visible label. With `hideLabel` it becomes the accessible name only. */
+  label: string;
+  hideLabel?: boolean;
+  options: SelectOption[];
   value: string;
   onValueChange: (value: string) => void;
   compact?: boolean;
+  isDisabled?: boolean;
+  className?: string;
 }
 
-// Native select with the same outline behaviour as FormInput (accessible by default).
 export function SelectField({
   label,
+  hideLabel,
   options,
   value,
   onValueChange,
-  compact,
-  className,
-  id,
-  ...rest
+  compact = false,
+  isDisabled,
+  className
 }: SelectFieldProps) {
-  const fallbackId = useId();
-  const selectId = id ?? fallbackId;
+  // Opening the list inside a scrolling modal makes the modal body fire one stray scroll event, and
+  // react-aria closes a popover on any scroll above its trigger. Ignore scrolls right after opening.
+  const openedAt = useRef(0);
+  useEffect(() => {
+    function ignoreOpeningScroll(event: Event) {
+      if (Date.now() - openedAt.current < 400) event.stopImmediatePropagation();
+    }
+    window.addEventListener("scroll", ignoreOpeningScroll, true);
+    return () => window.removeEventListener("scroll", ignoreOpeningScroll, true);
+  }, []);
+  const known = options.some((option) => option.value === value);
+  const items = known ? options : [{ value, label: value }, ...options];
   return (
-    <div className="flex flex-col gap-1">
-      <label
-        htmlFor={selectId}
-        className={
-          compact
-            ? "text-tiny font-medium text-default-600"
-            : "text-small font-medium text-foreground"
-        }
-      >
-        {label}
-      </label>
-      <select
-        id={selectId}
-        value={value}
-        onChange={(event) => onValueChange(event.target.value)}
-        className={
-          (compact ? "h-8 px-3 text-small " : "h-11 px-5 text-base ") +
-          "w-full rounded-full border-2 border-default-200 bg-transparent text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800 focus:ring-2 focus:ring-default-800/10 " +
-          (className ?? "")
-        }
-        {...rest}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value} className="bg-content1 text-foreground">
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <Select
+      aria-label={label}
+      label={hideLabel ? undefined : label}
+      labelPlacement="outside"
+      variant="bordered"
+      disallowEmptySelection
+      isDisabled={isDisabled}
+      onOpenChange={(open) => {
+        if (open) openedAt.current = Date.now();
+      }}
+      selectedKeys={[value]}
+      onSelectionChange={(keys) => {
+        const next = Array.from(keys)[0];
+        if (next !== undefined) onValueChange(String(next));
+      }}
+      classNames={SELECT_CLASSES(compact)}
+      className={className}
+      popoverProps={{ offset: 6, placement: "bottom-start" }}
+      listboxProps={{ itemClasses: ITEM_CLASSES }}
+      selectorIcon={<Icon name="ph:caret-down" width={14} height={14} />}
+    >
+      {items.map((option) => (
+        <SelectItem key={option.value}>{option.label}</SelectItem>
+      ))}
+    </Select>
   );
 }
 

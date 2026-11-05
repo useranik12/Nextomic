@@ -19,3 +19,28 @@ export type MixedText = z.infer<typeof mixedTextSchema>;
 
 export const propValueSchema = z.union([staticValueSchema, mixedTextSchema]);
 export type PropValue = z.infer<typeof propValueSchema>;
+
+const TOKEN_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g;
+
+/** Text for an input: tokens appear as {{token}} so they can be typed, moved and deleted. */
+export function dynamicTextOf(value: PropValue | undefined): string {
+  if (value === undefined || value === null) return "";
+  if (typeof value !== "object") return String(value);
+  return value.parts
+    .map((part) => (typeof part === "string" ? part : `{{${part.token}}}`))
+    .join("");
+}
+
+/** Inverse of dynamicTextOf: plain text stays a string, text with {{token}} becomes mixed. */
+export function parseDynamicText(text: string): PropValue {
+  const parts: MixedText["parts"] = [];
+  let last = 0;
+  for (const match of text.matchAll(TOKEN_PATTERN)) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    parts.push({ token: match[1] as string });
+    last = match.index + match[0].length;
+  }
+  if (parts.length === 0) return text;
+  if (last < text.length) parts.push(text.slice(last));
+  return { kind: "mixed", parts };
+}

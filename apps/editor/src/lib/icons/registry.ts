@@ -19,6 +19,7 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:squares-four" },
   { id: "ph:gear-six" },
   { id: "ph:plus" },
+  { id: "ph:x" },
   { id: "ph:minus" },
   { id: "ph:corners-out" },
   { id: "ph:device-rotate" },
@@ -64,9 +65,7 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:clipboard" },
   { id: "ph:arrow-counter-clockwise" },
   { id: "ph:arrow-clockwise" },
-  { id: "ph:minus-circle" },
-  { id: "ph:arrow-up" },
-  { id: "ph:arrow-down" }
+  { id: "ph:minus-circle" }
 ] as const;
 
 export const ICON_IDS: readonly string[] = ICON_REGISTRY.map((icon) => icon.id);

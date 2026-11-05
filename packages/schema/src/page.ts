@@ -21,7 +21,8 @@ const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const pageParamSchema = z.object({
   name: z.string().regex(IDENTIFIER).max(64),
   type: pageVariableTypeSchema.default("string"),
-  required: z.boolean().default(false)
+  required: z.boolean().default(false),
+  defaultValue: z.string().max(500).default("")
 });
 
 export const pageStateVariableSchema = z.object({
@@ -117,3 +118,6 @@ export function emptyPageTree(): ElementNode {
 export function defaultPageSettings(): PageSettings {
   return pageSettingsSchema.parse({});
 }
+
+/** What a visitor sees: the page as it was when the project was published. */
+export type PublishedPage = Pick<Page, "name" | "route" | "settings" | "tree">;

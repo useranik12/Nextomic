@@ -126,7 +126,8 @@ test("page settings: SEO, language, duplicate and home page", async ({ page }) =
   await page.getByRole("button", { name: "Page settings" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("SEO title").fill("My landing page");
-  await dialog.getByLabel("Page language").selectOption("fr");
+  await dialog.getByRole("button", { name: /Page language/ }).click();
+  await page.locator("[role=option]", { hasText: "French (fr)" }).click();
   await dialog.getByRole("button", { name: "Duplicate page" }).click();
   // The copy opens, with its own name, and is not the home page.
   await expect(page.getByRole("button", { name: /copy/ }).first()).toBeVisible();
@@ -153,4 +154,58 @@ test("drag an element tile onto the canvas inserts it", async ({ page }) => {
   await page.waitForTimeout(300);
   await page.mouse.up();
   await expect(page.getByRole("treeitem")).toHaveCount(1);
+});
+
+test("classes and ID chips, bolt, App Settings toggle, split publish", async ({
+  page,
+  request
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  // Flyout closed after the insert, and the section rail folded to icons.
+  await expect(page.getByRole("dialog", { name: "Elements" })).toHaveCount(0);
+
+  const input = page.getByLabel("Classes and ID", { exact: true });
+  await input.fill("hero");
+  await input.press("Enter");
+  await expect(input).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Class hero" })).toBeVisible();
+  await input.fill("#main-title");
+  await page.getByRole("button", { name: "Apply" }).click();
+  await expect(page.getByRole("button", { name: "ID #main-title" })).toBeVisible();
+  await page.getByRole("button", { name: "Class hero" }).click();
+  await expect(input).toHaveValue("hero");
+  await page.getByRole("button", { name: "Clear the active class or ID" }).click();
+  await expect(input).toHaveValue("");
+
+  // Bolt on a content field; no per-element auto-ID switch any more.
+  await expect(page.getByRole("button", { name: "Dynamic value for Text" })).toBeVisible();
+  await expect(page.getByText("Generate element ID automatically")).toHaveCount(0);
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await expect(page.getByText("Generate element ID automatically")).toBeVisible();
+
+  // Publish: private until published, public after, private again after Unpublish.
+  const site = `/site/${projectId}`;
+  expect((await request.get(site)).status()).toBe(404);
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
+  expect((await request.get(site)).status()).toBe(200);
+  await page.getByRole("button", { name: "More publish options" }).click();
+  await page.getByRole("menuitem", { name: /Unpublish/ }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Unpublished" })).toBeVisible();
+  expect((await request.get(site)).status()).toBe(404);
+});
+
+test("breakpoints order themselves by width", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Manage breakpoints" }).click();
+  await expect(page.getByRole("button", { name: /Move .* up/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Add breakpoint" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
+  // 480 sits between Tablet (768) and Mobile (414).
+  const group = page.getByRole("group", { name: "Breakpoints" }).getByRole("button");
+  await expect(group).toHaveCount(4);
+  const names = await group.evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
+  expect(names).toEqual(["Desktop", "Tablet", "Breakpoint 3", "Mobile"]);
 });
