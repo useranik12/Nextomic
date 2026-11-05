@@ -87,8 +87,8 @@ describe("css", () => {
   it("emits base first then down breakpoints largest to smallest", () => {
     expect(elementCss(tree, DEFAULT_BREAKPOINTS)).toBe(
       '[data-nid="n1"]{color:red}[data-nid="n1"]:hover{color:blue}' +
-        '@media (max-width:991px){[data-nid="n1"]{color:green}}' +
-        '@media (max-width:575px){[data-nid="n1"]{color:pink}}'
+        '@media (max-width:768px){[data-nid="n1"]{color:green}}' +
+        '@media (max-width:414px){[data-nid="n1"]{color:pink}}'
     );
   });
 

@@ -63,7 +63,7 @@ Layout (display, flex, grid, position, z-index, overflow), Spacing, Size, Typogr
 - Every value input has a variable picker (CSS variables) and a bolt (dynamic data, see `elements.md`).
 - A responsive icon next to a label shows the property can differ per breakpoint; inherited values from a larger breakpoint are shown dimmed.
 - "Search settings" at the bottom filters all controls across groups.
-- Breakpoints are user-defined per project (manager in `ui-reference.md` 4.12). Defaults: desktop (base), tablet (and below 991px), mobile (and below 575px). Output CSS emits media queries in cascade order: base, then "and above" ascending, then "and below" descending.
+- Breakpoints are user-defined per project (manager in `ui-reference.md` 4.12). Defaults: desktop (base), tablet (and below 768px), mobile (and below 414px). Output CSS emits media queries in cascade order: base, then "and above" ascending, then "and below" descending.
 
 ## 6. Variables and tokens
 

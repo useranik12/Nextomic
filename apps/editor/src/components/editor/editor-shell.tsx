@@ -2,6 +2,7 @@
 
 import type { ProjectSettings } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
+import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { ConflictDialog } from "./conflict-dialog";
@@ -95,6 +96,15 @@ export function EditorShell({
     );
     setReady(true);
   }, [projectId, project, initialPage]);
+
+  // Keep the page list (names, routes, home flag) in step with saves.
+  const savedTick = useEditorStore((s) => s.savedTick);
+  useEffect(() => {
+    if (savedTick === 0) return;
+    void listPagesAction(projectId).then((result) => {
+      if (result.error === null) setPages(result.data);
+    });
+  }, [savedTick, projectId]);
 
   if (!ready) {
     return (

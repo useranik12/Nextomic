@@ -4,6 +4,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownMenu,
+  DropdownSection,
   DropdownTrigger,
   Modal,
   ModalBody,
@@ -87,11 +88,18 @@ export function PageMenu({
             setMessage(error);
           }}
         >
-          {pages.map((page) => (
-            <DropdownItem key={page.id} description={page.route} textValue={page.name}>
-              {page.name}
+          <DropdownSection title="Pages" showDivider>
+            {pages.map((page) => (
+              <DropdownItem key={page.id} description={page.route} textValue={page.name}>
+                {page.name}
+              </DropdownItem>
+            ))}
+          </DropdownSection>
+          <DropdownSection title="Templates">
+            <DropdownItem key="no-templates" isDisabled textValue="No templates yet">
+              No templates yet
             </DropdownItem>
-          ))}
+          </DropdownSection>
         </DropdownMenu>
       </Dropdown>
       <button

@@ -36,7 +36,7 @@ export const DEFAULT_BREAKPOINTS: BreakpointDef[] = [
     name: "Tablet",
     icon: "tablet",
     kind: "down",
-    width: 991,
+    width: 768,
     previewWidth: 768
   },
   {
@@ -44,8 +44,8 @@ export const DEFAULT_BREAKPOINTS: BreakpointDef[] = [
     name: "Mobile",
     icon: "mobile",
     kind: "down",
-    width: 575,
-    previewWidth: 375
+    width: 414,
+    previewWidth: 414
   }
 ];
 

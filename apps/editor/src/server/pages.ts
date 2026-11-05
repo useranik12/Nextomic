@@ -11,7 +11,7 @@ import {
   type SavePageInput
 } from "@nextomic/schema";
 import { getDb, pages, pageVersions, projects } from "@nextomic/db";
-import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, lt, ne, sql } from "drizzle-orm";
 
 // Page persistence. Callers MUST have passed requireProjectAccess for the project first;
 // every query here is also scoped by projectId so a page id from another project never matches.
@@ -205,6 +205,19 @@ export async function savePage(
         tree: row.tree,
         savedBy: userId
       });
+      if (row.settings.isHome) {
+        // Only one home page per project.
+        await tx
+          .update(pages)
+          .set({ settings: sql`jsonb_set(${pages.settings}, '{isHome}', 'false'::jsonb)` })
+          .where(
+            and(
+              eq(pages.projectId, projectId),
+              ne(pages.id, pageId),
+              sql`${pages.settings}->>'isHome' = 'true'`
+            )
+          );
+      }
       await tx
         .delete(pageVersions)
         .where(
@@ -223,6 +236,30 @@ export async function savePage(
     if (isUniqueViolation(error)) return { ok: false, reason: "route-taken" };
     throw error;
   }
+}
+
+/** Copies a page (tree and settings) to a new route: /about -> /about-copy, /about-copy-2, ... */
+export async function duplicatePage(
+  projectId: string,
+  pageId: string,
+  userId: string
+): Promise<StoredPage | null> {
+  const source = await getPage(projectId, pageId);
+  if (!source) return null;
+  const settings = { ...source.settings, isHome: false };
+  const base = source.route === "/" ? "/home" : source.route;
+  for (let attempt = 1; attempt <= 20; attempt += 1) {
+    const route = attempt === 1 ? `${base}-copy` : `${base}-copy-${attempt}`;
+    const created = await createPage(projectId, userId, { name: `${source.name} copy`, route });
+    if (created === "route-taken") continue;
+    const saved = await savePage(projectId, created.id, userId, {
+      baseVersion: created.version,
+      settings,
+      tree: source.tree
+    });
+    return saved.ok ? saved.page : null;
+  }
+  return null;
 }
 
 export async function deletePage(projectId: string, pageId: string): Promise<boolean> {

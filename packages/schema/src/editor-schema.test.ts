@@ -9,13 +9,14 @@ import {
   elementNodeSchema,
   emptyPageTree,
   generateHtmlId,
+  pageSettingsSchema,
   projectSettingsSchema,
   savePageInputSchema
 } from "./index";
 
 describe("breakpoints", () => {
-  it("defaults to desktop 1440, tablet 768, mobile 375 previews", () => {
-    expect(DEFAULT_BREAKPOINTS.map((b) => b.previewWidth)).toEqual([1440, 768, 375]);
+  it("defaults to desktop 1440, tablet 768, mobile 414", () => {
+    expect(DEFAULT_BREAKPOINTS.map((b) => b.previewWidth)).toEqual([1440, 768, 414]);
     expect(breakpointListSchema.parse(DEFAULT_BREAKPOINTS)).toHaveLength(3);
   });
 
@@ -100,6 +101,16 @@ describe("page schemas", () => {
   it("requires baseVersion on save", () => {
     expect(savePageInputSchema.safeParse({ name: "x" }).success).toBe(false);
     expect(savePageInputSchema.safeParse({ baseVersion: 1, name: "x" }).success).toBe(true);
+  });
+
+  it("validates SEO and locale", () => {
+    const settings = pageSettingsSchema.parse({});
+    expect(settings.seo.robots).toBe("index");
+    expect(settings.locale).toBe("en");
+    expect(pageSettingsSchema.safeParse({ seo: { canonical: "javascript:x" } }).success).toBe(
+      false
+    );
+    expect(pageSettingsSchema.safeParse({ locale: "not a locale" }).success).toBe(false);
   });
 
   it("applies project settings defaults", () => {
