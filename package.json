@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "typecheck": "bun run --filter '*' typecheck",
     "test": "vitest run",
-    "test:node": "node ./node_modules/.bin/vitest run",
+    "test:node": "node ./node_modules/vitest/vitest.mjs run",
     "deps:manifest": "bun run scripts/deps-manifest.ts",
     "icons:build": "bun run scripts/build-icon-set.ts",
     "icons:lint": "bun run scripts/lint-icons.ts",

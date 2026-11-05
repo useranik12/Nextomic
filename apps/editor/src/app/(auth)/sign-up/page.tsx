@@ -1,14 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  AuthButton,
-  AuthCard,
-  AuthError,
-  AuthInput,
-  AuthLink,
-  PasswordInput
-} from "@/components/auth/auth-ui";
+import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
+import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
 import { signUpAction, type SignUpState } from "./actions";
 
 const initialState: SignUpState = { error: null, success: false };
@@ -32,8 +26,8 @@ export default function SignUpPage() {
   return (
     <AuthCard title="Create your account" description="Start building with Nextomic.">
       <form action={formAction} className="flex flex-col gap-5">
-        <AuthInput name="name" label="Name" isRequired autoComplete="name" isInvalid={hasError} />
-        <AuthInput
+        <FormInput name="name" label="Name" isRequired autoComplete="name" isInvalid={hasError} />
+        <FormInput
           name="email"
           type="email"
           label="Email"
@@ -49,7 +43,9 @@ export default function SignUpPage() {
           isInvalid={hasError}
         />
         <AuthError message={state.error} />
-        <AuthButton isLoading={isPending}>Sign up</AuthButton>
+        <ActionButton type="submit" fullWidth isLoading={isPending}>
+          Sign up
+        </ActionButton>
         <p className="text-small text-default-500">
           Already have an account? <AuthLink href="/sign-in">Sign in</AuthLink>
         </p>

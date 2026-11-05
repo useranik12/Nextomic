@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow
 } from "@heroui/react";
+import { ActionButton } from "@/components/ui/controls";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -138,14 +139,13 @@ export function ProjectsBoard({
             <Icon name="ph:list" label="List view" />
           </Button>
         </ButtonGroup>
-        <Button
-          color="primary"
+        <ActionButton
           endContent={<Icon name="ph:plus" />}
           onPress={() => setIsNewProjectOpen(true)}
           className="ml-auto"
         >
           New Project
-        </Button>
+        </ActionButton>
       </div>
 
       {filtered.length === 0 ? (
@@ -181,17 +181,16 @@ export function ProjectsBoard({
                 </TableCell>
                 <TableCell>{formatOrdinalDate(project.lastModifiedAt)}</TableCell>
                 <TableCell>
-                  <Button size="sm" variant="light" onPress={() => setProjectToRename(project)}>
+                  <ActionButton size="sm" tone="ghost" onPress={() => setProjectToRename(project)}>
                     Rename
-                  </Button>
-                  <Button
+                  </ActionButton>
+                  <ActionButton
                     size="sm"
-                    variant="light"
-                    color="danger"
+                    tone="danger-ghost"
                     onPress={() => setProjectToDelete(project)}
                   >
                     Delete
-                  </Button>
+                  </ActionButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -236,9 +235,9 @@ function EmptyState({
           : "Create your first site to get started."}
       </p>
       {hasAnyProjects ? null : (
-        <Button color="primary" endContent={<Icon name="ph:plus" />} onPress={onNewProject}>
+        <ActionButton endContent={<Icon name="ph:plus" />} onPress={onNewProject}>
           New Project
-        </Button>
+        </ActionButton>
       )}
     </div>
   );

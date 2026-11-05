@@ -2,13 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import {
-  AuthButton,
-  AuthCard,
-  AuthError,
-  AuthLink,
-  PasswordInput
-} from "@/components/auth/auth-ui";
+import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
+import { ActionButton, PasswordInput } from "@/components/ui/controls";
 import { authClient } from "@/lib/auth-client";
 
 export default function ResetPasswordPage() {
@@ -60,7 +55,9 @@ function ResetPasswordForm() {
           isInvalid={Boolean(error)}
         />
         <AuthError message={error} />
-        <AuthButton isLoading={isPending}>Reset password</AuthButton>
+        <ActionButton type="submit" fullWidth isLoading={isPending}>
+          Reset password
+        </ActionButton>
         <AuthLink href="/sign-in">Back to sign in</AuthLink>
       </form>
     </AuthCard>

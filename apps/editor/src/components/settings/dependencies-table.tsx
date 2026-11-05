@@ -1,3 +1,5 @@
+"use client";
+
 import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
 import type { BuilderDependenciesManifest } from "@/lib/deps-manifest";
 

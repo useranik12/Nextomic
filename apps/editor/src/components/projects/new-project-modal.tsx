@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  Button,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader
-} from "@heroui/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ActionButton, FormInput } from "@/components/ui/controls";
 import { useState } from "react";
 
 export interface NewProjectModalProps {
@@ -45,7 +38,7 @@ export function NewProjectModal({ isOpen, onClose, onCreate }: NewProjectModalPr
       <ModalContent>
         <ModalHeader>New Project</ModalHeader>
         <ModalBody>
-          <Input
+          <FormInput
             label="Project name"
             value={name}
             onValueChange={setName}
@@ -56,12 +49,12 @@ export function NewProjectModal({ isOpen, onClose, onCreate }: NewProjectModalPr
           />
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+          <ActionButton tone="ghost" onPress={onClose}>
             Cancel
-          </Button>
-          <Button color="primary" onPress={handleSubmit} isLoading={isPending}>
+          </ActionButton>
+          <ActionButton tone="primary" onPress={handleSubmit} isLoading={isPending}>
             Create
-          </Button>
+          </ActionButton>
         </ModalFooter>
       </ModalContent>
     </Modal>
