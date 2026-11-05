@@ -1,0 +1,9 @@
+{
+  "name": "@nextomic/schema",
+  "private": true,
+  "version": "0.0.0",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "build": "tsc --noEmit", "typecheck": "tsc --noEmit" },
+  "dependencies": { "zod": "^4.1.12" },
+  "devDependencies": { "typescript": "^5.9.3" }
+}

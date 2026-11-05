@@ -1,0 +1,8 @@
+{
+  "name": "@nextomic/css-framework",
+  "private": true,
+  "version": "0.0.0",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "build": "tsc --noEmit", "typecheck": "tsc --noEmit" },
+  "devDependencies": { "typescript": "^5.9.3" }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "db",
+  "private": true,
+  "version": "0.0.0",
+  "exports": { ".": "./src/index.ts", "./schema": "./src/schema.ts" },
+  "scripts": { "build": "tsc --noEmit", "typecheck": "tsc --noEmit", "generate": "cd ../.. && drizzle-kit generate --config drizzle.config.ts", "migrate": "cd ../.. && drizzle-kit migrate --config drizzle.config.ts" },
+  "dependencies": { "drizzle-orm": "^0.44.7", "postgres": "^3.4.7" },
+  "devDependencies": { "drizzle-kit": "^0.31.4", "typescript": "^5.9.3" }
+}

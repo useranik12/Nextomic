@@ -1,0 +1,34 @@
+services:
+  editor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://nextomic:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/nextomic
+      STORAGE_LOCAL_PATH: /var/lib/nextomic/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - nextomic-storage:/var/lib/nextomic/storage
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: nextomic
+      POSTGRES_USER: nextomic
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextomic -d nextomic"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - nextomic-postgres:/var/lib/postgresql/data
+
+volumes:
+  nextomic-postgres:
+  nextomic-storage:

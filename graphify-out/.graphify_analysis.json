@@ -1,0 +1,567 @@
+{
+  "communities": {
+    "0": [
+      "blueprint_components",
+      "blueprint_inspiration",
+      "blueprint_pages",
+      "brand_assets",
+      "file_assets_brandings_png_brand_name_dark_png",
+      "file_assets_brandings_png_brand_name_light_png",
+      "file_assets_brandings_png_favicon_png",
+      "file_assets_brandings_png_mascot_dark_png",
+      "file_assets_brandings_png_mascot_light_png",
+      "file_assets_brandings_png_name_logo_dark_png",
+      "file_assets_brandings_png_name_logo_light_png",
+      "file_assets_brandings_svg_brand_name_dark_svg",
+      "file_assets_brandings_svg_brand_name_light_svg",
+      "file_assets_brandings_svg_favicon_svg",
+      "file_assets_brandings_svg_mascot_dark_svg",
+      "file_assets_brandings_svg_mascot_light_svg",
+      "file_assets_brandings_svg_name_logo_dark_svg",
+      "file_assets_brandings_svg_name_logo_light_svg",
+      "file_assets_brandings_webp_brand_name_dark_webp",
+      "file_assets_brandings_webp_brand_name_light_webp",
+      "file_assets_brandings_webp_favicon_webp",
+      "file_assets_brandings_webp_mascot_dark_webp",
+      "file_assets_brandings_webp_mascot_light_webp",
+      "file_assets_brandings_webp_name_logo_dark_webp",
+      "file_assets_brandings_webp_name_logo_light_webp",
+      "file_blueprint_components_accordion_png",
+      "file_blueprint_components_alert_png",
+      "file_blueprint_components_button_group_png",
+      "file_blueprint_components_buttons_png",
+      "file_blueprint_components_calendar_png",
+      "file_blueprint_components_carousel_png",
+      "file_blueprint_components_chips_png",
+      "file_blueprint_components_elements_panel_png",
+      "file_blueprint_components_pin_png",
+      "file_blueprint_components_progress_png",
+      "file_blueprint_components_range_slider_png",
+      "file_blueprint_components_section_1_png",
+      "file_blueprint_components_switch_png",
+      "file_blueprint_components_table_png",
+      "file_blueprint_components_toast_png",
+      "file_blueprint_components_tooltip_png",
+      "file_blueprint_design_system_design_system_sheet_png",
+      "file_blueprint_inspiration_bricks_editing_panel_png",
+      "file_blueprint_inspiration_flutterflow_action_flow_editor_png",
+      "file_blueprint_inspiration_flutterflow_app_settings_png",
+      "file_blueprint_inspiration_instatic_media_asset_manager_png",
+      "file_blueprint_pages_dashboard_png",
+      "file_blueprint_pages_editor_api_data_body_png",
+      "file_blueprint_pages_editor_api_data_header_png",
+      "file_blueprint_pages_editor_api_data_variables_png",
+      "file_blueprint_pages_editor_navigator_png",
+      "file_blueprint_pages_editor_supabase_png",
+      "file_blueprint_pages_projects_png",
+      "file_blueprint_tools_crop_py",
+      "file_builder_dependencies_json",
+      "file_codex_hooks_json",
+      "nextomic_builder_repository"
+    ],
+    "1": [
+      "file_docs_dependencies_md",
+      "file_docs_dependencies_md_section_1",
+      "file_docs_dependencies_md_section_13",
+      "file_docs_dependencies_md_section_5",
+      "file_docs_fonts_and_icons_md",
+      "file_docs_fonts_and_icons_md_section_1",
+      "file_docs_fonts_and_icons_md_section_12",
+      "file_docs_fonts_and_icons_md_section_37",
+      "file_docs_fonts_and_icons_md_section_69",
+      "file_docs_fonts_and_icons_md_section_7",
+      "file_docs_fonts_and_icons_md_section_75",
+      "file_docs_fonts_and_icons_md_section_81",
+      "file_docs_templates_and_themes_md",
+      "file_docs_templates_and_themes_md_section_1",
+      "file_docs_templates_and_themes_md_section_12",
+      "file_docs_templates_and_themes_md_section_156",
+      "file_docs_templates_and_themes_md_section_164",
+      "file_docs_templates_and_themes_md_section_39",
+      "file_docs_templates_and_themes_md_section_5",
+      "file_docs_templates_and_themes_md_section_75",
+      "project_specifications"
+    ],
+    "2": [
+      "file_docs_phases_md",
+      "file_docs_phases_md_section_1",
+      "file_docs_phases_md_section_100",
+      "file_docs_phases_md_section_111",
+      "file_docs_phases_md_section_119",
+      "file_docs_phases_md_section_128",
+      "file_docs_phases_md_section_138",
+      "file_docs_phases_md_section_148",
+      "file_docs_phases_md_section_155",
+      "file_docs_phases_md_section_23",
+      "file_docs_phases_md_section_37",
+      "file_docs_phases_md_section_52",
+      "file_docs_phases_md_section_61",
+      "file_docs_phases_md_section_7",
+      "file_docs_phases_md_section_74",
+      "file_docs_phases_md_section_83",
+      "file_docs_phases_md_section_91"
+    ],
+    "3": [
+      "docs_app_auth_route_protection",
+      "docs_design_system_bidirectional_css",
+      "docs_design_system_style_map",
+      "docs_dynamic_data_and_actions_query_model",
+      "docs_elements_component_registry",
+      "docs_elements_element_node",
+      "docs_fonts_and_icons_icon_libraries",
+      "docs_integrations_resource_binding",
+      "docs_platform_export_import",
+      "docs_spec_json_data_principle",
+      "docs_templates_and_themes_condition_set",
+      "docs_templates_and_themes_template_model",
+      "docs_templates_and_themes_theme_model",
+      "docs_ui_reference_breakpoint_manager",
+      "docs_ui_reference_editor_shell",
+      "docs_ui_reference_element_settings_panel"
+    ],
+    "4": [
+      "agents_workflow",
+      "file_agents_md",
+      "file_agents_md_section_1",
+      "file_agents_md_section_104",
+      "file_agents_md_section_113",
+      "file_agents_md_section_122",
+      "file_agents_md_section_129",
+      "file_agents_md_section_22",
+      "file_agents_md_section_30",
+      "file_agents_md_section_36",
+      "file_agents_md_section_51",
+      "file_agents_md_section_65",
+      "file_agents_md_section_7",
+      "file_agents_md_section_78",
+      "file_agents_md_section_96"
+    ],
+    "5": [
+      "claude_workflow",
+      "file_claude_md",
+      "file_claude_md_section_1",
+      "file_claude_md_section_104",
+      "file_claude_md_section_113",
+      "file_claude_md_section_122",
+      "file_claude_md_section_22",
+      "file_claude_md_section_30",
+      "file_claude_md_section_36",
+      "file_claude_md_section_51",
+      "file_claude_md_section_65",
+      "file_claude_md_section_7",
+      "file_claude_md_section_78",
+      "file_claude_md_section_96"
+    ],
+    "6": [
+      "docs_phases_delivery_plan",
+      "file_docs_integrations_md",
+      "file_docs_integrations_md_section_1",
+      "file_docs_integrations_md_section_102",
+      "file_docs_integrations_md_section_11",
+      "file_docs_integrations_md_section_112",
+      "file_docs_integrations_md_section_136",
+      "file_docs_integrations_md_section_144",
+      "file_docs_integrations_md_section_149",
+      "file_docs_integrations_md_section_154",
+      "file_docs_integrations_md_section_48",
+      "file_docs_integrations_md_section_5",
+      "file_docs_integrations_md_section_69",
+      "file_docs_integrations_md_section_96"
+    ],
+    "7": [
+      "docs_platform_builder_authentication",
+      "docs_platform_project_settings",
+      "file_docs_app_auth_md",
+      "file_docs_app_auth_md_section_1",
+      "file_docs_app_auth_md_section_100",
+      "file_docs_app_auth_md_section_118",
+      "file_docs_app_auth_md_section_122",
+      "file_docs_app_auth_md_section_125",
+      "file_docs_app_auth_md_section_54",
+      "file_docs_app_auth_md_section_61",
+      "file_docs_app_auth_md_section_64",
+      "file_docs_app_auth_md_section_7",
+      "file_docs_app_auth_md_section_71",
+      "file_docs_app_auth_md_section_94"
+    ],
+    "8": [
+      "file_docs_design_system_md",
+      "file_docs_design_system_md_section_1",
+      "file_docs_design_system_md_section_17",
+      "file_docs_design_system_md_section_3",
+      "file_docs_design_system_md_section_37",
+      "file_docs_design_system_md_section_44",
+      "file_docs_design_system_md_section_50",
+      "file_docs_design_system_md_section_61",
+      "file_docs_design_system_md_section_77",
+      "file_docs_design_system_md_section_8",
+      "file_docs_design_system_md_section_83",
+      "file_docs_design_system_md_section_87",
+      "file_docs_design_system_md_section_92",
+      "file_docs_design_system_md_section_95"
+    ],
+    "9": [
+      "agents_apps_editor",
+      "agents_built_sites_layer",
+      "agents_docs_dynamic_data_and_actions",
+      "agents_docs_spec",
+      "agents_docs_ui_reference",
+      "agents_document",
+      "agents_documentation",
+      "agents_dynamic_data",
+      "agents_graphify",
+      "agents_integrations_layer",
+      "agents_packages_integrations",
+      "agents_platform_layer",
+      "agents_security_boundaries"
+    ],
+    "10": [
+      "claude_apps_editor",
+      "claude_built_sites_layer",
+      "claude_docs_dynamic_data_and_actions",
+      "claude_docs_spec",
+      "claude_docs_ui_reference",
+      "claude_document",
+      "claude_documentation",
+      "claude_dynamic_data",
+      "claude_integrations_layer",
+      "claude_packages_integrations",
+      "claude_platform_layer",
+      "claude_security_boundaries"
+    ],
+    "11": [
+      "file_docs_platform_md",
+      "file_docs_platform_md_section_1",
+      "file_docs_platform_md_section_15",
+      "file_docs_platform_md_section_22",
+      "file_docs_platform_md_section_29",
+      "file_docs_platform_md_section_37",
+      "file_docs_platform_md_section_44",
+      "file_docs_platform_md_section_51",
+      "file_docs_platform_md_section_7",
+      "file_docs_platform_md_section_78",
+      "file_docs_platform_md_section_83",
+      "file_docs_platform_md_section_89"
+    ],
+    "12": [
+      "file_docs_dynamic_data_and_actions_md",
+      "file_docs_dynamic_data_and_actions_md_section_1",
+      "file_docs_dynamic_data_and_actions_md_section_118",
+      "file_docs_dynamic_data_and_actions_md_section_16",
+      "file_docs_dynamic_data_and_actions_md_section_23",
+      "file_docs_dynamic_data_and_actions_md_section_3",
+      "file_docs_dynamic_data_and_actions_md_section_30",
+      "file_docs_dynamic_data_and_actions_md_section_36",
+      "file_docs_dynamic_data_and_actions_md_section_56",
+      "file_docs_dynamic_data_and_actions_md_section_61",
+      "file_docs_dynamic_data_and_actions_md_section_68"
+    ],
+    "13": [
+      "file_docs_elements_md",
+      "file_docs_elements_md_section_1",
+      "file_docs_elements_md_section_44",
+      "file_docs_elements_md_section_5",
+      "file_docs_elements_md_section_53",
+      "file_docs_elements_md_section_60",
+      "file_docs_elements_md_section_89",
+      "file_docs_elements_md_section_96",
+      "file_docs_elements_md_section_99"
+    ],
+    "14": [
+      "file_docs_spec_md",
+      "file_docs_spec_md_section_1",
+      "file_docs_spec_md_section_17",
+      "file_docs_spec_md_section_31",
+      "file_docs_spec_md_section_59",
+      "file_docs_spec_md_section_7",
+      "file_docs_spec_md_section_82",
+      "file_docs_spec_md_section_91"
+    ],
+    "15": [
+      "file_docs_ui_reference_md",
+      "file_docs_ui_reference_md_section_1",
+      "file_docs_ui_reference_md_section_16",
+      "file_docs_ui_reference_md_section_203",
+      "file_docs_ui_reference_md_section_209",
+      "file_docs_ui_reference_md_section_35",
+      "file_docs_ui_reference_md_section_50",
+      "file_docs_ui_reference_md_section_7"
+    ],
+    "16": [
+      "docs_app_auth_auth_provider_contract",
+      "docs_integrations_connector_interface",
+      "docs_integrations_rest_connector",
+      "docs_integrations_supabase_connector",
+      "docs_spec_platform_integration_boundary"
+    ],
+    "17": [
+      "agents_component_registry",
+      "agents_json_data_model",
+      "agents_packages_schema",
+      "agents_schema_source_of_truth"
+    ],
+    "18": [
+      "blueprint_tools_crop",
+      "blueprint_tools_crop_rationale_1",
+      "pil",
+      "sys"
+    ],
+    "19": [
+      "claude_component_registry",
+      "claude_json_data_model",
+      "claude_packages_schema",
+      "claude_schema_source_of_truth"
+    ],
+    "20": [
+      "docs_app_auth_auth_actions",
+      "docs_dynamic_data_and_actions_action_flow",
+      "docs_ui_reference_action_flow_editor"
+    ],
+    "21": [
+      "docs_integrations_builder_proxy",
+      "docs_integrations_connector_secrets",
+      "docs_integrations_ssrf_protection"
+    ],
+    "22": [
+      "docs_dependencies_dependency_boundaries",
+      "docs_design_system_css_framework"
+    ],
+    "23": [
+      "docs_dynamic_data_and_actions_universal_dynamic_data",
+      "docs_elements_universal_bindability"
+    ],
+    "24": [
+      "assets_brandings_png_brand_name_dark_brand_name"
+    ],
+    "25": [
+      "docs_app_auth_secure_session_handling"
+    ],
+    "26": [
+      "docs_dependencies_isolated_custom_packages"
+    ],
+    "27": [
+      "docs_design_system_design_system_separation"
+    ],
+    "28": [
+      "docs_dynamic_data_and_actions_state_persistence"
+    ],
+    "29": [
+      "docs_fonts_and_icons_self_hosted_fonts"
+    ],
+    "30": [
+      "docs_spec_document"
+    ]
+  },
+  "cohesion_scores": {
+    "0": 0.06516290726817042,
+    "1": 0.09523809523809523,
+    "2": 0.11764705882352941,
+    "3": 0.125,
+    "4": 0.13333333333333333,
+    "5": 0.14285714285714285,
+    "6": 0.14285714285714285,
+    "7": 0.14285714285714285,
+    "8": 0.14285714285714285,
+    "9": 0.15384615384615385,
+    "10": 0.16666666666666666,
+    "11": 0.16666666666666666,
+    "12": 0.18181818181818182,
+    "13": 0.2222222222222222,
+    "14": 0.25,
+    "15": 0.25,
+    "16": 0.5,
+    "17": 0.5,
+    "18": 0.5,
+    "19": 0.5,
+    "20": 0.6666666666666666,
+    "21": 0.6666666666666666,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0
+  },
+  "community_labels": {
+    "0": "Visual Design Sources",
+    "1": "Dependencies and Assets",
+    "2": "Delivery Roadmap",
+    "3": "Element Data Model",
+    "4": "Repository Governance",
+    "5": "Repository Governance",
+    "6": "Integration Delivery",
+    "7": "Authentication Settings",
+    "8": "Builder Design System",
+    "9": "Platform Architecture",
+    "10": "Built App Architecture",
+    "11": "Platform Operations",
+    "12": "Dynamic Data and Actions",
+    "13": "Element Registry",
+    "14": "Product Specification",
+    "15": "Builder UI Reference",
+    "16": "Connector Contracts",
+    "17": "Schema Governance",
+    "18": "Blueprint Image Tooling",
+    "19": "Schema Governance",
+    "20": "Action Flow Editor",
+    "21": "Connector Security",
+    "22": "Dependency Boundary",
+    "23": "Universal Data Binding",
+    "24": "Brand Identity",
+    "25": "Session Security",
+    "26": "Isolated Package Builds",
+    "27": "Design System Boundary",
+    "28": "Application State",
+    "29": "Font Hosting",
+    "30": "Product Specification"
+  },
+  "god_nodes": [
+    {
+      "id": "nextomic_builder_repository",
+      "label": "Nextomic Builder repository",
+      "degree": 71
+    },
+    {
+      "id": "brand_assets",
+      "label": "Brand assets",
+      "degree": 22
+    },
+    {
+      "id": "blueprint_components",
+      "label": "Builder UI component references",
+      "degree": 17
+    },
+    {
+      "id": "project_specifications",
+      "label": "Project specifications",
+      "degree": 13
+    },
+    {
+      "id": "blueprint_pages",
+      "label": "Builder page references",
+      "degree": 8
+    },
+    {
+      "id": "blueprint_inspiration",
+      "label": "Builder interaction inspiration",
+      "degree": 5
+    },
+    {
+      "id": "agents_documentation",
+      "label": "Project documentation",
+      "degree": 4
+    },
+    {
+      "id": "agents_platform_layer",
+      "label": "Platform layer",
+      "degree": 4
+    },
+    {
+      "id": "claude_documentation",
+      "label": "Project documentation",
+      "degree": 4
+    },
+    {
+      "id": "claude_platform_layer",
+      "label": "Platform layer",
+      "degree": 4
+    }
+  ],
+  "surprising_connections": [
+    {
+      "source": "Fourteen-phase delivery plan",
+      "target": "Authentication for Built Apps",
+      "source_files": [
+        "docs/phases.md",
+        "docs/app-auth.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "AuthProvider contract",
+      "target": "REST connector and API Data",
+      "source_files": [
+        "docs/app-auth.md",
+        "docs/integrations.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "implements",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "AuthProvider contract",
+      "target": "Supabase connector",
+      "source_files": [
+        "docs/app-auth.md",
+        "docs/integrations.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "implements",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "Route protection",
+      "target": "Template model",
+      "source_files": [
+        "docs/app-auth.md",
+        "docs/templates-and-themes.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "cross-file semantic connection"
+    },
+    {
+      "source": "Authentication action catalog",
+      "target": "Action flow model and catalog",
+      "source_files": [
+        "docs/app-auth.md",
+        "docs/dynamic-data-and-actions.md"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "implements",
+      "why": "cross-file semantic connection"
+    }
+  ],
+  "suggested_questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `Nextomic Builder repository` connect `Visual Design Sources` to `Dependencies and Assets`, `Delivery Roadmap`, `Repository Governance`, `Repository Governance`, `Integration Delivery`, `Authentication Settings`, `Builder Design System`, `Platform Operations`, `Dynamic Data and Actions`, `Element Registry`, `Product Specification`, `Builder UI Reference`?",
+      "why": "High betweenness centrality (0.428) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `Built sites layer`, `Component registry`, `Universal dynamic data` to the rest of the system?",
+      "why": "181 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Visual Design Sources` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.06516290726817042 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Project specifications` connect `Dependencies and Assets` to `Visual Design Sources`, `Delivery Roadmap`, `Integration Delivery`, `Authentication Settings`, `Builder Design System`, `Platform Operations`, `Dynamic Data and Actions`, `Element Registry`, `Product Specification`, `Builder UI Reference`?",
+      "why": "High betweenness centrality (0.088) - this node is a cross-community bridge."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Dependencies and Assets` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Authentication for Built Apps` connect `Authentication Settings` to `Integration Delivery`?",
+      "why": "High betweenness centrality (0.013) - this node is a cross-community bridge."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Delivery Roadmap` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected."
+    }
+  ]
+}
