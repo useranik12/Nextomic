@@ -37,7 +37,7 @@ describe("breakpoints", () => {
       ...Array.from({ length: 8 }, (_, i) => ({
         id: `b${i}`,
         name: `B${i}`,
-        icon: "ph:desktop",
+        icon: "desktop",
         kind: "down" as const,
         width: 300 + i
       }))
@@ -48,8 +48,8 @@ describe("breakpoints", () => {
   it("orders the cascade base, up ascending, down descending", () => {
     const list = breakpointListSchema.parse([
       ...DEFAULT_BREAKPOINTS,
-      { id: "wide", name: "Wide", icon: "ph:desktop", kind: "up", width: 1600 },
-      { id: "large", name: "Large", icon: "ph:desktop", kind: "up", width: 1200 }
+      { id: "wide", name: "Wide", icon: "desktop", kind: "up", width: 1600 },
+      { id: "large", name: "Large", icon: "desktop", kind: "up", width: 1200 }
     ]);
     expect(breakpointCascade(list).map((b) => b.id)).toEqual([
       "base",

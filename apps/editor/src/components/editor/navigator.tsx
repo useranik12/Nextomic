@@ -1,0 +1,178 @@
+"use client";
+
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { getElementDefinition } from "@nextomic/renderer";
+import type { ElementNode } from "@nextomic/schema";
+import { memo, useMemo, useState } from "react";
+import { Icon } from "@/lib/icons/Icon";
+import { ROOT_END_ID, useDropTarget } from "./dnd";
+import { ElementIcon } from "./icons";
+import { useEditorStore } from "./store/editor-store";
+
+interface Row {
+  node: ElementNode;
+  depth: number;
+  hasChildren: boolean;
+}
+
+function flatten(
+  node: ElementNode,
+  collapsed: ReadonlySet<string>,
+  depth: number,
+  out: Row[]
+): Row[] {
+  for (const child of node.children) {
+    out.push({ node: child, depth, hasChildren: child.children.length > 0 });
+    if (!collapsed.has(child.id)) flatten(child, collapsed, depth + 1, out);
+  }
+  return out;
+}
+
+const NavigatorRow = memo(function NavigatorRow({
+  row,
+  selected,
+  collapsed,
+  onToggle
+}: {
+  row: Row;
+  selected: boolean;
+  collapsed: boolean;
+  onToggle: (id: string) => void;
+}) {
+  const { node, depth, hasChildren } = row;
+  const select = useEditorStore((s) => s.select);
+  const duplicate = useEditorStore((s) => s.duplicateElement);
+  const remove = useEditorStore((s) => s.removeElement);
+  const drop = useDropTarget();
+  const draggable = useDraggable({ id: node.id });
+  const droppable = useDroppable({ id: node.id });
+  const dropZone = drop?.id === node.id ? drop.zone : null;
+  const label = node.name ?? getElementDefinition(node.type)?.label ?? node.type;
+
+  return (
+    <div
+      ref={(el) => {
+        draggable.setNodeRef(el);
+        droppable.setNodeRef(el);
+      }}
+      role="treeitem"
+      aria-selected={selected}
+      aria-expanded={hasChildren ? !collapsed : undefined}
+      aria-level={depth + 1}
+      style={{ paddingLeft: depth * 14 + 4 }}
+      className={
+        "group relative flex h-8 items-center gap-1 rounded-medium pr-1 text-small transition-colors duration-300 " +
+        (selected ? "bg-default-200 text-foreground" : "text-default-600 hover:bg-default-100") +
+        (draggable.isDragging ? " opacity-40" : "") +
+        (dropZone === "inside" ? " ring-2 ring-primary" : "")
+      }
+    >
+      {dropZone === "before" || dropZone === "after" ? (
+        <span
+          className={`pointer-events-none absolute inset-x-1 h-0.5 rounded bg-primary ${dropZone === "before" ? "top-0" : "bottom-0"}`}
+        />
+      ) : null}
+      <button
+        type="button"
+        aria-label={collapsed ? "Expand" : "Collapse"}
+        tabIndex={hasChildren ? 0 : -1}
+        onClick={() => onToggle(node.id)}
+        className={`flex h-5 w-5 items-center justify-center rounded ${hasChildren ? "" : "invisible"}`}
+      >
+        <Icon
+          name="ph:caret-right"
+          width={12}
+          height={12}
+          className={collapsed ? "" : "rotate-90"}
+        />
+      </button>
+      <button
+        type="button"
+        onClick={() => select(node.id)}
+        className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-default-800"
+        {...draggable.attributes}
+        {...draggable.listeners}
+      >
+        <ElementIcon type={node.type} size={16} />
+        <span className="truncate">{label}</span>
+      </button>
+      <span className="hidden items-center group-focus-within:flex group-hover:flex">
+        <button
+          type="button"
+          aria-label={`Duplicate ${label}`}
+          onClick={() => duplicate(node.id)}
+          className="rounded p-1 text-default-500 hover:text-foreground"
+        >
+          <Icon name="ph:copy" width={14} height={14} />
+        </button>
+        <button
+          type="button"
+          aria-label={`Delete ${label}`}
+          onClick={() => remove(node.id)}
+          className="rounded p-1 text-default-500 hover:text-danger"
+        >
+          <Icon name="ph:trash" width={14} height={14} />
+        </button>
+      </span>
+    </div>
+  );
+});
+
+export function Navigator({ onOpenElements }: { onOpenElements: () => void }) {
+  const tree = useEditorStore((s) => s.doc?.tree ?? null);
+  const selectedId = useEditorStore((s) => s.selectedId);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const rootEnd = useDroppable({ id: ROOT_END_ID });
+  const drop = useDropTarget();
+
+  const rows = useMemo(() => (tree ? flatten(tree, collapsed, 0, []) : []), [tree, collapsed]);
+
+  function toggle(id: string) {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between px-3 py-2">
+        <h2 className="text-small font-medium text-foreground">Navigator</h2>
+        <button
+          type="button"
+          aria-label="Add element"
+          onClick={onOpenElements}
+          className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground"
+        >
+          <Icon name="ph:plus" width={16} height={16} />
+        </button>
+      </div>
+      <div
+        role="tree"
+        aria-label="Page elements"
+        className="min-h-0 flex-1 overflow-y-auto px-2 pb-2"
+      >
+        {rows.map((row) => (
+          <NavigatorRow
+            key={row.node.id}
+            row={row}
+            selected={row.node.id === selectedId}
+            collapsed={collapsed.has(row.node.id)}
+            onToggle={toggle}
+          />
+        ))}
+        <div
+          ref={rootEnd.setNodeRef}
+          className={
+            "mt-1 flex min-h-16 items-center justify-center rounded-medium border border-dashed text-tiny text-default-500 " +
+            (drop?.id === ROOT_END_ID ? "border-primary text-primary" : "border-default-200")
+          }
+        >
+          {rows.length === 0 ? "Click + or drag an element here" : "Drop here to add at the end"}
+        </div>
+      </div>
+    </div>
+  );
+}

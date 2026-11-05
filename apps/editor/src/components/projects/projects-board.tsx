@@ -23,7 +23,7 @@ import {
   createProjectAction,
   deleteProjectAction,
   renameProjectAction
-} from "@/app/(dashboard)/projects/actions";
+} from "@/app/(builder)/(dashboard)/projects/actions";
 import { formatOrdinalDate } from "@/lib/format";
 import { Icon } from "@/lib/icons/Icon";
 import { DeleteProjectModal } from "./delete-project-modal";
