@@ -31,7 +31,6 @@ export interface ElementDefinition {
   type: string;
   label: string;
   category: ElementCategory;
-  icon: string;
   /** Hidden from the Elements flyout (the page root). */
   hidden?: boolean;
   canHaveChildren: boolean;

@@ -3,6 +3,10 @@ import { z } from "zod";
 export const BASE_BREAKPOINT_ID = "base";
 export const MAX_BREAKPOINTS = 8;
 
+export const BREAKPOINT_ICONS = ["desktop", "laptop", "tablet", "mobile"] as const;
+export const breakpointIconSchema = z.enum(BREAKPOINT_ICONS);
+export type BreakpointIcon = z.infer<typeof breakpointIconSchema>;
+
 export const breakpointKindSchema = z.enum(["base", "down", "up"]);
 export type BreakpointKind = z.infer<typeof breakpointKindSchema>;
 
@@ -11,7 +15,7 @@ export type BreakpointKind = z.infer<typeof breakpointKindSchema>;
 export const breakpointDefSchema = z.object({
   id: z.string().min(1).max(40),
   name: z.string().trim().min(1).max(40),
-  icon: z.string().min(1).max(60),
+  icon: breakpointIconSchema,
   kind: breakpointKindSchema,
   width: z.number().int().min(1).max(10000).nullable(),
   previewWidth: z.number().int().min(200).max(10000).optional()
@@ -22,7 +26,7 @@ export const DEFAULT_BREAKPOINTS: BreakpointDef[] = [
   {
     id: BASE_BREAKPOINT_ID,
     name: "Desktop",
-    icon: "ph:desktop",
+    icon: "desktop",
     kind: "base",
     width: null,
     previewWidth: 1440
@@ -30,7 +34,7 @@ export const DEFAULT_BREAKPOINTS: BreakpointDef[] = [
   {
     id: "tablet",
     name: "Tablet",
-    icon: "ph:device-tablet",
+    icon: "tablet",
     kind: "down",
     width: 991,
     previewWidth: 768
@@ -38,7 +42,7 @@ export const DEFAULT_BREAKPOINTS: BreakpointDef[] = [
   {
     id: "mobile",
     name: "Mobile",
-    icon: "ph:device-mobile",
+    icon: "mobile",
     kind: "down",
     width: 575,
     previewWidth: 375

@@ -4,7 +4,7 @@ import type { ColorMode } from "@nextomic/schema";
 import { Radio, RadioGroup } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
-import { updateColorModeAction } from "@/app/(dashboard)/settings/actions";
+import { updateColorModeAction } from "@/app/(builder)/(dashboard)/settings/actions";
 
 export function AppearanceSettings({ initialColorMode }: { initialColorMode: ColorMode }) {
   const { setTheme } = useTheme();

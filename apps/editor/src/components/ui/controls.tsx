@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Input, type ButtonProps, type InputProps } from "@heroui/react";
-import { useState } from "react";
+import { useId, useState, type SelectHTMLAttributes } from "react";
 import { Icon } from "@/lib/icons/Icon";
 
 // The builder's text fields and buttons. Use these everywhere instead of raw HeroUI Input/Button
@@ -27,15 +27,83 @@ const INPUT_CLASSES: InputProps["classNames"] = {
   errorMessage: "px-2 text-tiny"
 };
 
-export function FormInput(props: InputProps) {
+// Dense variant for side panels: same outline behaviour, 32px high, label to the left is not used.
+const COMPACT_INPUT_CLASSES: InputProps["classNames"] = {
+  ...INPUT_CLASSES,
+  label: "pb-0.5 text-tiny font-medium !text-default-600",
+  inputWrapper:
+    "h-8 min-h-8 flex-row flex-nowrap items-center gap-2 rounded-full border-2 border-default-200 bg-transparent px-3 shadow-none transition-colors " +
+    "data-[hover=true]:border-default-400 group-data-[focus=true]:border-default-800 " +
+    "group-data-[focus=true]:ring-2 group-data-[focus=true]:ring-default-800/10 " +
+    "group-data-[invalid=true]:border-danger group-data-[invalid=true]:ring-0",
+  input:
+    "h-full min-w-0 flex-1 text-small text-foreground outline-none placeholder:text-default-400 data-[focus-visible=true]:outline-none"
+};
+
+export function FormInput({ compact, ...props }: InputProps & { compact?: boolean }) {
   return (
     <Input
       variant="bordered"
       labelPlacement="outside-top"
       placeholder=" "
-      classNames={INPUT_CLASSES}
+      classNames={compact ? COMPACT_INPUT_CLASSES : INPUT_CLASSES}
       {...props}
     />
+  );
+}
+
+export interface SelectFieldProps
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "onChange"> {
+  label: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onValueChange: (value: string) => void;
+  compact?: boolean;
+}
+
+// Native select with the same outline behaviour as FormInput (accessible by default).
+export function SelectField({
+  label,
+  options,
+  value,
+  onValueChange,
+  compact,
+  className,
+  id,
+  ...rest
+}: SelectFieldProps) {
+  const fallbackId = useId();
+  const selectId = id ?? fallbackId;
+  return (
+    <div className="flex flex-col gap-1">
+      <label
+        htmlFor={selectId}
+        className={
+          compact
+            ? "text-tiny font-medium text-default-600"
+            : "text-small font-medium text-foreground"
+        }
+      >
+        {label}
+      </label>
+      <select
+        id={selectId}
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        className={
+          (compact ? "h-8 px-3 text-small " : "h-11 px-5 text-base ") +
+          "w-full rounded-full border-2 border-default-200 bg-transparent text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800 focus:ring-2 focus:ring-default-800/10 " +
+          (className ?? "")
+        }
+        {...rest}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value} className="bg-content1 text-foreground">
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
