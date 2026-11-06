@@ -27,6 +27,8 @@ export interface RenderOptions {
   breakpoints: readonly BreakpointDef[];
   classes?: Readonly<Record<string, StyleMap>>;
   variables?: readonly ProjectVariable[];
+  /** Custom CSS files of the page, already filtered and joined (schema `customCssFor`). Written after the theme. */
+  customCss?: string;
   /** Project fonts; active ones become @font-face rules loading from `fontBase`. */
   fonts?: readonly ProjectFont[];
   /** URL prefix the font files are served from, no trailing slash, e.g. /fonts/<projectId>. */
@@ -107,6 +109,7 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
     fontsCss(options.fonts ?? [], fontBase) +
     variablesCss(options.variables ?? []) +
     (options.theme ? themeCss(options.theme, used) : "") +
+    (options.customCss ?? "") +
     pageCss(tree, options.breakpoints, options.classes, options.resolveToken);
   return (
     <>

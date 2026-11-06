@@ -213,6 +213,7 @@ export function CanvasDocument() {
         fonts={payload.fonts}
         fontBase={payload.fontBase}
         theme={payload.theme}
+        customCss={payload.customCss}
         dynamic={payload.dynamic}
       />
       <div id="nxt-drop" ref={markerRef} />

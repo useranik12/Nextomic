@@ -13,6 +13,7 @@ import { GroupBody } from "./group-body";
 import { AccordionSection } from "./accordion";
 import { AutoTextarea } from "./auto-textarea";
 import { AttributesEditor } from "./attributes-editor";
+import { ConvertToClass } from "./convert-to-class";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
@@ -282,6 +283,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 onToggle={toggleGroup}
               >
                 <CssEditor key={node.id} node={node} />
+                <ConvertToClass node={node} />
               </AccordionSection>
             ) : null}
             {q && groups.length === 0 ? (

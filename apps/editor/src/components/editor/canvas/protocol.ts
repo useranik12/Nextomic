@@ -32,6 +32,8 @@ export const renderMessageSchema = z.object({
   // URL prefix the font files load from, e.g. /fonts/<projectId>.
   fontBase: z.string().regex(/^\/fonts\/[A-Za-z0-9_-]+$/),
   theme: themeSchema.nullable(),
+  // Custom CSS files that apply to this page, joined in order.
+  customCss: z.string().max(10_000_000).default(""),
   // A mode id of the active theme (light and dark unless the theme defines others).
   mode: z.string().max(32),
   selectedId: z.string().nullable(),
@@ -96,6 +98,7 @@ export interface RenderPayload {
   classes: Record<string, StyleMap>;
   variables: ProjectVariable[];
   theme: Theme | null;
+  customCss: string;
   mode: string;
   selectedId: string | null;
   hideSelection: boolean;

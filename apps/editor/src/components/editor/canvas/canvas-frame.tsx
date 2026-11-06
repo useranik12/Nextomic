@@ -1,6 +1,12 @@
 "use client";
 
-import { breakpointPreviewWidth, buildDynamicContext, findNode, setStyle } from "@nextomic/schema";
+import {
+  breakpointPreviewWidth,
+  buildDynamicContext,
+  customCssFor,
+  findNode,
+  setStyle
+} from "@nextomic/schema";
 import {
   memo,
   useCallback,
@@ -63,6 +69,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const classes = useEditorStore((s) => s.project.classes);
   const variables = useEditorStore((s) => s.project.variables);
   const fonts = useEditorStore((s) => s.project.fonts);
+  const cssFiles = useEditorStore((s) => s.project.cssFiles);
+  const pageId = useEditorStore((s) => s.page?.id ?? null);
   const projectId = useEditorStore((s) => s.projectId);
   const theme = useResolvedTheme();
   const activeId = useEditorStore((s) => s.activeBreakpointId);
@@ -263,6 +271,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
       fonts,
       fontBase: `/fonts/${projectId}`,
       theme,
+      customCss: customCssFor(cssFiles, pageId),
       mode: themeModeFor(theme, mode),
       selectedId,
       hideSelection,
@@ -282,6 +291,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
     fonts,
     projectId,
     theme,
+    cssFiles,
+    pageId,
     mode,
     selectedId,
     hideSelection,

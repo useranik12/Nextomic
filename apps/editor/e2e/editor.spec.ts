@@ -383,3 +383,28 @@ test("navigator right-click selects, aspect ratio options, dynamic style value, 
   // The dynamic bolt on a design value is live.
   await expect(page.getByRole("button", { name: "Dynamic value for Width" })).toBeEnabled();
 });
+
+test("custom CSS file applies, and a heading's styles convert to a class", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+
+  await page.getByRole("button", { name: "Design System" }).click();
+  await page.getByRole("button", { name: /Custom CSS/ }).click();
+  await page.getByRole("button", { name: "New CSS file" }).click();
+  await page.getByLabel("CSS of styles-1.css").fill("h1,h2,h3,h4,h5,h6{letter-spacing:7px}");
+  await page.getByRole("button", { name: "Close the Design System" }).click();
+  await page.getByRole("button", { name: "Save and close" }).click();
+  await expect(canvas.getByRole("heading")).toHaveCSS("letter-spacing", "7px");
+
+  // Convert element styles to a class.
+  await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Size", exact: true }).click();
+  await page.getByLabel("Width", { exact: true }).fill("120");
+  await page.getByRole("button", { name: "CSS", exact: true }).click();
+  await page.getByLabel("Convert styles to a class").fill("wide");
+  await page.getByRole("button", { name: "Convert", exact: true }).click();
+  await expect(canvas.getByRole("heading")).toHaveCSS("width", "120px");
+  await expect(canvas.getByRole("heading")).toHaveClass(/wide/);
+});

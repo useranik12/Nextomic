@@ -20,6 +20,7 @@ const project: ProjectSettings = {
   variableCategories: [],
   variables: [],
   fonts: [],
+  cssFiles: [],
   themes: []
 };
 
