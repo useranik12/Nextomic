@@ -1,9 +1,11 @@
-import { walkElements, type ElementNode, type PageSettings } from "@nextomic/schema";
+import type { PageSettings } from "@nextomic/schema";
 
 export interface DynamicTag {
   token: string;
   label: string;
   hint: string;
+  /** How to use the tag; shown on hover. */
+  help?: string;
 }
 
 export interface DynamicGroup {
@@ -52,35 +54,23 @@ const BUILT_IN: DynamicGroup[] = [
     ]
   },
   {
+    id: "elements",
+    label: "Elements",
+    tags: [
+      {
+        token: "attr @ cssID:attribute-name",
+        label: "Target element's attribute",
+        hint: "attribute",
+        help: "Reads an attribute of another element. Write the tag, a space, @, a space, the element's CSS ID, a colon and the attribute name. Example: {{attr @ nxtomc-ab12cd34:aria-label}}. Replace cssID and attribute-name after inserting."
+      }
+    ]
+  },
+  {
     id: "environment",
     label: "Environment",
     tags: [{ token: "env.mode", label: "Mode (editor, preview, live)", hint: "text" }]
   }
 ];
-
-/** Attributes and props of the elements that have an ID, as `attr.NAME@ID` and `prop.NAME@ID`. */
-function elementTags(tree: ElementNode): DynamicTag[] {
-  const tags: DynamicTag[] = [];
-  walkElements(tree, (node) => {
-    if (!node.htmlId) return;
-    const who = node.name ?? node.type;
-    for (const name of Object.keys(node.attributes ?? {})) {
-      tags.push({
-        token: `attr.${name}@${node.htmlId}`,
-        label: `${who}: ${name}`,
-        hint: "attribute"
-      });
-    }
-    for (const name of Object.keys(node.props)) {
-      tags.push({
-        token: `prop.${name}@${node.htmlId}`,
-        label: `${who}: ${name}`,
-        hint: "content"
-      });
-    }
-  });
-  return tags;
-}
 
 /**
  * The groups a field can use. A field that holds a parameter or a state variable's own value
@@ -88,12 +78,9 @@ function elementTags(tree: ElementNode): DynamicTag[] {
  */
 export function dynamicGroups(
   settings: Pick<PageSettings, "params" | "state"> | undefined,
-  exclude: ("params" | "state")[] = [],
-  tree?: ElementNode | null
+  exclude: ("params" | "state")[] = []
 ): DynamicGroup[] {
   const groups: DynamicGroup[] = [];
-  const elements = tree ? elementTags(tree) : [];
-  if (elements.length > 0) groups.push({ id: "elements", label: "Elements", tags: elements });
   if (settings && !exclude.includes("params") && settings.params.length > 0)
     groups.push({
       id: "params",

@@ -137,13 +137,13 @@ describe("editor store", () => {
 });
 
 describe("rename and attributes", () => {
-  it("refuses empty or duplicate names, and an attribute gives the element an ID", () => {
+  it("refuses empty names, allows duplicates, and an attribute gives the element an ID", () => {
     const store = useEditorStore.getState();
     const a = store.insertElement("container");
     const b = store.insertElement("container");
     if (!a || !b) throw new Error("elements not created");
     expect(useEditorStore.getState().renameElement(a, "Hero")).toBe(true);
-    expect(useEditorStore.getState().renameElement(b, "hero")).toBe(false);
+    expect(useEditorStore.getState().renameElement(b, "Hero")).toBe(true);
     expect(useEditorStore.getState().renameElement(b, "  ")).toBe(false);
     useEditorStore.getState().patchProject({ generateElementIds: false });
     const c = useEditorStore.getState().insertElement("container");

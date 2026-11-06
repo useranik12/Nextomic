@@ -107,7 +107,7 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
     fontsCss(options.fonts ?? [], fontBase) +
     variablesCss(options.variables ?? []) +
     (options.theme ? themeCss(options.theme, used) : "") +
-    pageCss(tree, options.breakpoints, options.classes);
+    pageCss(tree, options.breakpoints, options.classes, options.resolveToken);
   return (
     <>
       {options.theme && options.bootScript ? (

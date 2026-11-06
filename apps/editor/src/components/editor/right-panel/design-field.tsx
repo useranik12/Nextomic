@@ -2,7 +2,7 @@
 
 import { builtinStyle } from "@nextomic/renderer";
 import type { ElementNode } from "@nextomic/schema";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { SelectField } from "@/components/ui/controls";
 import { WEIGHT_NAMES } from "../design-system/fonts/font-model";
 import { useEditorStore } from "../store/editor-store";
@@ -61,6 +61,7 @@ function useOptions(node: ElementNode, property: DesignProperty, own: string | u
 export function DesignField({ node, property }: { node: ElementNode; property: DesignProperty }) {
   const id = useId();
   const target = useDesignTarget(node);
+  const [focused, setFocused] = useState(false);
   const setStyle = useEditorStore((s) => s.setElementStyle);
   const { options, hidden } = useOptions(node, property, target.own(property.property));
   if (property.sides) {
@@ -159,13 +160,41 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
               />
             </div>
           ) : (
-            <input
-              id={id}
-              value={own ?? ""}
-              placeholder={inherited ?? builtin ?? property.placeholder}
-              onChange={(e) => set(e.target.value.trim() === "" ? null : e.target.value)}
-              className={bareFieldClass}
-            />
+            <div className="relative min-w-0 flex-1">
+              <input
+                id={id}
+                value={own ?? ""}
+                placeholder={inherited ?? builtin ?? property.placeholder}
+                onChange={(e) => set(e.target.value.trim() === "" ? null : e.target.value)}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                className={bareFieldClass}
+              />
+              {property.suggestions && focused ? (
+                <ul
+                  aria-label={`${property.label} options`}
+                  className="absolute inset-x-0 top-full z-30 mt-1 flex flex-wrap gap-1 rounded-medium border border-divider bg-content1 p-2 shadow-lg"
+                >
+                  {property.suggestions.map((option) => (
+                    <li key={option}>
+                      <button
+                        type="button"
+                        // Keep focus in the field so the list stays open while picking.
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => set(option)}
+                        aria-pressed={own === option}
+                        className={
+                          "rounded-full px-2.5 py-1 font-mono text-tiny transition-colors hover:bg-default-300 " +
+                          (own === option ? "bg-default-300" : "bg-default-100")
+                        }
+                      >
+                        {option}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
           )}
           <div className="flex h-9 shrink-0 items-center gap-0.5 pr-1">
             {kind === "color" ? (
@@ -188,13 +217,10 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
                 onChange={set}
               />
             ) : null}
-            {property.half ? null : (
-              <DynamicBolt
-                label={property.label}
-                onInsert={() => undefined}
-                disabledReason="Dynamic style values arrive with the dynamic data phase."
-              />
-            )}
+            <DynamicBolt
+              label={property.label}
+              onInsert={(token) => set(`${own ?? ""}{{${token}}}`)}
+            />
           </div>
         </div>
       )}

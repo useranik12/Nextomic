@@ -65,7 +65,7 @@ const NavigatorRow = memo(function NavigatorRow({
       style={{ paddingLeft: depth * 14 + 4 }}
       onContextMenu={(event) => {
         event.preventDefault();
-        if (depth > 0) openContextMenu(event.clientX, event.clientY, node.id);
+        openContextMenu(event.clientX, event.clientY, node.id);
       }}
       className={
         "group relative flex h-8 items-center gap-1 rounded-medium pr-1 text-small transition-colors duration-300 " +

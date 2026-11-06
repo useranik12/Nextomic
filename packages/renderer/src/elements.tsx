@@ -61,7 +61,7 @@ registerElement({
   htmlTags: HEADING_TAGS,
   defaults: () => ({ props: { text: "Heading" }, htmlTag: "h2", name: "Heading" }),
   propsSchema: z.object({ text: z.string() }),
-  controls: [{ key: "text", label: "Text", kind: "text" }, tagControl(HEADING_TAGS)],
+  controls: [{ key: "text", label: "Text", kind: "textarea" }, tagControl(HEADING_TAGS)],
   bindable: { text: true },
   render: ({ node, attrs, text }) => createElement(node.htmlTag ?? "h2", attrs, text("text"))
 });

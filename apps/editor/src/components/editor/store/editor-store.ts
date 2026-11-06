@@ -9,7 +9,6 @@ import {
   duplicateNode,
   findNode,
   generateHtmlId,
-  isElementNameTaken,
   indentNode,
   insertNode,
   moveNode,
@@ -122,7 +121,7 @@ interface EditorState {
   duplicateElement: (id: string) => void;
   copyElement: (id: string) => void;
   pasteElement: (parentId?: string) => void;
-  /** Renames an element; false (nothing changes) when the name is empty or another element has it. */
+  /** Renames an element; false (nothing changes) when the name is empty. Names need not be unique. */
   renameElement: (id: string, name: string) => boolean;
   /** The element whose name is being edited (context menu > Rename); the navigator row and panel header react. */
   renamingId: string | null;
@@ -230,6 +229,12 @@ export type PendingOp =
   | { type: "deleteClass"; name: string; to: string | null }
   | { type: "renameVariable"; from: string; to: string }
   | { type: "renameCssVars"; pairs: [string, string][] };
+
+/** What the user calls an element in messages: its name, else its type. */
+function elementLabel(doc: PageDoc | null, id: string): string {
+  const node = doc ? findNode(doc.tree, id)?.node : null;
+  return node ? (node.name ?? node.type) : "Element";
+}
 
 export const useEditorStore = create<EditorState>((set, get) => {
   /** Applies an edit to the document, recording history. Edits with the same key coalesce. */
@@ -437,13 +442,19 @@ export const useEditorStore = create<EditorState>((set, get) => {
       edit(null, (draft) => {
         copyId = duplicateNode(draft.tree, id, project.generateElementIds)?.id ?? null;
       });
-      if (copyId) set({ selectedId: copyId });
+      if (copyId) {
+        set({ selectedId: copyId });
+        get().showToast(`${elementLabel(get().doc, id)} duplicated`);
+      }
     },
 
     copyElement: (id) => {
       const { doc } = get();
       const found = doc ? findNode(doc.tree, id) : null;
-      if (found && found.parent) set({ clipboard: JSON.parse(JSON.stringify(found.node)) });
+      if (found && found.parent) {
+        set({ clipboard: JSON.parse(JSON.stringify(found.node)) });
+        get().showToast(`${found.node.name ?? found.node.type} copied to clipboard`);
+      }
     },
 
     pasteElement: (parentId) => {
@@ -467,16 +478,18 @@ export const useEditorStore = create<EditorState>((set, get) => {
         }
       });
       set({ selectedId: copy.id });
+      get().showToast(`${copy.name ?? copy.type} pasted`);
     },
 
     renameElement: (id, name) => {
       const { doc } = get();
       const trimmed = name.trim();
-      if (!doc || trimmed === "" || isElementNameTaken(doc.tree, trimmed, id)) return false;
+      if (!doc || trimmed === "") return false;
       edit(`name:${id}`, (draft) => {
         const found = findNode(draft.tree, id);
         if (found) found.node.name = trimmed;
       });
+      get().showToast(`Renamed to ${trimmed}`);
       return true;
     },
     renamingId: null,

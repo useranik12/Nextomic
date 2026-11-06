@@ -50,8 +50,8 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
       <p className="text-small text-default-600">
         {node.htmlId ? (
           <>
-            Use <code className="font-mono">{`{{attr.NAME@${node.htmlId}}}`}</code> to read an
-            attribute elsewhere.
+            Read an attribute elsewhere with{" "}
+            <code className="font-mono">{`{{attr @ ${node.htmlId}:name}}`}</code>.
           </>
         ) : (
           "Adding an attribute gives this element an ID, so other settings can read it."

@@ -350,3 +350,36 @@ test("link buttons apply at once, rename and attributes work", async ({ page }) 
   await page.getByPlaceholder("name, e.g. aria-label").fill("onclick");
   await expect(page.getByText("This attribute is not allowed")).toBeVisible();
 });
+
+test("navigator right-click selects, aspect ratio options, dynamic style value, same names", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page
+    .getByLabel("Elements", { exact: true })
+    .getByRole("button", { name: "Heading" })
+    .click();
+
+  // Right-click the first row: it becomes the selected element and the menu shows Rename.
+  await page.getByRole("treeitem").first().click({ button: "right" });
+  await expect(page.getByRole("treeitem").first()).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("menuitem", { name: "Duplicate" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "duplicated" })).toBeVisible();
+
+  // Two elements may share a name.
+  await page.getByLabel("Element name").first().fill("Same");
+  await page.getByLabel("Element name").first().press("Enter");
+  await expect(page.getByRole("status").filter({ hasText: "Renamed to Same" })).toBeVisible();
+
+  await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Size", exact: true }).click();
+  await page.getByLabel("Aspect ratio", { exact: true }).focus();
+  await page.getByRole("button", { name: "16 / 9", exact: true }).click();
+  await expect(page.getByLabel("Aspect ratio", { exact: true })).toHaveValue("16 / 9");
+
+  // The dynamic bolt on a design value is live.
+  await expect(page.getByRole("button", { name: "Dynamic value for Width" })).toBeEnabled();
+});

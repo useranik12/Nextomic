@@ -1,3 +1,4 @@
+import type { TokenResolver } from "./values";
 import {
   breakpointCascade,
   walkElements,
@@ -54,8 +55,17 @@ export function elementSelector(nodeId: string): string {
   return `[data-nid="${nodeId.replace(/[^A-Za-z0-9_-]/g, "")}"]`;
 }
 
-function declarations(styles: Record<string, string>): string {
+const STYLE_TOKEN = /\{\{\s*([^{}]+?)\s*\}\}/g;
+
+/** Replaces {{tokens}} in a style value with their text. Without a resolver a tokened value is dropped. */
+function resolveStyleValue(value: string, resolve: TokenResolver | undefined): string {
+  if (!value.includes("{{")) return value;
+  return resolve ? value.replace(STYLE_TOKEN, (_, token: string) => resolve(token)) : "";
+}
+
+function declarations(styles: Record<string, string>, resolve?: TokenResolver): string {
   return Object.entries(styles)
+    .map(([property, value]) => [property, resolveStyleValue(value, resolve)] as const)
     .filter(([, value]) => isSafeCssValue(value))
     .map(([property, value]) => `${property}:${value}`)
     .join(";");
@@ -71,23 +81,29 @@ export function classSelector(name: string): string {
 }
 
 /** CSS for one element: base first, then "up" ascending, then "down" descending (cascade order). */
-export function elementCss(node: ElementNode, breakpoints: readonly BreakpointDef[]): string {
-  return stylesCss(elementSelector(node.id), node.styles, breakpoints);
+export function elementCss(
+  node: ElementNode,
+  breakpoints: readonly BreakpointDef[],
+  resolve?: TokenResolver
+): string {
+  return stylesCss(elementSelector(node.id), node.styles, breakpoints, resolve);
 }
 
 /** CSS for a class, same cascade order as an element. */
 export function classCss(
   name: string,
   styles: StyleMap,
-  breakpoints: readonly BreakpointDef[]
+  breakpoints: readonly BreakpointDef[],
+  resolve?: TokenResolver
 ): string {
-  return stylesCss(classSelector(name), styles, breakpoints);
+  return stylesCss(classSelector(name), styles, breakpoints, resolve);
 }
 
 function stylesCss(
   selector: string,
   styles: StyleMap,
-  breakpoints: readonly BreakpointDef[]
+  breakpoints: readonly BreakpointDef[],
+  resolve?: TokenResolver
 ): string {
   const out: string[] = [];
   for (const def of breakpointCascade(breakpoints)) {
@@ -96,7 +112,7 @@ function stylesCss(
     const media = mediaQuery(def);
     const rules: string[] = [];
     for (const state of STATE_ORDER) {
-      const body = declarations(byState[state] ?? {});
+      const body = declarations(byState[state] ?? {}, resolve);
       if (body) rules.push(`${selector}${PSEUDO_SELECTOR[state]}{${body}}`);
     }
     if (rules.length === 0) continue;
@@ -111,15 +127,16 @@ function stylesCss(
 export function pageCss(
   root: ElementNode,
   breakpoints: readonly BreakpointDef[],
-  classes: Readonly<Record<string, StyleMap>> = {}
+  classes: Readonly<Record<string, StyleMap>> = {},
+  resolve?: TokenResolver
 ): string {
   const chunks: string[] = [];
   for (const [name, styles] of Object.entries(classes)) {
-    const css = classCss(name, styles, breakpoints);
+    const css = classCss(name, styles, breakpoints, resolve);
     if (css) chunks.push(css);
   }
   walkElements(root, (node) => {
-    const css = elementCss(node, breakpoints);
+    const css = elementCss(node, breakpoints, resolve);
     if (css) chunks.push(css);
   });
   return chunks.join("\n");
