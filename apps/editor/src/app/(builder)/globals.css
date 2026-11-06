@@ -21,3 +21,12 @@ button,
   transition-duration: 300ms;
   transition-timing-function: ease;
 }
+
+/* Anything clickable shows the pointer; Tailwind v4 resets buttons to the default cursor. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+[role="tab"],
+[role="menuitem"]:not(:disabled),
+summary {
+  cursor: pointer;
+}

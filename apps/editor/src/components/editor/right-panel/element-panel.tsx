@@ -13,6 +13,7 @@ import { useId, useMemo, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
+import { STATUS_DOT } from "../top-bar";
 import { DESIGN_GROUPS, type DesignProperty } from "./design-groups";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
@@ -183,6 +184,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const copy = useEditorStore((s) => s.copyElement);
   const paste = useEditorStore((s) => s.pasteElement);
   const remove = useEditorStore((s) => s.removeElement);
+  const saveStatus = useEditorStore((s) => s.saveStatus);
   const hasClipboard = useEditorStore((s) => s.clipboard !== null);
 
   const designDot = useMemo(
@@ -267,7 +269,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 <span
                   role="img"
                   aria-label="Has changes"
-                  className="absolute right-2.5 top-3 h-1.5 w-1.5 rounded-full bg-warning"
+                  className={`absolute right-2.5 top-3 h-1.5 w-1.5 rounded-full ${STATUS_DOT[saveStatus]}`}
                 />
               ) : null}
             </button>

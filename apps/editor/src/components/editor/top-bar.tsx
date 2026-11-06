@@ -32,10 +32,10 @@ const STATUS_LABEL: Record<SaveStatus, string> = {
   error: "Save failed",
   conflict: "Conflict"
 };
-const STATUS_DOT: Record<SaveStatus, string> = {
+export const STATUS_DOT: Record<SaveStatus, string> = {
   saved: "bg-success",
   dirty: "bg-warning",
-  saving: "bg-primary animate-pulse",
+  saving: "bg-default-400 animate-pulse",
   error: "bg-danger",
   conflict: "bg-danger"
 };
@@ -124,6 +124,7 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const setActive = useEditorStore((s) => s.setActiveBreakpoint);
   const doc = useEditorStore((s) => s.doc);
+  const status = useEditorStore((s) => s.saveStatus);
   return (
     <div className="flex items-center gap-1">
       <div
@@ -154,8 +155,8 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
                 <BreakpointGlyph icon={bp.icon} />
                 {dot ? (
                   <span
-                    aria-label="Has changes"
-                    className="absolute right-2 top-1.5 h-2 w-2 rounded-full bg-warning"
+                    aria-label={`Has changes: ${STATUS_LABEL[status]}`}
+                    className={`absolute right-2 top-1.5 h-2 w-2 rounded-full ${STATUS_DOT[status]}`}
                   />
                 ) : null}
               </button>
@@ -367,7 +368,7 @@ export function TopBar({
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-divider bg-background px-3">
+    <header className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-divider bg-background px-3">
       <div className="flex min-w-0 items-center gap-2">
         <Link
           href="/projects"
@@ -416,14 +417,16 @@ export function TopBar({
           )}
         </button>
         <UndoRedo />
-        <div className="hidden min-w-0 lg:block">
+        <div className="hidden min-w-0 xl:block">
           <SaveChip saveNow={saveNow} />
         </div>
       </div>
 
       <BreakpointSwitcher onManage={() => setManagerOpen(true)} />
 
-      <PublishControl projectId={projectId} saveNow={saveNow} onOpenHistory={onOpenHistory} />
+      <div className="flex justify-end">
+        <PublishControl projectId={projectId} saveNow={saveNow} onOpenHistory={onOpenHistory} />
+      </div>
 
       {managerOpen ? <BreakpointManager isOpen onClose={() => setManagerOpen(false)} /> : null}
       {settingsOpen && pageId ? (

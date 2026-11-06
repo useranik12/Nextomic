@@ -76,7 +76,19 @@ export function CanvasDocument() {
       const message = parsed.data;
       if (message.type === "render") setPayload(message);
       else if (message.type === "probe") probe(message.x, message.y);
-      else hideMarker();
+      else if (message.type === "measure") {
+        const el = document.querySelector(`[data-nid="${CSS.escape(message.id)}"]`);
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        postToHost({
+          type: "measure-result",
+          id: message.id,
+          x: rect.left + window.scrollX,
+          y: rect.top + window.scrollY,
+          width: rect.width,
+          height: rect.height
+        });
+      } else hideMarker();
     }
     window.addEventListener("message", onMessage);
     postToHost({ type: "ready" });

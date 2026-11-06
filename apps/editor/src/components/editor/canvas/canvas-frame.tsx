@@ -91,6 +91,15 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const frameRef = useRef({ width: frameWidth, height: frameHeight });
   frameRef.current = { width: frameWidth, height: frameHeight };
 
+  // Fit with an element selected frames that element; the host asks the canvas for its bounds.
+  const fitSelected = useCallback(() => {
+    if (selectedId && ready)
+      iframeRef.current?.contentWindow?.postMessage(
+        { type: "measure", id: selectedId } satisfies HostMessage,
+        "*"
+      );
+  }, [selectedId, ready]);
+
   const fit = useCallback(() => {
     if (viewport.width === 0) return;
     adjusted.current = false;
@@ -186,6 +195,25 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
             setPanning(false);
           }
           break;
+        case "measure-result": {
+          const { x, y, width, height } = message;
+          const vw = viewportRef.current?.clientWidth ?? 0;
+          const vh = viewportRef.current?.clientHeight ?? 0;
+          if (vw === 0 || vh === 0) break;
+          adjusted.current = true;
+          const zoom = clampZoom(
+            Math.min(
+              (vw - PADDING * 2) / Math.max(width, 1),
+              (vh - PADDING * 2) / Math.max(height, 1)
+            )
+          );
+          setView({
+            zoom,
+            x: (vw - width * zoom) / 2 - x * zoom,
+            y: (vh - height * zoom) / 2 - y * zoom
+          });
+          break;
+        }
         case "probe-result":
           if (insideCanvas.current)
             setCanvasDropTarget({ id: message.id ?? "", zone: message.zone });
@@ -321,7 +349,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
         onZoomOut={() => zoomBy(1 / 1.25)}
         onZoomIn={() => zoomBy(1.25)}
         onActualSize={() => zoomBy(1 / viewRef.current.zoom)}
-        onFit={fit}
+        onFit={selectedId ? fitSelected : fit}
         onRotate={() => setRotated((r) => !r)}
       />
     </div>

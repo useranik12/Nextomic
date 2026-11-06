@@ -172,8 +172,8 @@ export function IdentityField({ node }: { node: ElementNode }) {
               tone={CLASS_CHIP}
               ring="ring-sky-500"
               active={activeClass === name}
-              hint="Double-click to edit this class"
-              onActivate={() => setActiveClass(name)}
+              hint="Double-click to edit or release this class"
+              onActivate={() => setActiveClass(activeClass === name ? null : name)}
               onRemove={() => removeClass(node.id, name)}
             />
           ))}
@@ -205,7 +205,9 @@ function Chip({
   return (
     <li
       className={
-        "flex h-6 items-center rounded-full text-tiny " + tone + (active ? ` ring-2 ${ring}` : "")
+        "flex h-6 cursor-pointer items-center rounded-full text-tiny " +
+        tone +
+        (active ? ` ring-2 ${ring}` : "")
       }
     >
       <button
