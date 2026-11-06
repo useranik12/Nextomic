@@ -183,7 +183,21 @@ export function LibraryManager({
         <span role="status">
           {shown.length} shown
           {screenshots && queue.busy ? " · Making screenshots…" : ""}
-          {screenshots && queue.failed > 0 ? ` · ${queue.failed} screenshot(s) failed` : ""}
+          {screenshots && queue.failed > 0 ? (
+            <>
+              {" · "}
+              <span className="text-danger">
+                {queue.failed} screenshot(s) failed{queue.reason ? `: ${queue.reason}` : ""}
+              </span>{" "}
+              <button
+                type="button"
+                onClick={queue.retry}
+                className="underline hover:text-foreground"
+              >
+                Try again
+              </button>
+            </>
+          ) : null}
           {message ? <span className="ml-2 text-danger">{message}</span> : null}
         </span>
         {selected && view === "list" ? (

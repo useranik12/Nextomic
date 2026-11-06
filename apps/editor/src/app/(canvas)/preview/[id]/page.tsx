@@ -21,7 +21,12 @@ import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
 import { getPageByRoute, getProjectSettings, listPages, type StoredPage } from "@/server/pages";
 import { requestFacts } from "@/server/request-facts";
-import { layoutForNotFound, layoutForPage, type RequestFacts } from "@/server/site-layout";
+import {
+  layoutForNotFound,
+  layoutForPage,
+  resolveSeo,
+  type RequestFacts
+} from "@/server/site-layout";
 import { getDraftTemplates, getTemplate } from "@/server/templates";
 
 export const dynamic = "force-dynamic";
@@ -64,11 +69,37 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const search = await searchParams;
-  const { page } = await resolvePreview(
+  const { page, settings } = await resolvePreview(
     id,
     typeof search.path === "string" ? search.path : undefined
   );
-  const seo = page.settings.seo;
+  const values: Record<string, string> = {};
+  for (const [key, value] of Object.entries(search)) {
+    if (key !== "path" && typeof value === "string") values[key] = value;
+  }
+  const seo = resolveSeo({
+    tree: page.tree,
+    settings,
+    page: {
+      id: page.id,
+      name: page.name,
+      route: page.route,
+      settings: page.settings,
+      meta: {
+        id: page.id,
+        status: "draft",
+        createdBy: "",
+        createdAt: "",
+        updatedAt: page.updatedAt.toISOString(),
+        publishedAt: "",
+        categoryIds: page.settings.categoryIds,
+        tagIds: page.settings.tagIds
+      }
+    },
+    params: values,
+    request: requestFacts(await headers(), page.route, new URLSearchParams(values).toString()),
+    mode: "preview"
+  });
   return {
     title: seo.title || page.name,
     description: seo.description || undefined,
@@ -121,7 +152,7 @@ async function previewTemplate(
   return {
     tree:
       stored.type === "header"
-        ? composePage(sample, stored.tree, null)
+        ? composePage(sample, stored.tree, null, stored.settings.sticky)
         : composePage(sample, null, stored.tree),
     dynamic
   };

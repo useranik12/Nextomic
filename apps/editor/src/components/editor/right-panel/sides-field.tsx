@@ -125,11 +125,10 @@ export function SidesField({
   const inherited =
     set && target.inheritedDeclarations ? readSides(target.inheritedDeclarations, set) : null;
   const [link, setLink] = useState<Link | null>(null);
-  // The side the variable and dynamic tag buttons fill: the one touched last.
-  const [active, setActive] = useState(0);
   if (!set || !own) return null;
 
   const corners = set.kind === "corners";
+  const names = corners ? CORNER_NAME : SIDE_NAME;
   const mode: Link = link ?? (sidesRelation(own) === "free" ? "free" : sidesRelation(own));
   const changed = hasSides(target.ownDeclarations, set);
 
@@ -165,15 +164,6 @@ export function SidesField({
       responsive
       actions={
         <>
-          <VariablePicker
-            label={`${label} ${(corners ? CORNER_NAME : SIDE_NAME)[active]}`}
-            property={set.props[active] ?? set.props[0] ?? ""}
-            onPick={(ref) => edit(active, ref)}
-          />
-          <DynamicBolt
-            label={`${label} ${(corners ? CORNER_NAME : SIDE_NAME)[active]}`}
-            onInsert={(token) => edit(active, `${own[active] ?? ""}{{${token}}}`)}
-          />
           <div role="group" aria-label={`${label} sides`} className="flex items-center gap-0.5">
             {(["free", "pairs", "all"] as const).map((l) => (
               <LinkButton key={l} link={l} active={mode === l} onPick={() => pick(l)} />
@@ -202,18 +192,27 @@ export function SidesField({
               "absolute flex items-center rounded-medium " +
               (corners ? CORNER_POSITION[i] : SIDE_POSITION[i])
             }
-            onFocusCapture={() => setActive(i)}
-            onPointerDownCapture={() => setActive(i)}
           >
             <LengthInput
               compact
               property={prop}
-              ariaLabel={`${label} ${(corners ? CORNER_NAME : SIDE_NAME)[i]}`}
+              ariaLabel={`${label} ${names[i]}`}
               value={own[i]}
               placeholder={inherited?.[i]}
               onChange={(v) => edit(i, v)}
               fieldClass={CELL_FIELD}
             />
+            <div className="flex shrink-0 flex-col">
+              <VariablePicker
+                label={`${label} ${names[i]}`}
+                property={prop}
+                onPick={(ref) => edit(i, ref)}
+              />
+              <DynamicBolt
+                label={`${label} ${names[i]}`}
+                onInsert={(token) => edit(i, `${own[i] ?? ""}{{${token}}}`)}
+              />
+            </div>
           </div>
         ))}
       </div>

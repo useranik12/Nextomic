@@ -9,7 +9,8 @@ import { STATUS_LABEL } from "./library-filter";
 const STATUS_STYLE: Record<LibraryStatus, { chip: string; dot: string }> = {
   draft: { chip: "bg-default-200 text-default-700", dot: "bg-default-500" },
   published: { chip: "bg-success/15 text-success-600", dot: "bg-success" },
-  modified: { chip: "bg-warning/20 text-warning-700 dark:text-warning", dot: "bg-warning" }
+  modified: { chip: "bg-warning/20 text-warning-700 dark:text-warning", dot: "bg-warning" },
+  scheduled: { chip: "bg-primary/15 text-primary", dot: "bg-primary" }
 };
 
 export function StatusChip({ status }: { status: LibraryStatus }) {

@@ -202,12 +202,12 @@ export function MarkingGroup({
   }
 
   return (
-    <section aria-label="Marking" className="flex flex-col gap-2">
+    <section aria-label="Categories and tags" className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-small text-default-600">Marking</h3>
+        <h3 className="text-small text-default-600">Categories and tags</h3>
         <button
           type="button"
-          aria-label={open ? "Collapse marking" : "Expand marking"}
+          aria-label={open ? "Collapse categories and tags" : "Expand categories and tags"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
           className="rounded p-1 text-default-600 hover:text-foreground"

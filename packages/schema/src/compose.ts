@@ -1,10 +1,32 @@
 import type { ElementNode } from "./element";
+import type { StickyHeader } from "./template";
 
 // Layout composition: the page content goes inside <main>, with the header above and the footer
 // below (docs/templates-and-themes.md 4.3). It works on plain element trees so the editor preview,
 // the published site and the exporter all build the same document.
 
 export const MAIN_ID = "main-content";
+/** Attribute on the header wrapper holding the sticky settings as JSON (read by the runtime). */
+export const STICKY_ATTRIBUTE = "data-nxt-sticky";
+
+/** What the runtime reads from the sticky attribute. */
+export interface StickyHeaderSpec {
+  after: string;
+  slideAfter: string;
+  animation: string;
+  duration: number;
+  onScroll: boolean;
+}
+
+export function stickySpecOf(sticky: StickyHeader): StickyHeaderSpec {
+  return {
+    after: sticky.stickyAfter,
+    slideAfter: sticky.slideAfter,
+    animation: sticky.animation,
+    duration: sticky.duration,
+    onScroll: sticky.onScroll
+  };
+}
 
 const wrapper = (
   id: string,
@@ -44,17 +66,46 @@ const skipLink = (): ElementNode => ({
 export function composePage(
   page: ElementNode,
   header: ElementNode | null,
-  footer: ElementNode | null
+  footer: ElementNode | null,
+  headerSticky?: StickyHeader | null
 ): ElementNode {
   if (!header && !footer) return page;
   const children: ElementNode[] = [];
   if (header) {
     children.push(skipLink());
-    children.push(wrapper("layout-header", "header", header.children));
+    if (headerSticky?.enabled) {
+      // The inner box is what sticks; the outer one keeps the header's place in the page.
+      children.push({
+        ...wrapper("layout-header", "header", [
+          wrapper("layout-header-inner", "div", header.children)
+        ]),
+        attributes: { [STICKY_ATTRIBUTE]: JSON.stringify(stickySpecOf(headerSticky)) }
+      });
+    } else children.push(wrapper("layout-header", "header", header.children));
   }
   children.push(wrapper("layout-main", "main", page.children, MAIN_ID));
   if (footer) children.push(wrapper("layout-footer", "footer", footer.children));
   return { ...page, children };
+}
+
+/**
+ * For the editor canvas: the header and footer above and below the page, as plain siblings of the
+ * page content, so every page element keeps its place and parent. They are shown, not editable.
+ */
+export function composeForEditor(
+  page: ElementNode,
+  header: ElementNode | null,
+  footer: ElementNode | null
+): ElementNode {
+  if (!header && !footer) return page;
+  return {
+    ...page,
+    children: [
+      ...(header ? [wrapper("layout-header", "header", header.children)] : []),
+      ...page.children,
+      ...(footer ? [wrapper("layout-footer", "footer", footer.children)] : [])
+    ]
+  };
 }
 
 /** The shown 404 page when the project has no published 404 template. */

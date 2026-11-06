@@ -277,3 +277,8 @@ export function createTokenResolver(context: DynamicContext): (token: string) =>
     }
   };
 }
+
+/** Replaces every {{tag}} in a text with what the resolver gives for it. */
+export function fillTokens(text: string, resolve: (token: string) => string): string {
+  return text.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (_match, token: string) => resolve(token));
+}

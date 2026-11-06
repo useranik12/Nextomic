@@ -9,11 +9,12 @@ import {
 import { useEffect, useState } from "react";
 import { listTemplatesAction } from "@/app/(builder)/editor/[id]/library-actions";
 import { SelectField } from "@/components/ui/controls";
-import { SwitchRow } from "@/components/ui/switch-row";
 import type { TemplateSummary } from "@/server/templates";
 import { RuleBuilder } from "../rules/rule-builder";
 import { useEditorStore } from "../store/editor-store";
 import { MarkingGroup } from "./marking-group";
+import { StatusField } from "./status-field";
+import { StickyHeaderGroup } from "./sticky-header-group";
 import { compactFieldClass } from "./setting-row";
 
 /** Header and footer choice: the one that applies by its rules, none, or a specific template. */
@@ -90,11 +91,11 @@ export function TemplateOptions() {
       <section aria-label="Template" className="flex flex-col gap-3">
         <h3 className="text-small text-default-600">Template</h3>
         <p className="text-small text-foreground">{TEMPLATE_TYPE_LABELS[type]}</p>
-        <SwitchRow
-          label="Published"
-          tip="A draft template is never used on a page. Publishing the project sends only published templates live."
-          selected={settings.status === "published"}
-          onChange={(on) => set({ status: on ? "published" : "draft" })}
+        <StatusField
+          status={settings.status}
+          scheduledAt={settings.scheduledAt}
+          onChange={(change) => set(change)}
+          tip="A draft template is never used on a page. Scheduled templates apply from their time."
         />
         {type === "error-404" ? null : (
           <label className="flex flex-col gap-1 text-tiny text-default-600">
@@ -140,6 +141,9 @@ export function TemplateOptions() {
       ) : (
         <RuleBuilder value={settings.rules} onChange={(rules) => set({ rules })} />
       )}
+      {type === "header" ? (
+        <StickyHeaderGroup value={settings.sticky} onChange={(sticky) => set({ sticky })} />
+      ) : null}
       <MarkingGroup
         scope="template"
         categoryIds={settings.categoryIds}

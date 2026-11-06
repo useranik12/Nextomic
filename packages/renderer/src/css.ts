@@ -45,7 +45,7 @@ export function builtinStyle(
 }
 
 /** Minimal base for built pages. The editor canvas uses the same rules so it matches the output. */
-export const BASE_CSS = `*,*::before,*::after{box-sizing:border-box}html,body{margin:0}:where([data-nid]:is(${FLEX_COLUMN_TAGS.join(",")})){display:flex;flex-direction:column}body{display:flow-root;background:#fff;color:#111;font-family:system-ui,sans-serif}.nxt-skip-link{position:absolute;left:8px;top:-48px;z-index:1000;padding:8px 14px;border-radius:8px;background:#111;color:#fff;text-decoration:none}.nxt-skip-link:focus{top:8px}.nxt-404{min-height:100vh;align-items:center;justify-content:center;text-align:center;gap:8px}`;
+export const BASE_CSS = `*,*::before,*::after{box-sizing:border-box}html,body{margin:0}:where([data-nid]:is(${FLEX_COLUMN_TAGS.join(",")})){display:flex;flex-direction:column}body{display:flow-root;background:#fff;color:#111;font-family:system-ui,sans-serif}.nxt-skip-link{position:absolute;left:8px;top:-48px;z-index:1000;padding:8px 14px;border-radius:8px;background:#111;color:#fff;text-decoration:none}.nxt-skip-link:focus{top:8px}.nxt-sticky-fixed{position:fixed;top:0;left:0;right:0;z-index:100}.nxt-404{min-height:100vh;align-items:center;justify-content:center;text-align:center;gap:8px}`;
 
 export function isSafeCssValue(value: string): boolean {
   return value.trim() !== "" && !UNSAFE_VALUE.test(value);

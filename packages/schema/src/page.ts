@@ -1,3 +1,4 @@
+import { ITEM_STATUSES, scheduledAtSchema } from "./status";
 import { layoutChoiceSchema } from "./template";
 import { z } from "zod";
 import { elementNodeSchema, type ElementNode } from "./element";
@@ -39,13 +40,14 @@ export const ROUTE_PATTERN = /^\/([a-z0-9._~-]+(\/[a-z0-9._~-]+)*)?$/i;
 
 export const pageRouteSchema = z.string().max(300).regex(ROUTE_PATTERN, "Use a path like /about");
 
+/** An http(s) URL or a path; a value that starts with a dynamic tag is checked after the tag is filled in. */
+export const isSafeUrl = (v: string): boolean =>
+  v === "" || v.startsWith("/") || v.startsWith("{{") || /^https?:\/\//i.test(v);
+
 const safeUrlField = z
   .string()
   .max(500)
-  .refine(
-    (v) => v === "" || v.startsWith("/") || /^https?:\/\//i.test(v),
-    "Use an http(s) URL or a path starting with /"
-  );
+  .refine(isSafeUrl, "Use an http(s) URL or a path starting with /");
 
 export const pageSeoSchema = z.object({
   title: z.string().max(120).default(""),
@@ -58,14 +60,15 @@ export const pageSeoSchema = z.object({
 });
 export type PageSeo = z.infer<typeof pageSeoSchema>;
 
-export const pageSettingsSchema = z.object({
+const pageSettingsShape = z.object({
   seo: pageSeoSchema.default({}),
   locale: z
     .string()
     .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, "Use a language code like en or en-US")
     .default("en"),
   description: z.string().max(500).default(""),
-  includeInPublish: z.boolean().default(true),
+  status: z.enum(ITEM_STATUSES).default("published"),
+  scheduledAt: scheduledAtSchema,
   isHome: z.boolean().default(false),
   requiresAuth: z.boolean().default(false),
   // Forced theme id; null means Auto (conditions, then the default theme).
@@ -83,7 +86,15 @@ export const pageSettingsSchema = z.object({
   params: z.array(pageParamSchema).max(20).default([]),
   state: z.array(pageStateVariableSchema).max(100).default([])
 });
-export type PageSettings = z.infer<typeof pageSettingsSchema>;
+/** Older pages stored `includeInPublish: false` for a draft; that reads as status draft. */
+export const pageSettingsSchema = z.preprocess((raw) => {
+  if (raw && typeof raw === "object" && "includeInPublish" in raw) {
+    const { includeInPublish, ...rest } = raw as Record<string, unknown>;
+    return "status" in rest || includeInPublish !== false ? rest : { ...rest, status: "draft" };
+  }
+  return raw;
+}, pageSettingsShape);
+export type PageSettings = z.infer<typeof pageSettingsShape>;
 
 export const pageNameSchema = z.string().trim().min(1).max(100);
 

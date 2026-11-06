@@ -5,10 +5,13 @@ import {
   buildDynamicContext,
   defaultNotFoundTree,
   emptyPageTree,
+  fillTokens,
+  isSafeUrl,
   resolveLayout,
   resolveNotFound,
   type DynamicContext,
   type ElementNode,
+  type PageSeo,
   type PageSettings,
   type ProjectSettings,
   type PublishedTemplate,
@@ -174,8 +177,50 @@ export function layoutForPage(input: PageLayoutInput): {
     ctx
   );
   return {
-    tree: composePage(input.tree, layout.header?.tree ?? null, layout.footer?.tree ?? null),
+    tree: composePage(
+      input.tree,
+      layout.header?.tree ?? null,
+      layout.footer?.tree ?? null,
+      layout.header?.settings.sticky
+    ),
     dynamic
+  };
+}
+
+/** The page's SEO fields with dynamic tags filled in. A link that resolves to something unsafe is dropped. */
+export function resolveSeo(
+  input: Pick<PageLayoutInput, "tree" | "settings" | "page" | "params" | "request" | "mode">
+): PageSeo {
+  const dynamic = buildDynamicContext({
+    page: {
+      name: input.page.name,
+      route: input.page.route,
+      settings: input.page.settings,
+      meta: metaFields(
+        input.page.meta,
+        input.settings.taxonomy.pageCategories,
+        input.settings.taxonomy.pageTags
+      )
+    },
+    tree: input.tree,
+    mode: input.mode,
+    paramValues: input.params,
+    query: input.request.query
+  });
+  const fill = (text: string) => fillTokens(text, createTokenResolver(dynamic)).trim();
+  const url = (text: string) => {
+    const value = fill(text);
+    return isSafeUrl(value) && !value.startsWith("{{") ? value : "";
+  };
+  const seo = input.page.settings.seo;
+  return {
+    title: fill(seo.title),
+    description: fill(seo.description),
+    canonical: url(seo.canonical),
+    robots: seo.robots,
+    ogTitle: fill(seo.ogTitle),
+    ogDescription: fill(seo.ogDescription),
+    ogImage: url(seo.ogImage)
   };
 }
 
@@ -213,7 +258,12 @@ export function layoutForNotFound(input: {
     ctx
   );
   return {
-    tree: composePage(found.tree, layout.header?.tree ?? null, layout.footer?.tree ?? null),
+    tree: composePage(
+      found.tree,
+      layout.header?.tree ?? null,
+      layout.footer?.tree ?? null,
+      layout.header?.settings.sticky
+    ),
     dynamic,
     themeId: found.settings.themeId
   };

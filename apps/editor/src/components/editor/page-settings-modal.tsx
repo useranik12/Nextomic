@@ -18,7 +18,8 @@ import {
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
 import { openPage } from "./open-item";
-import { HeaderFooterFields, useTemplateList } from "./right-panel/template-options";
+import { BoltInput } from "./right-panel/bolt-input";
+import { StatusField } from "./right-panel/status-field";
 import { useEditorStore } from "./store/editor-store";
 import type { PageSummary } from "@/server/pages";
 
@@ -104,6 +105,7 @@ function VersionLimit() {
           />
         </div>
         <FormInput
+          compact
           aria-label="History limit"
           type="number"
           min={VERSION_LIMIT_MIN}
@@ -146,7 +148,6 @@ export function PageSettingsModal({
   const updateMeta = useEditorStore((s) => s.updatePageMeta);
   const updateSettings = useEditorStore((s) => s.updatePageSettings);
   const themes = useEditorStore((s) => s.project.themes);
-  const templates = useTemplateList();
   const route = useEditorStore((s) => s.doc?.route ?? "/");
   const auto = resolveTheme(themes, { pageId: pageId ?? "", route }).theme;
   const themeLabel = auto ? `Auto (${auto.name})` : "Auto";
@@ -208,26 +209,27 @@ export function PageSettingsModal({
     >
       <ModalContent>
         <ModalHeader>Page settings</ModalHeader>
-        <ModalBody className="gap-5">
+        <ModalBody className="gap-3">
           <SectionTitle>General</SectionTitle>
           <FormInput
+            compact
             label="Name"
             value={doc.name}
             onValueChange={(name) => updateMeta({ name })}
             isInvalid={!nameValid}
             errorMessage={nameValid ? undefined : "A page needs a name."}
           />
-          <FormInput
+          <BoltInput
             label="Internal description"
             value={doc.settings.description}
             onValueChange={(description) => updateSettings({ description })}
           />
-          <Switch
-            isSelected={doc.settings.includeInPublish}
-            onValueChange={(includeInPublish) => updateSettings({ includeInPublish })}
-          >
-            Include in publish
-          </Switch>
+          <StatusField
+            status={doc.settings.status}
+            scheduledAt={doc.settings.scheduledAt}
+            onChange={(change) => updateSettings(change)}
+            tip="Draft pages stay out of publishing. Publish, Save as draft and Unpublish in the top bar act on the project."
+          />
           <Switch
             isSelected={doc.settings.isHome}
             onValueChange={(isHome) => updateSettings({ isHome })}
@@ -235,14 +237,14 @@ export function PageSettingsModal({
             Home page
           </Switch>
           <SectionTitle>SEO</SectionTitle>
-          <FormInput
+          <BoltInput
             label="SEO title"
             value={seo.title}
             onValueChange={(title) => setSeo({ title })}
             isInvalid={seo.title.length > 120}
             errorMessage={seo.title.length > 120 ? "Keep it under 120 characters." : undefined}
           />
-          <FormInput
+          <BoltInput
             label="Meta description"
             value={seo.description}
             onValueChange={(description) => setSeo({ description })}
@@ -251,7 +253,7 @@ export function PageSettingsModal({
               seo.description.length > 300 ? "Keep it under 300 characters." : undefined
             }
           />
-          <FormInput
+          <BoltInput
             label="Canonical URL"
             placeholder="https://example.com/page"
             value={seo.canonical}
@@ -260,6 +262,7 @@ export function PageSettingsModal({
             errorMessage={urlError("canonical")}
           />
           <SelectField
+            compact
             label="Search engines"
             value={seo.robots}
             onValueChange={(robots) =>
@@ -270,32 +273,26 @@ export function PageSettingsModal({
               { value: "noindex", label: "Hide from search (noindex)" }
             ]}
           />
-          <FormInput
+          <BoltInput
             label="Social title"
             value={seo.ogTitle}
             onValueChange={(ogTitle) => setSeo({ ogTitle })}
           />
-          <FormInput
+          <BoltInput
             label="Social description"
             value={seo.ogDescription}
             onValueChange={(ogDescription) => setSeo({ ogDescription })}
           />
-          <FormInput
+          <BoltInput
             label="Social image URL"
             value={seo.ogImage}
             onValueChange={(ogImage) => setSeo({ ogImage })}
             isInvalid={Boolean(urlError("ogImage"))}
             errorMessage={urlError("ogImage")}
           />
-          <SectionTitle>Header and footer</SectionTitle>
-          <HeaderFooterFields
-            header={doc.settings.header}
-            footer={doc.settings.footer}
-            templates={templates}
-            onChange={(change) => updateSettings(change)}
-          />
           <SectionTitle>Appearance</SectionTitle>
           <SelectField
+            compact
             label="Theme"
             value={doc.settings.themeId ?? ""}
             onValueChange={(themeId) => updateSettings({ themeId: themeId || null })}
@@ -308,6 +305,7 @@ export function PageSettingsModal({
           <VersionLimit />
           <SectionTitle>Language</SectionTitle>
           <SelectField
+            compact
             label="Page language"
             value={doc.settings.locale}
             onValueChange={(locale) => updateSettings({ locale })}

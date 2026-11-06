@@ -85,7 +85,8 @@ export function filterLibrary(items: readonly LibraryItem[], q: LibraryQuery): L
 export const STATUS_LABEL: Record<LibraryStatus, string> = {
   draft: "Draft",
   published: "Published",
-  modified: "Modified"
+  modified: "Modified",
+  scheduled: "Scheduled"
 };
 
 export function formatDate(iso: string | null): string {

@@ -7,6 +7,7 @@ export * from "./style";
 export * from "./breakpoint";
 export * from "./element";
 export * from "./page";
+export * from "./status";
 export * from "./project-settings";
 export * from "./tree";
 export * from "./css-text";

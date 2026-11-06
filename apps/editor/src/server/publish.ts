@@ -1,5 +1,6 @@
 import {
   elementNodeSchema,
+  isLive,
   themeCss,
   usedClassNames,
   pageSettingsSchema,
@@ -41,7 +42,7 @@ export function snapshotOfPage(row: {
   tree: unknown;
 }) {
   const settings = pageSettingsSchema.parse(row.settings);
-  if (!settings.includeInPublish) return null;
+  if (settings.status === "draft") return null;
   return { name: row.name, route: row.route, settings, tree: elementNodeSchema.parse(row.tree) };
 }
 
@@ -182,8 +183,10 @@ export async function getPublishedView(
     .leftJoin(user, eq(user.id, pages.createdBy))
     .where(eq(pages.projectId, projectId))
     .orderBy(asc(pages.createdAt));
+  const now = Date.now();
   const snapshots = rows.flatMap((row) =>
-    row.snapshot
+    // A scheduled page is part of the live snapshot but is only served once its time has come.
+    row.snapshot && isLive(pageSettingsSchema.parse(row.snapshot.settings), now)
       ? [
           {
             ...row.snapshot,
