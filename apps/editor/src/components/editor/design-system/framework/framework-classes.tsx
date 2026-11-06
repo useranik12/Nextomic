@@ -9,11 +9,13 @@ import {
 import { useMemo, useState } from "react";
 import { ActionButton, FormInput } from "@/components/ui/controls";
 import { useEditorStore } from "../../store/editor-store";
+import { useDesignNav } from "../design-nav";
 
 /** Classes found in the framework stylesheet, grouped by prefix, with their rules and an add action. */
 export function FrameworkClasses({ framework }: { framework: Framework }) {
   const css = useMemo(() => frameworkStylesheet(framework), [framework]);
   const all = useMemo(() => frameworkClasses(css), [css]);
+  const nav = useDesignNav();
   const selectedId = useEditorStore((s) => s.selectedId);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
@@ -49,10 +51,19 @@ export function FrameworkClasses({ framework }: { framework: Framework }) {
                   <button
                     type="button"
                     className="min-w-0 truncate text-left font-mono text-tiny hover:underline"
-                    aria-expanded={open === name}
-                    onClick={() => setOpen(open === name ? null : name)}
+                    title="Open in the Classes manager"
+                    onClick={() => nav.go("classes", { className: name })}
                   >
                     .{name}
+                  </button>
+                  <button
+                    type="button"
+                    aria-expanded={open === name}
+                    aria-label={`Show the rules of .${name}`}
+                    onClick={() => setOpen(open === name ? null : name)}
+                    className="shrink-0 rounded-medium px-2 text-tiny text-default-500 hover:bg-default-100"
+                  >
+                    {open === name ? "Hide CSS" : "CSS"}
                   </button>
                   <ActionButton
                     size="sm"

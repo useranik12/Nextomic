@@ -33,7 +33,8 @@ describe("upload", () => {
     const font = await storeUploadedFont("p1", meta, [{ data: woff2 }]);
     expect(font.id).toBe("acme-sans");
     expect(font.files[0]?.format).toBe("woff2");
-    expect(stored.has("fonts/p1/acme-sans/400-normal.woff2")).toBe(true);
+    expect(font.files[0]?.file).toMatch(/^400-normal-[0-9a-f]{6}\.woff2$/);
+    expect(stored.has(`fonts/p1/acme-sans/${font.files[0]?.file}`)).toBe(true);
   });
 
   it("refuses content that is not a font, whatever the name says", async () => {

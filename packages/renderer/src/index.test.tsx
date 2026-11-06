@@ -151,6 +151,7 @@ describe("PageRenderer", () => {
 describe("themes", () => {
   const theme = {
     ...newTheme("t", "Brand", []),
+    darkMode: true,
     variables: { bg: { dark: "#000" } }
   };
 
@@ -177,6 +178,8 @@ describe("fonts in output", () => {
     category: "sans-serif" as const,
     license: "",
     active: true,
+    favorite: false,
+    rights: true,
     preload: true,
     display: "swap" as const,
     files: [

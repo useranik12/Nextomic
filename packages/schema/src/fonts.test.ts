@@ -20,6 +20,8 @@ const inter: ProjectFont = {
   category: "sans-serif",
   license: "OFL-1.1",
   active: true,
+  favorite: false,
+  rights: true,
   preload: true,
   display: "swap",
   files: [
@@ -118,5 +120,15 @@ describe("usage", () => {
         "Inter"
       )
     ).toBe(1);
+  });
+});
+
+describe("font rights", () => {
+  it("writes nothing for a font whose use is not confirmed", () => {
+    const font = { ...inter, source: "upload" as const, rights: false };
+    expect(fontsCss([font], "/fonts/p")).toBe("");
+    expect(fontPreloads([font], "/fonts/p")).toEqual([]);
+    expect(fontWeight([font])).toEqual({ files: 0, bytes: 0 });
+    expect(fontsCss([{ ...font, rights: true }], "/fonts/p")).toContain("@font-face");
   });
 });

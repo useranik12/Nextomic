@@ -7,15 +7,20 @@ import {
 } from "@nextomic/schema";
 import { useMemo, useState } from "react";
 import { FormInput } from "@/components/ui/controls";
+import { useDesignNav } from "../design-nav";
 
 /** Variables grouped by prefix, searchable, with a light and a dark value each. */
 export function FrameworkVariables({
   framework,
+  darkMode,
   onChange
 }: {
   framework: Framework;
+  /** The theme has dark mode on: show the dark value column. */
+  darkMode: boolean;
   onChange: (fw: Framework) => string | null;
 }) {
+  const nav = useDesignNav();
   const [query, setQuery] = useState("");
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -58,7 +63,7 @@ export function FrameworkVariables({
               return (
                 <li
                   key={m.name}
-                  className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)] items-center gap-2 py-1.5"
+                  className={`grid items-center gap-2 py-1.5 ${darkMode ? "grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)]" : "grid-cols-[minmax(0,1fr)_minmax(0,2.4fr)]"}`}
                 >
                   <span className="flex min-w-0 items-center gap-2">
                     {m.type === "color" ? (
@@ -68,7 +73,14 @@ export function FrameworkVariables({
                         style={{ background: m.value }}
                       />
                     ) : null}
-                    <code className="truncate text-tiny">{m.cssName}</code>
+                    <button
+                      type="button"
+                      title="Open in the Variables manager"
+                      onClick={() => nav.go("variables", { variable: m.name })}
+                      className="min-w-0 truncate text-left font-mono text-tiny hover:underline"
+                    >
+                      {m.cssName}
+                    </button>
                   </span>
                   <FormInput
                     compact
@@ -76,13 +88,15 @@ export function FrameworkVariables({
                     value={m.value}
                     onValueChange={(v) => edit(m.name, "value", v)}
                   />
-                  <FormInput
-                    compact
-                    aria-label={`${m.cssName} dark value`}
-                    placeholder="dark value"
-                    value={dark}
-                    onValueChange={(v) => edit(m.name, "dark", v)}
-                  />
+                  {darkMode ? (
+                    <FormInput
+                      compact
+                      aria-label={`${m.cssName} dark value`}
+                      placeholder="dark value"
+                      value={dark}
+                      onValueChange={(v) => edit(m.name, "dark", v)}
+                    />
+                  ) : null}
                 </li>
               );
             })}

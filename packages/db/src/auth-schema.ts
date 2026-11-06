@@ -4,7 +4,7 @@ import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
  * Better Auth's own tables (builder authentication only — see docs/platform.md section 1).
  * Shape follows Better Auth's Drizzle adapter conventions. Re-verify against
  * `npx @better-auth/cli generate` output (current Better Auth version) before relying on this
- * for production migrations — CLAUDE.md requires confirming plugin/schema details against the
+ * for production migrations — the project rules require confirming plugin/schema details against the
  * current docs rather than trusting this from memory.
  */
 export const user = pgTable("user", {

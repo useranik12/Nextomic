@@ -37,6 +37,11 @@ export const themeSchema = z.object({
   name: z.string().trim().min(1).max(64),
   slug: z.string().regex(THEME_SLUG_PATTERN).max(48),
   isDefault: z.boolean().default(false),
+  // Off: the theme is kept but never applies (not by conditions, not as the default, not when a page forces it).
+  active: z.boolean().default(true),
+  // Dark mode for the whole site on this theme. Off: only the first mode (light) exists, the
+  // color-mode options are hidden and colors have no dark values. Older themes keep their dark mode.
+  darkMode: z.boolean().default(true),
   priority: z.number().int().min(0).max(1000).default(0),
   conditions: themeConditionsSchema.default({ match: "any", items: [] }),
   modes: z.array(themeModeSchema).min(1).max(6).default(DEFAULT_THEME_MODES),
@@ -95,7 +100,8 @@ export function newTheme(id: string, name: string, themes: readonly Theme[]): Th
     id,
     name,
     slug: uniqueThemeSlug(name, themes),
-    isDefault: themes.length === 0
+    isDefault: themes.length === 0,
+    darkMode: false
   });
 }
 
@@ -135,17 +141,33 @@ export interface ThemeResolution {
 
 /** Forced theme, else the best matching theme (priority, specificity, name), else the default. */
 export function resolveTheme(themes: readonly Theme[], ctx: ThemeContext): ThemeResolution {
-  const forced = ctx.forcedThemeId ? themes.find((t) => t.id === ctx.forcedThemeId) : undefined;
+  const usable = themes.filter((t) => t.active);
+  const forced = ctx.forcedThemeId ? usable.find((t) => t.id === ctx.forcedThemeId) : undefined;
   if (forced) return { theme: forced, reason: "forced" };
-  const matches = themes
+  const matches = usable
     .filter((t) => !t.isDefault)
     .map((t) => ({ t, s: matchedSpecificity(t, ctx) }))
     .filter((m): m is { t: Theme; s: number } => m.s !== null)
     .sort((a, b) => b.t.priority - a.t.priority || b.s - a.s || a.t.name.localeCompare(b.t.name));
   const best = matches[0]?.t;
   if (best) return { theme: best, reason: "condition" };
-  const fallback = themes.find((t) => t.isDefault);
+  const fallback = usable.find((t) => t.isDefault);
   return fallback ? { theme: fallback, reason: "default" } : { theme: null, reason: "none" };
+}
+
+/** The modes a theme really has: without site-wide dark mode the dark mode does not exist. */
+export function themeModes(theme: Theme): ThemeMode[] {
+  if (theme.darkMode) return theme.modes;
+  const light = theme.modes.filter((m) => m.id !== "dark");
+  return light.length > 0 ? light : theme.modes.slice(0, 1);
+}
+
+/** The default mode, falling back to the first mode when the default one is turned off. */
+export function themeDefaultMode(theme: Theme): string {
+  const modes = themeModes(theme);
+  return modes.some((m) => m.id === theme.defaultMode)
+    ? theme.defaultMode
+    : (modes[0]?.id ?? theme.defaultMode);
 }
 
 /**
@@ -155,7 +177,8 @@ export function resolveTheme(themes: readonly Theme[], ctx: ThemeContext): Theme
 export function themeCss(theme: Theme): string {
   const root = `:root[data-nxt-theme="${theme.slug}"]`;
   const rules: string[] = [];
-  for (const mode of theme.modes) {
+  const defaultMode = themeDefaultMode(theme);
+  for (const mode of themeModes(theme)) {
     const body = Object.entries(theme.variables)
       .flatMap(([name, byMode]) => {
         const value = byMode[mode.id];
@@ -164,7 +187,7 @@ export function themeCss(theme: Theme): string {
       .join(";");
     if (!body) continue;
     const selector =
-      mode.id === theme.defaultMode
+      mode.id === defaultMode
         ? `${root}[data-nxt-mode="${mode.id}"],:root:not([data-nxt-mode])`
         : `${root}[data-nxt-mode="${mode.id}"]`;
     rules.push(`${selector}{${body}}`);
@@ -174,7 +197,7 @@ export function themeCss(theme: Theme): string {
     ? frameworkVariablesCss(
         fw,
         theme.slug,
-        theme.modes.some((m) => m.id === "dark")
+        themeModes(theme).some((m) => m.id === "dark")
       ) + scopeFrameworkCss(frameworkStylesheet(fw), theme.slug)
     : "";
   return framework + rules.join("");
@@ -182,7 +205,7 @@ export function themeCss(theme: Theme): string {
 
 /** Blocking script: sets theme and mode on <html> before first paint (saved choice wins). */
 export function themeBootScript(theme: Theme): string {
-  const modes = JSON.stringify(theme.modes.map((m) => m.id));
+  const modes = JSON.stringify(themeModes(theme).map((m) => m.id));
   const system = theme.respectSystemPreference
     ? 'if(!v&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches&&m.indexOf("dark")>-1)v="dark";'
     : "";
@@ -191,7 +214,7 @@ export function themeBootScript(theme: Theme): string {
     `(function(){var d=document.documentElement,m=${modes},v=null;` +
     stored +
     (theme.allowModeSwitch ? system : "") +
-    `if(m.indexOf(v)<0)v=${JSON.stringify(theme.defaultMode)};` +
+    `if(m.indexOf(v)<0)v=${JSON.stringify(themeDefaultMode(theme))};` +
     `d.setAttribute("data-nxt-theme",${JSON.stringify(theme.slug)});d.setAttribute("data-nxt-mode",v)})()`
   );
 }

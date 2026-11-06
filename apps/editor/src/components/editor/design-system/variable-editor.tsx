@@ -1,10 +1,10 @@
 "use client";
 
+import { ColorField } from "@/components/ui/color-field";
 import {
   VARIABLE_TYPES,
   VARIABLE_TYPE_LABEL,
   fluidClamp,
-  isHexColor,
   type FluidSize,
   type ProjectVariable,
   type VariableType
@@ -81,18 +81,13 @@ export function VariableFields({
           options={typeOptions}
           onValueChange={(t) => onChange(withType(variable, t as VariableType))}
         />
-        <FormInput
-          compact
+        <SelectField
           label="Group"
+          compact
           value={variable.group}
-          list="variable-groups"
+          options={[...new Set([...groups, variable.group])].map((g) => ({ value: g, label: g }))}
           onValueChange={(group) => onChange({ ...variable, group })}
         />
-        <datalist id="variable-groups">
-          {groups.map((g) => (
-            <option key={g} value={g} />
-          ))}
-        </datalist>
       </div>
       {fluid ? (
         <div className="grid grid-cols-2 gap-3">
@@ -120,23 +115,22 @@ export function VariableFields({
         </div>
       ) : (
         <div className="flex items-end gap-2">
-          {variable.type === "color" ? (
-            <input
-              type="color"
-              aria-label="Pick a color"
-              value={isHexColor(variable.value) ? variable.value : "#000000"}
-              onChange={(e) => onChange({ ...variable, value: e.target.value })}
-              className="h-8 w-10 shrink-0 cursor-pointer rounded-medium border-2 border-default-200 bg-transparent p-0.5"
-            />
-          ) : null}
           <div className="min-w-0 flex-1">
-            <FormInput
-              compact
-              label="Value"
-              placeholder={VALUE_HINT[variable.type]}
-              value={variable.value}
-              onValueChange={(value) => onChange({ ...variable, value })}
-            />
+            {variable.type === "color" ? (
+              <ColorField
+                label="Value"
+                value={variable.value}
+                onChange={(value) => onChange({ ...variable, value })}
+              />
+            ) : (
+              <FormInput
+                compact
+                label="Value"
+                placeholder={VALUE_HINT[variable.type]}
+                value={variable.value}
+                onValueChange={(value) => onChange({ ...variable, value })}
+              />
+            )}
           </div>
         </div>
       )}

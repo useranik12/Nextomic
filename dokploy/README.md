@@ -23,7 +23,7 @@ Set every variable from `.env.example` in the Dokploy Compose service's Environm
 interpolates them. `POSTGRES_PASSWORD` and `BETTER_AUTH_SECRET` are required (compose refuses to
 start without them), and the app's `DATABASE_URL` is built from the `POSTGRES_*` values. Set
 `BETTER_AUTH_URL` and `STORAGE_PUBLIC_BASE_URL` to the public https origin. Never commit a populated
-`.env`; secrets are configured only in Dokploy (or the target host), per CLAUDE.md security rules.
+`.env`; secrets are configured only in Dokploy (or the target host), per the project security rules.
 
 ### Email (SMTP)
 

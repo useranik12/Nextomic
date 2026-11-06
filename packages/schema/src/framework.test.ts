@@ -11,6 +11,7 @@ import {
   DEFAULT_SCALES
 } from "./framework";
 import { frameworkStylesheet, mainFramework } from "./main-framework";
+import { NO_COLOR_OPTIONS } from "./framework-colors";
 import { newTheme, themeCss } from "./theme";
 
 const SAMPLE = `
@@ -103,7 +104,19 @@ describe("scoping and theme output", () => {
   });
 
   it("themeCss emits framework variables, dark values and classes", () => {
-    const theme = { ...newTheme("t1", "Main", []), framework: mainFramework() };
+    const fw = mainFramework();
+    const theme = {
+      ...newTheme("t1", "Main", []),
+      darkMode: true,
+      framework: {
+        ...fw,
+        variables: fw.variables.map((v) => (v.name === "primary" ? { ...v, dark: "#818cf8" } : v)),
+        colorOptions: {
+          ...fw.colorOptions,
+          primary: { ...NO_COLOR_OPTIONS, utility: ["background-color" as const] }
+        }
+      }
+    };
     const css = themeCss(theme);
     expect(css).toContain("--primary:#4f46e5");
     expect(css).toContain('[data-nxt-mode="dark"]{');
@@ -116,5 +129,24 @@ describe("scoping and theme output", () => {
       "size"
     );
     expect(frameworkVariableMeta({ name: "space-m", value: "1rem" }).ref).toBe("var(--space-m)");
+  });
+});
+
+describe("scale steps", () => {
+  it("adds and removes steps at both ends and removes the variable", async () => {
+    const { addScaleStep, removeScaleStep } = await import("./framework");
+    const text = DEFAULT_SCALES[0]!;
+    const up = addScaleStep(text, "larger");
+    expect(up.names.at(-1)).toBe("5xl");
+    const down = addScaleStep(text, "smaller");
+    expect(down.names[0]).toBe("2xs");
+    expect(down.baseIndex).toBe(text.baseIndex + 1);
+    const fw = applyScale(mainFramework(), up);
+    expect(fw.variables.some((v) => v.name === "text-5xl")).toBe(true);
+    const back = applyScale(fw, removeScaleStep(up, "larger"));
+    expect(back.variables.some((v) => v.name === "text-5xl")).toBe(false);
+    expect(
+      removeScaleStep({ ...text, names: ["a", "b", "c"], baseIndex: 1 }, "larger").names
+    ).toHaveLength(3);
   });
 });

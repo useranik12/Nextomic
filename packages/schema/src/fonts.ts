@@ -61,11 +61,17 @@ export const fontSchema = z.object({
     .enum(["sans-serif", "serif", "monospace", "display", "handwriting", "other"])
     .default("other"),
   license: z.string().max(80).default(""),
+  /** Shown first in the font manager. */
+  favorite: z.boolean().default(false),
   /** Written to the output only while active. */
   active: z.boolean().default(true),
   preload: z.boolean().default(false),
   display: z.enum(["swap", "fallback", "optional", "block", "auto"]).default("swap"),
-  files: z.array(fontFileSchema).min(1).max(60)
+  // A custom font starts with no faces and gets them in the font editor; it loads nothing until it has one.
+  files: z.array(fontFileSchema).max(60),
+  // The user confirmed they may use and distribute the font files. Without it a custom font is
+  // never written to the site and text that names it falls back to the next font in its stack.
+  rights: z.boolean().default(true)
 });
 export type ProjectFont = z.infer<typeof fontSchema>;
 
@@ -78,6 +84,23 @@ export const fontListSchema = z
       new Set(list.map((f) => f.family.toLowerCase())).size === list.length,
     { message: "Font ids and families must be unique." }
   );
+
+/** A font is written to the site only while it is on and its use is confirmed. */
+export const isFontUsable = (f: Pick<ProjectFont, "active" | "rights">): boolean =>
+  f.active && f.rights;
+
+/** Faces from the lowest weight to the highest, normal before italic, then by subset. */
+export function sortFontFiles<
+  T extends Pick<FontFile, "weight" | "weightMax" | "style" | "subset">
+>(files: readonly T[]): T[] {
+  return [...files].sort(
+    (a, b) =>
+      a.weight - b.weight ||
+      (a.weightMax ?? a.weight) - (b.weightMax ?? b.weight) ||
+      a.style.localeCompare(b.style) ||
+      a.subset.localeCompare(b.subset)
+  );
+}
 
 export const FONT_SOFT_LIMIT_FILES = 6;
 export const FONT_SOFT_LIMIT_BYTES = 300_000;
@@ -121,7 +144,7 @@ export const fontUrl = (base: string, font: Pick<ProjectFont, "id">, file: FontF
 
 /** Total bytes a page loads at first view if every active font file were requested. */
 export function fontWeight(fonts: readonly ProjectFont[]): { files: number; bytes: number } {
-  const files = fonts.filter((f) => f.active).flatMap((f) => f.files);
+  const files = fonts.filter(isFontUsable).flatMap((f) => f.files);
   return { files: files.length, bytes: files.reduce((sum, f) => sum + f.bytes, 0) };
 }
 
@@ -131,7 +154,7 @@ export function fontWeight(fonts: readonly ProjectFont[]): { files: number; byte
  */
 export function fontsCss(fonts: readonly ProjectFont[], base: string): string {
   return fonts
-    .filter((f) => f.active && FONT_FAMILY_PATTERN.test(f.family))
+    .filter((f) => isFontUsable(f) && FONT_FAMILY_PATTERN.test(f.family))
     .flatMap((font) =>
       font.files.map((file) => {
         const weight = file.weightMax ? `${file.weight} ${file.weightMax}` : String(file.weight);
@@ -151,7 +174,7 @@ export function fontPreloads(
   base: string
 ): { href: string; type: string }[] {
   return fonts
-    .filter((f) => f.active && f.preload)
+    .filter((f) => isFontUsable(f) && f.preload)
     .flatMap((font) => {
       const latin = font.files.filter((f) => f.subset === "latin");
       const pool = latin.length > 0 ? latin : font.files.slice(0, 1);

@@ -11,6 +11,7 @@ import {
 
 const make = (patch: Partial<Theme>, id: string, name: string, existing: Theme[] = []): Theme => ({
   ...newTheme(id, name, existing),
+  darkMode: true,
   ...patch
 });
 
@@ -80,6 +81,7 @@ describe("themes", () => {
   it("scopes variable overrides per mode and refuses unsafe values", () => {
     const t = {
       ...newTheme("a", "A", []),
+      darkMode: true,
       variables: { bg: { light: "#fff", dark: "#000" }, bad: { dark: "red}" } }
     };
     const css = themeCss(t);
@@ -89,6 +91,19 @@ describe("themes", () => {
     expect(css).toContain('[data-nxt-mode="dark"]{--nxt-bg:#000}');
     expect(css).not.toContain("bad");
     expect(themeBootScript(t)).toContain('"data-nxt-theme","a"');
+  });
+});
+
+describe("darkMode", () => {
+  it("off removes the dark mode from the output and the boot script", () => {
+    const theme = make(
+      { darkMode: false, variables: { bg: { light: "#fff", dark: "#000" } }, defaultMode: "dark" },
+      "t1",
+      "Main"
+    );
+    expect(themeCss(theme)).not.toContain("dark");
+    expect(themeBootScript(theme)).not.toContain('"dark"');
+    expect(themeBootScript(theme)).toContain('"light"');
   });
 });
 
@@ -111,5 +126,26 @@ describe("allowModeSwitch", () => {
     expect(script).not.toContain("localStorage");
     expect(script).not.toContain("prefers-color-scheme");
     expect(script).toContain('"dark"');
+  });
+});
+
+describe("active", () => {
+  it("never applies an inactive theme, whatever picks it", () => {
+    const a = make({ isDefault: true, active: false }, "a", "A");
+    const b = make(
+      {
+        isDefault: false,
+        conditions: { match: "any", items: [{ type: "page", pageIds: ["p1"] }] }
+      },
+      "b",
+      "B",
+      [a]
+    );
+    expect(resolveTheme([a, b], { pageId: "p2", route: "/x" }).theme).toBeNull();
+    expect(resolveTheme([a, b], { pageId: "p1", route: "/x" }).theme?.id).toBe("b");
+    expect(
+      resolveTheme([a, { ...b, active: false }], { pageId: "p1", route: "/x", forcedThemeId: "b" })
+        .theme
+    ).toBeNull();
   });
 });

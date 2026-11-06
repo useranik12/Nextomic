@@ -1,7 +1,7 @@
 "use client";
 
+import { ColorField } from "@/components/ui/color-field";
 import { Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
-import { isHexColor } from "@nextomic/schema";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { previewProps, useStylePreview } from "./design-field-tools";
@@ -85,7 +85,6 @@ export function ColorPalette({
   const [menu, setMenu] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const [hovered, setHovered] = useState<Swatch | null>(null);
-  const [hex, setHex] = useState("");
 
   const palettes = useMemo(() => {
     const map = new Map<string, Swatch[]>();
@@ -112,7 +111,6 @@ export function ColorPalette({
   const name = chosen ?? owner?.[0] ?? palettes[0]?.[0] ?? "";
   const swatches = palettes.find(([g]) => g === name)?.[1] ?? [];
   const shown = resolveColor(value, variables);
-  const picker = shown && isHexColor(shown) ? shown : "#000000";
   const footer = hovered ?? swatches.find((s) => s.value === value) ?? null;
 
   function close() {
@@ -125,11 +123,6 @@ export function ColorPalette({
   function pick(next: string | null) {
     onPick(next);
     close();
-  }
-
-  function applyHex() {
-    const text = hex.trim().startsWith("#") ? hex.trim() : `#${hex.trim()}`;
-    if (isHexColor(text) || /^#[0-9a-f]{3}$/i.test(text)) pick(text.toLowerCase());
   }
 
   return (
@@ -259,30 +252,12 @@ export function ColorPalette({
         </p>
 
         <div className="flex items-center gap-2 border-t border-divider pt-3">
-          <label className="relative h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded-full border-2 border-default-200 transition-colors hover:border-default-400">
-            <span className="sr-only">Custom color</span>
-            <input
-              type="color"
-              value={picker}
-              onChange={(e) => onPick(e.target.value)}
-              className="absolute -inset-2 h-12 w-12 cursor-pointer opacity-0"
-            />
-            <span
-              aria-hidden
-              style={{ background: shown ?? "transparent" }}
-              className="block h-full w-full"
-            />
-          </label>
-          <input
-            aria-label="Hex color"
-            placeholder="#0066ff"
-            value={hex}
-            maxLength={7}
-            onChange={(e) => setHex(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") applyHex();
-            }}
-            className="h-8 min-w-0 flex-1 rounded-full border-2 border-default-200 bg-transparent px-3 font-mono text-tiny outline-none transition-colors hover:border-default-400 focus:border-default-800"
+          <ColorField
+            className="min-w-0 flex-1"
+            label="Custom color"
+            value={value ?? ""}
+            display={shown}
+            onChange={(v) => onPick(v)}
           />
           {value ? (
             <button

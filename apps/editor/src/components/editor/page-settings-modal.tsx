@@ -198,7 +198,7 @@ export function PageSettingsModal({
             onValueChange={(themeId) => updateSettings({ themeId: themeId || null })}
             options={[
               { value: "", label: themeLabel },
-              ...themes.map((t) => ({ value: t.id, label: t.name }))
+              ...themes.filter((t) => t.active).map((t) => ({ value: t.id, label: t.name }))
             ]}
           />
           <SectionTitle>Language</SectionTitle>

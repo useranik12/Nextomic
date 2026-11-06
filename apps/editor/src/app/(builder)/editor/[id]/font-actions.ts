@@ -5,6 +5,7 @@ import { z } from "zod";
 import { authorizeProject, failResult, type ActionResult } from "@/server/authorize";
 import {
   FontError,
+  fontWeightAxis,
   installCatalogFont,
   installFontInputSchema,
   searchFonts,
@@ -46,6 +47,28 @@ export async function installFontAction(
     };
   } catch (error) {
     return failResult(error, "Could not install the font.");
+  }
+}
+
+/** The variable weight range of a catalog font, or null when it has no variable weight axis. */
+export async function fontAxisAction(
+  projectId: string,
+  id: string
+): Promise<ActionResult<{ min: number; max: number } | null>> {
+  try {
+    await authorizeProject(projectId);
+    return {
+      data: await fontWeightAxis(
+        z
+          .string()
+          .regex(/^[a-z0-9][a-z0-9-]*$/)
+          .max(64)
+          .parse(id)
+      ),
+      error: null
+    };
+  } catch (error) {
+    return failResult(error, "Could not check the font's weights.");
   }
 }
 

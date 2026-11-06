@@ -91,7 +91,7 @@ Left rail pages that sit outside App Settings:
 
 ## 9. Dashboard and projects
 
-- Dashboard and All Projects are specified in `ui-reference.md` (4.1, 4.2). Projects belong to a workspace; the All Projects header shows the workspace name. The dashboard body (KPIs, charts, activity, health) is designed by Claude, approved by the owner, and built last. It reads from a daily rollup table in the builder's Postgres (`usage_daily`: workspace, project, date, edits, publishes, storage bytes) and has no visitor analytics.
+- Dashboard and All Projects are specified in `ui-reference.md` (4.1, 4.2). Projects belong to a workspace; the All Projects header shows the workspace name. The dashboard body (KPIs, charts, activity, health) is designed in-house, approved by the owner, and built last. It reads from a daily rollup table in the builder's Postgres (`usage_daily`: workspace, project, date, edits, publishes, storage bytes) and has no visitor analytics.
 - User preferences (Settings > Appearance): builder UI color mode (dark default, light, system).
 - Project list supports search, date range (by last modified), grid/list view, and the card menu (rename, duplicate, export, backup now, settings, delete).
 - Project thumbnails are generated from the home page on publish or save (server-side screenshot in an isolated worker; never executes custom code in the builder process).

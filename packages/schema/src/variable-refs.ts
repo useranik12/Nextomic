@@ -68,3 +68,46 @@ export function renameVariableInTree(root: ElementNode, from: string, to: string
   });
   return changed;
 }
+
+// Framework variables (`--primary`) are written without the `--nxt-` prefix, so they have their own
+// rewrite, used when colors are renamed or the color prefix changes.
+
+const CSS_VAR_REF = /(var\(\s*--)([A-Za-z][\w-]*)(?![\w-])/g;
+
+/** Points `var(--from)` at `var(--to)` for every pair, in one pass so swapped names stay correct. */
+export function renameCssVarRefs(text: string, renames: ReadonlyMap<string, string>): string {
+  return text.replace(CSS_VAR_REF, (whole, head: string, name: string) => {
+    const to = renames.get(name);
+    return to === undefined ? whole : `${head}${to}`;
+  });
+}
+
+export function renameCssVarsInStyles(
+  styles: StyleMap,
+  renames: ReadonlyMap<string, string>
+): StyleMap {
+  return eachStyleText(styles, (text) => renameCssVarRefs(text, renames));
+}
+
+/** Rewrites `var(--name)` references on every element. Returns true when anything changed. */
+export function renameCssVarsInTree(
+  root: ElementNode,
+  renames: ReadonlyMap<string, string>
+): boolean {
+  let changed = false;
+  walkElements(root, (node) => {
+    const next = renameCssVarsInStyles(node.styles, renames);
+    if (JSON.stringify(next) !== JSON.stringify(node.styles)) {
+      node.styles = next;
+      changed = true;
+    }
+    if (node.customCss) {
+      const css = renameCssVarRefs(node.customCss, renames);
+      if (css !== node.customCss) {
+        node.customCss = css;
+        changed = true;
+      }
+    }
+  });
+  return changed;
+}

@@ -12,25 +12,23 @@ import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { useEditorStore } from "../store/editor-store";
 import { FrameworkClasses } from "./framework/framework-classes";
-import { FrameworkScales } from "./framework/framework-scales";
 import { FrameworkVariables } from "./framework/framework-variables";
 import { ImportFramework } from "./framework/import-framework";
 import { useFramework } from "./framework/use-framework";
 
-type View = "variables" | "scales" | "classes" | "import";
+type View = "variables" | "classes" | "import";
 const VIEWS: { id: View; label: string }[] = [
   { id: "variables", label: "Variables" },
-  { id: "scales", label: "Scales" },
   { id: "classes", label: "Classes" },
   { id: "import", label: "Import" }
 ];
 
-function download(fw: Framework) {
+function download(fw: Framework, siteUid: string) {
   const blob = new Blob([exportFrameworkCss(fw, frameworkStylesheet(fw))], { type: "text/css" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${fw.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "framework"}.css`;
+  a.download = `nextomic-framework-${siteUid}-${fw.version}.css`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -38,6 +36,7 @@ function download(fw: Framework) {
 /** Design System > Framework: the CSS framework each theme runs on (variables, scales, classes). */
 export function FrameworkTab() {
   const { themes, theme, framework, setSelectedId, setFramework } = useFramework();
+  const siteUid = useEditorStore((s) => s.projectId);
   const [view, setView] = useState<View>("variables");
   const [error, setError] = useState<string | null>(null);
 
@@ -103,7 +102,14 @@ export function FrameworkTab() {
         </div>
         {framework ? (
           <>
-            <ActionButton size="sm" tone="ghost" onPress={() => download(framework)}>
+            <ActionButton
+              size="sm"
+              tone="ghost"
+              onPress={() => {
+                download(framework, siteUid);
+                void setFramework({ ...framework, version: framework.version + 1 });
+              }}
+            >
               Export CSS
             </ActionButton>
             <ActionButton
@@ -141,9 +147,11 @@ export function FrameworkTab() {
             </div>
           </div>
         ) : view === "variables" ? (
-          <FrameworkVariables framework={framework} onChange={run} />
-        ) : view === "scales" ? (
-          <FrameworkScales framework={framework} onChange={run} />
+          <FrameworkVariables
+            darkMode={theme?.darkMode ?? false}
+            framework={framework}
+            onChange={run}
+          />
         ) : (
           <FrameworkClasses framework={framework} />
         )}
