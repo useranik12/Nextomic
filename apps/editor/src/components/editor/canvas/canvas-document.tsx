@@ -96,7 +96,11 @@ export function CanvasDocument() {
   }, []);
 
   useEffect(() => {
-    if (payload) document.documentElement.setAttribute("data-nxt-mode", payload.mode);
+    if (!payload) return;
+    const root = document.documentElement;
+    root.setAttribute("data-nxt-mode", payload.mode);
+    if (payload.theme) root.setAttribute("data-nxt-theme", payload.theme.slug);
+    else root.removeAttribute("data-nxt-theme");
   }, [payload]);
 
   useEffect(() => {
@@ -204,6 +208,7 @@ export function CanvasDocument() {
         breakpoints={payload.breakpoints}
         classes={payload.classes}
         variables={payload.variables}
+        theme={payload.theme}
       />
       <div id="nxt-drop" ref={markerRef} />
     </>

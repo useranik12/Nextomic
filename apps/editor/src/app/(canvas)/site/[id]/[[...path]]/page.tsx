@@ -1,4 +1,5 @@
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
+import { resolveTheme } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -35,7 +36,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function PublishedPage({ params }: { params: Params }) {
   const { id, path } = await params;
-  const { page, settings } = await resolve(id, path);
+  const { page, pageId, settings } = await resolve(id, path);
+  const { theme } = resolveTheme(settings.themes, {
+    pageId,
+    route: page.route,
+    forcedThemeId: page.settings.themeId
+  });
   return (
     <>
       <style>{BASE_CSS}</style>
@@ -44,6 +50,8 @@ export default async function PublishedPage({ params }: { params: Params }) {
         breakpoints={settings.breakpoints}
         classes={settings.classes}
         variables={settings.variables}
+        theme={theme}
+        bootScript
       />
     </>
   );

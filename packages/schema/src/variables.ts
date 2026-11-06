@@ -42,7 +42,7 @@ export const fluidSizeSchema = z.object({
 export type FluidSize = z.infer<typeof fluidSizeSchema>;
 
 // A value that could end the declaration or open another rule is refused.
-const SAFE_VALUE = /^[^{};<>]*$/;
+export const SAFE_VALUE = /^[^{};<>]*$/;
 
 export const variableSchema = z.object({
   name: z.string().regex(VARIABLE_NAME_PATTERN).max(48),

@@ -11,7 +11,8 @@ const project: ProjectSettings = {
   breakpoints: DEFAULT_BREAKPOINTS,
   generateElementIds: true,
   classes: {},
-  variables: []
+  variables: [],
+  themes: []
 };
 
 function reset() {

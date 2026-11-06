@@ -31,6 +31,7 @@ import {
   type StyleMap,
   type ProjectSettings,
   type ProjectVariable,
+  type Theme,
   type PropValue,
   type PseudoState
 } from "@nextomic/schema";
@@ -124,6 +125,8 @@ interface EditorState {
   /** Adds variables, or replaces the ones with the same name (generated scales, palettes, edits). */
   upsertVariables: (variables: ProjectVariable[]) => void;
   deleteVariable: (name: string) => void;
+  /** Replaces the theme list (create, edit, delete, default); the editor keeps it valid. */
+  setThemes: (themes: Theme[]) => void;
   /** Renames and rewrites references on the open page and in class styles; other pages are server side. */
   renameVariable: (from: string, to: string) => boolean;
   /** Class manager operations. They return false when the name is taken or the source is missing. */
@@ -203,7 +206,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
   return {
     projectId: "",
-    project: { breakpoints: [], generateElementIds: true, classes: {}, variables: [] },
+    project: { breakpoints: [], generateElementIds: true, classes: {}, variables: [], themes: [] },
     page: null,
     doc: null,
     past: [],
@@ -467,6 +470,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set({
         project: { ...project, variables: [...byName.values()] },
         classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+    },
+
+    setThemes: (themes) => {
+      set({
+        project: { ...get().project, themes },
         saveStatus: dirtyStatus(get().saveStatus)
       });
     },

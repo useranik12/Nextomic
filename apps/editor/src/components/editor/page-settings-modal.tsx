@@ -1,7 +1,7 @@
 "use client";
 
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch } from "@heroui/react";
-import { pageNameSchema, pageSeoSchema } from "@nextomic/schema";
+import { pageNameSchema, pageSeoSchema, resolveTheme } from "@nextomic/schema";
 import { useState } from "react";
 import {
   deletePageAction,
@@ -13,7 +13,7 @@ import { openPage } from "./page-menu";
 import { useEditorStore } from "./store/editor-store";
 import type { PageSummary } from "@/server/pages";
 
-// General, SEO and Language. Appearance, Templates, Rendering and Custom code appear as the
+// General, SEO, Appearance (theme) and Language. Templates, Rendering and Custom code appear as the
 // features behind them are built (docs/ui-reference.md 4.11).
 const LOCALES = [
   ["en", "English"],
@@ -50,6 +50,10 @@ export function PageSettingsModal({
   const pageId = useEditorStore((s) => s.page?.id);
   const updateMeta = useEditorStore((s) => s.updatePageMeta);
   const updateSettings = useEditorStore((s) => s.updatePageSettings);
+  const themes = useEditorStore((s) => s.project.themes);
+  const route = useEditorStore((s) => s.doc?.route ?? "/");
+  const auto = resolveTheme(themes, { pageId: pageId ?? "", route }).theme;
+  const themeLabel = auto ? `Auto (${auto.name})` : "Auto";
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicating, setDuplicating] = useState(false);
@@ -186,6 +190,16 @@ export function PageSettingsModal({
             onValueChange={(ogImage) => setSeo({ ogImage })}
             isInvalid={Boolean(urlError("ogImage"))}
             errorMessage={urlError("ogImage")}
+          />
+          <SectionTitle>Appearance</SectionTitle>
+          <SelectField
+            label="Theme"
+            value={doc.settings.themeId ?? ""}
+            onValueChange={(themeId) => updateSettings({ themeId: themeId || null })}
+            options={[
+              { value: "", label: themeLabel },
+              ...themes.map((t) => ({ value: t.id, label: t.name }))
+            ]}
           />
           <SectionTitle>Language</SectionTitle>
           <SelectField

@@ -41,6 +41,8 @@ interface ConditionSet {
 
 ### 3.1 Model
 
+> Built so far (see the decisions log in `spec.md`): id, name, slug, isDefault, priority, static page/route conditions, modes, defaultMode, respectSystemPreference, per-mode variable overrides. The first theme created is the default. `elementDefaults`, `fonts` and `customCss` below are still open.
+
 ```ts
 interface Theme {
   id: string;

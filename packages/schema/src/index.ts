@@ -13,3 +13,4 @@ export * from "./css-text";
 export * from "./classes";
 export * from "./variables";
 export * from "./variable-refs";
+export * from "./theme";

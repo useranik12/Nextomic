@@ -1,4 +1,4 @@
-import { DEFAULT_BREAKPOINTS, emptyPageTree, type ElementNode } from "@nextomic/schema";
+import { DEFAULT_BREAKPOINTS, emptyPageTree, newTheme, type ElementNode } from "@nextomic/schema";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -145,5 +145,25 @@ describe("PageRenderer", () => {
     expect(html).not.toContain("onclick");
     expect(html).toContain('aria-label="box"');
     expect(html).not.toContain("mystery");
+  });
+});
+
+describe("themes", () => {
+  const theme = {
+    ...newTheme("t", "Brand", []),
+    variables: { bg: { dark: "#000" } }
+  };
+
+  it("emits theme variables and the boot script only when asked", () => {
+    const tree = emptyPageTree();
+    const css = renderToStaticMarkup(
+      <PageRenderer tree={tree} breakpoints={DEFAULT_BREAKPOINTS} theme={theme} />
+    );
+    expect(css).toContain('[data-nxt-theme="brand"][data-nxt-mode="dark"]{--nxt-bg:#000}');
+    expect(css).not.toContain("<script");
+    const built = renderToStaticMarkup(
+      <PageRenderer tree={tree} breakpoints={DEFAULT_BREAKPOINTS} theme={theme} bootScript />
+    );
+    expect(built).toContain("<script");
   });
 });

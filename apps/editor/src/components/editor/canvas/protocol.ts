@@ -1,12 +1,14 @@
 import {
   breakpointListSchema,
   variableListSchema,
+  themeSchema,
   elementNodeSchema,
   styleMapSchema,
   type BreakpointDef,
   type ElementNode,
   type ProjectVariable,
-  type StyleMap
+  type StyleMap,
+  type Theme
 } from "@nextomic/schema";
 import { z } from "zod";
 
@@ -24,7 +26,9 @@ export const renderMessageSchema = z.object({
   breakpoints: breakpointListSchema,
   classes: z.record(z.string(), styleMapSchema),
   variables: variableListSchema,
-  mode: z.enum(["light", "dark"]),
+  theme: themeSchema.nullable(),
+  // A mode id of the active theme (light and dark unless the theme defines others).
+  mode: z.string().max(32),
   selectedId: z.string().nullable()
 });
 export type RenderMessage = z.infer<typeof renderMessageSchema>;
@@ -82,6 +86,7 @@ export interface RenderPayload {
   breakpoints: BreakpointDef[];
   classes: Record<string, StyleMap>;
   variables: ProjectVariable[];
-  mode: "light" | "dark";
+  theme: Theme | null;
+  mode: string;
   selectedId: string | null;
 }

@@ -97,6 +97,8 @@ export async function unpublishProject(projectId: string): Promise<PublishState>
 
 export interface PublishedView {
   page: PublishedPage;
+  /** Id of the page row; theme conditions match on it. */
+  pageId: string;
   settings: ProjectSettings;
 }
 
@@ -116,11 +118,11 @@ export async function getPublishedView(
     .limit(1);
   if (!project?.publishedAt) return null;
   const rows = await db
-    .select({ snapshot: pages.publishedSnapshot })
+    .select({ id: pages.id, snapshot: pages.publishedSnapshot })
     .from(pages)
     .where(eq(pages.projectId, projectId))
     .orderBy(asc(pages.createdAt));
-  const snapshots = rows.flatMap((row) => (row.snapshot ? [row.snapshot] : []));
+  const snapshots = rows.flatMap((row) => (row.snapshot ? [{ ...row.snapshot, id: row.id }] : []));
   const found =
     route === null
       ? (snapshots.find((p) => p.settings.isHome) ?? snapshots[0])
@@ -129,6 +131,7 @@ export async function getPublishedView(
   const settings = projectSettingsSchema.safeParse(project.settings);
   if (!settings.success) return null;
   return {
+    pageId: found.id,
     page: {
       name: found.name,
       route: found.route,
