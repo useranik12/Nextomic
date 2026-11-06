@@ -86,7 +86,7 @@ Layout (display, flex, grid, position, z-index, overflow), Spacing, Size, Typogr
 
 ### Themes and color modes
 
-Superseded by `templates-and-themes.md`. In short: a site can have many themes (Bricks-style style sets) that are activated per page or template by conditions, and each theme has color modes (light, dark, custom) that visitors can switch. Base variables defined here are the defaults that themes override. The scoping attribute is `data-nxt-theme` plus `data-nxt-mode`.
+Superseded by `templates-and-themes.md` (themes are built; see the decisions log in `spec.md`). In short: a site can have many themes (Bricks-style style sets) that are activated per page or template by conditions, and each theme has color modes (light, dark, custom) that visitors can switch. Base variables defined here are the defaults that themes override. The scoping attribute is `data-nxt-theme` plus `data-nxt-mode`.
 
 ## 7. Nextomic CSS framework
 
