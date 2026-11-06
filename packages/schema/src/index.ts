@@ -11,3 +11,5 @@ export * from "./project-settings";
 export * from "./tree";
 export * from "./css-text";
 export * from "./classes";
+export * from "./variables";
+export * from "./variable-refs";

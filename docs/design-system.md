@@ -73,6 +73,8 @@ Layout (display, flex, grid, position, z-index, overflow), Spacing, Size, Typogr
 - Variable manager: groups, search, rename with reference update, usage count, import/export.
 - Font family variables (`--nxt-font-heading`, `--nxt-font-body`, `--nxt-font-mono`, or custom) point to fonts imported in Design System > Fonts & Icons (see `fonts-and-icons.md`). The Design tab font control lists only project fonts and system stacks.
 
+- Implementation: `packages/schema/src/variables.ts` (schema, `fluidClamp`, `typeScale`, `spaceScale`, `colorShades`, `variablesCss`) and `variable-refs.ts` (usage counts and renames). Variables live in `ProjectSettings.variables`, are written as `:root{--nxt-name:value}` before the class and element CSS, and a published site uses the variables saved with the publish.
+
 ### Fluid typography and spacing
 
 - Generate scales from min/max viewport and min/max size using `clamp()`. Settings: base size, ratio, steps, min/max viewport.

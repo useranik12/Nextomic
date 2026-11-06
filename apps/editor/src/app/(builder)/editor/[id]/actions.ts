@@ -2,6 +2,7 @@
 
 import {
   CLASS_NAME_PATTERN,
+  VARIABLE_NAME_PATTERN,
   createPageInputSchema,
   projectSettingsSchema,
   savePageInputSchema,
@@ -18,6 +19,7 @@ import {
   getPage,
   listPages,
   listVersions,
+  renameVariableInOtherPages,
   replaceClassInOtherPages,
   restoreVersion,
   savePage,
@@ -25,6 +27,7 @@ import {
   type PageSummary,
   type SaveResult,
   type StoredPage,
+  variableUsageInOtherPages,
   type VersionSummary
 } from "@/server/pages";
 import {
@@ -255,6 +258,44 @@ export async function replaceClassAction(
       idSchema.parse(exceptPageId),
       classNameSchema.parse(from),
       to === null ? null : classNameSchema.parse(to)
+    );
+    return { data: updated, error: null };
+  } catch (error) {
+    return fail(error, "Could not update the other pages.");
+  }
+}
+
+const variableNameSchema = z.string().regex(VARIABLE_NAME_PATTERN).max(48);
+
+export async function variableUsageAction(
+  projectId: string,
+  exceptPageId: string
+): Promise<ActionResult<Record<string, number>>> {
+  try {
+    await authorize(projectId);
+    return {
+      data: await variableUsageInOtherPages(projectId, idSchema.parse(exceptPageId)),
+      error: null
+    };
+  } catch (error) {
+    return fail(error, "Could not count variable usage.");
+  }
+}
+
+/** Rewrites references on the other pages; the open page and classes change in the editor. */
+export async function renameVariableAction(
+  projectId: string,
+  exceptPageId: string,
+  from: string,
+  to: string
+): Promise<ActionResult<number>> {
+  try {
+    await authorize(projectId);
+    const updated = await renameVariableInOtherPages(
+      projectId,
+      idSchema.parse(exceptPageId),
+      variableNameSchema.parse(from),
+      variableNameSchema.parse(to)
     );
     return { data: updated, error: null };
   } catch (error) {

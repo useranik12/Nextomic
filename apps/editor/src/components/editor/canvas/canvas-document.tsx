@@ -203,6 +203,7 @@ export function CanvasDocument() {
         tree={payload.tree}
         breakpoints={payload.breakpoints}
         classes={payload.classes}
+        variables={payload.variables}
       />
       <div id="nxt-drop" ref={markerRef} />
     </>

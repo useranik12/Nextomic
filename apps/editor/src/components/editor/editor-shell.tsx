@@ -6,7 +6,7 @@ import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { AppSettings } from "./app-settings";
-import { ClassManager } from "./class-manager";
+import { DesignSystemModal } from "./design-system/design-system-modal";
 import { ConflictDialog } from "./conflict-dialog";
 import { EditorDndProvider } from "./dnd";
 import { ElementContextMenu } from "./element-context-menu";
@@ -74,6 +74,7 @@ export function EditorShell({
   const [ready, setReady] = useState(false);
   const [pages, setPages] = useState(initialPages);
   const [rail, setRail] = useState<RailItemId>("navigator");
+  const [designSystemOpen, setDesignSystemOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [flyout, setFlyout] = useState(false);
   const [mode, setMode] = useState<"light" | "dark">("light");
@@ -152,6 +153,10 @@ export function EditorShell({
               active={rail}
               collapsed={collapsed}
               onSelect={(id) => {
+                if (id === "design-system") {
+                  setDesignSystemOpen(true);
+                  return;
+                }
                 setRail(id);
                 setFlyout(false);
                 // The Navigator folds the rail and shows the page settings until an element is picked.
@@ -171,8 +176,6 @@ export function EditorShell({
               </>
             ) : rail === "history" ? (
               <VersionHistory saveNow={saveNow} />
-            ) : rail === "design-system" ? (
-              <ClassManager saveNow={saveNow} />
             ) : rail === "app-settings" ? (
               <AppSettings />
             ) : (
@@ -193,6 +196,9 @@ export function EditorShell({
         </div>
         <ConflictDialog />
         <ElementContextMenu />
+        {designSystemOpen ? (
+          <DesignSystemModal onClose={() => setDesignSystemOpen(false)} saveNow={saveNow} />
+        ) : null}
       </div>
     </EditorDndProvider>
   );

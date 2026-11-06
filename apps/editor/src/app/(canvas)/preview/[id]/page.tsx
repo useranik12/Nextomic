@@ -80,6 +80,7 @@ export default async function PreviewPage({
         tree={page.tree}
         breakpoints={settings.breakpoints}
         classes={settings.classes}
+        variables={settings.variables}
       />
     </>
   );

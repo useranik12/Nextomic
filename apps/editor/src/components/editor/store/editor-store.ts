@@ -19,6 +19,8 @@ import {
   newElementId,
   reassignBreakpointStyles,
   removeNode,
+  renameRefsInStyles,
+  renameVariableInTree,
   replaceClassInTree,
   setProp,
   setStyle,
@@ -28,6 +30,7 @@ import {
   type PageSettings,
   type StyleMap,
   type ProjectSettings,
+  type ProjectVariable,
   type PropValue,
   type PseudoState
 } from "@nextomic/schema";
@@ -118,6 +121,11 @@ interface EditorState {
   /** Adds a class name, or swaps `replacing` for it; duplicates are ignored. */
   setElementClass: (id: string, name: string, replacing?: string) => void;
   removeElementClass: (id: string, name: string) => void;
+  /** Adds variables, or replaces the ones with the same name (generated scales, palettes, edits). */
+  upsertVariables: (variables: ProjectVariable[]) => void;
+  deleteVariable: (name: string) => void;
+  /** Renames and rewrites references on the open page and in class styles; other pages are server side. */
+  renameVariable: (from: string, to: string) => boolean;
   /** Class manager operations. They return false when the name is taken or the source is missing. */
   createClass: (name: string) => boolean;
   duplicateClass: (from: string, to: string) => boolean;
@@ -195,7 +203,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
   return {
     projectId: "",
-    project: { breakpoints: [], generateElementIds: true, classes: {} },
+    project: { breakpoints: [], generateElementIds: true, classes: {}, variables: [] },
     page: null,
     doc: null,
     past: [],
@@ -450,6 +458,50 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const found = findNode(draft.tree, id);
         if (found) found.node.classIds = found.node.classIds.filter((c) => c !== name);
       });
+    },
+
+    upsertVariables: (variables) => {
+      const { project } = get();
+      const byName = new Map(project.variables.map((v) => [v.name, v]));
+      for (const v of variables) byName.set(v.name, v);
+      set({
+        project: { ...project, variables: [...byName.values()] },
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+    },
+
+    deleteVariable: (name) => {
+      const { project } = get();
+      set({
+        project: { ...project, variables: project.variables.filter((v) => v.name !== name) },
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+    },
+
+    renameVariable: (from, to) => {
+      const { project } = get();
+      if (from === to || project.variables.some((v) => v.name === to)) return false;
+      const classes = Object.fromEntries(
+        Object.entries(project.classes).map(([name, styles]) => [
+          name,
+          renameRefsInStyles(styles, from, to)
+        ])
+      );
+      edit(null, (draft) => {
+        renameVariableInTree(draft.tree, from, to);
+      });
+      set({
+        project: {
+          ...project,
+          classes,
+          variables: project.variables.map((v) => (v.name === from ? { ...v, name: to } : v))
+        },
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+      return true;
     },
 
     createClass: (name) => {

@@ -60,6 +60,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const doc = useEditorStore((s) => s.doc);
   const breakpoints = useEditorStore((s) => s.project.breakpoints);
   const classes = useEditorStore((s) => s.project.classes);
+  const variables = useEditorStore((s) => s.project.variables);
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
   const select = useEditorStore((s) => s.select);
@@ -230,8 +231,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
 
   useEffect(() => {
     if (!ready || !doc) return;
-    send({ type: "render", tree: doc.tree, breakpoints, classes, mode, selectedId });
-  }, [ready, doc, breakpoints, classes, mode, selectedId, send]);
+    send({ type: "render", tree: doc.tree, breakpoints, classes, variables, mode, selectedId });
+  }, [ready, doc, breakpoints, classes, variables, mode, selectedId, send]);
 
   // Wheel over the canvas surround zooms around the cursor. Native listener: React's is passive.
   useEffect(() => {

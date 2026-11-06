@@ -17,6 +17,7 @@ import { DESIGN_GROUPS, type DesignProperty } from "./design-groups";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
+import { VariablePicker } from "./variable-picker";
 import { IdentityField } from "./identity-field";
 import { SettingRow, compactFieldClass, designFieldClass } from "./setting-row";
 
@@ -157,7 +158,12 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
             }
             className={designFieldClass + " rounded-l-medium"}
           />
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-r-medium bg-default-200">
+          <div className="flex h-9 shrink-0 items-center gap-0.5 rounded-r-medium bg-default-200 px-1">
+            <VariablePicker
+              label={property.label}
+              property={property.property}
+              onPick={(ref) => setStyle(node.id, property.property, ref)}
+            />
             <DynamicBolt
               label={property.label}
               onInsert={() => undefined}
