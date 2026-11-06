@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DEFAULT_BREAKPOINTS, breakpointListSchema } from "./breakpoint";
 import { CLASS_NAME_PATTERN } from "./element";
 import { styleMapSchema } from "./style";
+import { themeListSchema } from "./theme";
 import { variableListSchema } from "./variables";
 
 export const projectSettingsSchema = z.object({
@@ -10,7 +11,9 @@ export const projectSettingsSchema = z.object({
   // Styles of each class, shared by every element that carries it. Keyed by class name.
   classes: z.record(z.string().regex(CLASS_NAME_PATTERN).max(64), styleMapSchema).default({}),
   // Design system variables, written to the output as --nxt-* custom properties.
-  variables: variableListSchema.default([])
+  variables: variableListSchema.default([]),
+  // Themes: the default one applies everywhere unless a page forces another or conditions match.
+  themes: themeListSchema.default([])
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -18,5 +21,6 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   breakpoints: DEFAULT_BREAKPOINTS.map((b) => ({ ...b })),
   generateElementIds: true,
   classes: {},
-  variables: []
+  variables: [],
+  themes: []
 });

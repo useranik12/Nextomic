@@ -197,7 +197,11 @@ export function EditorShell({
         <ConflictDialog />
         <ElementContextMenu />
         {designSystemOpen ? (
-          <DesignSystemModal onClose={() => setDesignSystemOpen(false)} saveNow={saveNow} />
+          <DesignSystemModal
+            onClose={() => setDesignSystemOpen(false)}
+            saveNow={saveNow}
+            pages={pages}
+          />
         ) : null}
       </div>
     </EditorDndProvider>

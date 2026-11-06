@@ -67,6 +67,8 @@ export const pageSettingsSchema = z.object({
   includeInPublish: z.boolean().default(true),
   isHome: z.boolean().default(false),
   requiresAuth: z.boolean().default(false),
+  // Forced theme id; null means Auto (conditions, then the default theme).
+  themeId: z.string().max(64).nullable().default(null),
   params: z.array(pageParamSchema).max(20).default([]),
   state: z.array(pageStateVariableSchema).max(100).default([])
 });

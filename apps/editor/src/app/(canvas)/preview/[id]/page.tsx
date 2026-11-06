@@ -1,4 +1,5 @@
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
+import { resolveTheme } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
@@ -73,6 +74,11 @@ export default async function PreviewPage({
   const { id } = await params;
   const { path } = await searchParams;
   const { page, settings } = await resolvePreview(id, path);
+  const { theme } = resolveTheme(settings.themes, {
+    pageId: page.id,
+    route: page.route,
+    forcedThemeId: page.settings.themeId
+  });
   return (
     <>
       <style>{BASE_CSS}</style>
@@ -81,6 +87,8 @@ export default async function PreviewPage({
         breakpoints={settings.breakpoints}
         classes={settings.classes}
         variables={settings.variables}
+        theme={theme}
+        bootScript
       />
     </>
   );

@@ -6,9 +6,12 @@ import { Icon } from "@/lib/icons/Icon";
 import { ClassManager } from "../class-manager";
 import { ColorsTab } from "./colors-tab";
 import { SpacingTab, TypographyTab } from "./scale-tab";
+import { ThemesTab } from "./themes-tab";
 import { VariablesTab } from "./variables-tab";
+import type { PageSummary } from "@/server/pages";
 
 const TABS = [
+  { id: "themes", label: "Themes", hint: "Style sets and color modes" },
   { id: "variables", label: "Variables", hint: "All design tokens" },
   { id: "typography", label: "Typography", hint: "Fluid type scale" },
   { id: "spacing", label: "Spacing", hint: "Fluid spacing scale" },
@@ -23,10 +26,12 @@ type TabId = (typeof TABS)[number]["id"];
  */
 export function DesignSystemModal({
   onClose,
-  saveNow
+  saveNow,
+  pages
 }: {
   onClose: () => void;
   saveNow: () => Promise<void>;
+  pages: PageSummary[];
 }) {
   const [tab, setTab] = useState<TabId>("variables");
   return (
@@ -66,6 +71,7 @@ export function DesignSystemModal({
             ))}
           </nav>
           <div className="min-w-0 flex-1">
+            {tab === "themes" ? <ThemesTab pages={pages} /> : null}
             {tab === "variables" ? <VariablesTab saveNow={saveNow} /> : null}
             {tab === "typography" ? <TypographyTab /> : null}
             {tab === "spacing" ? <SpacingTab /> : null}

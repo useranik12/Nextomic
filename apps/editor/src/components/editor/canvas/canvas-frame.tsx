@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useDragActive } from "../dnd";
 import { useEditorStore } from "../store/editor-store";
+import { themeModeFor, useResolvedTheme } from "../store/use-resolved-theme";
 import { setCanvasDropTarget } from "./canvas-drop";
 import { CanvasToolbar } from "./canvas-toolbar";
 import { canvasMessageSchema, type HostMessage } from "./protocol";
@@ -61,6 +62,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const breakpoints = useEditorStore((s) => s.project.breakpoints);
   const classes = useEditorStore((s) => s.project.classes);
   const variables = useEditorStore((s) => s.project.variables);
+  const theme = useResolvedTheme();
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
   const select = useEditorStore((s) => s.select);
@@ -231,8 +233,17 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
 
   useEffect(() => {
     if (!ready || !doc) return;
-    send({ type: "render", tree: doc.tree, breakpoints, classes, variables, mode, selectedId });
-  }, [ready, doc, breakpoints, classes, variables, mode, selectedId, send]);
+    send({
+      type: "render",
+      tree: doc.tree,
+      breakpoints,
+      classes,
+      variables,
+      theme,
+      mode: themeModeFor(theme, mode),
+      selectedId
+    });
+  }, [ready, doc, breakpoints, classes, variables, theme, mode, selectedId, send]);
 
   // Wheel over the canvas surround zooms around the cursor. Native listener: React's is passive.
   useEffect(() => {
