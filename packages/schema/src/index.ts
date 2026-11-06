@@ -9,3 +9,4 @@ export * from "./element";
 export * from "./page";
 export * from "./project-settings";
 export * from "./tree";
+export * from "./css-text";

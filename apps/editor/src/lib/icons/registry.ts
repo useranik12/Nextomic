@@ -57,6 +57,8 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:check" },
   { id: "ph:rows" },
   { id: "ph:square" },
+  { id: "ph:crosshair" },
+  { id: "ph:sparkle" },
   { id: "ph:text-h" },
   { id: "ph:text-align-left" },
   { id: "ph:cursor-click" },

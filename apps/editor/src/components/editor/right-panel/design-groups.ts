@@ -102,7 +102,15 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { property: "width", label: "Width", placeholder: "100%" },
       { property: "max-width", label: "Max width", placeholder: "1200px" },
       { property: "height", label: "Height", placeholder: "auto" },
-      { property: "min-height", label: "Min height", placeholder: "0" }
+      { property: "min-width", label: "Min width", placeholder: "0" },
+      { property: "min-height", label: "Min height", placeholder: "0" },
+      { property: "max-height", label: "Max height", placeholder: "none" },
+      { property: "aspect-ratio", label: "Aspect ratio", placeholder: "16 / 9" },
+      {
+        property: "object-fit",
+        label: "Object fit",
+        options: ["fill", "contain", "cover", "none", "scale-down"]
+      }
     ]
   },
   {
@@ -124,14 +132,54 @@ export const DESIGN_GROUPS: DesignGroup[] = [
           justify: "text-justify"
         }
       },
-      { property: "color", label: "Color", placeholder: "#111111" }
+      { property: "color", label: "Color", placeholder: "#111111" },
+      { property: "font-family", label: "Font family", placeholder: "system-ui, sans-serif" },
+      {
+        property: "font-style",
+        label: "Font style",
+        options: ["normal", "italic", "oblique"]
+      },
+      { property: "letter-spacing", label: "Letter spacing", placeholder: "0" },
+      {
+        property: "text-transform",
+        label: "Transform",
+        options: ["none", "uppercase", "lowercase", "capitalize"]
+      },
+      {
+        property: "text-decoration-line",
+        label: "Decoration",
+        options: ["none", "underline", "line-through", "overline"]
+      },
+      {
+        property: "white-space",
+        label: "White space",
+        options: ["normal", "nowrap", "pre", "pre-wrap"]
+      }
     ]
   },
   {
     id: "background",
     label: "Background",
     icon: "group-background",
-    properties: [{ property: "background-color", label: "Color", placeholder: "#ffffff" }]
+    properties: [
+      { property: "background-color", label: "Color", placeholder: "#ffffff" },
+      {
+        property: "background-image",
+        label: "Image",
+        placeholder: "url(...) or linear-gradient(...)"
+      },
+      {
+        property: "background-size",
+        label: "Size",
+        options: ["auto", "cover", "contain"]
+      },
+      { property: "background-position", label: "Position", placeholder: "center" },
+      {
+        property: "background-repeat",
+        label: "Repeat",
+        options: ["repeat", "no-repeat", "repeat-x", "repeat-y"]
+      }
+    ]
   },
   {
     id: "border",
@@ -139,7 +187,53 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     icon: "group-border",
     properties: [
       { property: "border", label: "Border", placeholder: "1px solid #ccc" },
-      { property: "border-radius", label: "Radius", placeholder: "8px" }
+      { property: "border-radius", label: "Radius", placeholder: "8px" },
+      { property: "outline", label: "Outline", placeholder: "2px solid #06f" }
+    ]
+  },
+  {
+    id: "position",
+    label: "Position",
+    icon: "group-position",
+    properties: [
+      {
+        property: "position",
+        label: "Position",
+        options: ["static", "relative", "absolute", "fixed", "sticky"]
+      },
+      { property: "top", label: "Top", placeholder: "auto" },
+      { property: "right", label: "Right", placeholder: "auto" },
+      { property: "bottom", label: "Bottom", placeholder: "auto" },
+      { property: "left", label: "Left", placeholder: "auto" },
+      { property: "z-index", label: "Z-index", placeholder: "auto" },
+      {
+        property: "overflow",
+        label: "Overflow",
+        options: ["visible", "hidden", "scroll", "auto", "clip"]
+      }
+    ]
+  },
+  {
+    id: "effects",
+    label: "Effects",
+    icon: "group-effects",
+    properties: [
+      { property: "opacity", label: "Opacity", placeholder: "1" },
+      { property: "box-shadow", label: "Box shadow", placeholder: "0 4px 12px rgba(0,0,0,.2)" },
+      { property: "filter", label: "Filter", placeholder: "blur(4px)" },
+      { property: "backdrop-filter", label: "Backdrop filter", placeholder: "blur(8px)" },
+      { property: "transform", label: "Transform", placeholder: "translateY(-2px)" },
+      { property: "transition", label: "Transition", placeholder: "all 300ms ease" },
+      {
+        property: "cursor",
+        label: "Cursor",
+        options: ["auto", "pointer", "default", "not-allowed", "grab", "text"]
+      },
+      {
+        property: "pointer-events",
+        label: "Pointer events",
+        options: ["auto", "none"]
+      }
     ]
   }
 ];

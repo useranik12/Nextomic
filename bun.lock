@@ -103,6 +103,7 @@
       "name": "@nextomic/schema",
       "version": "0.0.0",
       "dependencies": {
+        "postcss": "^8.5.32",
         "zod": "3.24.1",
       },
     },

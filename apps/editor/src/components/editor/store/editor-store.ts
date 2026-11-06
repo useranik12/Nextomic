@@ -118,6 +118,8 @@ interface EditorState {
   setElementClass: (id: string, name: string, replacing?: string) => void;
   removeElementClass: (id: string, name: string) => void;
   setElementStyle: (id: string, property: string, value: string | null) => void;
+  /** Replaces every style of the active target (the active class, else the element), e.g. from the CSS editor. */
+  setTargetStyles: (id: string, styles: StyleMap) => void;
   updatePageMeta: (patch: Partial<Pick<PageDoc, "name" | "route">>) => void;
   updatePageSettings: (patch: Partial<PageSettings>) => void;
   replaceProject: (project: ProjectSettings) => void;
@@ -462,6 +464,26 @@ export const useEditorStore = create<EditorState>((set, get) => {
       edit(`style:${id}:${activeBreakpointId}:${activeState}:${property}`, (draft) => {
         const found = findNode(draft.tree, id);
         if (found) setStyle(found.node, activeBreakpointId, activeState, property, value);
+      });
+    },
+
+    setTargetStyles: (id, styles) => {
+      const { activeClass, project } = get();
+      if (activeClass) {
+        const classes = { ...project.classes };
+        if (Object.keys(styles.breakpoints).length === 0 && !styles.raw)
+          delete classes[activeClass];
+        else classes[activeClass] = styles;
+        set({
+          project: { ...project, classes },
+          classesTick: get().classesTick + 1,
+          saveStatus: dirtyStatus(get().saveStatus)
+        });
+        return;
+      }
+      edit(`css:${id}`, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (found) found.node.styles = styles;
       });
     },
 
