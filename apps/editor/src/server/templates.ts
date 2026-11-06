@@ -49,6 +49,7 @@ export interface TemplateSummary {
   name: string;
   type: TemplateType;
   status: "draft" | "published";
+  settings: TemplateSettings;
 }
 
 export async function listTemplates(projectId: string): Promise<TemplateSummary[]> {
@@ -57,12 +58,10 @@ export async function listTemplates(projectId: string): Promise<TemplateSummary[
     .from(templates)
     .where(eq(templates.projectId, projectId))
     .orderBy(asc(templates.createdAt));
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    status: templateSettingsSchema.parse(row.settings).status
-  }));
+  return rows.map((row) => {
+    const settings = templateSettingsSchema.parse(row.settings);
+    return { id: row.id, name: row.name, type: row.type, status: settings.status, settings };
+  });
 }
 
 export async function getTemplate(

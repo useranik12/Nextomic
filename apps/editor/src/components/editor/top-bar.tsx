@@ -24,7 +24,14 @@ import {
   type SaveStatus
 } from "./store/editor-store";
 import { themeModeFor, useResolvedTheme } from "./store/use-resolved-theme";
-import { themeModes } from "@nextomic/schema";
+import {
+  TEMPLATE_TYPE_LABELS,
+  evaluateRules,
+  explainLayout,
+  resolveLayout,
+  themeModes
+} from "@nextomic/schema";
+import { pageRuleContext } from "./rules/editor-context";
 import { UnsavedDraftsDialog } from "./unsaved-drafts-dialog";
 import type { PageSummary } from "@/server/pages";
 import type { TemplateSummary } from "@/server/templates";
@@ -53,43 +60,121 @@ function ChipFact({ label, value }: { label: string; value: string }) {
   );
 }
 
-// What applies to this page right now. Theme, header and footer arrive with themes and templates.
-function ChipPopover({ status }: { status: SaveStatus }) {
+// What applies to this page right now, and why.
+function ChipPopover({
+  status,
+  pages,
+  templates
+}: {
+  status: SaveStatus;
+  pages: PageSummary[];
+  templates: TemplateSummary[];
+}) {
   const doc = useEditorStore((s) => s.doc);
+  const page = useEditorStore((s) => s.page);
   const publishedAt = useEditorStore((s) => s.publishedAt);
-  const version = useEditorStore((s) => s.page?.version);
+  const theme = useResolvedTheme();
+  const isTemplate = page?.kind === "template";
+  const layout =
+    !isTemplate && doc && page
+      ? resolveLayout(
+          templates,
+          { header: doc.settings.header, footer: doc.settings.footer },
+          pageRuleContext({ id: page.id, name: doc.name, route: doc.route })
+        )
+      : null;
+  const matching =
+    isTemplate && doc?.template && page?.templateType !== "error-404"
+      ? pages.filter((p) =>
+          evaluateRules(
+            doc.template!.rules,
+            pageRuleContext({ id: p.id, name: p.name, route: p.route })
+          )
+        )
+      : [];
   return (
-    <div className="flex flex-col gap-2 px-1 py-2 text-small">
+    <div className="flex max-w-xs flex-col gap-2 px-1 py-2 text-small">
       <p className="font-medium text-foreground">{doc?.name}</p>
       <dl className="flex flex-col gap-1">
-        <ChipFact label="Route" value={doc?.route ?? ""} />
-        <ChipFact label="Version" value={version ? String(version) : "—"} />
-        <ChipFact
-          label="Status"
-          value={(publishedAt ? "Published" : "Draft") + " · " + STATUS_LABEL[status]}
-        />
-        <ChipFact label="Theme" value="None" />
-        <ChipFact label="Header" value="None" />
-        <ChipFact label="Footer" value="None" />
+        {isTemplate ? (
+          <>
+            <ChipFact
+              label="Type"
+              value={page?.templateType ? TEMPLATE_TYPE_LABELS[page.templateType] : ""}
+            />
+            <ChipFact
+              label="Status"
+              value={doc?.template?.status === "published" ? "Published" : "Draft"}
+            />
+            <ChipFact
+              label="Applies to"
+              value={
+                page?.templateType === "error-404"
+                  ? "Addresses that match no page"
+                  : matching.length === 0
+                    ? "No pages"
+                    : matching.map((p) => p.name).join(", ")
+              }
+            />
+          </>
+        ) : (
+          <>
+            <ChipFact label="Route" value={doc?.route ?? ""} />
+            <ChipFact label="Version" value={page?.version ? String(page.version) : "—"} />
+            <ChipFact
+              label="Status"
+              value={(publishedAt ? "Published" : "Draft") + " · " + STATUS_LABEL[status]}
+            />
+            <ChipFact label="Theme" value={theme?.name ?? "None"} />
+          </>
+        )}
       </dl>
+      {layout ? (
+        <ul
+          className="flex flex-col gap-1 text-tiny text-default-600"
+          aria-label="Why this applies"
+        >
+          {explainLayout(layout.decisions).map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
 
-function SaveChip({ saveNow }: { saveNow: () => Promise<void> }) {
+function SaveChip({
+  saveNow,
+  pages,
+  templates
+}: {
+  saveNow: () => Promise<void>;
+  pages: PageSummary[];
+  templates: TemplateSummary[];
+}) {
   const doc = useEditorStore((s) => s.doc);
   const status = useEditorStore((s) => s.saveStatus);
   const error = useEditorStore((s) => s.saveError);
+  const isTemplate = useEditorStore((s) => s.page?.kind === "template");
   return (
-    <Tooltip content={<ChipPopover status={status} />} placement="bottom" delay={300}>
+    <Tooltip
+      content={<ChipPopover status={status} pages={pages} templates={templates} />}
+      placement="bottom"
+      delay={300}
+    >
       <div
         tabIndex={0}
         aria-label="Editing context"
-        className="flex items-center gap-2 rounded-full bg-default-100 px-3 py-1.5 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
+        className={
+          "flex items-center gap-2 rounded-full px-3 py-1.5 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30 " +
+          (isTemplate ? "bg-secondary/20" : "bg-default-100")
+        }
       >
-        <span className="text-default-500">Page</span>
+        <span className={isTemplate ? "font-medium text-secondary" : "text-default-500"}>
+          {isTemplate ? "Template" : "Page"}
+        </span>
         <span className="max-w-[160px] truncate font-medium text-foreground">{doc?.name}</span>
-        <span className="text-default-400">{doc?.route}</span>
+        {isTemplate ? null : <span className="text-default-400">{doc?.route}</span>}
         <span role="status" className="flex items-center gap-1.5 text-tiny text-default-600">
           <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} />
           {error && status === "error" ? error : STATUS_LABEL[status]}
@@ -439,6 +524,7 @@ export function TopBar({
   const [managerOpen, setManagerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const pageId = useEditorStore((s) => s.page?.id);
+  const isTemplate = useEditorStore((s) => s.page?.kind === "template");
   const status = useEditorStore((s) => s.saveStatus);
 
   function confirmLeave(event: React.MouseEvent) {
@@ -451,7 +537,12 @@ export function TopBar({
   }
 
   return (
-    <header className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-divider bg-background px-3">
+    <header
+      className={
+        "grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b bg-background px-3 " +
+        (isTemplate ? "border-secondary" : "border-divider")
+      }
+    >
       <div className="flex min-w-0 items-center gap-2">
         <Link
           href="/projects"
@@ -484,8 +575,10 @@ export function TopBar({
         />
         <button
           type="button"
-          aria-label="Page settings"
-          onClick={() => setSettingsOpen(true)}
+          aria-label={isTemplate ? "Template settings" : "Page settings"}
+          onClick={() =>
+            isTemplate ? useEditorStore.getState().select(null) : setSettingsOpen(true)
+          }
           className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
         >
           <Icon name="ph:sliders-horizontal" width={20} height={20} />
@@ -493,7 +586,7 @@ export function TopBar({
         <ModePreview mode={mode} onModeChange={onModeChange} />
         <UndoRedo />
         <div className="hidden min-w-0 xl:block">
-          <SaveChip saveNow={saveNow} />
+          <SaveChip saveNow={saveNow} pages={pages} templates={templates} />
         </div>
       </div>
 
