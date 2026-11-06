@@ -208,6 +208,15 @@ function PublishControl({
   }, [projectId, setPublishedAt, savedTick, breakpoints]);
 
   const upToDate = publishedAt !== null && !hasChanges && saveStatus === "saved";
+  // Red: edits since the last save. Orange: saved as a draft, not live. Green: live and current.
+  const dot =
+    saveStatus === "dirty" || saveStatus === "error" || saveStatus === "conflict"
+      ? { color: "bg-danger", label: "Unsaved changes" }
+      : saveStatus === "saving"
+        ? { color: "bg-orange-500 animate-pulse", label: "Saving" }
+        : upToDate
+          ? { color: "bg-success", label: "Published" }
+          : { color: "bg-orange-500", label: "Draft saved, not published" };
 
   // Publishing waits until every edited group is saved with its check icon (or discarded).
   function requestPublish() {
@@ -276,7 +285,13 @@ function PublishControl({
           </button>
         </span>
       </Tooltip>
-      <div className="flex items-center">
+      <div className="relative flex items-center">
+        <span
+          role="img"
+          aria-label={dot.label}
+          title={dot.label}
+          className={`pointer-events-none absolute -right-0.5 -top-0.5 z-10 h-2.5 w-2.5 rounded-full ring-2 ring-background ${dot.color}`}
+        />
         <ActionButton
           className="rounded-r-none"
           isLoading={busy === "publish"}
