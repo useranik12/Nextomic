@@ -153,6 +153,8 @@ interface EditorState {
   /** `replaceWith` null removes the class from the elements of the open page. */
   deleteClass: (name: string, replaceWith: string | null) => void;
   setElementStyle: (id: string, property: string, value: string | null) => void;
+  /** Several declarations in one step (one undo): a value sets the property, null removes it. */
+  setElementStyles: (id: string, patch: Readonly<Record<string, string | null>>) => void;
   setStylePreview: (preview: { property: string; value: string } | null) => void;
   /** Replaces every style of the active target (the active class, else the element), e.g. from the CSS editor. */
   setTargetStyles: (id: string, styles: StyleMap) => void;
@@ -233,6 +235,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
     project: {
       breakpoints: [],
       generateElementIds: true,
+      versionControl: true,
+      versionLimit: 200,
       classes: {},
       classCategories: [],
       classMeta: {},
@@ -267,20 +271,28 @@ export const useEditorStore = create<EditorState>((set, get) => {
         project: { ...project, breakpoints: sortBreakpoints(project.breakpoints) }
       }),
 
-    loadPage: (page, doc) =>
+    loadPage: (page, doc) => {
+      // With automatic IDs on, elements made before the setting was on get their ID now.
+      const missing = get().project.generateElementIds && hasMissingHtmlId(doc.tree);
+      const loaded = missing
+        ? produce(doc, (draft) => {
+            assignMissingHtmlIds(draft.tree);
+          })
+        : doc;
       set({
         page,
-        doc,
+        doc: loaded,
         past: [],
         future: [],
         lastEditKey: null,
         selectedId: null,
         activeClass: null,
         pageDrafts: NO_DRAFTS,
-        saveStatus: "saved",
+        saveStatus: missing ? "dirty" : "saved",
         saveError: null,
         conflict: null
-      }),
+      });
+    },
 
     markSaved: (version) =>
       set((state) => ({
@@ -677,6 +689,39 @@ export const useEditorStore = create<EditorState>((set, get) => {
       });
     },
 
+    setElementStyles: (id, patch) => {
+      const { activeBreakpointId, activeState, activeClass, project } = get();
+      const entries = Object.entries(patch);
+      if (activeClass) {
+        const styles: StyleMap = structuredClone(
+          project.classes[activeClass] ?? { breakpoints: {} }
+        );
+        for (const [property, value] of entries) {
+          setStyle({ styles }, activeBreakpointId, activeState, property, value);
+        }
+        const classes = { ...project.classes };
+        if (Object.keys(styles.breakpoints).length === 0 && !styles.raw)
+          delete classes[activeClass];
+        else classes[activeClass] = styles;
+        set({
+          project: { ...project, classes },
+          classesTick: get().classesTick + 1,
+          saveStatus: dirtyStatus(get().saveStatus)
+        });
+        return;
+      }
+      edit(
+        `styles:${id}:${activeBreakpointId}:${activeState}:${entries.map(([k]) => k).join(",")}`,
+        (draft) => {
+          const found = findNode(draft.tree, id);
+          if (!found) return;
+          for (const [property, value] of entries) {
+            setStyle(found.node, activeBreakpointId, activeState, property, value);
+          }
+        }
+      );
+    },
+
     setTargetStyles: (id, styles) => {
       const { activeClass, project } = get();
       if (activeClass) {
@@ -782,6 +827,14 @@ export function countElements(doc: PageDoc | null): number {
 }
 
 /** Edits make a page "dirty", but never hide an unresolved conflict or an in-flight save. */
+function hasMissingHtmlId(root: ElementNode): boolean {
+  let missing = false;
+  walkElements(root, (node) => {
+    if (node.type !== "page" && !node.htmlId) missing = true;
+  });
+  return missing;
+}
+
 const dirtyStatus = (status: SaveStatus): SaveStatus =>
   status === "conflict" || status === "saving" ? status : "dirty";
 

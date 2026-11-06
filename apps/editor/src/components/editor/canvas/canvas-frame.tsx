@@ -1,6 +1,6 @@
 "use client";
 
-import { breakpointPreviewWidth, findNode, setStyle } from "@nextomic/schema";
+import { breakpointPreviewWidth, buildDynamicContext, findNode, setStyle } from "@nextomic/schema";
 import {
   memo,
   useCallback,
@@ -263,7 +263,12 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
       fontBase: `/fonts/${projectId}`,
       theme,
       mode: themeModeFor(theme, mode),
-      selectedId
+      selectedId,
+      dynamic: buildDynamicContext({
+        page: { name: doc.name, route: doc.route, settings: doc.settings },
+        mode: "editor",
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      })
     });
   }, [
     ready,

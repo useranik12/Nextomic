@@ -15,6 +15,10 @@
 - The modal and the canvas show which kind of value is used and a refresh button for live fetches.
 - Fetch results are never persisted in the database, backups, or exports.
 
+### Token resolution (built)
+
+Dynamic tokens in text are written `{{group.name}}` and resolved by `createTokenResolver` (`packages/schema/src/dynamic-context.ts`) from a `DynamicContext` the editor canvas, the owner preview and the published site each build with `buildDynamicContext`. Groups: `page.name|route`, `request.url|path|query`, `now.iso|date|time|year` (shown in the context's time zone), `user.id|email|name|role` (empty while signed out), `env.mode` (editor, preview, live), `param.<name>` (the address value, else the default) and `state.<name>[.path]` (the starting value; JSON values can be followed with dots). Unknown tokens give empty text, never raw braces. The renderer takes the context as `dynamic` on `PageRenderer`. Style values, queries, loops and conditions arrive with the Data layer phase.
+
 ## 2. Scoping rules
 
 - Query data is available only to the element that owns the query and its descendants. Parents and siblings cannot see it.

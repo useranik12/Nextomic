@@ -1,5 +1,7 @@
 import {
   CLASS_NAME_PATTERN,
+  createTokenResolver,
+  type DynamicContext,
   themeBootScript,
   fontPreloads,
   fontsCss,
@@ -38,6 +40,8 @@ export interface RenderOptions {
   pruneUnusedClasses?: boolean;
   /** Class names to keep even when no element has them (classes a script or action adds later). */
   keepClasses?: readonly string[];
+  /** What dynamic tags resolve to ({{page.name}}, {{param.id}}, {{now.date}} ...). */
+  dynamic?: DynamicContext;
   resolveToken?: TokenResolver;
 }
 
@@ -72,7 +76,12 @@ export function renderNode(node: ElementNode, options: RenderOptions): ReactNode
 }
 
 /** The page tree plus the CSS for every element at every breakpoint. */
-export function PageRenderer({ tree, ...options }: RenderOptions & { tree: ElementNode }) {
+export function PageRenderer({ tree, ...given }: RenderOptions & { tree: ElementNode }) {
+  const options: RenderOptions = {
+    ...given,
+    resolveToken:
+      given.resolveToken ?? (given.dynamic ? createTokenResolver(given.dynamic) : undefined)
+  };
   const fontBase = options.fontBase ?? "";
   const used = options.pruneUnusedClasses
     ? new Set([...usedClassNames(tree), ...(options.keepClasses ?? [])])

@@ -1,5 +1,6 @@
 import {
   breakpointListSchema,
+  dynamicContextSchema,
   variableListSchema,
   fontListSchema,
   themeSchema,
@@ -33,7 +34,9 @@ export const renderMessageSchema = z.object({
   theme: themeSchema.nullable(),
   // A mode id of the active theme (light and dark unless the theme defines others).
   mode: z.string().max(32),
-  selectedId: z.string().nullable()
+  selectedId: z.string().nullable(),
+  // What dynamic tags show: the page, its parameter defaults, state, date and time.
+  dynamic: dynamicContextSchema
 });
 export type RenderMessage = z.infer<typeof renderMessageSchema>;
 

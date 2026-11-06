@@ -1,5 +1,5 @@
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
-import { resolveTheme } from "@nextomic/schema";
+import { buildDynamicContext, resolveTheme } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -34,8 +34,19 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-export default async function PublishedPage({ params }: { params: Params }) {
+export default async function PublishedPage({
+  params,
+  searchParams
+}: {
+  params: Params;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id, path } = await params;
+  const search = await searchParams;
+  const values: Record<string, string> = {};
+  for (const [key, value] of Object.entries(search)) {
+    if (typeof value === "string") values[key] = value;
+  }
   const { page, pageId, settings } = await resolve(id, path);
   const { theme } = resolveTheme(settings.themes, {
     pageId,
@@ -53,6 +64,12 @@ export default async function PublishedPage({ params }: { params: Params }) {
         fonts={settings.fonts}
         fontBase={`/fonts/${id}`}
         theme={theme}
+        dynamic={buildDynamicContext({
+          page: { name: page.name, route: page.route, settings: page.settings },
+          mode: "live",
+          paramValues: values,
+          query: new URLSearchParams(values).toString()
+        })}
         bootScript
         pruneUnusedClasses
       />

@@ -16,6 +16,9 @@ export interface RegisteredIcon {
 
 export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:magnifying-glass" },
+  { id: "ph:link" },
+  { id: "ph:link-simple" },
+  { id: "ph:link-simple-break" },
   { id: "ph:squares-four" },
   { id: "ph:gear-six" },
   { id: "ph:plus" },

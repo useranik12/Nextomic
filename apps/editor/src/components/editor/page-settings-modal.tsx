@@ -1,7 +1,14 @@
 "use client";
 
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch } from "@heroui/react";
-import { pageNameSchema, pageSeoSchema, resolveTheme } from "@nextomic/schema";
+import {
+  VERSION_LIMIT_MAX,
+  VERSION_LIMIT_MIN,
+  effectiveVersionLimit,
+  pageNameSchema,
+  pageSeoSchema,
+  resolveTheme
+} from "@nextomic/schema";
 import { useState } from "react";
 import {
   deletePageAction,
@@ -9,6 +16,7 @@ import {
   listPagesAction
 } from "@/app/(builder)/editor/[id]/actions";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
+import { InfoTip } from "@/components/ui/info-tip";
 import { openPage } from "./page-menu";
 import { useEditorStore } from "./store/editor-store";
 import type { PageSummary } from "@/server/pages";
@@ -30,6 +38,65 @@ const LOCALES = [
   ["ko", "Korean"],
   ["zh", "Chinese"]
 ].map(([value, label]) => ({ value: value as string, label: `${label} (${value})` }));
+
+/**
+ * How many saved versions this page keeps (5 to 200). Greyed out, with a tip, while version control
+ * is off in App Settings. Empty follows the app-wide limit.
+ */
+function VersionLimit() {
+  const settings = useEditorStore((s) => s.doc?.settings);
+  const project = useEditorStore((s) => s.project);
+  const update = useEditorStore((s) => s.updatePageSettings);
+  const own = settings?.versionLimit ?? null;
+  const [text, setText] = useState(own === null ? "" : String(own));
+  const off = !project.versionControl;
+  const inherited = effectiveVersionLimit(project, { versionLimit: null });
+
+  function commit(raw: string) {
+    if (raw.trim() === "") {
+      update({ versionLimit: null });
+      return setText("");
+    }
+    const n = Math.round(Number(raw));
+    const next = Number.isFinite(n)
+      ? Math.min(VERSION_LIMIT_MAX, Math.max(VERSION_LIMIT_MIN, n))
+      : (own ?? inherited);
+    update({ versionLimit: next });
+    setText(String(next));
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-small font-medium text-foreground">History limit</span>
+        <InfoTip
+          label="History limit"
+          text={
+            off
+              ? "Version control is off. Turn it on in App Settings to keep a history of this page."
+              : `How many saved versions this page keeps, from ${VERSION_LIMIT_MIN} to ${VERSION_LIMIT_MAX}. When it is full the oldest version is deleted. Leave empty to use the app-wide limit (${inherited}).`
+          }
+        />
+      </div>
+      <FormInput
+        aria-label="History limit"
+        type="number"
+        min={VERSION_LIMIT_MIN}
+        max={VERSION_LIMIT_MAX}
+        isDisabled={off}
+        placeholder={`App default (${inherited})`}
+        value={text}
+        onValueChange={setText}
+        onBlur={() => commit(text)}
+        description={
+          off
+            ? "Version control is off. Turn it on from App Settings."
+            : `${VERSION_LIMIT_MIN} to ${VERSION_LIMIT_MAX} versions. Older ones are deleted.`
+        }
+      />
+    </div>
+  );
+}
 
 function SectionTitle({ children }: { children: string }) {
   return <h3 className="text-small font-semibold text-foreground">{children}</h3>;
@@ -201,6 +268,8 @@ export function PageSettingsModal({
               ...themes.filter((t) => t.active).map((t) => ({ value: t.id, label: t.name }))
             ]}
           />
+          <SectionTitle>Version history</SectionTitle>
+          <VersionLimit />
           <SectionTitle>Language</SectionTitle>
           <SelectField
             label="Page language"

@@ -1,5 +1,5 @@
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
-import { resolveTheme } from "@nextomic/schema";
+import { buildDynamicContext, resolveTheme } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
@@ -10,7 +10,7 @@ import { getPageByRoute, getProjectSettings, listPages } from "@/server/pages";
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ id: string }>;
-type Search = Promise<{ path?: string }>;
+type Search = Promise<Record<string, string | string[] | undefined>>;
 
 // Owner-only lookup shared by the page and its metadata (cached per request).
 const resolvePreview = cache(async (id: string, path: string | undefined) => {
@@ -46,8 +46,11 @@ export async function generateMetadata({
   searchParams: Search;
 }): Promise<Metadata> {
   const { id } = await params;
-  const { path } = await searchParams;
-  const { page } = await resolvePreview(id, path);
+  const search = await searchParams;
+  const { page } = await resolvePreview(
+    id,
+    typeof search.path === "string" ? search.path : undefined
+  );
   const seo = page.settings.seo;
   return {
     title: seo.title || page.name,
@@ -72,8 +75,13 @@ export default async function PreviewPage({
   searchParams: Search;
 }) {
   const { id } = await params;
-  const { path } = await searchParams;
+  const search = await searchParams;
+  const path = typeof search.path === "string" ? search.path : undefined;
   const { page, settings } = await resolvePreview(id, path);
+  const values: Record<string, string> = {};
+  for (const [key, value] of Object.entries(search)) {
+    if (key !== "path" && typeof value === "string") values[key] = value;
+  }
   const { theme } = resolveTheme(settings.themes, {
     pageId: page.id,
     route: page.route,
@@ -90,6 +98,12 @@ export default async function PreviewPage({
         fonts={settings.fonts}
         fontBase={`/fonts/${id}`}
         theme={theme}
+        dynamic={buildDynamicContext({
+          page: { name: page.name, route: page.route, settings: page.settings },
+          mode: "preview",
+          paramValues: values,
+          query: new URLSearchParams(values).toString()
+        })}
         bootScript
         pruneUnusedClasses
       />

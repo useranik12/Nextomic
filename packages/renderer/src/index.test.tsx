@@ -1,4 +1,11 @@
-import { DEFAULT_BREAKPOINTS, emptyPageTree, newTheme, type ElementNode } from "@nextomic/schema";
+import {
+  DEFAULT_BREAKPOINTS,
+  buildDynamicContext,
+  defaultPageSettings,
+  emptyPageTree,
+  newTheme,
+  type ElementNode
+} from "@nextomic/schema";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
@@ -261,5 +268,30 @@ describe("fonts in output", () => {
     );
     expect(canvas).toContain("@font-face");
     expect(canvas).not.toContain("preload");
+  });
+});
+
+describe("dynamic tags", () => {
+  it("shows what the dynamic context resolves to, and nothing for unknown tags", () => {
+    const heading = node({
+      id: "h",
+      type: "heading",
+      props: {
+        text: { kind: "mixed", parts: ["Hi ", { token: "page.name" }, " / ", { token: "nope.x" }] }
+      }
+    });
+    const tree = { ...emptyPageTree(), children: [heading] };
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={buildDynamicContext({
+          page: { name: "About us", route: "/about", settings: defaultPageSettings() },
+          mode: "preview"
+        })}
+      />
+    );
+    expect(html).toContain("Hi About us / ");
+    expect(html).not.toContain("{{");
   });
 });

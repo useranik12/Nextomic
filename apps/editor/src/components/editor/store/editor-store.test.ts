@@ -10,6 +10,8 @@ import { useEditorStore } from "./editor-store";
 const project: ProjectSettings = {
   breakpoints: DEFAULT_BREAKPOINTS,
   generateElementIds: true,
+  versionControl: true,
+  versionLimit: 200,
   classes: {},
   classCategories: [],
   classMeta: {},
