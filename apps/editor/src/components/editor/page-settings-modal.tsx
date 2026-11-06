@@ -18,6 +18,7 @@ import {
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
 import { openPage } from "./open-item";
+import { HeaderFooterFields, useTemplateList } from "./right-panel/template-options";
 import { useEditorStore } from "./store/editor-store";
 import type { PageSummary } from "@/server/pages";
 
@@ -145,6 +146,7 @@ export function PageSettingsModal({
   const updateMeta = useEditorStore((s) => s.updatePageMeta);
   const updateSettings = useEditorStore((s) => s.updatePageSettings);
   const themes = useEditorStore((s) => s.project.themes);
+  const templates = useTemplateList();
   const route = useEditorStore((s) => s.doc?.route ?? "/");
   const auto = resolveTheme(themes, { pageId: pageId ?? "", route }).theme;
   const themeLabel = auto ? `Auto (${auto.name})` : "Auto";
@@ -284,6 +286,13 @@ export function PageSettingsModal({
             onValueChange={(ogImage) => setSeo({ ogImage })}
             isInvalid={Boolean(urlError("ogImage"))}
             errorMessage={urlError("ogImage")}
+          />
+          <SectionTitle>Header and footer</SectionTitle>
+          <HeaderFooterFields
+            header={doc.settings.header}
+            footer={doc.settings.footer}
+            templates={templates}
+            onChange={(change) => updateSettings(change)}
           />
           <SectionTitle>Appearance</SectionTitle>
           <SelectField
