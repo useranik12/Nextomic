@@ -2,10 +2,12 @@ import {
   defaultPageSettings,
   defaultProjectSettings,
   countClassUsage,
+  countVariableUsageInTree,
   elementNodeSchema,
   emptyPageTree,
   pageSettingsSchema,
   projectSettingsSchema,
+  renameVariableInTree,
   replaceClassInTree,
   type ElementNode,
   type PageSettings,
@@ -358,6 +360,46 @@ export async function replaceClassInOtherPages(
     for (const row of rows) {
       const tree = elementNodeSchema.parse(row.tree);
       if (!replaceClassInTree(tree, from, to)) continue;
+      await tx
+        .update(pages)
+        .set({ tree, version: sql`${pages.version} + 1`, updatedAt: new Date() })
+        .where(and(eq(pages.id, row.id), eq(pages.projectId, projectId)));
+      updated += 1;
+    }
+    return updated;
+  });
+}
+
+/** Variable references on the saved pages of a project, leaving out `exceptPageId`. */
+export async function variableUsageInOtherPages(
+  projectId: string,
+  exceptPageId: string
+): Promise<Record<string, number>> {
+  const rows = await getDb()
+    .select({ tree: pages.tree })
+    .from(pages)
+    .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
+  const counts: Record<string, number> = {};
+  for (const row of rows) countVariableUsageInTree(elementNodeSchema.parse(row.tree), counts);
+  return counts;
+}
+
+/** Points references of variable `from` at `to` on every saved page except `exceptPageId`. */
+export async function renameVariableInOtherPages(
+  projectId: string,
+  exceptPageId: string,
+  from: string,
+  to: string
+): Promise<number> {
+  return getDb().transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: pages.id, tree: pages.tree })
+      .from(pages)
+      .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
+    let updated = 0;
+    for (const row of rows) {
+      const tree = elementNodeSchema.parse(row.tree);
+      if (!renameVariableInTree(tree, from, to)) continue;
       await tx
         .update(pages)
         .set({ tree, version: sql`${pages.version} + 1`, updatedAt: new Date() })

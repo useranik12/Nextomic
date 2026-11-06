@@ -43,6 +43,7 @@ export default async function PublishedPage({ params }: { params: Params }) {
         tree={page.tree}
         breakpoints={settings.breakpoints}
         classes={settings.classes}
+        variables={settings.variables}
       />
     </>
   );

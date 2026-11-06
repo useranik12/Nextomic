@@ -10,7 +10,8 @@ import { useEditorStore } from "./editor-store";
 const project: ProjectSettings = {
   breakpoints: DEFAULT_BREAKPOINTS,
   generateElementIds: true,
-  classes: {}
+  classes: {},
+  variables: []
 };
 
 function reset() {
