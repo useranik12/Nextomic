@@ -49,7 +49,9 @@ function VersionLimit() {
   const update = useEditorStore((s) => s.updatePageSettings);
   const own = settings?.versionLimit ?? null;
   const [text, setText] = useState(own === null ? "" : String(own));
-  const off = !project.versionControl;
+  const globalOff = !project.versionControl;
+  const pageOn = settings?.versionControl ?? true;
+  const off = globalOff || !pageOn;
   const inherited = effectiveVersionLimit(project, { versionLimit: null });
 
   function commit(raw: string) {
@@ -66,34 +68,59 @@ function VersionLimit() {
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-1.5">
-        <span className="text-small font-medium text-foreground">History limit</span>
+        <Switch
+          isSelected={pageOn && !globalOff}
+          isDisabled={globalOff}
+          onValueChange={(on) => update({ versionControl: on })}
+        >
+          <span className="text-small font-medium text-foreground">
+            Enable version history for this page
+          </span>
+        </Switch>
         <InfoTip
-          label="History limit"
+          label="Version history for this page"
           text={
-            off
-              ? "Version control is off. Turn it on in App Settings to keep a history of this page."
-              : `How many saved versions this page keeps, from ${VERSION_LIMIT_MIN} to ${VERSION_LIMIT_MAX}. When it is full the oldest version is deleted. Leave empty to use the app-wide limit (${inherited}).`
+            globalOff
+              ? "Version control is off for the whole app. Turn it on in App Settings first."
+              : "Off: saving this page makes no new snapshots. Other pages are not affected."
           }
         />
       </div>
-      <FormInput
-        aria-label="History limit"
-        type="number"
-        min={VERSION_LIMIT_MIN}
-        max={VERSION_LIMIT_MAX}
-        isDisabled={off}
-        placeholder={`App default (${inherited})`}
-        value={text}
-        onValueChange={setText}
-        onBlur={() => commit(text)}
-        description={
-          off
-            ? "Version control is off. Turn it on from App Settings."
-            : `${VERSION_LIMIT_MIN} to ${VERSION_LIMIT_MAX} versions. Older ones are deleted.`
-        }
-      />
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-small font-medium text-foreground">History limit</span>
+          <InfoTip
+            label="History limit"
+            text={
+              globalOff
+                ? "Version control is off. Turn it on in App Settings to keep a history of this page."
+                : !pageOn
+                  ? "Version history is off for this page. Turn it on above."
+                  : `How many saved versions this page keeps, from ${VERSION_LIMIT_MIN} to ${VERSION_LIMIT_MAX}. When it is full the oldest version is deleted. Leave empty to use the app-wide limit (${inherited}).`
+            }
+          />
+        </div>
+        <FormInput
+          aria-label="History limit"
+          type="number"
+          min={VERSION_LIMIT_MIN}
+          max={VERSION_LIMIT_MAX}
+          isDisabled={off}
+          placeholder={`App default (${inherited})`}
+          value={text}
+          onValueChange={setText}
+          onBlur={() => commit(text)}
+          description={
+            off
+              ? globalOff
+                ? "Version control is off. Turn it on from App Settings."
+                : "Version history is off for this page."
+              : `${VERSION_LIMIT_MIN} to ${VERSION_LIMIT_MAX} versions. Older ones are deleted.`
+          }
+        />
+      </div>
     </div>
   );
 }

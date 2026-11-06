@@ -9,7 +9,8 @@ import { useEditorStore } from "../store/editor-store";
 import { ColorPalette } from "./color-palette";
 import { fieldKind } from "./design-field-tools";
 import type { DesignProperty } from "./design-groups";
-import { DesignIcon } from "./design-icons";
+import { CallEditorButton } from "./call-editor";
+import { DesignIcon, PropertyIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
 import { FontPicker } from "./font-picker";
 import { LengthInput } from "./length-input";
@@ -64,7 +65,13 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
   const { options, hidden } = useOptions(node, property, target.own(property.property));
   if (property.sides) {
     return (
-      <SidesField node={node} setId={property.sides} label={property.label} tip={property.tip} />
+      <SidesField
+        node={node}
+        setId={property.sides}
+        label={property.label}
+        tip={property.tip}
+        icon={<PropertyIcon property={property.property} />}
+      />
     );
   }
   if (hidden) return null;
@@ -87,7 +94,8 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
       changed={changed}
       onReset={() => set(null)}
       tip={property.tip}
-      responsive
+      responsive={!property.half}
+      icon={<PropertyIcon property={property.property} />}
     >
       {property.options && property.icons ? (
         <div
@@ -172,11 +180,21 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
             {kind !== "color" && typesForProperty(property.property) !== null ? (
               <VariablePicker label={property.label} property={property.property} onPick={set} />
             ) : null}
-            <DynamicBolt
-              label={property.label}
-              onInsert={() => undefined}
-              disabledReason="Dynamic style values arrive with the dynamic data phase."
-            />
+            {property.editor ? (
+              <CallEditorButton
+                label={property.label}
+                kind={property.editor}
+                value={own}
+                onChange={set}
+              />
+            ) : null}
+            {property.half ? null : (
+              <DynamicBolt
+                label={property.label}
+                onInsert={() => undefined}
+                disabledReason="Dynamic style values arrive with the dynamic data phase."
+              />
+            )}
           </div>
         </div>
       )}

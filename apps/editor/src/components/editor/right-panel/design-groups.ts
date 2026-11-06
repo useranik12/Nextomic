@@ -11,6 +11,12 @@ export interface DesignProperty {
   tip?: string;
   /** Options come from the font in use: the weights and styles it really has. */
   fontOption?: "weight" | "style";
+  /** Shown at half width beside the next half-width property (min and max width, the two gaps). */
+  half?: boolean;
+  /** Settings with the same cluster id sit close together; clusters are spaced further apart. */
+  cluster?: string;
+  /** A visual editor in a popover instead of a text field. */
+  editor?: "transform" | "filter" | "backdrop-filter";
 }
 
 export interface DesignGroup {
@@ -31,15 +37,28 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     properties: [
       {
         property: "display",
+        cluster: "align",
         label: "Display",
         options: ["block", "flex", "grid", "inline", "inline-block", "none"]
       },
-      { property: "gap", label: "Gap", placeholder: "16px" },
-      { property: "column-gap", label: "Column gap", placeholder: "normal" },
-      { property: "row-gap", label: "Row gap", placeholder: "normal" },
-      { property: "flex-wrap", label: "Flex wrap", options: ["nowrap", "wrap", "wrap-reverse"] },
+      {
+        property: "flex-wrap",
+        label: "Flex wrap",
+        cluster: "align",
+        options: ["nowrap", "wrap", "wrap-reverse"]
+      },
+      { property: "gap", label: "Gap", placeholder: "16px", cluster: "gaps" },
+      {
+        property: "column-gap",
+        label: "Column gap",
+        placeholder: "normal",
+        half: true,
+        cluster: "gaps"
+      },
+      { property: "row-gap", label: "Row gap", placeholder: "normal", half: true, cluster: "gaps" },
       {
         property: "flex-direction",
+        cluster: "align",
         label: "Direction",
         options: ["row", "column", "row-reverse", "column-reverse"],
         icons: {
@@ -51,6 +70,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       },
       {
         property: "align-self",
+        cluster: "align",
         label: "Align self",
         options: ["flex-start", "center", "flex-end", "stretch", "baseline"],
         icons: {
@@ -63,6 +83,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       },
       {
         property: "justify-content",
+        cluster: "align",
         label: "Align main axis",
         options: ["flex-start", "center", "flex-end", "space-between", "space-around"],
         icons: {
@@ -75,6 +96,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       },
       {
         property: "align-items",
+        cluster: "align",
         label: "Align cross axis",
         options: ["stretch", "flex-start", "center", "flex-end", "baseline"],
         icons: {
@@ -85,10 +107,16 @@ export const DESIGN_GROUPS: DesignGroup[] = [
           baseline: "baseline"
         }
       },
-      { property: "flex-grow", label: "Flex grow", placeholder: "0" },
-      { property: "flex-shrink", label: "Flex shrink", placeholder: "1" },
-      { property: "flex-basis", label: "Flex basis", placeholder: "auto" },
-      { property: "order", label: "Order", placeholder: "0" }
+      { property: "flex-grow", label: "Flex grow", placeholder: "0", half: true, cluster: "flex" },
+      {
+        property: "flex-shrink",
+        label: "Flex shrink",
+        placeholder: "1",
+        half: true,
+        cluster: "flex"
+      },
+      { property: "flex-basis", label: "Flex basis", placeholder: "auto", cluster: "flex" },
+      { property: "order", label: "Order", placeholder: "0", cluster: "flex" }
     ]
   },
   {
@@ -115,12 +143,30 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     label: "Size",
     icon: "group-size",
     properties: [
-      { property: "width", label: "Width", placeholder: "100%" },
-      { property: "max-width", label: "Max width", placeholder: "1200px" },
-      { property: "height", label: "Height", placeholder: "auto" },
-      { property: "min-width", label: "Min width", placeholder: "0" },
-      { property: "min-height", label: "Min height", placeholder: "0" },
-      { property: "max-height", label: "Max height", placeholder: "none" },
+      { property: "width", label: "Width", placeholder: "100%", cluster: "width" },
+      { property: "min-width", label: "Min width", placeholder: "0", half: true, cluster: "width" },
+      {
+        property: "max-width",
+        label: "Max width",
+        placeholder: "1200px",
+        half: true,
+        cluster: "width"
+      },
+      { property: "height", label: "Height", placeholder: "auto", cluster: "height" },
+      {
+        property: "min-height",
+        label: "Min height",
+        placeholder: "0",
+        half: true,
+        cluster: "height"
+      },
+      {
+        property: "max-height",
+        label: "Max height",
+        placeholder: "none",
+        half: true,
+        cluster: "height"
+      },
       { property: "aspect-ratio", label: "Aspect ratio", placeholder: "16 / 9" },
       {
         property: "object-fit",
@@ -136,13 +182,15 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     properties: [
       {
         property: "font-family",
+        cluster: "font",
         label: "Font family",
         placeholder: "system-ui, sans-serif",
         tip: "Pick one of your project fonts or a system font. The weights and styles below follow the font you choose."
       },
-      { property: "font-size", label: "Font size", placeholder: "16" },
+      { property: "font-size", cluster: "font", label: "Font size", placeholder: "16" },
       {
         property: "font-weight",
+        cluster: "font",
         label: "Font weight",
         fontOption: "weight",
         options: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -150,14 +198,16 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       },
       {
         property: "font-style",
+        cluster: "font",
         label: "Font style",
         fontOption: "style",
         options: ["normal", "italic", "oblique"],
         tip: "Italic appears only when the font has an italic face installed."
       },
-      { property: "line-height", label: "Line height", placeholder: "1.5" },
+      { property: "line-height", cluster: "rhythm", label: "Line height", placeholder: "1.5" },
       {
         property: "text-align",
+        cluster: "text",
         label: "Text align",
         options: ["left", "center", "right", "justify"],
         icons: {
@@ -168,19 +218,22 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         }
       },
       { property: "color", label: "Color", placeholder: "#111111" },
-      { property: "letter-spacing", label: "Letter spacing", placeholder: "0" },
+      { property: "letter-spacing", cluster: "rhythm", label: "Letter spacing", placeholder: "0" },
       {
         property: "text-transform",
+        cluster: "text",
         label: "Transform",
         options: ["none", "uppercase", "lowercase", "capitalize"]
       },
       {
         property: "text-decoration-line",
+        cluster: "text",
         label: "Decoration",
         options: ["none", "underline", "line-through", "overline"]
       },
       {
         property: "white-space",
+        cluster: "text",
         label: "White space",
         options: ["normal", "nowrap", "pre", "pre-wrap"]
       }
@@ -194,17 +247,25 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       { property: "background-color", label: "Color", placeholder: "#ffffff" },
       {
         property: "background-image",
+        cluster: "image",
         label: "Image",
         placeholder: "url(...) or linear-gradient(...)"
       },
       {
         property: "background-size",
+        cluster: "image",
         label: "Size",
         options: ["auto", "cover", "contain"]
       },
-      { property: "background-position", label: "Position", placeholder: "center" },
+      {
+        property: "background-position",
+        cluster: "image",
+        label: "Position",
+        placeholder: "center"
+      },
       {
         property: "background-repeat",
+        cluster: "image",
         label: "Repeat",
         options: ["repeat", "no-repeat", "repeat-x", "repeat-y"]
       }
@@ -217,16 +278,18 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     properties: [
       {
         property: "border-width",
+        cluster: "edge",
         label: "Border width",
         sides: "border-width",
         tip: "The thickness of each edge. A border shows only when the style is not none."
       },
       {
         property: "border-style",
+        cluster: "edge",
         label: "Border style",
         options: ["none", "solid", "dashed", "dotted", "double"]
       },
-      { property: "border-color", label: "Border color", placeholder: "#cccccc" },
+      { property: "border-color", cluster: "edge", label: "Border color", placeholder: "#cccccc" },
       {
         property: "border-radius",
         label: "Radius",
@@ -267,20 +330,65 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     properties: [
       { property: "opacity", label: "Opacity", placeholder: "1" },
       { property: "box-shadow", label: "Box shadow", placeholder: "0 4px 12px rgba(0,0,0,.2)" },
-      { property: "filter", label: "Filter", placeholder: "blur(4px)" },
-      { property: "backdrop-filter", label: "Backdrop filter", placeholder: "blur(8px)" },
-      { property: "transform", label: "Transform", placeholder: "translateY(-2px)" },
-      { property: "transition", label: "Transition", placeholder: "all 300ms ease" },
       {
         property: "cursor",
         label: "Cursor",
+        cluster: "interact",
         options: ["auto", "pointer", "default", "not-allowed", "grab", "text"]
       },
       {
         property: "pointer-events",
         label: "Pointer events",
+        cluster: "interact",
         options: ["auto", "none"]
       }
+    ]
+  },
+  {
+    id: "transform",
+    label: "Transform",
+    icon: "group-transform",
+    properties: [
+      {
+        property: "transform",
+        label: "Transform",
+        editor: "transform",
+        placeholder: "translateY(-2px)",
+        tip: "Move, scale, rotate, skew and add perspective. Open the editor with the icon; the CSS text stays available."
+      },
+      { property: "transform-origin", label: "Transform origin", placeholder: "50% 50%" },
+      {
+        property: "transform-style",
+        label: "Transform style",
+        options: ["flat", "preserve-3d"]
+      },
+      {
+        property: "transform-box",
+        label: "Transform box",
+        options: ["content-box", "border-box", "fill-box", "stroke-box", "view-box"]
+      }
+    ]
+  },
+  {
+    id: "filters",
+    label: "Filters and transition",
+    icon: "group-filters",
+    properties: [
+      {
+        property: "filter",
+        label: "CSS filters",
+        editor: "filter",
+        placeholder: "blur(4px)",
+        tip: "Blur, brightness, contrast, hue, invert, opacity, saturation and sepia, with sliders."
+      },
+      {
+        property: "backdrop-filter",
+        label: "Backdrop filter",
+        editor: "backdrop-filter",
+        placeholder: "blur(8px)",
+        tip: "The same filters, applied to what is behind the element."
+      },
+      { property: "transition", label: "Transition", placeholder: "all 300ms ease" }
     ]
   }
 ];

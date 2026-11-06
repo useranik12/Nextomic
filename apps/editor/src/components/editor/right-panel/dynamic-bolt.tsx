@@ -86,12 +86,13 @@ function DynamicDataModal({
   onPick: (token: string) => void;
 }) {
   const settings = useEditorStore((s) => s.doc?.settings);
+  const tree = useEditorStore((s) => s.doc?.tree ?? null);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("all");
   const excludeKey = exclude?.join(",") ?? "";
   const groups = useMemo(
-    () => dynamicGroups(settings, excludeKey ? (excludeKey.split(",") as Exclude) : []),
-    [settings, excludeKey]
+    () => dynamicGroups(settings, excludeKey ? (excludeKey.split(",") as Exclude) : [], tree),
+    [settings, excludeKey, tree]
   );
   const q = query.trim().toLowerCase();
   const visible = groups

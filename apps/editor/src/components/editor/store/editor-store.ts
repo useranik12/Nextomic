@@ -9,6 +9,7 @@ import {
   duplicateNode,
   findNode,
   generateHtmlId,
+  isElementNameTaken,
   indentNode,
   insertNode,
   moveNode,
@@ -121,7 +122,27 @@ interface EditorState {
   duplicateElement: (id: string) => void;
   copyElement: (id: string) => void;
   pasteElement: (parentId?: string) => void;
-  renameElement: (id: string, name: string) => void;
+  /** Renames an element; false (nothing changes) when the name is empty or another element has it. */
+  renameElement: (id: string, name: string) => boolean;
+  /** The element whose name is being edited (context menu > Rename); the navigator row and panel header react. */
+  renamingId: string | null;
+  setRenamingId: (id: string | null) => void;
+  /** Sets one HTML attribute; adds an element ID first when the element has none. */
+  setElementAttribute: (id: string, name: string, value: PropValue) => void;
+  removeElementAttribute: (id: string, name: string) => void;
+  renameElementAttribute: (id: string, from: string, to: string) => void;
+  /** The open Design group (one at a time) and the property each element was last edited in. */
+  /** True while a setting that the selection outline would cover is being edited (and the project asks to hide it). */
+  hideSelection: boolean;
+  setHideSelection: (hide: boolean) => void;
+  designGroup: string | null;
+  setDesignGroup: (group: string | null) => void;
+  designMemory: Record<string, { group: string; property: string }>;
+  rememberDesign: (nodeId: string, group: string, property: string) => void;
+  /** A short message at the bottom of the editor, such as "#nxtomc-abc copied to clipboard". */
+  toast: { id: number; message: string } | null;
+  showToast: (message: string) => void;
+  dismissToast: () => void;
   setElementProp: (id: string, key: string, value: PropValue) => void;
   setElementTag: (id: string, tag: string) => void;
   setElementHtmlId: (id: string, htmlId: string) => void;
@@ -235,6 +256,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     project: {
       breakpoints: [],
       generateElementIds: true,
+      hideEditBorder: false,
       versionControl: true,
       versionLimit: 200,
       classes: {},
@@ -447,11 +469,65 @@ export const useEditorStore = create<EditorState>((set, get) => {
       set({ selectedId: copy.id });
     },
 
-    renameElement: (id, name) =>
-      void edit(`name:${id}`, (draft) => {
+    renameElement: (id, name) => {
+      const { doc } = get();
+      const trimmed = name.trim();
+      if (!doc || trimmed === "" || isElementNameTaken(doc.tree, trimmed, id)) return false;
+      edit(`name:${id}`, (draft) => {
         const found = findNode(draft.tree, id);
-        if (found) found.node.name = name;
+        if (found) found.node.name = trimmed;
+      });
+      return true;
+    },
+    renamingId: null,
+    setRenamingId: (id) => set({ renamingId: id }),
+
+    setElementAttribute: (id, name, value) => {
+      edit(`attr:${id}:${name}`, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (!found) return;
+        if (!found.node.htmlId) {
+          found.node.htmlId = generateHtmlId(collectHtmlIds(draft.tree));
+        }
+        found.node.attributes = { ...(found.node.attributes ?? {}), [name]: value };
+      });
+    },
+    removeElementAttribute: (id, name) =>
+      void edit(`attr:${id}:${name}:remove`, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (!found?.node.attributes || !(name in found.node.attributes)) return;
+        const { [name]: _removed, ...rest } = found.node.attributes;
+        void _removed;
+        if (Object.keys(rest).length === 0) delete found.node.attributes;
+        else found.node.attributes = rest;
       }),
+    renameElementAttribute: (id, from, to) =>
+      void edit(null, (draft) => {
+        const found = findNode(draft.tree, id);
+        const attrs = found?.node.attributes;
+        if (!found || !attrs || !(from in attrs) || from === to || to in attrs) return;
+        // Rebuild so the row keeps its place in the list.
+        found.node.attributes = Object.fromEntries(
+          Object.entries(attrs).map(([k, v]) => [k === from ? to : k, v])
+        );
+      }),
+
+    hideSelection: false,
+    setHideSelection: (hide) => {
+      if (get().hideSelection !== hide) set({ hideSelection: hide });
+    },
+    designGroup: "layout",
+    setDesignGroup: (group) => set({ designGroup: group }),
+    designMemory: {},
+    rememberDesign: (nodeId, group, property) => {
+      const known = get().designMemory[nodeId];
+      if (known?.group === group && known.property === property) return;
+      set({ designMemory: { ...get().designMemory, [nodeId]: { group, property } } });
+    },
+
+    toast: null,
+    showToast: (message) => set({ toast: { id: Date.now(), message } }),
+    dismissToast: () => set({ toast: null }),
 
     setElementProp: (id, key, value) =>
       void edit(`prop:${id}:${key}`, (draft) => {

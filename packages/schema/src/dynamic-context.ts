@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { walkElements, type ElementNode } from "./element";
 import type { PageSettings } from "./page";
 import type { PropValue } from "./value";
 
@@ -23,6 +24,19 @@ export const dynamicContextSchema = z.object({
     path: z.string().max(300),
     query: z.string().max(2000)
   }),
+  /**
+   * Elements that have an ID, by that ID: their attributes and props as text. Read with
+   * `{{attr.NAME@ELEMENT_ID}}` and `{{prop.NAME@ELEMENT_ID}}`.
+   */
+  elements: z
+    .record(
+      z.string(),
+      z.object({
+        attrs: z.record(z.string(), z.string().max(5000)),
+        props: z.record(z.string(), z.string().max(5000))
+      })
+    )
+    .default({}),
   /** The signed-in visitor, if any. Empty fields while nobody is signed in. */
   user: z
     .object({
@@ -51,6 +65,27 @@ export interface DynamicContextInput {
   nowIso?: string;
   timeZone?: string;
   user?: DynamicContext["user"];
+  /** The page tree, so element attributes and props can be read by ID. */
+  tree?: ElementNode;
+}
+
+function plainText(value: PropValue | undefined): string {
+  return flatten(value);
+}
+
+/** Attributes and props of every element that has an ID, as plain text (tokens inside are dropped). */
+function elementValues(root: ElementNode): DynamicContext["elements"] {
+  const out: DynamicContext["elements"] = {};
+  walkElements(root, (node) => {
+    if (!node.htmlId) return;
+    const attrs: Record<string, string> = {};
+    for (const [name, value] of Object.entries(node.attributes ?? {}))
+      attrs[name] = plainText(value);
+    const props: Record<string, string> = {};
+    for (const [name, value] of Object.entries(node.props)) props[name] = plainText(value);
+    out[node.htmlId] = { attrs, props };
+  });
+  return out;
 }
 
 /** Builds the context for a page: parameters take the given value, else their default. */
@@ -73,6 +108,7 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
       path: page.route,
       query
     },
+    elements: input.tree ? elementValues(input.tree) : {},
     user: input.user ?? null
   };
 }
@@ -120,6 +156,16 @@ function jsonPath(text: string, path: readonly string[]): string {
   return typeof node === "object" ? JSON.stringify(node) : String(node);
 }
 
+/** `attr.NAME` or `prop.NAME` read from the element with this ID; anything missing gives "". */
+function fromElement(context: DynamicContext, what: string, elementId: string): string {
+  const [group, name] = what.split(".");
+  const element = context.elements[elementId];
+  if (!element || !name) return "";
+  if (group === "attr") return element.attrs[name] ?? "";
+  if (group === "prop") return element.props[name] ?? "";
+  return "";
+}
+
 /**
  * Turns a token such as `param.id` or `now.date` into text. Unknown tokens give "" so a typo never
  * prints raw braces on a live page.
@@ -127,6 +173,8 @@ function jsonPath(text: string, path: readonly string[]): string {
 export function createTokenResolver(context: DynamicContext): (token: string) => string {
   const when = nowParts(context.nowIso, context.timeZone);
   return (raw) => {
+    const at = raw.lastIndexOf("@");
+    if (at > 0) return fromElement(context, raw.slice(0, at).trim(), raw.slice(at + 1).trim());
     const [group, name, ...rest] = raw.trim().split(".");
     if (!group || !name) return "";
     switch (group) {

@@ -3,6 +3,7 @@ import {
   SIDE_SETS,
   expandShorthand,
   hasSides,
+  linkValues,
   readSides,
   sidesPatch,
   sidesRelation
@@ -66,5 +67,41 @@ describe("readSides and sidesPatch", () => {
     expect(sidesRelation(["1", "1", "1", "1"])).toBe("all");
     expect(sidesRelation(["1", "2", "1", "2"])).toBe("pairs");
     expect(sidesRelation(["1", "2", "3", "2"])).toBe("free");
+  });
+});
+
+describe("linkValues", () => {
+  it("matches all sides to the smallest set value", () => {
+    expect(linkValues(["12px", "4px", "8px", undefined], "all")).toEqual([
+      "4px",
+      "4px",
+      "4px",
+      "4px"
+    ]);
+  });
+  it("matches each pair to its smaller value", () => {
+    expect(linkValues(["12px", "4px", "8px", "6px"], "pairs")).toEqual([
+      "8px",
+      "4px",
+      "8px",
+      "4px"
+    ]);
+  });
+  it("takes the first value when units differ and leaves free alone", () => {
+    expect(linkValues(["1rem", "4px", undefined, undefined], "all")).toEqual([
+      "1rem",
+      "1rem",
+      "1rem",
+      "1rem"
+    ]);
+    expect(linkValues(["1px", "2px", "3px", "4px"], "free")).toEqual(["1px", "2px", "3px", "4px"]);
+  });
+  it("keeps everything unset when nothing is set", () => {
+    expect(linkValues([undefined, undefined, undefined, undefined], "all")).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined
+    ]);
   });
 });

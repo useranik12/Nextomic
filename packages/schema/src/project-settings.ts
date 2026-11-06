@@ -22,6 +22,8 @@ export function effectiveVersionLimit(
 export const projectSettingsSchema = z.object({
   breakpoints: breakpointListSchema.default(DEFAULT_BREAKPOINTS),
   generateElementIds: z.boolean().default(true),
+  // Hides the selection outline while the Border settings are open, so the border can be judged.
+  hideEditBorder: z.boolean().default(false),
   // Version control: every save keeps a snapshot. Off stops new snapshots (old ones stay).
   versionControl: z.boolean().default(true),
   // App-wide number of snapshots kept per page (a page can set its own); older ones are deleted.
@@ -59,6 +61,7 @@ export const mainTheme = () => ({
 export const defaultProjectSettings = (): ProjectSettings => ({
   breakpoints: DEFAULT_BREAKPOINTS.map((b) => ({ ...b })),
   generateElementIds: true,
+  hideEditBorder: false,
   versionControl: true,
   versionLimit: VERSION_LIMIT_MAX,
   classes: {},

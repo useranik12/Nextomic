@@ -122,3 +122,38 @@ export function sidesRelation(values: FourValues): "all" | "pairs" | "free" {
   if (t === b && r === l) return "pairs";
   return "free";
 }
+
+const AMOUNT = /^(-?(?:\d+\.?\d*|\.\d+))([a-z%]*)$/i;
+
+/** The smallest of some values when they are plain numbers in one unit; else the first one given. */
+function smallest(values: readonly (string | undefined)[]): string | undefined {
+  const set = values.filter((v): v is string => v !== undefined && v !== "");
+  if (set.length === 0) return undefined;
+  const parsed = set.map((v) => AMOUNT.exec(v));
+  const first = parsed[0];
+  if (first && parsed.every((m) => m !== null && m[2] === first[2])) {
+    let best = 0;
+    parsed.forEach((m, i) => {
+      if (m && first && Number(m[1]) < Number(parsed[best]?.[1])) best = i;
+    });
+    return set[best];
+  }
+  return set[0];
+}
+
+/**
+ * The values after the link mode is switched on, so the box matches at once: all sides take the
+ * smallest set value; pairs take the smallest of each pair (top/bottom, left/right). Unset sides
+ * are ignored; with nothing set the values stay as they are.
+ */
+export function linkValues(values: FourValues, relation: "all" | "pairs" | "free"): FourValues {
+  const [t, r, b, l] = values;
+  if (relation === "free") return values;
+  if (relation === "all") {
+    const v = smallest(values);
+    return [v, v, v, v];
+  }
+  const vertical = smallest([t, b]);
+  const horizontal = smallest([r, l]);
+  return [vertical, horizontal, vertical, horizontal];
+}

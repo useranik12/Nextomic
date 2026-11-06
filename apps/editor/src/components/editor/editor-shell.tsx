@@ -11,6 +11,7 @@ import { DesignSystemModal } from "./design-system/design-system-modal";
 import { ConflictDialog } from "./conflict-dialog";
 import { EditorDndProvider } from "./dnd";
 import { ElementContextMenu } from "./element-context-menu";
+import { Toast } from "./toast";
 import { ElementsFlyout } from "./elements-flyout";
 import { LeftRail, RAIL_ITEMS, type RailItemId } from "./left-rail";
 import { Navigator } from "./navigator";
@@ -238,6 +239,7 @@ export function EditorShell({
         </div>
         <ConflictDialog />
         <ElementContextMenu />
+        <Toast />
         {designSystemOpen ? (
           <DesignSystemModal
             initialTab={designSystemTab}

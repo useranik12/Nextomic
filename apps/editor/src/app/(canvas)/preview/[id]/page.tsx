@@ -100,6 +100,7 @@ export default async function PreviewPage({
         theme={theme}
         dynamic={buildDynamicContext({
           page: { name: page.name, route: page.route, settings: page.settings },
+          tree: page.tree,
           mode: "preview",
           paramValues: values,
           query: new URLSearchParams(values).toString()

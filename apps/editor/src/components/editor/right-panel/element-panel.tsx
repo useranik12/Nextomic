@@ -2,13 +2,16 @@
 
 import { getElementDefinition, type ControlDef } from "@nextomic/renderer";
 import { dynamicTextOf, findNode, parseDynamicText, type ElementNode } from "@nextomic/schema";
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
+import { RenameField } from "../rename-field";
 import { useEditorStore } from "../store/editor-store";
 import { STATUS_DOT } from "../top-bar";
-import { DesignField } from "./design-field";
 import { DESIGN_GROUPS } from "./design-groups";
+import { GroupBody } from "./group-body";
+import { AccordionSection } from "./accordion";
+import { AttributesEditor } from "./attributes-editor";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
@@ -77,15 +80,23 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
 export function ElementPanel({ node }: { node: ElementNode }) {
   const definition = getElementDefinition(node.type);
   const [tab, setTab] = useState<Tab>("element");
+  const [elementSection, setElementSection] = useState("general");
   const [query, setQuery] = useState("");
+  const scroller = useRef<HTMLDivElement>(null);
   const bp = useEditorStore((s) => s.activeBreakpointId);
-  const rename = useEditorStore((s) => s.renameElement);
   const duplicate = useEditorStore((s) => s.duplicateElement);
   const copy = useEditorStore((s) => s.copyElement);
   const paste = useEditorStore((s) => s.pasteElement);
   const remove = useEditorStore((s) => s.removeElement);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const hasClipboard = useEditorStore((s) => s.clipboard !== null);
+  const hideBorderSetting = useEditorStore((s) => s.project.hideEditBorder);
+  const designGroup = useEditorStore((s) => s.designGroup);
+  const setDesignGroup = useEditorStore((s) => s.setDesignGroup);
+  const setHideSelection = useEditorStore((s) => s.setHideSelection);
+  const memory = useEditorStore((s) => s.designMemory[node.id]);
+  const renamingId = useEditorStore((s) => s.renamingId);
+  const setRenamingId = useEditorStore((s) => s.setRenamingId);
 
   const designDot = useMemo(
     () => Object.values(node.styles.breakpoints[bp] ?? {}).some((d) => Object.keys(d).length > 0),
@@ -105,15 +116,43 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const showDesign = q ? groups.length > 0 : tab === "design";
   const showAction = !q && tab === "action";
 
+  // Opening an element's Design tab shows the group (and setting) it was last edited in.
+  const memoryGroup = memory?.group;
+  const memoryProperty = memory?.property;
+  useEffect(() => {
+    if (tab !== "design") return;
+    setDesignGroup(memoryGroup ?? "layout");
+    if (!memoryProperty) return;
+    const frame = requestAnimationFrame(() => {
+      scroller.current
+        ?.querySelector(`[data-design-property="${CSS.escape(memoryProperty)}"]`)
+        ?.scrollIntoView({ block: "center" });
+    });
+    return () => cancelAnimationFrame(frame);
+    // Only when the element or tab changes, not on every edit.
+  }, [node.id, tab]);
+
+  // The selection outline hides while Border settings are open, when App Settings asks for it.
+  const editingBorder = tab === "design" && !q && designGroup === "border";
+  useEffect(() => {
+    setHideSelection(hideBorderSetting && editingBorder);
+    return () => setHideSelection(false);
+  }, [hideBorderSetting, editingBorder, setHideSelection]);
+
+  const toggleGroup = (id: string) => setDesignGroup(designGroup === id ? null : id);
+  const toggleElementSection = (id: string) => setElementSection(elementSection === id ? "" : id);
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-col gap-3 border-b border-divider p-3">
-        <div className="flex items-center gap-2">
-          <input
-            aria-label="Element name"
-            value={node.name ?? definition?.label ?? node.type}
-            onChange={(e) => rename(node.id, e.target.value)}
-            className="min-w-0 flex-1 bg-transparent text-medium font-medium text-foreground outline-none focus-visible:underline"
+        <div className="flex items-start gap-1">
+          <RenameField
+            key={node.id}
+            node={node}
+            fallback={definition?.label ?? node.type}
+            autoFocus={renamingId === node.id}
+            onDone={() => setRenamingId(null)}
+            className="text-medium font-medium text-foreground"
           />
           <button
             type="button"
@@ -122,6 +161,15 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             className="rounded p-1.5 text-default-600 hover:text-foreground"
           >
             <Icon name="ph:copy" width={16} height={16} />
+          </button>
+          <button
+            type="button"
+            aria-label="Rename element"
+            title="Rename"
+            onClick={() => setRenamingId(node.id)}
+            className="rounded p-1.5 text-default-600 hover:text-foreground"
+          >
+            <Icon name="ph:pencil-simple" width={16} height={16} />
           </button>
           <button
             type="button"
@@ -177,65 +225,69 @@ export function ElementPanel({ node }: { node: ElementNode }) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto p-3">
         {showElement ? (
-          <section className="mb-4 flex flex-col gap-5" aria-label="Element settings">
-            {q ? (
-              <h3 className="text-tiny font-semibold uppercase text-default-500">Element</h3>
-            ) : null}
-            {controls.length === 0 ? (
-              <p className="text-small text-default-500">This element has no content settings.</p>
-            ) : (
-              controls.map((control) => (
-                <ControlField key={control.key} node={node} control={control} />
-              ))
-            )}
-          </section>
-        ) : null}
-        {showDesign ? (
-          <section className="flex flex-col gap-6" aria-label="Design settings">
-            {groups.map((group) => (
-              <details
-                key={group.id}
-                open
-                className="group flex flex-col gap-3 border-b border-divider pb-6 last:border-b-0"
-              >
-                <summary className="flex cursor-pointer list-none items-center gap-2 text-small font-medium text-foreground">
-                  <DesignIcon id={group.icon} />
-                  {group.label}
-                  <Icon
-                    name="ph:caret-down"
-                    width={12}
-                    height={12}
-                    className="ml-auto transition-transform group-open:rotate-180"
-                  />
-                </summary>
-                <div className="mt-3 flex flex-col gap-5">
-                  {group.properties.map((property) => (
-                    <DesignField key={property.property} node={node} property={property} />
+          <div className="mb-2 flex flex-col" aria-label="Element settings">
+            <AccordionSection
+              id="general"
+              title="General"
+              icon={<Icon name="ph:sliders-horizontal" width={18} height={18} />}
+              open={q ? true : elementSection === "general"}
+              onToggle={toggleElementSection}
+            >
+              {controls.length === 0 ? (
+                <p className="text-small text-default-500">This element has no content settings.</p>
+              ) : (
+                <div className="flex flex-col gap-5">
+                  {controls.map((control) => (
+                    <ControlField key={control.key} node={node} control={control} />
                   ))}
                 </div>
-              </details>
+              )}
+            </AccordionSection>
+            {!q || "attributes".includes(q) ? (
+              <AccordionSection
+                id="attributes"
+                title="Attributes"
+                icon={<Icon name="ph:tag" width={18} height={18} />}
+                open={q ? true : elementSection === "attributes"}
+                onToggle={toggleElementSection}
+                changed={Object.keys(node.attributes ?? {}).length > 0}
+              >
+                <AttributesEditor node={node} />
+              </AccordionSection>
+            ) : null}
+          </div>
+        ) : null}
+        {showDesign ? (
+          <div className="flex flex-col" aria-label="Design settings">
+            {groups.map((group) => (
+              <AccordionSection
+                key={group.id}
+                id={group.id}
+                title={group.label}
+                icon={<DesignIcon id={group.icon} />}
+                open={q ? true : designGroup === group.id}
+                onToggle={toggleGroup}
+              >
+                <GroupBody node={node} groupId={group.id} properties={group.properties} />
+              </AccordionSection>
             ))}
             {!q || "css".includes(q) ? (
-              <details className="group flex flex-col gap-3">
-                <summary className="flex cursor-pointer list-none items-center gap-2 text-small font-medium text-foreground">
-                  <Icon name="ph:code" width={18} height={18} />
-                  CSS
-                  <Icon
-                    name="ph:caret-down"
-                    width={12}
-                    height={12}
-                    className="ml-auto transition-transform group-open:rotate-180"
-                  />
-                </summary>
+              <AccordionSection
+                id="css"
+                title="CSS"
+                icon={<Icon name="ph:code" width={18} height={18} />}
+                open={q ? true : designGroup === "css"}
+                onToggle={toggleGroup}
+              >
                 <CssEditor key={node.id} node={node} />
-              </details>
+              </AccordionSection>
             ) : null}
             {q && groups.length === 0 ? (
               <p className="text-small text-default-500">No settings match.</p>
             ) : null}
-          </section>
+          </div>
         ) : null}
         {showAction ? (
           <p className="text-small text-default-500">Action flows arrive in a later phase.</p>
