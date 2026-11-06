@@ -36,6 +36,9 @@ import {
   type ProjectSettings,
   type ProjectFont,
   type ProjectVariable,
+  type Taxonomy,
+  type TemplateSettings,
+  type TemplateType,
   type Theme,
   type PropValue,
   type PseudoState
@@ -48,6 +51,8 @@ export interface PageDoc {
   route: string;
   settings: PageSettings;
   tree: ElementNode;
+  /** Set while a template is open: its own settings (rules, priority, status, marking). */
+  template?: TemplateSettings;
 }
 
 export type SaveStatus = "saved" | "dirty" | "saving" | "error" | "conflict";
@@ -62,6 +67,9 @@ export const NO_DRAFTS: PageDrafts = { params: null, state: null };
 export interface PageMeta {
   id: string;
   version: number;
+  /** What is open: a page (default) or a template. */
+  kind?: "page" | "template";
+  templateType?: TemplateType;
 }
 
 interface EditorState {
@@ -160,6 +168,7 @@ interface EditorState {
   deleteVariable: (name: string) => void;
   /** Replaces the theme list (create, edit, delete, default); the editor keeps it valid. */
   setThemes: (themes: Theme[]) => void;
+  setTaxonomy: (taxonomy: Taxonomy) => void;
   /** Replaces the font list (install, upload, activate, preload, remove). */
   setFonts: (fonts: ProjectFont[]) => void;
   /** Merges settings (categories, framework-independent project fields) and marks the project dirty. */
@@ -191,6 +200,7 @@ interface EditorState {
   setTargetStyles: (id: string, styles: StyleMap) => void;
   updatePageMeta: (patch: Partial<Pick<PageDoc, "name" | "route">>) => void;
   updatePageSettings: (patch: Partial<PageSettings>) => void;
+  updateTemplateSettings: (patch: Partial<TemplateSettings>) => void;
   replaceProject: (project: ProjectSettings) => void;
   setBreakpoints: (
     breakpoints: BreakpointDef[],
@@ -660,6 +670,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
       });
     },
 
+    setTaxonomy: (taxonomy) => {
+      set({
+        project: { ...get().project, taxonomy },
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+    },
+
     setThemes: (themes) => {
       set({
         project: { ...get().project, themes },
@@ -944,6 +962,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
     updatePageSettings: (patch) =>
       void edit(`settings:${Object.keys(patch).join(",")}`, (draft) => {
         Object.assign(draft.settings, patch);
+      }),
+
+    updateTemplateSettings: (patch) =>
+      void edit(`template:${Object.keys(patch).join(",")}`, (draft) => {
+        if (draft.template) Object.assign(draft.template, patch);
       }),
 
     replaceProject: (project) => set({ project }),

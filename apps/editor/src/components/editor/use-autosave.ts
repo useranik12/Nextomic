@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { saveProjectSettingsAction, savePageAction } from "@/app/(builder)/editor/[id]/actions";
+import { saveTemplateAction } from "@/app/(builder)/editor/[id]/library-actions";
 import { useEditorStore } from "./store/editor-store";
 
 /**
@@ -36,6 +37,44 @@ export function useAutosave(): { saveNow: () => Promise<void> } {
           return;
         }
         savedClassesTick.current = classesTick;
+      }
+      if (state.page.kind === "template") {
+        const outcome = await saveTemplateAction(state.projectId, state.page.id, {
+          baseVersion: state.page.version,
+          name: saved.name,
+          settings: saved.template,
+          tree: saved.tree
+        });
+        const now = useEditorStore.getState();
+        if (outcome.error !== null) {
+          now.setSaveStatus("error", outcome.error);
+          return;
+        }
+        const data = outcome.data;
+        if (data.ok) {
+          const stillSame = now.doc === saved;
+          now.markSaved(data.template.version);
+          if (!stillSame || now.classesTick !== classesTick) now.setSaveStatus("dirty");
+        } else if (data.reason === "conflict") {
+          now.setConflict(
+            {
+              id: data.template.id,
+              version: data.template.version,
+              kind: "template",
+              templateType: data.template.type
+            },
+            {
+              name: data.template.name,
+              route: "",
+              settings: saved.settings,
+              tree: data.template.tree,
+              template: data.template.settings
+            }
+          );
+        } else {
+          now.setSaveStatus("error", "This template no longer exists.");
+        }
+        return;
       }
       const result = await savePageAction(state.projectId, state.page.id, {
         baseVersion: state.page.version,

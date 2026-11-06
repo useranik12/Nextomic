@@ -13,6 +13,7 @@ export function AppSettings() {
   const versionControl = useEditorStore((s) => s.project.versionControl);
   const hideEditBorder = useEditorStore((s) => s.project.hideEditBorder);
   const showClock = useEditorStore((s) => s.project.showClock);
+  const generateScreenshots = useEditorStore((s) => s.project.generateScreenshots);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -68,6 +69,20 @@ export function AppSettings() {
               text="Keeps a snapshot of a page every time it is saved, so you can restore an earlier version. Off: no snapshots are made for any page. Each page can also turn its history off and set how many versions it keeps in Page Settings."
             />
           </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Switch
+            isSelected={generateScreenshots}
+            isDisabled={saving}
+            onValueChange={(on) => void change({ generateScreenshots: on })}
+          >
+            <span className="text-small text-foreground">Generate Screenshots</span>
+          </Switch>
+          <p className="text-tiny text-default-500">
+            Makes a small picture of every page and template for Pages &amp; Templates. A new
+            picture replaces the old one, so only one is kept per item. Screenshots are private to
+            people who can open this project.
+          </p>
         </div>
         <div className="flex flex-col gap-1">
           <Switch

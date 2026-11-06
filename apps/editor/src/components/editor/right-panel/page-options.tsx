@@ -7,6 +7,7 @@ import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { DynamicBolt } from "./dynamic-bolt";
+import { MarkingGroup } from "./marking-group";
 import { compactFieldClass } from "./setting-row";
 
 const TYPES = pageVariableTypeSchema.options;
@@ -471,6 +472,20 @@ function StateVariables() {
 }
 
 /** Right panel when nothing is selected (docs/ui-reference.md 4.3). */
+function PageMarking() {
+  const categoryIds = useEditorStore((s) => s.doc?.settings.categoryIds ?? []);
+  const tagIds = useEditorStore((s) => s.doc?.settings.tagIds ?? []);
+  const updateSettings = useEditorStore((s) => s.updatePageSettings);
+  return (
+    <MarkingGroup
+      scope="page"
+      categoryIds={categoryIds}
+      tagIds={tagIds}
+      onChange={(change) => updateSettings(change)}
+    />
+  );
+}
+
 export function PageOptions() {
   const pageId = useEditorStore((s) => s.page?.id);
   // Remount per page so local drafts (route, names) reset when the page changes.
@@ -478,6 +493,7 @@ export function PageOptions() {
     <div key={pageId} className="flex flex-col gap-6 overflow-y-auto p-4">
       <PageParameters />
       <RouteSettings />
+      <PageMarking />
       <StateVariables />
     </div>
   );

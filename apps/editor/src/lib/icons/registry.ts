@@ -16,6 +16,9 @@ export interface RegisteredIcon {
 
 export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:magnifying-glass" },
+  { id: "ph:sort-descending" },
+  { id: "ph:file-text" },
+  { id: "ph:files" },
   { id: "ph:link" },
   { id: "ph:link-simple" },
   { id: "ph:link-simple-break" },
