@@ -1,28 +1,42 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { savePageAction } from "@/app/(builder)/editor/[id]/actions";
+import { saveProjectSettingsAction, savePageAction } from "@/app/(builder)/editor/[id]/actions";
 import { useEditorStore } from "./store/editor-store";
 
-const AUTOSAVE_DELAY_MS = 1200;
-
 /**
- * Saves the document shortly after the last edit. The base version travels with every save; a
- * mismatch means someone else saved first and the store switches to the conflict state instead of
- * overwriting.
+ * Saves only on request (Save, Publish, Ctrl+S): unsaved edits are gone after a refresh. The base
+ * version travels with every save; a mismatch means someone else saved first and the store
+ * switches to the conflict state instead of overwriting.
  */
 export function useAutosave(): { saveNow: () => Promise<void> } {
-  const doc = useEditorStore((s) => s.doc);
-  const status = useEditorStore((s) => s.saveStatus);
   const inFlight = useRef(false);
+  const savedClassesTick = useRef(0);
 
   const saveNow = useCallback(async () => {
     const state = useEditorStore.getState();
-    if (!state.doc || !state.page || inFlight.current || state.saveStatus === "conflict") return;
+    if (
+      !state.doc ||
+      !state.page ||
+      inFlight.current ||
+      state.saveStatus === "conflict" ||
+      state.saveStatus === "saved"
+    )
+      return;
     inFlight.current = true;
     const saved = state.doc;
+    const classesTick = state.classesTick;
     state.setSaveStatus("saving");
     try {
+      // Class styles belong to the project settings and save together with the page.
+      if (classesTick !== savedClassesTick.current) {
+        const settingsResult = await saveProjectSettingsAction(state.projectId, state.project);
+        if (settingsResult.error !== null) {
+          useEditorStore.getState().setSaveStatus("error", settingsResult.error);
+          return;
+        }
+        savedClassesTick.current = classesTick;
+      }
       const result = await savePageAction(state.projectId, state.page.id, {
         baseVersion: state.page.version,
         name: saved.name,
@@ -40,7 +54,7 @@ export function useAutosave(): { saveNow: () => Promise<void> } {
         // Edits made while the request was in flight stay "dirty" and save on the next tick.
         const stillSame = current.doc === saved;
         current.markSaved(outcome.page.version);
-        if (!stillSame) current.setSaveStatus("dirty");
+        if (!stillSame || current.classesTick !== classesTick) current.setSaveStatus("dirty");
       } else if (outcome.reason === "conflict") {
         current.setConflict(
           { id: outcome.page.id, version: outcome.page.version },
@@ -64,10 +78,15 @@ export function useAutosave(): { saveNow: () => Promise<void> } {
   }, []);
 
   useEffect(() => {
-    if (status !== "dirty") return;
-    const timer = setTimeout(() => void saveNow(), AUTOSAVE_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [doc, status, saveNow]);
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault();
+        void saveNow();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [saveNow]);
 
   useEffect(() => {
     function onBeforeUnload(event: BeforeUnloadEvent) {

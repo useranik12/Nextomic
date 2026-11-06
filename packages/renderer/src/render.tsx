@@ -33,7 +33,7 @@ function elementAttrs(node: ElementNode, options: RenderOptions): Record<string,
 
 export function renderNode(node: ElementNode, options: RenderOptions): ReactNode {
   const definition = getElementDefinition(node.type);
-  if (!definition) return null;
+  if (!definition || node.hidden) return null;
   const children = node.children.map((child) => (
     <Fragment key={child.id}>{renderNode(child, options)}</Fragment>
   ));

@@ -17,7 +17,7 @@ import { DESIGN_GROUPS, type DesignProperty } from "./design-groups";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
 import { IdentityField } from "./identity-field";
-import { SettingRow, compactFieldClass } from "./setting-row";
+import { SettingRow, compactFieldClass, designFieldClass } from "./setting-row";
 
 const STATES: PseudoState[] = ["default", "hover", "focus", "active", "disabled"];
 
@@ -93,15 +93,23 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
   const inherited = bp === "base" ? undefined : getStyle(node, "base", state, property.property);
   const changed = own !== undefined;
 
+  const stacked = property.icons !== undefined;
+
   return (
     <SettingRow
       label={property.label}
       htmlFor={id}
       changed={changed}
       onReset={() => setStyle(node.id, property.property, null)}
+      layout={stacked ? "stacked" : "inline"}
+      responsive
     >
       {property.options && property.icons ? (
-        <div role="group" aria-label={property.label} className="flex flex-wrap gap-1">
+        <div
+          role="group"
+          aria-label={property.label}
+          className="grid grid-flow-col auto-cols-fr gap-1"
+        >
           {property.options.map((o) => (
             <button
               key={o}
@@ -111,9 +119,9 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
               aria-pressed={own === o}
               onClick={() => setStyle(node.id, property.property, own === o ? null : o)}
               className={
-                "flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-300 " +
+                "flex h-10 items-center justify-center rounded-medium outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-default-800/50 " +
                 (own === o
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-default-300 text-foreground"
                   : "bg-default-100 text-default-600 hover:bg-default-200")
               }
             >
@@ -136,7 +144,7 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
           }
         />
       ) : (
-        <div className="relative">
+        <div className="flex">
           <input
             id={id}
             value={own ?? ""}
@@ -148,9 +156,9 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
                 e.target.value.trim() === "" ? null : e.target.value
               )
             }
-            className={compactFieldClass + " pr-9"}
+            className={designFieldClass + " rounded-l-medium"}
           />
-          <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-r-medium bg-default-200">
             <DynamicBolt
               label={property.label}
               onInsert={() => undefined}
@@ -248,10 +256,10 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 setQuery("");
               }}
               className={
-                "relative flex-1 rounded-full px-3 py-1.5 text-small capitalize transition-colors duration-300 " +
+                "relative h-10 flex-1 rounded-medium px-3 text-small font-bold uppercase tracking-wide transition-colors duration-300 " +
                 (tab === id && !q
                   ? "bg-default-200 text-foreground"
-                  : "text-default-600 hover:bg-default-100")
+                  : "text-default-500 hover:bg-default-100")
               }
             >
               {id}
@@ -259,7 +267,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 <span
                   role="img"
                   aria-label="Has changes"
-                  className="absolute right-3 top-2 h-1.5 w-1.5 rounded-full bg-warning"
+                  className="absolute right-2.5 top-3 h-1.5 w-1.5 rounded-full bg-warning"
                 />
               ) : null}
             </button>
@@ -303,7 +311,11 @@ export function ElementPanel({ node }: { node: ElementNode }) {
               ))}
             </div>
             {groups.map((group) => (
-              <details key={group.id} open className="group flex flex-col gap-3">
+              <details
+                key={group.id}
+                open
+                className="group flex flex-col gap-3 border-b border-divider pb-4 last:border-b-0"
+              >
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-small font-medium text-foreground">
                   <DesignIcon id={group.icon} />
                   {group.label}

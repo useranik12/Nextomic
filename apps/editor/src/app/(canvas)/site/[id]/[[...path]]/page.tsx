@@ -1,4 +1,4 @@
-import { PageRenderer } from "@nextomic/renderer";
+import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -37,6 +37,13 @@ export default async function PublishedPage({ params }: { params: Params }) {
   const { id, path } = await params;
   const { page, settings } = await resolve(id, path);
   return (
-    <PageRenderer tree={page.tree} breakpoints={settings.breakpoints} classes={settings.classes} />
+    <>
+      <style>{BASE_CSS}</style>
+      <PageRenderer
+        tree={page.tree}
+        breakpoints={settings.breakpoints}
+        classes={settings.classes}
+      />
+    </>
   );
 }

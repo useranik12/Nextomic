@@ -28,6 +28,10 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         label: "Display",
         options: ["block", "flex", "grid", "inline", "inline-block", "none"]
       },
+      { property: "gap", label: "Gap", placeholder: "16px" },
+      { property: "column-gap", label: "Column gap", placeholder: "normal" },
+      { property: "row-gap", label: "Row gap", placeholder: "normal" },
+      { property: "flex-wrap", label: "Flex wrap", options: ["nowrap", "wrap", "wrap-reverse"] },
       {
         property: "flex-direction",
         label: "Direction",
@@ -40,8 +44,20 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         }
       },
       {
+        property: "align-self",
+        label: "Align self",
+        options: ["flex-start", "center", "flex-end", "stretch", "baseline"],
+        icons: {
+          "flex-start": "top",
+          center: "middle",
+          "flex-end": "bottom",
+          stretch: "stretch",
+          baseline: "baseline"
+        }
+      },
+      {
         property: "justify-content",
-        label: "Justify",
+        label: "Align main axis",
         options: ["flex-start", "center", "flex-end", "space-between", "space-around"],
         icons: {
           "flex-start": "start",
@@ -53,7 +69,7 @@ export const DESIGN_GROUPS: DesignGroup[] = [
       },
       {
         property: "align-items",
-        label: "Align",
+        label: "Align cross axis",
         options: ["stretch", "flex-start", "center", "flex-end", "baseline"],
         icons: {
           stretch: "stretch",
@@ -63,7 +79,10 @@ export const DESIGN_GROUPS: DesignGroup[] = [
           baseline: "baseline"
         }
       },
-      { property: "gap", label: "Gap", placeholder: "16px" }
+      { property: "flex-grow", label: "Flex grow", placeholder: "0" },
+      { property: "flex-shrink", label: "Flex shrink", placeholder: "1" },
+      { property: "flex-basis", label: "Flex basis", placeholder: "auto" },
+      { property: "order", label: "Order", placeholder: "0" }
     ]
   },
   {

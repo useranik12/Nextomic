@@ -63,6 +63,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
   const select = useEditorStore((s) => s.select);
+  const openContextMenu = useEditorStore((s) => s.openContextMenu);
+  const closeContextMenu = useEditorStore((s) => s.closeContextMenu);
   const dragActive = useDragActive();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
@@ -145,8 +147,20 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
           setReady(true);
           break;
         case "select":
+          closeContextMenu();
           select(message.id);
           break;
+        case "context": {
+          const v = viewRef.current;
+          const rect = viewportRef.current?.getBoundingClientRect();
+          if (!rect) break;
+          openContextMenu(
+            rect.left + v.x + message.clientX * v.zoom,
+            rect.top + v.y + message.clientY * v.zoom,
+            message.id
+          );
+          break;
+        }
         case "size":
           setDocHeight(message.height);
           break;
@@ -180,7 +194,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [select, panBy, panMove, wheelZoom]);
+  }, [select, closeContextMenu, openContextMenu, viewportRef, panBy, panMove, wheelZoom]);
 
   const send = useCallback((message: HostMessage) => {
     iframeRef.current?.contentWindow?.postMessage(message, "*");

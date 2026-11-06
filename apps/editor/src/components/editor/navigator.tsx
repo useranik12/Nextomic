@@ -43,6 +43,7 @@ const NavigatorRow = memo(function NavigatorRow({
   const select = useEditorStore((s) => s.select);
   const duplicate = useEditorStore((s) => s.duplicateElement);
   const remove = useEditorStore((s) => s.removeElement);
+  const openContextMenu = useEditorStore((s) => s.openContextMenu);
   const drop = useDropTarget();
   const draggable = useDraggable({ id: node.id });
   const droppable = useDroppable({ id: node.id });
@@ -60,10 +61,14 @@ const NavigatorRow = memo(function NavigatorRow({
       aria-expanded={hasChildren ? !collapsed : undefined}
       aria-level={depth + 1}
       style={{ paddingLeft: depth * 14 + 4 }}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        if (depth > 0) openContextMenu(event.clientX, event.clientY, node.id);
+      }}
       className={
         "group relative flex h-8 items-center gap-1 rounded-medium pr-1 text-small transition-colors duration-300 " +
         (selected ? "bg-default-200 text-foreground" : "text-default-600 hover:bg-default-100") +
-        (draggable.isDragging ? " opacity-40" : "") +
+        (draggable.isDragging ? " opacity-40" : node.hidden ? " opacity-50" : "") +
         (dropZone === "inside" ? " ring-2 ring-primary" : "")
       }
     >
@@ -95,6 +100,9 @@ const NavigatorRow = memo(function NavigatorRow({
       >
         <ElementIcon type={node.type} size={16} />
         <span className="truncate">{label}</span>
+        {node.hidden ? (
+          <Icon name="ph:eye-slash" width={12} height={12} className="shrink-0" />
+        ) : null}
       </button>
       <span className="hidden items-center group-focus-within:flex group-hover:flex">
         <button

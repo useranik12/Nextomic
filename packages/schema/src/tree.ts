@@ -188,3 +188,58 @@ export function assignMissingHtmlIds(root: ElementNode): void {
     node.htmlId = id;
   });
 }
+
+/** Moves a node one step among its siblings. Returns false at the edge or for the root. */
+export function shiftNode(root: ElementNode, id: string, delta: -1 | 1): boolean {
+  const found = findNode(root, id);
+  if (!found?.parent) return false;
+  const to = found.index + delta;
+  if (to < 0 || to >= found.parent.children.length) return false;
+  found.parent.children.splice(found.index, 1);
+  found.parent.children.splice(to, 0, found.node);
+  return true;
+}
+
+/** Moves a node out to sit right after its parent (not possible when the parent is the root). */
+export function outdentNode(root: ElementNode, id: string): boolean {
+  const found = findNode(root, id);
+  const parent = found?.parent;
+  if (!found || !parent) return false;
+  const grand = findNode(root, parent.id);
+  if (!grand?.parent) return false;
+  parent.children.splice(found.index, 1);
+  grand.parent.children.splice(grand.index + 1, 0, found.node);
+  return true;
+}
+
+/** Moves a node into its previous sibling (at the end) when that sibling can hold children. */
+export function indentNode(
+  root: ElementNode,
+  id: string,
+  canHaveChildren: CanHaveChildren
+): boolean {
+  const found = findNode(root, id);
+  if (!found?.parent || found.index === 0) return false;
+  const previous = found.parent.children[found.index - 1];
+  if (!previous || !canHaveChildren(previous.type)) return false;
+  found.parent.children.splice(found.index, 1);
+  previous.children.push(found.node);
+  return true;
+}
+
+/** Puts `wrapper` (a childless node) in the place of `id` and moves `id` inside it. */
+export function wrapNode(root: ElementNode, id: string, wrapper: ElementNode): boolean {
+  const found = findNode(root, id);
+  if (!found?.parent) return false;
+  wrapper.children = [found.node];
+  found.parent.children.splice(found.index, 1, wrapper);
+  return true;
+}
+
+/** Replaces a node with its children. Refuses the root and nodes without children. */
+export function unwrapNode(root: ElementNode, id: string): boolean {
+  const found = findNode(root, id);
+  if (!found?.parent || found.node.children.length === 0) return false;
+  found.parent.children.splice(found.index, 1, ...found.node.children);
+  return true;
+}

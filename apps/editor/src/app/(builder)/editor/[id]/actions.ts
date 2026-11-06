@@ -183,12 +183,14 @@ export interface PublishInfo {
   /** Epoch milliseconds of the last publish, null when the project is not published. */
   publishedAt: number | null;
   publishedPages: number;
+  hasUnpublishedChanges: boolean;
 }
 
 function toInfo(state: PublishState): PublishInfo {
   return {
     publishedAt: state.publishedAt?.getTime() ?? null,
-    publishedPages: state.publishedPages
+    publishedPages: state.publishedPages,
+    hasUnpublishedChanges: state.hasUnpublishedChanges
   };
 }
 

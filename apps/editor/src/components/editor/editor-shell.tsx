@@ -2,12 +2,13 @@
 
 import type { ProjectSettings } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
-import { listPagesAction, saveProjectSettingsAction } from "@/app/(builder)/editor/[id]/actions";
+import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { AppSettings } from "./app-settings";
 import { ConflictDialog } from "./conflict-dialog";
 import { EditorDndProvider } from "./dnd";
+import { ElementContextMenu } from "./element-context-menu";
 import { ElementsFlyout } from "./elements-flyout";
 import { LeftRail, RAIL_ITEMS, type RailItemId } from "./left-rail";
 import { Navigator } from "./navigator";
@@ -108,17 +109,6 @@ export function EditorShell({
     setFlyout(false);
   }, [selectedId, rail]);
 
-  // Class styles live in the project settings; save them shortly after the last change.
-  const classesTick = useEditorStore((s) => s.classesTick);
-  useEffect(() => {
-    if (classesTick === 0) return;
-    const timer = window.setTimeout(() => {
-      const { projectId: id, project: current } = useEditorStore.getState();
-      void saveProjectSettingsAction(id, current);
-    }, 600);
-    return () => window.clearTimeout(timer);
-  }, [classesTick]);
-
   // Keep the page list (names, routes, home flag) in step with saves.
   const savedTick = useEditorStore((s) => s.savedTick);
   useEffect(() => {
@@ -199,6 +189,7 @@ export function EditorShell({
           </div>
         </div>
         <ConflictDialog />
+        <ElementContextMenu />
       </div>
     </EditorDndProvider>
   );
