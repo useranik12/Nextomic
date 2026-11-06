@@ -14,6 +14,7 @@ import { ElementContextMenu } from "./element-context-menu";
 import { ElementsFlyout } from "./elements-flyout";
 import { LeftRail, RAIL_ITEMS, type RailItemId } from "./left-rail";
 import { Navigator } from "./navigator";
+import { PanelResizer, usePanelWidth } from "./panel-resizer";
 import { RightPanel } from "./right-panel";
 import { useEditorStore } from "./store/editor-store";
 import { TopBar } from "./top-bar";
@@ -61,6 +62,10 @@ function useShortcuts() {
   }, []);
 }
 
+const LEFT_PANEL_WIDTH = 240;
+const NAVIGATOR_MIN = 240;
+const RIGHT_MIN = 288;
+
 export function EditorShell({
   projectId,
   project,
@@ -73,6 +78,8 @@ export function EditorShell({
   initialPage: StoredPage;
 }) {
   const [ready, setReady] = useState(false);
+  const navigatorWidth = usePanelWidth("nxt:navigator-width", NAVIGATOR_MIN, NAVIGATOR_MIN);
+  const rightWidth = usePanelWidth("nxt:right-panel-width", RIGHT_MIN, RIGHT_MIN);
   const [pages, setPages] = useState(initialPages);
   const [rail, setRail] = useState<RailItemId>("navigator");
   const [designSystemOpen, setDesignSystemOpen] = useState(false);
@@ -181,7 +188,19 @@ export function EditorShell({
               onToggleCollapse={() => setCollapsed((v) => !v)}
             />
           </div>
-          <div className="relative w-60 shrink-0 border-r border-divider">
+          <div
+            className="relative shrink-0 border-r border-divider"
+            style={{ width: rail === "navigator" ? navigatorWidth.width : LEFT_PANEL_WIDTH }}
+          >
+            {rail === "navigator" ? (
+              <PanelResizer
+                side="left"
+                label="Resize the Navigator"
+                width={navigatorWidth.width}
+                min={NAVIGATOR_MIN}
+                onResize={navigatorWidth.setWidth}
+              />
+            ) : null}
             {rail === "navigator" ? (
               <>
                 <Navigator onOpenElements={() => setFlyout((v) => !v)} />
@@ -203,7 +222,17 @@ export function EditorShell({
           <main className="min-w-0 flex-1 bg-content1/20">
             <CanvasFrame mode={mode} />
           </main>
-          <div className="w-72 shrink-0 border-l border-divider">
+          <div
+            className="relative shrink-0 border-l border-divider"
+            style={{ width: rightWidth.width }}
+          >
+            <PanelResizer
+              side="right"
+              label="Resize the settings panel"
+              width={rightWidth.width}
+              min={RIGHT_MIN}
+              onResize={rightWidth.setWidth}
+            />
             <RightPanel />
           </div>
         </div>

@@ -42,10 +42,11 @@ test("create, edit, save, reload and preview a page", async ({ page }) => {
 
   // Style it at the base breakpoint, then check the change dot on the Design tab.
   await page.getByRole("tab", { name: /design/i }).click();
-  await page.getByLabel("Font size", { exact: true }).fill("48px");
+  await page.getByLabel("Font size", { exact: true }).fill("48");
   await expect(page.getByRole("img", { name: "Changed at this breakpoint" })).toBeVisible();
 
-  // Autosave settles.
+  // Saving is on request (Ctrl+S).
+  await page.keyboard.press("Control+s");
   await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
     timeout: 10_000
   });
@@ -54,7 +55,8 @@ test("create, edit, save, reload and preview a page", async ({ page }) => {
   await page.getByRole("button", { name: "Undo" }).click();
   await expect(page.getByLabel("Font size", { exact: true })).toHaveValue("");
   await page.getByRole("button", { name: "Redo" }).click();
-  await expect(page.getByLabel("Font size", { exact: true })).toHaveValue("48px");
+  await expect(page.getByLabel("Font size", { exact: true })).toHaveValue("48");
+  await page.keyboard.press("Control+s");
   await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
     timeout: 10_000
   });
@@ -69,7 +71,10 @@ test("create, edit, save, reload and preview a page", async ({ page }) => {
   const preview = await page.context().newPage();
   await preview.goto(`/preview/${projectId}`);
   await expect(preview.getByRole("heading", { name: "Hello from the editor" })).toBeVisible();
-  expect(await preview.locator("style").first().innerHTML()).toContain("font-size:48px");
+  await expect(preview.getByRole("heading", { name: "Hello from the editor" })).toHaveCSS(
+    "font-size",
+    "48px"
+  );
 });
 
 test("breakpoint manager adds a breakpoint and the switcher shows it", async ({ page }) => {
@@ -208,4 +213,81 @@ test("breakpoints order themselves by width", async ({ page }) => {
   await expect(group).toHaveCount(4);
   const names = await group.evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
   expect(names).toEqual(["Desktop", "Tablet", "Breakpoint 3", "Mobile"]);
+});
+
+test("dynamic tags show real values on the canvas", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByLabel("Text", { exact: true }).fill("On {{page.name}} in {{now.year}}");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  const year = String(new Date().getFullYear());
+  await expect(
+    canvas.getByRole("heading", { name: new RegExp(`On Home in ${year}`) })
+  ).toBeVisible();
+});
+
+test("every element gets an ID that shows in the ID field", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await expect(page.getByPlaceholder("No ID")).toHaveValue(/^#nxtomc-[a-z0-9]{8}$/);
+});
+
+test("margin sides are independent and numeric fields take only numbers", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Each side on its own" }).first().click();
+  await page.getByLabel("Margin top", { exact: true }).fill("10");
+  await page.getByLabel("Margin left", { exact: true }).fill("20");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  const heading = canvas.getByRole("heading");
+  await expect(heading).toHaveCSS("margin-top", "10px");
+  await expect(heading).toHaveCSS("margin-left", "20px");
+  await expect(heading).toHaveCSS("margin-right", "0px");
+
+  // Letters never reach a numeric field.
+  const width = page.getByLabel("Width", { exact: true });
+  await width.fill("12ab");
+  await expect(width).toHaveValue("");
+  await width.pressSequentially("12");
+  await expect(heading).toHaveCSS("width", /px$/);
+});
+
+test("side panels can be resized with the keyboard", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  const handle = page.getByRole("separator", { name: "Resize the settings panel" });
+  const before = Number(await handle.getAttribute("aria-valuenow"));
+  await handle.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(handle).toHaveAttribute("aria-valuenow", String(before + 16));
+});
+
+test("version control off disables the page history limit", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await page.getByRole("switch", { name: "Version control" }).click();
+  await page.getByRole("button", { name: "Page settings", exact: true }).click();
+  await expect(page.getByRole("dialog").getByPlaceholder(/App default/)).toBeDisabled();
+});
+
+test("a page keeps only as many versions as its history limit", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Page settings", exact: true }).click();
+  const limit = page.getByRole("dialog").getByPlaceholder(/App default/);
+  await limit.fill("5");
+  await limit.blur();
+  await page.getByRole("dialog").getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const text = page.getByLabel("Text", { exact: true });
+  for (let i = 1; i <= 7; i += 1) {
+    await text.fill(`Draft ${i}`);
+    await page.keyboard.press("Control+s");
+    await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible();
+  }
+  await page.getByRole("button", { name: "Version History" }).click();
+  await expect(page.getByText(/^Version \d+/)).toHaveCount(5);
 });

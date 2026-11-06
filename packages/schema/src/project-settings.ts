@@ -7,9 +7,25 @@ import { mainFramework } from "./main-framework";
 import { newTheme, themeListSchema } from "./theme";
 import { variableListSchema } from "./variables";
 
+export const VERSION_LIMIT_MIN = 5;
+export const VERSION_LIMIT_MAX = 200;
+export const versionLimitSchema = z.number().int().min(VERSION_LIMIT_MIN).max(VERSION_LIMIT_MAX);
+
+/** How many saved versions a page keeps: its own limit, else the app-wide one, never above the maximum. */
+export function effectiveVersionLimit(
+  project: Pick<ProjectSettings, "versionLimit">,
+  page: { versionLimit?: number | null }
+): number {
+  return Math.min(page.versionLimit ?? project.versionLimit, VERSION_LIMIT_MAX);
+}
+
 export const projectSettingsSchema = z.object({
   breakpoints: breakpointListSchema.default(DEFAULT_BREAKPOINTS),
   generateElementIds: z.boolean().default(true),
+  // Version control: every save keeps a snapshot. Off stops new snapshots (old ones stay).
+  versionControl: z.boolean().default(true),
+  // App-wide number of snapshots kept per page (a page can set its own); older ones are deleted.
+  versionLimit: versionLimitSchema.default(VERSION_LIMIT_MAX),
   // Styles of each class, shared by every element that carries it. Keyed by class name.
   classes: z.record(z.string().regex(CLASS_NAME_PATTERN).max(64), styleMapSchema).default({}),
   // Class manager organisation: categories (also empty ones) and per-class category and lock.
@@ -43,6 +59,8 @@ export const mainTheme = () => ({
 export const defaultProjectSettings = (): ProjectSettings => ({
   breakpoints: DEFAULT_BREAKPOINTS.map((b) => ({ ...b })),
   generateElementIds: true,
+  versionControl: true,
+  versionLimit: VERSION_LIMIT_MAX,
   classes: {},
   classCategories: [],
   classMeta: {},

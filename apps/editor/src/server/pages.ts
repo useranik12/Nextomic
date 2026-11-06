@@ -4,6 +4,8 @@ import {
   countClassUsage,
   countFamilyInTree,
   countVariableUsageInTree,
+  VERSION_LIMIT_MAX,
+  effectiveVersionLimit,
   elementNodeSchema,
   emptyPageTree,
   pageSettingsSchema,
@@ -17,12 +19,10 @@ import {
   type SavePageInput
 } from "@nextomic/schema";
 import { getDb, pages, pageVersions, projects } from "@nextomic/db";
-import { and, asc, desc, eq, lt, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ne, notInArray, sql } from "drizzle-orm";
 
 // Page persistence. Callers MUST have passed requireProjectAccess for the project first;
 // every query here is also scoped by projectId so a page id from another project never matches.
-
-const MAX_VERSIONS_PER_PAGE = 50;
 
 export interface StoredPage {
   id: string;
@@ -202,15 +202,29 @@ export async function savePage(
         .where(eq(pages.id, pageId))
         .returning();
       if (!row) throw new Error("Page update returned no row");
-      await tx.insert(pageVersions).values({
-        pageId,
-        version: row.version,
-        name: row.name,
-        route: row.route,
-        settings: row.settings,
-        tree: row.tree,
-        savedBy: userId
-      });
+      const [projectRow] = await tx
+        .select({ settings: projects.settings })
+        .from(projects)
+        .where(eq(projects.id, projectId))
+        .limit(1);
+      const project = projectSettingsSchema.safeParse(projectRow?.settings ?? {});
+      const versionControl = project.success ? project.data.versionControl : true;
+      if (versionControl) {
+        await tx.insert(pageVersions).values({
+          pageId,
+          version: row.version,
+          name: row.name,
+          route: row.route,
+          settings: row.settings,
+          tree: row.tree,
+          savedBy: userId
+        });
+        const limit = effectiveVersionLimit(
+          project.success ? project.data : defaultProjectSettings(),
+          row.settings
+        );
+        await pruneVersions(tx, pageId, limit);
+      }
       if (row.settings.isHome) {
         // Only one home page per project.
         await tx
@@ -224,14 +238,6 @@ export async function savePage(
             )
           );
       }
-      await tx
-        .delete(pageVersions)
-        .where(
-          and(
-            eq(pageVersions.pageId, pageId),
-            lt(pageVersions.version, row.version - MAX_VERSIONS_PER_PAGE + 1)
-          )
-        );
       await tx
         .update(projects)
         .set({ lastModifiedAt: new Date() })
@@ -276,6 +282,21 @@ export async function deletePage(projectId: string, pageId: string): Promise<boo
   return removed.length > 0;
 }
 
+type Tx = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
+
+/** Keeps the newest `limit` snapshots of a page and deletes the rest. */
+async function pruneVersions(tx: Tx, pageId: string, limit: number): Promise<void> {
+  const keep = tx
+    .select({ version: pageVersions.version })
+    .from(pageVersions)
+    .where(eq(pageVersions.pageId, pageId))
+    .orderBy(desc(pageVersions.version))
+    .limit(limit);
+  await tx
+    .delete(pageVersions)
+    .where(and(eq(pageVersions.pageId, pageId), notInArray(pageVersions.version, keep)));
+}
+
 export interface VersionSummary {
   version: number;
   name: string;
@@ -296,7 +317,7 @@ export async function listVersions(projectId: string, pageId: string): Promise<V
     .from(pageVersions)
     .where(eq(pageVersions.pageId, pageId))
     .orderBy(desc(pageVersions.version))
-    .limit(MAX_VERSIONS_PER_PAGE);
+    .limit(VERSION_LIMIT_MAX);
   return rows;
 }
 

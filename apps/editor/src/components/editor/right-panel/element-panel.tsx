@@ -1,33 +1,21 @@
 "use client";
 
-import { builtinStyle, getElementDefinition, type ControlDef } from "@nextomic/renderer";
-import {
-  dynamicTextOf,
-  findNode,
-  getStyle,
-  parseDynamicText,
-  type ElementNode
-} from "@nextomic/schema";
+import { getElementDefinition, type ControlDef } from "@nextomic/renderer";
+import { dynamicTextOf, findNode, parseDynamicText, type ElementNode } from "@nextomic/schema";
 import { useId, useMemo, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { STATUS_DOT } from "../top-bar";
-import { DESIGN_GROUPS, type DesignProperty } from "./design-groups";
+import { DesignField } from "./design-field";
+import { DESIGN_GROUPS } from "./design-groups";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
-import { FontPicker } from "./font-picker";
-import { VariablePicker, typesForProperty } from "./variable-picker";
-import { ColorPalette } from "./color-palette";
-import { UnitPicker, fieldKind } from "./design-field-tools";
 import { IdentityField } from "./identity-field";
-import { SettingRow, compactFieldClass, designFieldClass } from "./setting-row";
+import { SettingRow, compactFieldClass } from "./setting-row";
 
 type Tab = "element" | "design" | "action";
-
-// HeroUI Select keys cannot be empty, so "no value set" has its own key.
-const DEFAULT_OPTION = "__default";
 
 function ControlField({ node, control }: { node: ElementNode; control: ControlDef }) {
   const id = useId();
@@ -82,138 +70,6 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
           </div>
         )}
       </div>
-    </SettingRow>
-  );
-}
-
-function DesignField({ node, property }: { node: ElementNode; property: DesignProperty }) {
-  const id = useId();
-  const bp = useEditorStore((s) => s.activeBreakpointId);
-  const state = useEditorStore((s) => s.activeState);
-  const setStyle = useEditorStore((s) => s.setElementStyle);
-  const own = getStyle(node, bp, state, property.property);
-  // Dimmed hint of the value inherited from the base breakpoint.
-  const inherited = bp === "base" ? undefined : getStyle(node, "base", state, property.property);
-  const changed = own !== undefined;
-  // What the element looks like before anything is set here (a container starts as a flex column).
-  const builtin = builtinStyle(node, property.property);
-  const effective = own ?? inherited ?? builtin;
-
-  const stacked = property.icons !== undefined;
-  const kind = fieldKind(property.property);
-
-  return (
-    <SettingRow
-      label={property.label}
-      htmlFor={id}
-      changed={changed}
-      onReset={() => setStyle(node.id, property.property, null)}
-      layout={stacked ? "stacked" : "inline"}
-      responsive
-    >
-      {property.options && property.icons ? (
-        <div
-          role="group"
-          aria-label={property.label}
-          className="grid grid-flow-col auto-cols-fr gap-1"
-        >
-          {property.options.map((o) => (
-            <button
-              key={o}
-              type="button"
-              title={o}
-              aria-label={o}
-              aria-pressed={own === o}
-              data-effective={own === undefined && effective === o ? "true" : undefined}
-              onClick={() => setStyle(node.id, property.property, own === o ? null : o)}
-              className={
-                "flex h-10 items-center justify-center rounded-medium outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-default-800/50 " +
-                (own === o
-                  ? "bg-default-300 text-foreground"
-                  : effective === o
-                    ? "bg-default-200 text-foreground ring-1 ring-inset ring-default-400"
-                    : "bg-default-100 text-default-600 hover:bg-default-200")
-              }
-            >
-              <DesignIcon id={property.icons?.[o] ?? ""} />
-            </button>
-          ))}
-        </div>
-      ) : property.options ? (
-        <SelectField
-          compact
-          hideLabel
-          label={property.label}
-          value={own ?? DEFAULT_OPTION}
-          options={[
-            {
-              value: DEFAULT_OPTION,
-              label: inherited
-                ? `${inherited} (inherited)`
-                : builtin
-                  ? `${builtin} (default)`
-                  : "Default"
-            },
-            ...property.options.map((o) => ({ value: o, label: o }))
-          ]}
-          onValueChange={(next) =>
-            setStyle(node.id, property.property, next === DEFAULT_OPTION ? null : next)
-          }
-        />
-      ) : (
-        <div className="flex">
-          <input
-            id={id}
-            value={own ?? ""}
-            placeholder={inherited ?? builtin ?? property.placeholder}
-            onChange={(e) =>
-              setStyle(
-                node.id,
-                property.property,
-                e.target.value.trim() === "" ? null : e.target.value
-              )
-            }
-            className={designFieldClass + " rounded-l-medium"}
-          />
-          <div className="flex h-9 shrink-0 items-center gap-0.5 rounded-r-medium bg-default-200 px-1">
-            {kind === "length" ? (
-              <UnitPicker
-                label={property.label}
-                property={property.property}
-                value={own}
-                fallback={inherited ?? property.placeholder}
-                onPick={(next) => setStyle(node.id, property.property, next)}
-              />
-            ) : null}
-            {kind === "color" ? (
-              <ColorPalette
-                label={property.label}
-                property={property.property}
-                value={own}
-                onPick={(next) => setStyle(node.id, property.property, next)}
-              />
-            ) : null}
-            {kind === "font" ? (
-              <FontPicker
-                property={property.property}
-                onPick={(stack) => setStyle(node.id, property.property, stack)}
-              />
-            ) : null}
-            {kind !== "color" && typesForProperty(property.property) !== null ? (
-              <VariablePicker
-                label={property.label}
-                property={property.property}
-                onPick={(ref) => setStyle(node.id, property.property, ref)}
-              />
-            ) : null}
-            <DynamicBolt
-              label={property.label}
-              onInsert={() => undefined}
-              disabledReason="Dynamic style values arrive with the dynamic data phase."
-            />
-          </div>
-        </div>
-      )}
     </SettingRow>
   );
 }
@@ -323,7 +179,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
 
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {showElement ? (
-          <section className="mb-4 flex flex-col gap-3" aria-label="Element settings">
+          <section className="mb-4 flex flex-col gap-5" aria-label="Element settings">
             {q ? (
               <h3 className="text-tiny font-semibold uppercase text-default-500">Element</h3>
             ) : null}
@@ -337,12 +193,12 @@ export function ElementPanel({ node }: { node: ElementNode }) {
           </section>
         ) : null}
         {showDesign ? (
-          <section className="flex flex-col gap-4" aria-label="Design settings">
+          <section className="flex flex-col gap-6" aria-label="Design settings">
             {groups.map((group) => (
               <details
                 key={group.id}
                 open
-                className="group flex flex-col gap-3 border-b border-divider pb-4 last:border-b-0"
+                className="group flex flex-col gap-3 border-b border-divider pb-6 last:border-b-0"
               >
                 <summary className="flex cursor-pointer list-none items-center gap-2 text-small font-medium text-foreground">
                   <DesignIcon id={group.icon} />
@@ -354,7 +210,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                     className="ml-auto transition-transform group-open:rotate-180"
                   />
                 </summary>
-                <div className="mt-3 flex flex-col gap-3">
+                <div className="mt-3 flex flex-col gap-5">
                   {group.properties.map((property) => (
                     <DesignField key={property.property} node={node} property={property} />
                   ))}

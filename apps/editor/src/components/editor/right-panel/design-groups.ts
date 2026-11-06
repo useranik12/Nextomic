@@ -5,6 +5,12 @@ export interface DesignProperty {
   placeholder?: string;
   /** Option value to DesignIcon key; when set the options are shown as icon buttons. */
   icons?: Record<string, string>;
+  /** A box of four values (margin, padding, border width, radius, offsets): the SIDE_SETS id. */
+  sides?: string;
+  /** Plain words about the setting, shown by the (i) beside the label. */
+  tip?: string;
+  /** Options come from the font in use: the weights and styles it really has. */
+  fontOption?: "weight" | "style";
 }
 
 export interface DesignGroup {
@@ -90,8 +96,18 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     label: "Spacing",
     icon: "group-spacing",
     properties: [
-      { property: "margin", label: "Margin", placeholder: "0 auto" },
-      { property: "padding", label: "Padding", placeholder: "24px" }
+      {
+        property: "margin",
+        label: "Margin",
+        sides: "margin",
+        tip: "Space outside the element. Use the link buttons to set all sides together, top and bottom with left and right, or each side alone."
+      },
+      {
+        property: "padding",
+        label: "Padding",
+        sides: "padding",
+        tip: "Space between the element's edge and its content."
+      }
     ]
   },
   {
@@ -118,8 +134,27 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     label: "Typography",
     icon: "group-typography",
     properties: [
-      { property: "font-size", label: "Font size", placeholder: "16px" },
-      { property: "font-weight", label: "Font weight", options: ["400", "500", "600", "700"] },
+      {
+        property: "font-family",
+        label: "Font family",
+        placeholder: "system-ui, sans-serif",
+        tip: "Pick one of your project fonts or a system font. The weights and styles below follow the font you choose."
+      },
+      { property: "font-size", label: "Font size", placeholder: "16" },
+      {
+        property: "font-weight",
+        label: "Font weight",
+        fontOption: "weight",
+        options: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+        tip: "Only the weights installed for this font are listed."
+      },
+      {
+        property: "font-style",
+        label: "Font style",
+        fontOption: "style",
+        options: ["normal", "italic", "oblique"],
+        tip: "Italic appears only when the font has an italic face installed."
+      },
       { property: "line-height", label: "Line height", placeholder: "1.5" },
       {
         property: "text-align",
@@ -133,12 +168,6 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         }
       },
       { property: "color", label: "Color", placeholder: "#111111" },
-      { property: "font-family", label: "Font family", placeholder: "system-ui, sans-serif" },
-      {
-        property: "font-style",
-        label: "Font style",
-        options: ["normal", "italic", "oblique"]
-      },
       { property: "letter-spacing", label: "Letter spacing", placeholder: "0" },
       {
         property: "text-transform",
@@ -186,8 +215,24 @@ export const DESIGN_GROUPS: DesignGroup[] = [
     label: "Border",
     icon: "group-border",
     properties: [
-      { property: "border", label: "Border", placeholder: "1px solid #ccc" },
-      { property: "border-radius", label: "Radius", placeholder: "8px" },
+      {
+        property: "border-width",
+        label: "Border width",
+        sides: "border-width",
+        tip: "The thickness of each edge. A border shows only when the style is not none."
+      },
+      {
+        property: "border-style",
+        label: "Border style",
+        options: ["none", "solid", "dashed", "dotted", "double"]
+      },
+      { property: "border-color", label: "Border color", placeholder: "#cccccc" },
+      {
+        property: "border-radius",
+        label: "Radius",
+        sides: "border-radius",
+        tip: "Rounds each corner on its own, or all together."
+      },
       { property: "outline", label: "Outline", placeholder: "2px solid #06f" }
     ]
   },
@@ -201,10 +246,12 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         label: "Position",
         options: ["static", "relative", "absolute", "fixed", "sticky"]
       },
-      { property: "top", label: "Top", placeholder: "auto" },
-      { property: "right", label: "Right", placeholder: "auto" },
-      { property: "bottom", label: "Bottom", placeholder: "auto" },
-      { property: "left", label: "Left", placeholder: "auto" },
+      {
+        property: "inset",
+        label: "Offsets",
+        sides: "inset",
+        tip: "Distance from each edge for positioned elements (relative, absolute, fixed, sticky)."
+      },
       { property: "z-index", label: "Z-index", placeholder: "auto" },
       {
         property: "overflow",

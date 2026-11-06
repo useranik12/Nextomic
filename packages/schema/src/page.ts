@@ -69,6 +69,8 @@ export const pageSettingsSchema = z.object({
   requiresAuth: z.boolean().default(false),
   // Forced theme id; null means Auto (conditions, then the default theme).
   themeId: z.string().max(64).nullable().default(null),
+  // Snapshots kept for this page (5 to 200); null follows the app-wide limit.
+  versionLimit: z.number().int().min(5).max(200).nullable().default(null),
   params: z.array(pageParamSchema).max(20).default([]),
   state: z.array(pageStateVariableSchema).max(100).default([])
 });

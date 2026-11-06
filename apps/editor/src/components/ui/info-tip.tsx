@@ -7,11 +7,19 @@ import { Icon } from "@/lib/icons/Icon";
  * A small (i) beside a setting. Hover or focus shows what the setting does, in plain words. Keep
  * the text to one or two sentences and say what changes, not what the control is called.
  */
-export function InfoTip({ text, label = "More information" }: { text: string; label?: string }) {
+export function InfoTip({
+  text,
+  label = "More information",
+  placement = "top"
+}: {
+  text: string;
+  label?: string;
+  placement?: "top" | "left" | "right" | "bottom";
+}) {
   return (
     <Tooltip
       content={<span className="block max-w-64 px-1 py-0.5 text-tiny leading-snug">{text}</span>}
-      placement="top"
+      placement={placement}
       delay={150}
       closeDelay={0}
       classNames={{ base: "z-[1000]" }}
