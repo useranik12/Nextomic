@@ -77,6 +77,13 @@ export function ElementContextMenu() {
   const hasClipboard = useEditorStore((s) => s.clipboard !== null);
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ left: 0, top: 0 });
+  const [choosingClass, setChoosingClass] = useState(false);
+  const [classQuery, setClassQuery] = useState("");
+  const classes = useEditorStore((s) => s.project.classes);
+  useEffect(() => {
+    setChoosingClass(false);
+    setClassQuery("");
+  }, [menu]);
 
   // Keep the menu inside the window.
   useLayoutEffect(() => {
@@ -131,6 +138,14 @@ export function ElementContextMenu() {
     }
   }
 
+  const hasOwnStyles =
+    Object.values(node.styles.breakpoints).some((byState) =>
+      Object.values(byState).some((decls) => Object.keys(decls).length > 0)
+    ) || Boolean(node.styles.raw);
+  const classNames = Object.keys(classes)
+    .filter((name) => name.toLowerCase().includes(classQuery.trim().toLowerCase()))
+    .sort();
+
   function run(action: () => void) {
     action();
     close();
@@ -145,91 +160,141 @@ export function ElementContextMenu() {
       onContextMenu={(event) => event.preventDefault()}
       className="fixed z-[100] max-h-[calc(100vh-16px)] overflow-y-auto rounded-large border border-divider bg-content1 p-1.5 shadow-large"
     >
-      <div className="flex items-center justify-between px-2.5 py-1">
-        <span className="text-small font-medium text-foreground">Move</span>
-        <span className="flex gap-1">
-          <MoveButton
-            label="Move out of parent"
-            disabled={parentIsRoot}
-            onPress={() => run(() => store.shiftElement(node.id, "out"))}
+      {choosingClass ? (
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1 px-1 py-1">
+            <button
+              type="button"
+              role="menuitem"
+              aria-label="Back to the menu"
+              onClick={() => setChoosingClass(false)}
+              className="rounded-medium p-1 text-default-600 hover:bg-default-100 hover:text-foreground"
+            >
+              <Icon name="ph:arrow-left" width={14} height={14} />
+            </button>
+            <span className="text-small font-medium text-foreground">Move styles to a class</span>
+          </div>
+          <input
+            autoFocus
+            aria-label="Search classes"
+            placeholder="Search classes"
+            value={classQuery}
+            onChange={(e) => setClassQuery(e.target.value)}
+            className="mx-1 h-8 rounded-full border-2 border-default-200 bg-transparent px-3 text-small outline-none focus:border-default-800"
+          />
+          <p className="px-2 text-tiny text-default-500">
+            Moves this element&apos;s own design into the class you pick. Its added classes stay.
+          </p>
+          <ul role="group" aria-label="Classes" className="max-h-56 overflow-y-auto">
+            {classNames.length === 0 ? (
+              <li className="px-2.5 py-2 text-small text-default-500">
+                {Object.keys(classes).length === 0
+                  ? "This project has no classes yet."
+                  : "No class matches."}
+              </li>
+            ) : null}
+            {classNames.map((name) => (
+              <li key={name}>
+                <Item onPress={() => run(() => void store.moveStylesToClass(node.id, name))}>
+                  <span className="truncate font-mono">.{name}</span>
+                </Item>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between px-2.5 py-1">
+            <span className="text-small font-medium text-foreground">Move</span>
+            <span className="flex gap-1">
+              <MoveButton
+                label="Move out of parent"
+                disabled={parentIsRoot}
+                onPress={() => run(() => store.shiftElement(node.id, "out"))}
+              >
+                <Icon name="ph:arrow-left" width={14} height={14} />
+              </MoveButton>
+              <MoveButton
+                label="Move into previous sibling"
+                disabled={!canIndent}
+                onPress={() => run(() => store.shiftElement(node.id, "in"))}
+              >
+                <Icon name="ph:arrow-right" width={14} height={14} />
+              </MoveButton>
+              <MoveButton
+                label="Move up"
+                disabled={index === 0}
+                onPress={() => run(() => store.shiftElement(node.id, "up"))}
+              >
+                <Icon name="ph:arrow-up" width={14} height={14} />
+              </MoveButton>
+              <MoveButton
+                label="Move down"
+                disabled={index >= parent.children.length - 1}
+                onPress={() => run(() => store.shiftElement(node.id, "down"))}
+              >
+                <Icon name="ph:arrow-down" width={14} height={14} />
+              </MoveButton>
+            </span>
+          </div>
+          <Divider />
+          <Item onPress={() => run(() => store.select(parent.id === tree?.id ? null : parent.id))}>
+            Select parent
+          </Item>
+          <Divider />
+          <Item onPress={() => run(() => store.setRenamingId(node.id))}>
+            <Icon name="ph:pencil-simple" width={14} height={14} />
+            Rename
+          </Item>
+          {node.htmlId ? (
+            <Item onPress={() => run(() => void copyText(node.htmlId ?? "", `#${node.htmlId}`))}>
+              <Icon name="ph:hash" width={14} height={14} />
+              Copy CSS ID
+            </Item>
+          ) : null}
+          {selectedClass ? (
+            <Item onPress={() => run(() => void copyText(selectedClass, `.${selectedClass}`))}>
+              <Icon name="ph:tag-simple" width={14} height={14} />
+              Copy selected class
+            </Item>
+          ) : null}
+          <Divider />
+          <Item onPress={() => run(() => store.copyElement(node.id))}>
+            <Icon name="ph:clipboard" width={14} height={14} />
+            Copy
+          </Item>
+          <Item disabled={!hasClipboard} onPress={() => run(() => store.pasteElement())}>
+            Paste
+          </Item>
+          <Item onPress={() => run(() => store.duplicateElement(node.id))}>
+            <Icon name="ph:copy" width={14} height={14} />
+            Duplicate
+          </Item>
+          <Item danger onPress={() => run(() => store.removeElement(node.id))}>
+            <Icon name="ph:trash" width={14} height={14} />
+            Delete
+          </Item>
+          <Divider />
+          <Item disabled={!hasOwnStyles} onPress={() => setChoosingClass(true)}>
+            <Icon name="ph:tag-simple" width={14} height={14} />
+            Move element styles to class
+          </Item>
+          <Item onPress={() => run(() => store.toggleElementHidden(node.id))}>
+            <Icon name={node.hidden ? "ph:eye" : "ph:eye-slash"} width={14} height={14} />
+            {node.hidden ? "Show element" : "Hide element"}
+          </Item>
+          <Item onPress={() => run(() => store.wrapElement(node.id))}>
+            <Icon name="ph:stack" width={14} height={14} />
+            Wrap (Container)
+          </Item>
+          <Item
+            disabled={node.children.length === 0}
+            onPress={() => run(() => store.unwrapElement(node.id))}
           >
-            <Icon name="ph:arrow-left" width={14} height={14} />
-          </MoveButton>
-          <MoveButton
-            label="Move into previous sibling"
-            disabled={!canIndent}
-            onPress={() => run(() => store.shiftElement(node.id, "in"))}
-          >
-            <Icon name="ph:arrow-right" width={14} height={14} />
-          </MoveButton>
-          <MoveButton
-            label="Move up"
-            disabled={index === 0}
-            onPress={() => run(() => store.shiftElement(node.id, "up"))}
-          >
-            <Icon name="ph:arrow-up" width={14} height={14} />
-          </MoveButton>
-          <MoveButton
-            label="Move down"
-            disabled={index >= parent.children.length - 1}
-            onPress={() => run(() => store.shiftElement(node.id, "down"))}
-          >
-            <Icon name="ph:arrow-down" width={14} height={14} />
-          </MoveButton>
-        </span>
-      </div>
-      <Divider />
-      <Item onPress={() => run(() => store.select(parent.id === tree?.id ? null : parent.id))}>
-        Select parent
-      </Item>
-      <Divider />
-      <Item onPress={() => run(() => store.setRenamingId(node.id))}>
-        <Icon name="ph:pencil-simple" width={14} height={14} />
-        Rename
-      </Item>
-      {node.htmlId ? (
-        <Item onPress={() => run(() => void copyText(node.htmlId ?? "", `#${node.htmlId}`))}>
-          <Icon name="ph:hash" width={14} height={14} />
-          Copy CSS ID
-        </Item>
-      ) : null}
-      {selectedClass ? (
-        <Item onPress={() => run(() => void copyText(selectedClass, `.${selectedClass}`))}>
-          <Icon name="ph:tag-simple" width={14} height={14} />
-          Copy selected class
-        </Item>
-      ) : null}
-      <Divider />
-      <Item onPress={() => run(() => store.copyElement(node.id))}>
-        <Icon name="ph:clipboard" width={14} height={14} />
-        Copy
-      </Item>
-      <Item disabled={!hasClipboard} onPress={() => run(() => store.pasteElement())}>
-        Paste
-      </Item>
-      <Item onPress={() => run(() => store.duplicateElement(node.id))}>
-        <Icon name="ph:copy" width={14} height={14} />
-        Duplicate
-      </Item>
-      <Item danger onPress={() => run(() => store.removeElement(node.id))}>
-        <Icon name="ph:trash" width={14} height={14} />
-        Delete
-      </Item>
-      <Divider />
-      <Item onPress={() => run(() => store.toggleElementHidden(node.id))}>
-        <Icon name={node.hidden ? "ph:eye" : "ph:eye-slash"} width={14} height={14} />
-        {node.hidden ? "Show element" : "Hide element"}
-      </Item>
-      <Item onPress={() => run(() => store.wrapElement(node.id))}>
-        <Icon name="ph:stack" width={14} height={14} />
-        Wrap (Container)
-      </Item>
-      <Item
-        disabled={node.children.length === 0}
-        onPress={() => run(() => store.unwrapElement(node.id))}
-      >
-        Unwrap
-      </Item>
+            Unwrap
+          </Item>
+        </>
+      )}
     </div>
   );
 }

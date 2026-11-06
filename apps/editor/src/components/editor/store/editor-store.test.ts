@@ -156,4 +156,43 @@ describe("rename and attributes", () => {
     expect(found?.htmlId).toMatch(/^nxtomc-[a-z0-9]{8}$/);
     expect(found?.attributes).toEqual({ "aria-label": "x" });
   });
+
+  it("moves an element's own styles into an existing class, the element's values winning", () => {
+    reset();
+    useEditorStore.getState().setActiveState("default");
+    useEditorStore.getState().setActiveClass(null);
+    const store = useEditorStore.getState();
+    const id = store.insertElement("heading")!;
+    store.replaceProject({
+      ...useEditorStore.getState().project,
+      classes: { card: { breakpoints: { base: { default: { color: "red", width: "10px" } } } } }
+    });
+    useEditorStore.getState().setElementStyle(id, "color", "blue");
+    useEditorStore.getState().setElementStyle(id, "height", "5px");
+    expect(useEditorStore.getState().moveStylesToClass(id, "card")).toBe(true);
+    const state = useEditorStore.getState();
+    expect(state.project.classes.card?.breakpoints.base?.default).toEqual({
+      color: "blue",
+      width: "10px",
+      height: "5px"
+    });
+    const node = findNode(state.doc!.tree, id)!.node;
+    expect(node.classIds).toContain("card");
+    expect(node.styles.breakpoints).toEqual({});
+    expect(state.moveStylesToClass(id, "card")).toBe(false);
+    expect(state.moveStylesToClass(id, "missing")).toBe(false);
+  });
+
+  it("picking an element passes its ID to the picker and does not select it", () => {
+    reset();
+    const store = useEditorStore.getState();
+    const id = store.insertElement("heading")!;
+    useEditorStore.getState().select(null);
+    let picked = "";
+    useEditorStore.getState().startPicking((selector) => (picked = selector));
+    useEditorStore.getState().select(id);
+    expect(picked).toMatch(/^#nxtomc-[a-z0-9]{8}$/);
+    expect(useEditorStore.getState().picker).toBeNull();
+    expect(useEditorStore.getState().selectedId).toBeNull();
+  });
 });

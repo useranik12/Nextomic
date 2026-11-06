@@ -177,6 +177,8 @@ interface EditorState {
   duplicateClass: (from: string, to: string) => boolean;
   /** Moves an element's own styles into a new class and adds the class to the element; false when the name exists or there is nothing to move. */
   convertStylesToClass: (id: string, name: string) => boolean;
+  /** Moves the element's own styles into an existing class (the element's values win) and adds the class to it. */
+  moveStylesToClass: (id: string, name: string) => boolean;
   /** Renames on the open page and in the project classes; other pages are updated by the server. */
   renameClass: (from: string, to: string) => boolean;
   /** `replaceWith` null removes the class from the elements of the open page. */
@@ -767,6 +769,38 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (!target.node.classIds.includes(name)) target.node.classIds.push(name);
       });
       set({ activeClass: name, classesTick: get().classesTick + 1 });
+      return true;
+    },
+
+    moveStylesToClass: (id, name) => {
+      const { doc, project } = get();
+      const found = doc ? findNode(doc.tree, id) : null;
+      const target = project.classes[name];
+      if (!found || !target) return false;
+      const own = found.node.styles;
+      const hasStyles =
+        Object.values(own.breakpoints).some((byState) =>
+          Object.values(byState).some((decls) => Object.keys(decls).length > 0)
+        ) || Boolean(own.raw);
+      if (!hasStyles) return false;
+      const merged = structuredClone(target);
+      for (const [bp, byState] of Object.entries(own.breakpoints)) {
+        const into = (merged.breakpoints[bp] ??= {});
+        for (const [state, decls] of Object.entries(byState)) {
+          const key = state as PseudoState;
+          into[key] = { ...(into[key] ?? {}), ...decls };
+        }
+      }
+      if (own.raw) merged.raw = [merged.raw, own.raw].filter(Boolean).join("\n");
+      get().replaceProject({ ...project, classes: { ...project.classes, [name]: merged } });
+      edit(null, (draft) => {
+        const node = findNode(draft.tree, id);
+        if (!node) return;
+        node.node.styles = { breakpoints: {} };
+        if (!node.node.classIds.includes(name)) node.node.classIds.push(name);
+      });
+      set({ classesTick: get().classesTick + 1 });
+      get().showToast(`Styles moved to .${name}`);
       return true;
     },
 
