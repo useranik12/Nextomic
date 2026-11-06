@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { DEFAULT_BREAKPOINTS, breakpointListSchema } from "./breakpoint";
 import { CLASS_NAME_PATTERN } from "./element";
+import { fontListSchema } from "./fonts";
 import { styleMapSchema } from "./style";
-import { themeListSchema } from "./theme";
+import { mainFramework } from "./main-framework";
+import { newTheme, themeListSchema } from "./theme";
 import { variableListSchema } from "./variables";
 
 export const projectSettingsSchema = z.object({
@@ -13,14 +15,23 @@ export const projectSettingsSchema = z.object({
   // Design system variables, written to the output as --nxt-* custom properties.
   variables: variableListSchema.default([]),
   // Themes: the default one applies everywhere unless a page forces another or conditions match.
-  themes: themeListSchema.default([])
+  themes: themeListSchema.default([]),
+  // Text fonts: files in storage, written to the output as @font-face while active.
+  fonts: fontListSchema.default([])
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
+
+/** The Main theme, running on the Main framework, that every new project starts with. */
+export const mainTheme = () => ({
+  ...newTheme("theme-main", "Main", []),
+  framework: mainFramework()
+});
 
 export const defaultProjectSettings = (): ProjectSettings => ({
   breakpoints: DEFAULT_BREAKPOINTS.map((b) => ({ ...b })),
   generateElementIds: true,
   classes: {},
   variables: [],
-  themes: []
+  themes: [mainTheme()],
+  fonts: []
 });

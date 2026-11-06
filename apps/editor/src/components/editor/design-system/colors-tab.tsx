@@ -6,14 +6,18 @@ import { ActionButton, FormInput } from "@/components/ui/controls";
 import { useEditorStore } from "../store/editor-store";
 
 /** Color palettes: eleven shades (50 to 950) from one base color, saved as color variables. */
-export function ColorsTab() {
+export function ColorsTab({ saveNow }: { saveNow: () => Promise<void> }) {
   const [name, setName] = useState("brand");
   const [base, setBase] = useState("#0066ff");
   const nameOk = VARIABLE_NAME_PATTERN.test(name) && name.length <= 40;
   const baseOk = isHexColor(base);
+  const [note, setNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // The palette name is also its group: the color picker on Design fields lists one palette per group.
+  const group = name.charAt(0).toUpperCase() + name.slice(1);
   const shades = useMemo(
-    () => (nameOk && baseOk ? colorShades(name, base) : []),
-    [name, base, nameOk, baseOk]
+    () => (nameOk && baseOk ? colorShades(name, base, group) : []),
+    [name, base, group, nameOk, baseOk]
   );
 
   return (
@@ -61,10 +65,24 @@ export function ColorsTab() {
           ) : null}
           <ActionButton
             isDisabled={shades.length === 0}
-            onPress={() => useEditorStore.getState().upsertVariables(shades)}
+            isLoading={busy}
+            onPress={async () => {
+              setBusy(true);
+              useEditorStore.getState().upsertVariables(shades);
+              await saveNow();
+              setBusy(false);
+              setNote(
+                `Saved ${shades.length} colors in the "${group}" palette. Pick them from the palette button on any color field.`
+              );
+            }}
           >
             Apply {shades.length || 11} variables
           </ActionButton>
+          {note ? (
+            <p role="status" className="text-tiny text-success">
+              {note}
+            </p>
+          ) : null}
         </div>
         <ul className="grid auto-rows-min grid-cols-[repeat(auto-fill,minmax(88px,1fr))] gap-3 overflow-y-auto p-4">
           {shades.map((v) => (

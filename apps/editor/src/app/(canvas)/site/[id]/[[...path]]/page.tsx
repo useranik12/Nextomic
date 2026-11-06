@@ -50,6 +50,8 @@ export default async function PublishedPage({ params }: { params: Params }) {
         breakpoints={settings.breakpoints}
         classes={settings.classes}
         variables={settings.variables}
+        fonts={settings.fonts}
+        fontBase={`/fonts/${id}`}
         theme={theme}
         bootScript
       />

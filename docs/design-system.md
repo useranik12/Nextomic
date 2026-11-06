@@ -95,6 +95,16 @@ Superseded by `templates-and-themes.md` (themes are built; see the decisions log
 - Users can import another CSS framework as a project file (e.g. a custom framework). Imported classes appear read-only in the class manager (`source: "import"`) and can be cloned to edit.
 - Generated CSS is split per project: framework, variables/themes, classes, per-page CSS. Unused class pruning on publish.
 
+### Frameworks per theme (built)
+
+- Every theme owns one framework (`Theme.framework`, `packages/schema/src/framework.ts`): custom properties (`--primary`, `--space-m`, written exactly as named, never prefixed), each with a light value and an optional dark value; a stylesheet of classes; and the settings of its fluid scales. New projects start with the Main theme running the generated Main framework (modern colors with `-d-`, `-l-`, `-a-` shades, text, space and radius scales, shadows, utility and component classes). A theme can also have no framework.
+- Output: framework variables on `:root[data-nxt-theme="slug"]` (dark values on the dark mode attribute), then the framework classes scoped under `:where(:root[data-nxt-theme="slug"])`, so the classes have zero extra specificity and any class or element style set in the builder wins. Because only the resolved theme is emitted, each page gets one framework.
+- Scales (like Core Framework): `prefix`, ordered step `names`, `baseIndex`, `baseMin`/`baseMax` (px), minor ratio at the min screen, major ratio at the max screen, `minScreen`/`maxScreen`. Step `k` away from the base is `base * ratio^k`, written as a `clamp()`. Presets from 1.067 to 1.618 or any custom ratio.
+- Import (Design System > Framework > Import, file or paste, 2 MB): rules that only hold custom properties on `:root` become variables, a `.dark`/`.theme-dark` root rule becomes the dark values, every other rule stays in the stylesheet with `.theme-dark`/`.theme-light` rewritten to the mode attribute. `@import`, `@font-face`, `@charset` and unsafe declarations are removed. Scales are inferred from `--text-*`, `--space-*`, `--radius-*` clamp() variables (base `m`, screens from `--min-screen-width`/`--max-screen-width`, else 320/1400), so imported frameworks get the same ratio and base controls.
+- Export writes variables, dark variables, a `nextomic:scales` comment (restores the exact scale settings on re-import) and the classes as one `.css` file. Import then export then import returns the same variables and classes.
+- Pickers (variable button, color palette) list project variables and the variables of the framework of the current theme (`var(--primary)`).
+- Open: grouping classes by the user's own groups, adding used classes automatically, per-class source badge in the Classes tab, context selectors such as `.theme-inverted` variable blocks (dropped with a warning), pruning unused classes on publish.
+
 ## 8. Custom CSS files
 
 - Multiple files per project with order, enable/disable, scope (global or per page), minify on publish.

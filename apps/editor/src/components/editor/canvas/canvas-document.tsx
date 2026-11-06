@@ -208,6 +208,8 @@ export function CanvasDocument() {
         breakpoints={payload.breakpoints}
         classes={payload.classes}
         variables={payload.variables}
+        fonts={payload.fonts}
+        fontBase={payload.fontBase}
         theme={payload.theme}
       />
       <div id="nxt-drop" ref={markerRef} />

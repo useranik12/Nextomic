@@ -41,7 +41,7 @@ interface ConditionSet {
 
 ### 3.1 Model
 
-> Built so far (see the decisions log in `spec.md`): id, name, slug, isDefault, priority, static page/route conditions, modes, defaultMode, respectSystemPreference, per-mode variable overrides. The first theme created is the default. `elementDefaults`, `fonts` and `customCss` below are still open.
+> Built so far (see the decisions log in `spec.md`): id, name, slug, isDefault, priority, static page/route conditions, modes, defaultMode, respectSystemPreference, allowModeSwitch (off locks visitors to the default mode: saved choice and system preference are ignored), per-mode variable overrides. The first theme created is the default. `elementDefaults`, `fonts` and `customCss` below are still open.
 
 ```ts
 interface Theme {
@@ -54,6 +54,7 @@ interface Theme {
   modes: ColorMode[]; // e.g. [{ id: "light" }, { id: "dark" }]
   defaultMode: string;
   respectSystemPreference: boolean;
+  allowModeSwitch: boolean;
   variables: Record<VariableId, Partial<Record<ModeId, string>>>; // overrides of base variables per mode
   elementDefaults: Partial<Record<ElementType, StyleMap>>; // default styles by element type (all headings, buttons, ...)
   fonts: FontConfig[];

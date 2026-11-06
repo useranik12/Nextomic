@@ -1,6 +1,7 @@
 import {
   breakpointListSchema,
   variableListSchema,
+  fontListSchema,
   themeSchema,
   elementNodeSchema,
   styleMapSchema,
@@ -26,6 +27,9 @@ export const renderMessageSchema = z.object({
   breakpoints: breakpointListSchema,
   classes: z.record(z.string(), styleMapSchema),
   variables: variableListSchema,
+  fonts: fontListSchema,
+  // URL prefix the font files load from, e.g. /fonts/<projectId>.
+  fontBase: z.string().regex(/^\/fonts\/[A-Za-z0-9_-]+$/),
   theme: themeSchema.nullable(),
   // A mode id of the active theme (light and dark unless the theme defines others).
   mode: z.string().max(32),

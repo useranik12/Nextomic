@@ -6,13 +6,17 @@ import { Icon } from "@/lib/icons/Icon";
 import { ClassManager } from "../class-manager";
 import { ColorsTab } from "./colors-tab";
 import { SpacingTab, TypographyTab } from "./scale-tab";
+import { FontsTab } from "./fonts/fonts-tab";
+import { FrameworkTab } from "./framework-tab";
 import { ThemesTab } from "./themes-tab";
 import { VariablesTab } from "./variables-tab";
 import type { PageSummary } from "@/server/pages";
 
 const TABS = [
   { id: "themes", label: "Themes", hint: "Style sets and color modes" },
+  { id: "framework", label: "Framework", hint: "CSS framework per theme" },
   { id: "variables", label: "Variables", hint: "All design tokens" },
+  { id: "fonts", label: "Fonts & Icons", hint: "Google, uploaded, self-hosted" },
   { id: "typography", label: "Typography", hint: "Fluid type scale" },
   { id: "spacing", label: "Spacing", hint: "Fluid spacing scale" },
   { id: "colors", label: "Colors", hint: "Palettes and shades" },
@@ -25,15 +29,17 @@ type TabId = (typeof TABS)[number]["id"];
  * element (variables, classes) is managed in it; scales and palettes are generated into variables.
  */
 export function DesignSystemModal({
+  initialTab,
   onClose,
   saveNow,
   pages
 }: {
+  initialTab?: string;
   onClose: () => void;
   saveNow: () => Promise<void>;
   pages: PageSummary[];
 }) {
-  const [tab, setTab] = useState<TabId>("variables");
+  const [tab, setTab] = useState<TabId>(TABS.find((t) => t.id === initialTab)?.id ?? "variables");
   return (
     <Modal
       isOpen
@@ -72,10 +78,12 @@ export function DesignSystemModal({
           </nav>
           <div className="min-w-0 flex-1">
             {tab === "themes" ? <ThemesTab pages={pages} /> : null}
+            {tab === "framework" ? <FrameworkTab /> : null}
             {tab === "variables" ? <VariablesTab saveNow={saveNow} /> : null}
+            {tab === "fonts" ? <FontsTab saveNow={saveNow} /> : null}
             {tab === "typography" ? <TypographyTab /> : null}
             {tab === "spacing" ? <SpacingTab /> : null}
-            {tab === "colors" ? <ColorsTab /> : null}
+            {tab === "colors" ? <ColorsTab saveNow={saveNow} /> : null}
             {tab === "classes" ? <ClassManager saveNow={saveNow} /> : null}
           </div>
         </div>

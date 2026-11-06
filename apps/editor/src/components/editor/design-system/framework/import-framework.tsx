@@ -1,0 +1,93 @@
+"use client";
+
+import { importFrameworkCss, type Framework, type ImportReport } from "@nextomic/schema";
+import { useState } from "react";
+import { ActionButton, FormInput } from "@/components/ui/controls";
+
+/** Import any CSS framework file (a Core Framework export, a hand-written sheet) into the theme. */
+export function ImportFramework({
+  onImport,
+  onCancel
+}: {
+  onImport: (fw: Framework) => string | null;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("Imported framework");
+  const [css, setCss] = useState("");
+  const [report, setReport] = useState<ImportReport | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function pick(list: FileList | null) {
+    const file = list?.[0];
+    if (!file) return;
+    if (file.size > 2_000_000) return setError("The file is larger than 2 MB.");
+    setError(null);
+    setReport(null);
+    setCss(await file.text());
+    setName(file.name.replace(/\.css$/i, "") || "Imported framework");
+  }
+
+  function apply() {
+    const result = importFrameworkCss(css, name);
+    if ("error" in result) return setError(result.error);
+    const failed = onImport(result.framework);
+    if (failed) return setError(failed);
+    setReport(result.report);
+    setError(null);
+  }
+
+  return (
+    <div className="flex flex-col gap-3 p-3">
+      <label className="flex cursor-pointer flex-col items-center gap-1 rounded-large border-2 border-dashed border-default-300 px-4 py-6 text-center focus-within:ring-2 focus-within:ring-default-800/40 hover:border-default-500">
+        <span className="text-small font-medium">Choose a .css file</span>
+        <span className="text-tiny text-default-500">
+          or paste the CSS below. Up to 2 MB. This replaces the theme framework.
+        </span>
+        <input
+          type="file"
+          accept=".css,text/css"
+          className="sr-only"
+          aria-label="CSS framework file"
+          onChange={(e) => {
+            void pick(e.target.files);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      <FormInput compact label="Framework name" value={name} onValueChange={setName} />
+      <textarea
+        aria-label="CSS"
+        value={css}
+        onChange={(e) => setCss(e.target.value)}
+        rows={8}
+        spellCheck={false}
+        className="w-full rounded-large border-2 border-default-200 bg-transparent p-2 font-mono text-tiny outline-none focus:border-default-800"
+      />
+      {error ? (
+        <p role="alert" className="text-tiny text-danger">
+          {error}
+        </p>
+      ) : null}
+      {report ? (
+        <div role="status" className="rounded-large bg-default-100 p-3 text-tiny">
+          Imported {report.variables} variables ({report.darkVariables} with dark values),{" "}
+          {report.classes} classes
+          {report.scales.length > 0 ? `, scales: ${report.scales.join(", ")}` : ""}.
+          {report.warnings.map((w) => (
+            <p key={w} className="text-warning-600">
+              {w}
+            </p>
+          ))}
+        </div>
+      ) : null}
+      <div className="flex justify-end gap-2">
+        <ActionButton size="sm" tone="ghost" onPress={onCancel}>
+          {report ? "Done" : "Cancel"}
+        </ActionButton>
+        <ActionButton size="sm" isDisabled={css.trim() === ""} onPress={apply}>
+          Import into theme
+        </ActionButton>
+      </div>
+    </div>
+  );
+}

@@ -87,6 +87,8 @@ export default async function PreviewPage({
         breakpoints={settings.breakpoints}
         classes={settings.classes}
         variables={settings.variables}
+        fonts={settings.fonts}
+        fontBase={`/fonts/${id}`}
         theme={theme}
         bootScript
       />

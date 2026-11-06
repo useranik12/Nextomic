@@ -1,6 +1,6 @@
 "use client";
 
-import { getElementDefinition, type ControlDef } from "@nextomic/renderer";
+import { builtinStyle, getElementDefinition, type ControlDef } from "@nextomic/renderer";
 import {
   dynamicTextOf,
   findNode,
@@ -17,7 +17,10 @@ import { DESIGN_GROUPS, type DesignProperty } from "./design-groups";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
-import { VariablePicker } from "./variable-picker";
+import { FontPicker } from "./font-picker";
+import { VariablePicker, typesForProperty } from "./variable-picker";
+import { ColorPalette } from "./color-palette";
+import { UnitPicker, fieldKind } from "./design-field-tools";
 import { IdentityField } from "./identity-field";
 import { SettingRow, compactFieldClass, designFieldClass } from "./setting-row";
 
@@ -92,8 +95,12 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
   // Dimmed hint of the value inherited from the base breakpoint.
   const inherited = bp === "base" ? undefined : getStyle(node, "base", state, property.property);
   const changed = own !== undefined;
+  // What the element looks like before anything is set here (a container starts as a flex column).
+  const builtin = builtinStyle(node, property.property);
+  const effective = own ?? inherited ?? builtin;
 
   const stacked = property.icons !== undefined;
+  const kind = fieldKind(property.property);
 
   return (
     <SettingRow
@@ -117,12 +124,15 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
               title={o}
               aria-label={o}
               aria-pressed={own === o}
+              data-effective={own === undefined && effective === o ? "true" : undefined}
               onClick={() => setStyle(node.id, property.property, own === o ? null : o)}
               className={
                 "flex h-10 items-center justify-center rounded-medium outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-default-800/50 " +
                 (own === o
                   ? "bg-default-300 text-foreground"
-                  : "bg-default-100 text-default-600 hover:bg-default-200")
+                  : effective === o
+                    ? "bg-default-200 text-foreground ring-1 ring-inset ring-default-400"
+                    : "bg-default-100 text-default-600 hover:bg-default-200")
               }
             >
               <DesignIcon id={property.icons?.[o] ?? ""} />
@@ -136,7 +146,14 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
           label={property.label}
           value={own ?? DEFAULT_OPTION}
           options={[
-            { value: DEFAULT_OPTION, label: inherited ? `${inherited} (inherited)` : "Default" },
+            {
+              value: DEFAULT_OPTION,
+              label: inherited
+                ? `${inherited} (inherited)`
+                : builtin
+                  ? `${builtin} (default)`
+                  : "Default"
+            },
             ...property.options.map((o) => ({ value: o, label: o }))
           ]}
           onValueChange={(next) =>
@@ -148,7 +165,7 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
           <input
             id={id}
             value={own ?? ""}
-            placeholder={inherited ?? property.placeholder}
+            placeholder={inherited ?? builtin ?? property.placeholder}
             onChange={(e) =>
               setStyle(
                 node.id,
@@ -159,11 +176,36 @@ function DesignField({ node, property }: { node: ElementNode; property: DesignPr
             className={designFieldClass + " rounded-l-medium"}
           />
           <div className="flex h-9 shrink-0 items-center gap-0.5 rounded-r-medium bg-default-200 px-1">
-            <VariablePicker
-              label={property.label}
-              property={property.property}
-              onPick={(ref) => setStyle(node.id, property.property, ref)}
-            />
+            {kind === "length" ? (
+              <UnitPicker
+                label={property.label}
+                property={property.property}
+                value={own}
+                fallback={inherited ?? property.placeholder}
+                onPick={(next) => setStyle(node.id, property.property, next)}
+              />
+            ) : null}
+            {kind === "color" ? (
+              <ColorPalette
+                label={property.label}
+                property={property.property}
+                value={own}
+                onPick={(next) => setStyle(node.id, property.property, next)}
+              />
+            ) : null}
+            {kind === "font" ? (
+              <FontPicker
+                property={property.property}
+                onPick={(stack) => setStyle(node.id, property.property, stack)}
+              />
+            ) : null}
+            {kind !== "color" && typesForProperty(property.property) !== null ? (
+              <VariablePicker
+                label={property.label}
+                property={property.property}
+                onPick={(ref) => setStyle(node.id, property.property, ref)}
+              />
+            ) : null}
             <DynamicBolt
               label={property.label}
               onInsert={() => undefined}

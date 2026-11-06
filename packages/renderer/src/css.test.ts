@@ -21,3 +21,21 @@ describe("raw CSS output", () => {
     expect(css).toBe("");
   });
 });
+
+describe("container defaults", () => {
+  it("BASE_CSS makes container tags a flex column with zero specificity", async () => {
+    const { BASE_CSS } = await import("./css");
+    expect(BASE_CSS).toContain(
+      ":where([data-nid]:is(div,section,header,main,nav,aside,article,footer)){display:flex;flex-direction:column}"
+    );
+  });
+
+  it("builtinStyle reports the default only for containers", async () => {
+    await import("./elements");
+    const { builtinStyle } = await import("./css");
+    expect(builtinStyle({ type: "container", htmlTag: "div" }, "display")).toBe("flex");
+    expect(builtinStyle({ type: "section", htmlTag: undefined }, "flex-direction")).toBe("column");
+    expect(builtinStyle({ type: "container", htmlTag: "div" }, "gap")).toBeUndefined();
+    expect(builtinStyle({ type: "heading", htmlTag: "h1" }, "display")).toBeUndefined();
+  });
+});
