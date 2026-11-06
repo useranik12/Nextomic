@@ -154,6 +154,42 @@ describe("PageRenderer", () => {
     expect(render("a", "")).toContain('<a data-nid="b">Go</a>');
   });
 
+  it("links the theme stylesheet when given and keeps the cascade order", () => {
+    const theme = { ...newTheme("t", "Brand", []), variables: { bg: { light: "#fff" } } };
+    const tree = {
+      ...emptyPageTree(),
+      children: [
+        node({
+          id: "h",
+          type: "heading",
+          styles: { breakpoints: { base: { default: { color: "red" } } } }
+        })
+      ]
+    };
+    const render = (themeStylesheet?: string) =>
+      renderToStaticMarkup(
+        <PageRenderer
+          tree={tree}
+          breakpoints={DEFAULT_BREAKPOINTS}
+          variables={[{ name: "bg", type: "color", value: "#eee", group: "" } as never]}
+          theme={theme}
+          customCss=".mine{top:0}"
+          {...(themeStylesheet ? { themeStylesheet } : {})}
+        />
+      );
+    const inline = render();
+    expect(inline).toContain('data-nxt-theme="brand"');
+    expect(inline).not.toContain("<link");
+    const linked = render("/theme-css/p/brand.css?v=1");
+    expect(linked).toContain('<link rel="stylesheet" href="/theme-css/p/brand.css?v=1"/>');
+    expect(linked).not.toContain('[data-nxt-theme="brand"]');
+    // Variables before the link; custom CSS and element styles after it.
+    const link = linked.indexOf("<link");
+    expect(linked.indexOf("--nxt-bg:#eee")).toBeLessThan(link);
+    expect(linked.indexOf(".mine{top:0}")).toBeGreaterThan(link);
+    expect(linked.indexOf("color:red")).toBeGreaterThan(link);
+  });
+
   it("skips unknown element types and unsafe attributes", () => {
     const root = emptyPageTree();
     root.children = [

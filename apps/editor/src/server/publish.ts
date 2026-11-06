@@ -1,5 +1,7 @@
 import {
   elementNodeSchema,
+  themeCss,
+  usedClassNames,
   pageSettingsSchema,
   projectSettingsSchema,
   type ProjectSettings,
@@ -96,6 +98,8 @@ export async function unpublishProject(projectId: string): Promise<PublishState>
 }
 
 export interface PublishedView {
+  /** When the live version was published; used to version asset URLs. */
+  publishedAt: Date;
   page: PublishedPage;
   /** Id of the page row; theme conditions match on it. */
   pageId: string;
@@ -131,6 +135,7 @@ export async function getPublishedView(
   const settings = projectSettingsSchema.safeParse(project.settings);
   if (!settings.success) return null;
   return {
+    publishedAt: project.publishedAt,
     pageId: found.id,
     page: {
       name: found.name,
@@ -140,4 +145,37 @@ export async function getPublishedView(
     },
     settings: settings.data
   };
+}
+
+/**
+ * The CSS file of one theme of the live site: variables per mode and the framework classes that
+ * any published page uses. Public read, no session. Null when nothing is published or the theme
+ * does not exist.
+ */
+export async function getPublishedThemeCss(
+  projectId: string,
+  slug: string
+): Promise<{ css: string; publishedAt: Date } | null> {
+  const db = getDb();
+  const [project] = await db
+    .select({ publishedAt: projects.publishedAt, settings: projects.publishedSettings })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (!project?.publishedAt) return null;
+  const settings = projectSettingsSchema.safeParse(project.settings);
+  if (!settings.success) return null;
+  const theme = settings.data.themes.find((t) => t.slug === slug);
+  if (!theme) return null;
+  const rows = await db
+    .select({ snapshot: pages.publishedSnapshot })
+    .from(pages)
+    .where(eq(pages.projectId, projectId));
+  const used = new Set<string>();
+  for (const row of rows) {
+    if (!row.snapshot) continue;
+    const tree = elementNodeSchema.safeParse(row.snapshot.tree);
+    if (tree.success) for (const name of usedClassNames(tree.data)) used.add(name);
+  }
+  return { css: themeCss(theme, used), publishedAt: project.publishedAt };
 }

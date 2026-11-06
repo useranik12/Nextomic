@@ -35,6 +35,11 @@ export interface RenderOptions {
   fontBase?: string;
   /** The resolved theme: its variable overrides are emitted after the base variables. */
   theme?: Theme | null;
+  /**
+   * Published sites load the theme's CSS from this stylesheet URL (one cacheable file per theme)
+   * instead of writing it into the page. The editor canvas and the preview keep it inline.
+   */
+  themeStylesheet?: string;
   /** Built pages set theme and mode on <html> before first paint; the editor canvas sets them itself. */
   bootScript?: boolean;
   /**
@@ -105,12 +110,17 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
   const used = options.pruneUnusedClasses
     ? new Set([...usedClassNames(tree), ...(options.keepClasses ?? [])])
     : undefined;
-  const css =
+  const linkTheme = Boolean(options.theme && options.themeStylesheet);
+  // The cascade is fonts, variables, theme, custom CSS files, classes, elements. With the theme in
+  // its own file the page style splits around the link so the order stays the same.
+  const head =
     fontsCss(options.fonts ?? [], fontBase) +
     variablesCss(options.variables ?? []) +
-    (options.theme ? themeCss(options.theme, used) : "") +
+    (options.theme && !linkTheme ? themeCss(options.theme, used) : "");
+  const tail =
     (options.customCss ?? "") +
     pageCss(tree, options.breakpoints, options.classes, options.resolveToken);
+  const css = head + (linkTheme ? "" : tail);
   return (
     <>
       {options.theme && options.bootScript ? (
@@ -122,6 +132,8 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
           ))
         : null}
       {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
+      {linkTheme ? <link rel="stylesheet" href={options.themeStylesheet} /> : null}
+      {linkTheme && tail ? <style dangerouslySetInnerHTML={{ __html: tail }} /> : null}
       {renderNode(tree, options)}
     </>
   );
