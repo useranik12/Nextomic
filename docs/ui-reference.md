@@ -259,6 +259,8 @@ For the page or template being edited. Route, Page Parameters, "Requires Authent
 - Navigator header: collapse or expand all elements (the icon follows the action), and reset the side panels.
 - The builder UI font is DM Sans (built sites use their own fonts). The editor clock is 12px in a dimmer white.
 
+- Every icon-only button shows a tooltip after the pointer rests on it for 300 ms (`AutoTooltips`, from its title or accessible name); controls with their own tooltip (InfoTip) are left alone. HTML tag lists show plain tag names (no angle brackets); Button has a tag option (button, a, div, span). Naming a class on an element creates it in the project, so the Design System lists it.
+
 ### 4.13 Animations editor (replicate `inspiration/bricksforge-gsap-animation-timeline.png`)
 
 - Opened from the left rail item "Animations". A full-height layer over the editor body; the top bar stays. The real page canvas shows through the middle, so previews play on the actual elements. Esc or "Back to editor" closes it.

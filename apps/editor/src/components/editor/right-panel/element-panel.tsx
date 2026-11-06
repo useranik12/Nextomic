@@ -28,7 +28,9 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
   const setProp = useEditorStore((s) => s.setElementProp);
   const setTag = useEditorStore((s) => s.setElementTag);
   const isTag = control.key === "htmlTag";
-  const value = isTag ? (node.htmlTag ?? "") : dynamicTextOf(node.props[control.key]);
+  const value = isTag
+    ? (node.htmlTag ?? control.options?.[0]?.value ?? "")
+    : dynamicTextOf(node.props[control.key]);
   const onChange = (next: string) =>
     isTag ? setTag(node.id, next) : setProp(node.id, control.key, parseDynamicText(next));
   const insertToken = (token: string) => onChange(`${value}{{${token}}}`);

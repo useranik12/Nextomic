@@ -527,3 +527,31 @@ test("design group is remembered, states show on the canvas, styles move to a cl
   await page.getByRole("menuitem", { name: "Move element styles to class" }).click();
   await expect(page.getByText("This project has no classes yet.")).toBeVisible();
 });
+
+test("icon tooltips, new class is created, button HTML tag shows names", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+
+  // An icon button explains itself after the pointer rests on it.
+  await page.mouse.move(5, 5);
+  await page.getByRole("button", { name: "Reset side panel sizes" }).hover();
+  await expect(
+    page.getByRole("tooltip").filter({ hasText: "Reset the width of the side panels" })
+  ).toBeVisible();
+
+  // The HTML tag list shows plain tag names.
+  await page.getByLabel("HTML tag", { exact: true }).click();
+  await expect(page.getByRole("option", { name: "span", exact: true })).toBeVisible();
+  await page.getByRole("option", { name: "div", exact: true }).click();
+  await expect(page.getByRole("treeitem").first()).toBeVisible();
+
+  // A class typed on the element appears in the Design System.
+  await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Add a class" }).click();
+  await page.getByPlaceholder("New class name").fill("fresh-class");
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Design System" }).click();
+  await page.getByRole("button", { name: /^Classes/ }).click();
+  await expect(page.getByText("fresh-class").first()).toBeVisible();
+});

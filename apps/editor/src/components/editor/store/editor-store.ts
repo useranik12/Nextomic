@@ -616,6 +616,15 @@ export const useEditorStore = create<EditorState>((set, get) => {
         }
         if (activeClass === replacing) set({ activeClass: name });
       }
+      // A class named on an element exists from then on, so the Design System lists it.
+      const { project: current } = get();
+      if (!current.classes[name]) {
+        set({
+          project: { ...current, classes: { ...current.classes, [name]: { breakpoints: {} } } },
+          classesTick: get().classesTick + 1,
+          saveStatus: dirtyStatus(get().saveStatus)
+        });
+      }
       edit(null, (draft) => {
         const found = findNode(draft.tree, id);
         if (!found) return;
