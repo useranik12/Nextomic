@@ -1,10 +1,9 @@
 "use client";
 
 import { Switch } from "@heroui/react";
-import { VERSION_LIMIT_MAX, VERSION_LIMIT_MIN, type ProjectSettings } from "@nextomic/schema";
+import type { ProjectSettings } from "@nextomic/schema";
 import { useState } from "react";
 import { saveProjectSettingsAction } from "@/app/(builder)/editor/[id]/actions";
-import { FormInput } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
 import { useEditorStore } from "./store/editor-store";
 
@@ -12,8 +11,7 @@ import { useEditorStore } from "./store/editor-store";
 export function AppSettings() {
   const generateIds = useEditorStore((s) => s.project.generateElementIds);
   const versionControl = useEditorStore((s) => s.project.versionControl);
-  const versionLimit = useEditorStore((s) => s.project.versionLimit);
-  const [limitText, setLimitText] = useState(String(versionLimit));
+  const hideEditBorder = useEditorStore((s) => s.project.hideEditBorder);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -32,20 +30,10 @@ export function AppSettings() {
     setSaving(false);
     if (result.error !== null) {
       useEditorStore.getState().patchProject(previous);
-      setLimitText(String(previous.versionLimit));
       setError(result.error);
       return;
     }
     setError(null);
-  }
-
-  function commitLimit(raw: string) {
-    const n = Math.round(Number(raw));
-    const next = Number.isFinite(n)
-      ? Math.min(VERSION_LIMIT_MAX, Math.max(VERSION_LIMIT_MIN, n))
-      : versionLimit;
-    setLimitText(String(next));
-    if (next !== versionLimit) void change({ versionLimit: next });
   }
 
   return (
@@ -76,22 +64,22 @@ export function AppSettings() {
             </Switch>
             <InfoTip
               label="Version control"
-              text="Keeps a snapshot of a page every time it is saved, so you can restore an earlier version. Off: no new snapshots are made and the history limit in Page Settings is disabled."
+              text="Keeps a snapshot of a page every time it is saved, so you can restore an earlier version. Off: no snapshots are made for any page. Each page can also turn its history off and set how many versions it keeps in Page Settings."
             />
           </div>
-          <FormInput
-            compact
-            aria-label="Default history limit"
-            label="Default history limit"
-            type="number"
-            min={VERSION_LIMIT_MIN}
-            max={VERSION_LIMIT_MAX}
-            isDisabled={!versionControl || saving}
-            value={limitText}
-            onValueChange={setLimitText}
-            onBlur={() => commitLimit(limitText)}
-            description={`Versions kept per page, ${VERSION_LIMIT_MIN} to ${VERSION_LIMIT_MAX}. A page can set its own in Page Settings. The oldest versions are deleted first.`}
-          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Switch
+            isSelected={hideEditBorder}
+            isDisabled={saving}
+            onValueChange={(on) => void change({ hideEditBorder: on })}
+          >
+            <span className="text-small text-foreground">Hide edit border while editing</span>
+          </Switch>
+          <p className="text-tiny text-default-500">
+            Hides the blue outline of the selected element while you edit its Border settings, so
+            you see the real border.
+          </p>
         </div>
         {error ? (
           <p role="alert" className="text-small text-danger">

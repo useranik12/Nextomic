@@ -7,6 +7,7 @@ import { memo, useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { ROOT_END_ID, useDropTarget } from "./dnd";
 import { ElementIcon } from "./icons";
+import { RenameField } from "./rename-field";
 import { useEditorStore } from "./store/editor-store";
 
 interface Row {
@@ -44,6 +45,7 @@ const NavigatorRow = memo(function NavigatorRow({
   const duplicate = useEditorStore((s) => s.duplicateElement);
   const remove = useEditorStore((s) => s.removeElement);
   const openContextMenu = useEditorStore((s) => s.openContextMenu);
+  const [renaming, setRenaming] = useState(false);
   const drop = useDropTarget();
   const draggable = useDraggable({ id: node.id });
   const droppable = useDroppable({ id: node.id });
@@ -91,19 +93,32 @@ const NavigatorRow = memo(function NavigatorRow({
           className={collapsed ? "" : "rotate-90"}
         />
       </button>
-      <button
-        type="button"
-        onClick={() => select(node.id)}
-        className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-default-800"
-        {...draggable.attributes}
-        {...draggable.listeners}
-      >
-        <ElementIcon type={node.type} size={16} />
-        <span className="truncate">{label}</span>
-        {node.hidden ? (
-          <Icon name="ph:eye-slash" width={12} height={12} className="shrink-0" />
-        ) : null}
-      </button>
+      {renaming ? (
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <ElementIcon type={node.type} size={16} />
+          <RenameField
+            node={node}
+            fallback={label}
+            autoFocus
+            className="text-small text-foreground"
+            onDone={() => setRenaming(false)}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => select(node.id)}
+          className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-default-800"
+          {...draggable.attributes}
+          {...draggable.listeners}
+        >
+          <ElementIcon type={node.type} size={16} />
+          <span className="truncate">{label}</span>
+          {node.hidden ? (
+            <Icon name="ph:eye-slash" width={12} height={12} className="shrink-0" />
+          ) : null}
+        </button>
+      )}
       <span className="hidden items-center group-focus-within:flex group-hover:flex">
         <button
           type="button"
@@ -112,6 +127,14 @@ const NavigatorRow = memo(function NavigatorRow({
           className="rounded p-1 text-default-500 hover:text-foreground"
         >
           <Icon name="ph:copy" width={14} height={14} />
+        </button>
+        <button
+          type="button"
+          aria-label={`Rename ${label}`}
+          onClick={() => setRenaming(true)}
+          className="rounded p-1 text-default-500 hover:text-foreground"
+        >
+          <Icon name="ph:pencil-simple" width={14} height={14} />
         </button>
         <button
           type="button"

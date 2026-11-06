@@ -14,6 +14,23 @@ function defaultUnit(spec: UnitSpec | null): string {
   return spec.unitless && spec.units.length > 0 ? "" : (spec.units[0] ?? "");
 }
 
+/** Arrow-key step: 1, or 0.1 for small unitless numbers and em/rem; Shift is 10x, Alt is 0.1x. */
+function stepSize(property: string, unit: string, shift: boolean, alt: boolean): number {
+  const fine =
+    property === "opacity" || (unit === "" && property !== "z-index" && property !== "order");
+  const base = fine || unit === "em" || unit === "rem" ? 0.1 : 1;
+  return shift ? base * 10 : alt ? base / 10 : base;
+}
+
+/** The text of `current` moved by `direction * step`, without float noise, never below 0 when negatives are not allowed. */
+function stepNumber(current: string, direction: 1 | -1, step: number, negative: boolean): string {
+  const parsed = Number.parseFloat(current);
+  const from = Number.isFinite(parsed) ? parsed : 0;
+  let next = Math.round((from + direction * step) * 1000) / 1000;
+  if (!negative && next < 0) next = 0;
+  return String(next);
+}
+
 /**
  * A length or number value the safe way: the user types the number, picks the unit (px, rem, em, %,
  * vw, dvh ...) or a word (auto, none, fit-content), and Custom takes any CSS text such as calc() or
@@ -121,6 +138,18 @@ export function LengthInput({
           onChange={(e) => {
             const next = e.target.value;
             if (!isNumberText(next, spec)) return;
+            setText(next);
+            commit(next, unit);
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+            e.preventDefault();
+            const next = stepNumber(
+              text !== "" ? text : hint,
+              e.key === "ArrowUp" ? 1 : -1,
+              stepSize(property, unit, e.shiftKey, e.altKey),
+              spec.negative
+            );
             setText(next);
             commit(next, unit);
           }}

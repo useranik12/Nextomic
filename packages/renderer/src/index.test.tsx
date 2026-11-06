@@ -295,3 +295,38 @@ describe("dynamic tags", () => {
     expect(html).not.toContain("{{");
   });
 });
+
+describe("element attributes and element tokens", () => {
+  it("adds attributes that read another element's value by ID, and drops URL attributes that are unsafe", () => {
+    const source = node({
+      id: "src",
+      type: "container",
+      htmlId: "nxtomc-source01",
+      attributes: { "data-label": "Hello" }
+    });
+    const target = node({
+      id: "dst",
+      type: "container",
+      attributes: {
+        "aria-label": { kind: "mixed", parts: [{ token: "attr.data-label@nxtomc-source01" }] },
+        href: "javascript:alert(1)",
+        required: ""
+      }
+    });
+    const tree = { ...emptyPageTree(), children: [source, target] };
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={buildDynamicContext({
+          page: { name: "P", route: "/", settings: defaultPageSettings() },
+          tree,
+          mode: "preview"
+        })}
+      />
+    );
+    expect(html).toContain('aria-label="Hello"');
+    expect(html).not.toContain("javascript:");
+    expect(html).toContain('required=""');
+  });
+});

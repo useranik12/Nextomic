@@ -1,4 +1,4 @@
-import type { PageSettings } from "@nextomic/schema";
+import { walkElements, type ElementNode, type PageSettings } from "@nextomic/schema";
 
 export interface DynamicTag {
   token: string;
@@ -58,15 +58,42 @@ const BUILT_IN: DynamicGroup[] = [
   }
 ];
 
+/** Attributes and props of the elements that have an ID, as `attr.NAME@ID` and `prop.NAME@ID`. */
+function elementTags(tree: ElementNode): DynamicTag[] {
+  const tags: DynamicTag[] = [];
+  walkElements(tree, (node) => {
+    if (!node.htmlId) return;
+    const who = node.name ?? node.type;
+    for (const name of Object.keys(node.attributes ?? {})) {
+      tags.push({
+        token: `attr.${name}@${node.htmlId}`,
+        label: `${who}: ${name}`,
+        hint: "attribute"
+      });
+    }
+    for (const name of Object.keys(node.props)) {
+      tags.push({
+        token: `prop.${name}@${node.htmlId}`,
+        label: `${who}: ${name}`,
+        hint: "content"
+      });
+    }
+  });
+  return tags;
+}
+
 /**
  * The groups a field can use. A field that holds a parameter or a state variable's own value
  * cannot reference those groups (they would refer to themselves), so callers can leave them out.
  */
 export function dynamicGroups(
   settings: Pick<PageSettings, "params" | "state"> | undefined,
-  exclude: ("params" | "state")[] = []
+  exclude: ("params" | "state")[] = [],
+  tree?: ElementNode | null
 ): DynamicGroup[] {
   const groups: DynamicGroup[] = [];
+  const elements = tree ? elementTags(tree) : [];
+  if (elements.length > 0) groups.push({ id: "elements", label: "Elements", tags: elements });
   if (settings && !exclude.includes("params") && settings.params.length > 0)
     groups.push({
       id: "params",

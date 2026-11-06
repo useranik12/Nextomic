@@ -17,6 +17,7 @@ export function SettingRow({
   responsive,
   tip,
   actions,
+  icon,
   children
 }: {
   label: string;
@@ -29,6 +30,8 @@ export function SettingRow({
   tip?: string | undefined;
   /** Extra controls on the label line, such as the side link buttons. */
   actions?: ReactNode;
+  /** A small icon before the label. */
+  icon?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -51,6 +54,7 @@ export function SettingRow({
             className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning"
           />
         ) : null}
+        {icon ? <span className="shrink-0 text-default-500">{icon}</span> : null}
         <label htmlFor={htmlFor} className="text-small font-semibold text-foreground">
           {label}
         </label>

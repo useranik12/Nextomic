@@ -1,6 +1,8 @@
 import {
   CLASS_NAME_PATTERN,
+  URL_ATTRIBUTES,
   createTokenResolver,
+  isAllowedAttribute,
   type DynamicContext,
   themeBootScript,
   fontPreloads,
@@ -19,7 +21,7 @@ import { Fragment, type ReactNode } from "react";
 import { pageCss } from "./css";
 import "./elements";
 import { getElementDefinition } from "./registry";
-import { resolveBoolean, resolveText, type TokenResolver } from "./values";
+import { resolveBoolean, resolveText, safeUrl, type TokenResolver } from "./values";
 
 export interface RenderOptions {
   breakpoints: readonly BreakpointDef[];
@@ -45,7 +47,16 @@ export interface RenderOptions {
   resolveToken?: TokenResolver;
 }
 
-const SAFE_ATTRIBUTE = /^(aria-[a-z-]+|data-[a-z0-9-]+|title|role|tabindex|lang|dir)$/;
+const BOOLEAN_ATTRIBUTES = new Set([
+  "required",
+  "disabled",
+  "readonly",
+  "checked",
+  "selected",
+  "multiple",
+  "hidden",
+  "autofocus"
+]);
 
 function elementAttrs(node: ElementNode, options: RenderOptions): Record<string, string> {
   const attrs: Record<string, string> = { "data-nid": node.id };
@@ -53,9 +64,15 @@ function elementAttrs(node: ElementNode, options: RenderOptions): Record<string,
   const classes = node.classIds.filter((name) => CLASS_NAME_PATTERN.test(name));
   if (classes.length > 0) attrs.className = classes.join(" ");
   for (const [name, value] of Object.entries(node.attributes ?? {})) {
-    if (SAFE_ATTRIBUTE.test(name) && name !== "data-nid") {
-      attrs[name] = resolveText(value, options.resolveToken);
-    }
+    if (!isAllowedAttribute(name)) continue;
+    const text = resolveText(value, options.resolveToken);
+    if (BOOLEAN_ATTRIBUTES.has(name)) {
+      // A switch attribute is on when it is empty or "true"; "false" leaves it off.
+      if (text !== "false") attrs[name] = "true";
+    } else if (URL_ATTRIBUTES.has(name)) {
+      const url = safeUrl(text);
+      if (url !== "") attrs[name] = url;
+    } else attrs[name] = text;
   }
   return attrs;
 }

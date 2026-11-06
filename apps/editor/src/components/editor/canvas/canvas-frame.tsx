@@ -67,6 +67,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const theme = useResolvedTheme();
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
+  const hideSelection = useEditorStore((s) => s.hideSelection);
   const stylePreview = useEditorStore((s) => s.stylePreview);
   const activeClass = useEditorStore((s) => s.activeClass);
   const activeState = useEditorStore((s) => s.activeState);
@@ -264,8 +265,10 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
       theme,
       mode: themeModeFor(theme, mode),
       selectedId,
+      hideSelection,
       dynamic: buildDynamicContext({
         page: { name: doc.name, route: doc.route, settings: doc.settings },
+        tree: doc.tree,
         mode: "editor",
         timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
       })
@@ -281,6 +284,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
     theme,
     mode,
     selectedId,
+    hideSelection,
     stylePreview,
     activeClass,
     activeState,

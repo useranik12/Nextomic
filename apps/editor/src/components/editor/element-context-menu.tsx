@@ -119,6 +119,18 @@ export function ElementContextMenu() {
   const canIndent = !!previous && (getElementDefinition(previous.type)?.canHaveChildren ?? false);
   const parentIsRoot = parent.id === tree?.id;
 
+  const activeClass = store.activeClass;
+  const selectedClass = activeClass && node.classIds.includes(activeClass) ? activeClass : null;
+
+  async function copyText(text: string, shown: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      store.showToast(`${shown} copied to clipboard`);
+    } catch {
+      store.showToast("Copy was blocked by the browser");
+    }
+  }
+
   function run(action: () => void) {
     action();
     close();
@@ -170,6 +182,23 @@ export function ElementContextMenu() {
       <Item onPress={() => run(() => store.select(parent.id === tree?.id ? null : parent.id))}>
         Select parent
       </Item>
+      <Divider />
+      <Item onPress={() => run(() => store.setRenamingId(node.id))}>
+        <Icon name="ph:pencil-simple" width={14} height={14} />
+        Rename
+      </Item>
+      {node.htmlId ? (
+        <Item onPress={() => run(() => void copyText(node.htmlId ?? "", `#${node.htmlId}`))}>
+          <Icon name="ph:hash" width={14} height={14} />
+          Copy CSS ID
+        </Item>
+      ) : null}
+      {selectedClass ? (
+        <Item onPress={() => run(() => void copyText(selectedClass, `.${selectedClass}`))}>
+          <Icon name="ph:tag-simple" width={14} height={14} />
+          Copy selected class
+        </Item>
+      ) : null}
       <Divider />
       <Item onPress={() => run(() => store.copyElement(node.id))}>
         <Icon name="ph:clipboard" width={14} height={14} />

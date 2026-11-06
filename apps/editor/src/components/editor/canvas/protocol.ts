@@ -35,6 +35,8 @@ export const renderMessageSchema = z.object({
   // A mode id of the active theme (light and dark unless the theme defines others).
   mode: z.string().max(32),
   selectedId: z.string().nullable(),
+  // Hide the selection outline (Border settings are being edited).
+  hideSelection: z.boolean().default(false),
   // What dynamic tags show: the page, its parameter defaults, state, date and time.
   dynamic: dynamicContextSchema
 });
@@ -96,4 +98,5 @@ export interface RenderPayload {
   theme: Theme | null;
   mode: string;
   selectedId: string | null;
+  hideSelection: boolean;
 }

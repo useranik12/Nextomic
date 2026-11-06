@@ -8,6 +8,7 @@ import {
   getStyle,
   indentNode,
   insertNode,
+  isElementNameTaken,
   moveNode,
   outdentNode,
   shiftNode,
@@ -150,5 +151,17 @@ describe("element menu operations", () => {
     expect(unwrapNode(root, "w")).toBe(true);
     expect(findNode(root, "a1")?.parent?.id).toBe("a");
     expect(unwrapNode(root, "b")).toBe(false);
+  });
+});
+
+describe("isElementNameTaken", () => {
+  it("finds another element with the same name, ignoring case and the element itself", () => {
+    const root = emptyPageTree();
+    const a = { ...emptyPageTree(), id: "a", name: "Hero" };
+    const b = { ...emptyPageTree(), id: "b", name: "Footer" };
+    root.children.push(a, b);
+    expect(isElementNameTaken(root, "hero", "b")).toBe(true);
+    expect(isElementNameTaken(root, "Hero", "a")).toBe(false);
+    expect(isElementNameTaken(root, "New", "a")).toBe(false);
   });
 });

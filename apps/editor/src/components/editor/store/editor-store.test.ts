@@ -2,6 +2,7 @@ import {
   DEFAULT_BREAKPOINTS,
   emptyPageTree,
   defaultPageSettings,
+  findNode,
   type ProjectSettings
 } from "@nextomic/schema";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -10,6 +11,7 @@ import { useEditorStore } from "./editor-store";
 const project: ProjectSettings = {
   breakpoints: DEFAULT_BREAKPOINTS,
   generateElementIds: true,
+  hideEditBorder: false,
   versionControl: true,
   versionLimit: 200,
   classes: {},
@@ -131,5 +133,24 @@ describe("editor store", () => {
     expect(useEditorStore.getState().doc?.name).toBe("Server");
     expect(useEditorStore.getState().page?.version).toBe(5);
     expect(useEditorStore.getState().saveStatus).toBe("saved");
+  });
+});
+
+describe("rename and attributes", () => {
+  it("refuses empty or duplicate names, and an attribute gives the element an ID", () => {
+    const store = useEditorStore.getState();
+    const a = store.insertElement("container");
+    const b = store.insertElement("container");
+    if (!a || !b) throw new Error("elements not created");
+    expect(useEditorStore.getState().renameElement(a, "Hero")).toBe(true);
+    expect(useEditorStore.getState().renameElement(b, "hero")).toBe(false);
+    expect(useEditorStore.getState().renameElement(b, "  ")).toBe(false);
+    useEditorStore.getState().patchProject({ generateElementIds: false });
+    const c = useEditorStore.getState().insertElement("container");
+    if (!c) throw new Error("element not created");
+    useEditorStore.getState().setElementAttribute(c, "aria-label", "x");
+    const found = findNode(useEditorStore.getState().doc!.tree, c)?.node;
+    expect(found?.htmlId).toMatch(/^nxtomc-[a-z0-9]{8}$/);
+    expect(found?.attributes).toEqual({ "aria-label": "x" });
   });
 });

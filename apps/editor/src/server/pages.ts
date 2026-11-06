@@ -208,7 +208,8 @@ export async function savePage(
         .where(eq(projects.id, projectId))
         .limit(1);
       const project = projectSettingsSchema.safeParse(projectRow?.settings ?? {});
-      const versionControl = project.success ? project.data.versionControl : true;
+      const versionControl =
+        (project.success ? project.data.versionControl : true) && row.settings.versionControl;
       if (versionControl) {
         await tx.insert(pageVersions).values({
           pageId,

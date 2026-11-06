@@ -66,6 +66,7 @@ export default async function PublishedPage({
         theme={theme}
         dynamic={buildDynamicContext({
           page: { name: page.name, route: page.route, settings: page.settings },
+          tree: page.tree,
           mode: "live",
           paramValues: values,
           query: new URLSearchParams(values).toString()

@@ -14,6 +14,7 @@ html[data-nxt-mode="dark"] body{background:#0b0b0c;color:#f2f2f2}
 [data-nid]:empty:not(img){min-height:48px;outline:1px dashed rgba(128,128,128,.55);outline-offset:-1px}
 [data-nid]:hover{outline:1px solid rgba(0,111,238,.55);outline-offset:-1px}
 [data-nid][data-nxt-selected]{outline:2px solid #006fee!important;outline-offset:-2px}
+html[data-nxt-hide-selection] [data-nid][data-nxt-selected]{outline:none!important}
 #nxt-drop{position:fixed;display:none;pointer-events:none;z-index:2147483647;background:rgba(0,111,238,.9)}
 #nxt-drop[data-zone="inside"]{background:rgba(0,111,238,.12);outline:2px solid #006fee;outline-offset:-2px}
 `;
@@ -194,6 +195,7 @@ export function CanvasDocument() {
     document
       .querySelectorAll("[data-nxt-selected]")
       .forEach((el) => el.removeAttribute("data-nxt-selected"));
+    document.documentElement.toggleAttribute("data-nxt-hide-selection", !!payload?.hideSelection);
     if (!payload?.selectedId) return;
     const el = document.querySelector(`[data-nid="${CSS.escape(payload.selectedId)}"]`);
     el?.setAttribute("data-nxt-selected", "");

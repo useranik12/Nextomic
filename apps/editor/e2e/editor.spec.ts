@@ -42,6 +42,7 @@ test("create, edit, save, reload and preview a page", async ({ page }) => {
 
   // Style it at the base breakpoint, then check the change dot on the Design tab.
   await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Typography" }).click();
   await page.getByLabel("Font size", { exact: true }).fill("48");
   await expect(page.getByRole("img", { name: "Changed at this breakpoint" })).toBeVisible();
 
@@ -161,28 +162,12 @@ test("drag an element tile onto the canvas inserts it", async ({ page }) => {
   await expect(page.getByRole("treeitem")).toHaveCount(1);
 });
 
-test("classes and ID chips, bolt, App Settings toggle, split publish", async ({
-  page,
-  request
-}) => {
+test("bolt, App Settings toggle, split publish", async ({ page, request }) => {
   const projectId = await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   // Flyout closed after the insert, and the section rail folded to icons.
   await expect(page.getByRole("dialog", { name: "Elements" })).toHaveCount(0);
-
-  const input = page.getByLabel("Classes and ID", { exact: true });
-  await input.fill("hero");
-  await input.press("Enter");
-  await expect(input).toHaveValue("");
-  await expect(page.getByRole("button", { name: "Class hero" })).toBeVisible();
-  await input.fill("#main-title");
-  await page.getByRole("button", { name: "Apply" }).click();
-  await expect(page.getByRole("button", { name: "ID #main-title" })).toBeVisible();
-  await page.getByRole("button", { name: "Class hero" }).click();
-  await expect(input).toHaveValue("hero");
-  await page.getByRole("button", { name: "Clear the active class or ID" }).click();
-  await expect(input).toHaveValue("");
 
   // Bolt on a content field; no per-element auto-ID switch any more.
   await expect(page.getByRole("button", { name: "Dynamic value for Text" })).toBeVisible();
@@ -239,6 +224,7 @@ test("margin sides are independent and numeric fields take only numbers", async 
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Spacing" }).click();
   await page.getByRole("button", { name: "Each side on its own" }).first().click();
   await page.getByLabel("Margin top", { exact: true }).fill("10");
   await page.getByLabel("Margin left", { exact: true }).fill("20");
@@ -249,6 +235,7 @@ test("margin sides are independent and numeric fields take only numbers", async 
   await expect(heading).toHaveCSS("margin-right", "0px");
 
   // Letters never reach a numeric field.
+  await page.getByRole("button", { name: "Size", exact: true }).click();
   const width = page.getByLabel("Width", { exact: true });
   await width.fill("12ab");
   await expect(width).toHaveValue("");
@@ -290,4 +277,76 @@ test("a page keeps only as many versions as its history limit", async ({ page })
   }
   await page.getByRole("button", { name: "Version History" }).click();
   await expect(page.getByText(/^Version \d+/)).toHaveCount(5);
+});
+
+test("design accordion opens one group, remembers the setting, steps with arrow keys", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByRole("tab", { name: /design/i }).click();
+  await expect(page.getByRole("button", { name: "Layout" })).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
+  await page.getByRole("button", { name: "Border" }).click();
+  await expect(page.getByRole("button", { name: "Layout" })).toHaveAttribute(
+    "aria-expanded",
+    "false"
+  );
+
+  // Arrow keys step a numeric value.
+  await page.getByRole("button", { name: "Size", exact: true }).click();
+  const width = page.getByLabel("Width", { exact: true });
+  await width.fill("10");
+  await width.press("ArrowUp");
+  await expect(width).toHaveValue("11");
+  await width.press("Shift+ArrowDown");
+  await expect(width).toHaveValue("1");
+
+  // A second element, then back: the first one reopens in Size.
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page
+    .getByLabel("Elements", { exact: true })
+    .getByRole("button", { name: "Heading" })
+    .click();
+  await page.getByRole("treeitem").first().getByText("Heading").click();
+  await page.getByRole("tab", { name: /design/i }).click();
+  await expect(page.getByRole("button", { name: "Size", exact: true })).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
+});
+
+test("link buttons apply at once, rename and attributes work", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Spacing" }).click();
+  await page.getByRole("button", { name: "Each side on its own" }).first().click();
+  await page.getByLabel("Margin top", { exact: true }).fill("30");
+  await page.getByLabel("Margin left", { exact: true }).fill("8");
+  await page.getByRole("button", { name: "All sides linked" }).first().click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading")).toHaveCSS("margin-top", "8px");
+  await expect(canvas.getByRole("heading")).toHaveCSS("margin-bottom", "8px");
+
+  // Rename from the panel header.
+  await page.getByRole("button", { name: "Rename element" }).click();
+  const name = page.getByLabel("Element name").first();
+  await name.fill("Hero title");
+  await name.press("Enter");
+  await expect(page.getByRole("treeitem", { name: /Hero title/ })).toBeVisible();
+
+  // Attributes get an ID and show on the canvas.
+  await page.getByRole("tab", { name: /element/i }).click();
+  await page.getByRole("button", { name: "Attributes" }).click();
+  await page.getByPlaceholder("name, e.g. aria-label").fill("aria-label");
+  await page.getByPlaceholder("value", { exact: true }).fill("Hello");
+  await page.getByRole("button", { name: "Add attribute" }).click();
+  await expect(canvas.getByRole("heading")).toHaveAttribute("aria-label", "Hello");
+  await page.getByPlaceholder("name, e.g. aria-label").fill("onclick");
+  await expect(page.getByText("This attribute is not allowed")).toBeVisible();
 });

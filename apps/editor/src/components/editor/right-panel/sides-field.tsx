@@ -3,13 +3,14 @@
 import {
   SIDE_SETS,
   hasSides,
+  linkValues,
   readSides,
   sidesPatch,
   sidesRelation,
   type ElementNode,
   type FourValues
 } from "@nextomic/schema";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { LengthInput } from "./length-input";
@@ -106,12 +107,14 @@ export function SidesField({
   node,
   setId,
   label,
-  tip
+  tip,
+  icon
 }: {
   node: ElementNode;
   setId: string;
   label: string;
   tip?: string;
+  icon?: ReactNode;
 }) {
   const set = SIDE_SETS[setId];
   const target = useDesignTarget(node);
@@ -130,6 +133,13 @@ export function SidesField({
     if (set) apply(node.id, sidesPatch(values, set));
   }
 
+  function pick(next: Link) {
+    setLink(next);
+    // Linking takes effect at once: the sides snap to the smallest value that is set.
+    const linked = linkValues(own as FourValues, next);
+    if (linked.some((v, i) => v !== (own as FourValues)[i])) write(linked);
+  }
+
   function edit(index: number, value: string | null) {
     const next: FourValues = [...(own as FourValues)] as FourValues;
     const v = value ?? undefined;
@@ -145,13 +155,14 @@ export function SidesField({
     <SettingRow
       label={label}
       tip={tip}
+      icon={icon}
       changed={changed}
       onReset={() => apply(node.id, sidesPatch([undefined, undefined, undefined, undefined], set))}
       responsive
       actions={
         <div role="group" aria-label={`${label} sides`} className="flex items-center gap-0.5">
           {(["free", "pairs", "all"] as const).map((l) => (
-            <LinkButton key={l} link={l} active={mode === l} onPick={() => setLink(l)} />
+            <LinkButton key={l} link={l} active={mode === l} onPick={() => pick(l)} />
           ))}
         </div>
       }
@@ -173,7 +184,7 @@ export function SidesField({
           <div
             key={prop}
             className={
-              "absolute flex items-center rounded-medium bg-default-50/80 " +
+              "absolute flex items-center rounded-medium " +
               (corners ? CORNER_POSITION[i] : SIDE_POSITION[i])
             }
           >
