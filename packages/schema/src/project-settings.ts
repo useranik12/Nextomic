@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DEFAULT_BREAKPOINTS, breakpointListSchema } from "./breakpoint";
+import { cssFileListSchema } from "./css-files";
 import { CLASS_NAME_PATTERN } from "./element";
 import { fontListSchema } from "./fonts";
 import { styleMapSchema } from "./style";
@@ -48,7 +49,9 @@ export const projectSettingsSchema = z.object({
   // Themes: the default one applies everywhere unless a page forces another or conditions match.
   themes: themeListSchema.default([]),
   // Text fonts: files in storage, written to the output as @font-face while active.
-  fonts: fontListSchema.default([])
+  fonts: fontListSchema.default([]),
+  // Custom CSS files: written after the theme and before classes, in this order.
+  cssFiles: cssFileListSchema.default([])
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -70,5 +73,6 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   variableCategories: [],
   variables: [],
   themes: [mainTheme()],
-  fonts: []
+  fonts: [],
+  cssFiles: []
 });

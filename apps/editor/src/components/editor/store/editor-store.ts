@@ -168,6 +168,8 @@ interface EditorState {
   /** Class manager operations. They return false when the name is taken or the source is missing. */
   createClass: (name: string) => boolean;
   duplicateClass: (from: string, to: string) => boolean;
+  /** Moves an element's own styles into a new class and adds the class to the element; false when the name exists or there is nothing to move. */
+  convertStylesToClass: (id: string, name: string) => boolean;
   /** Renames on the open page and in the project classes; other pages are updated by the server. */
   renameClass: (from: string, to: string) => boolean;
   /** `replaceWith` null removes the class from the elements of the open page. */
@@ -270,7 +272,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
       variableCategories: [],
       variables: [],
       themes: [],
-      fonts: []
+      fonts: [],
+      cssFiles: []
     },
     page: null,
     doc: null,
@@ -707,6 +710,29 @@ export const useEditorStore = create<EditorState>((set, get) => {
         classes: { ...project.classes, [name]: { breakpoints: {} } }
       });
       set({ classesTick: get().classesTick + 1, saveStatus: dirtyStatus(get().saveStatus) });
+      return true;
+    },
+
+    convertStylesToClass: (id, name) => {
+      const { doc, project } = get();
+      const found = doc ? findNode(doc.tree, id) : null;
+      if (!found || project.classes[name]) return false;
+      const breakpoints = structuredClone(found.node.styles.breakpoints);
+      const hasStyles = Object.values(breakpoints).some((byState) =>
+        Object.values(byState).some((decls) => Object.keys(decls).length > 0)
+      );
+      if (!hasStyles) return false;
+      get().replaceProject({
+        ...project,
+        classes: { ...project.classes, [name]: { breakpoints } }
+      });
+      edit(null, (draft) => {
+        const target = findNode(draft.tree, id);
+        if (!target) return;
+        target.node.styles = { ...target.node.styles, breakpoints: {} };
+        if (!target.node.classIds.includes(name)) target.node.classIds.push(name);
+      });
+      set({ activeClass: name, classesTick: get().classesTick + 1 });
       return true;
     },
 

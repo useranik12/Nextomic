@@ -8,6 +8,7 @@ import type { PageSummary } from "@/server/pages";
 import { ClassesTab } from "./classes/classes-tab";
 import { ColorsTab } from "./colors/colors-tab";
 import { DesignNavProvider, type DesignNavParams } from "./design-nav";
+import { CssFilesTab } from "./css-files-tab";
 import { DESIGN_TABS, isDesignTab, type DesignTabId } from "./design-tabs";
 import { FontsTab } from "./fonts/fonts-tab";
 import { FrameworkTab } from "./framework-tab";
@@ -134,6 +135,7 @@ export function DesignSystemModal({
               {tab === "spacing" ? <SpacingTab /> : null}
               {tab === "variables" ? <VariablesTab key={navKey} /> : null}
               {tab === "classes" ? <ClassesTab key={navKey} /> : null}
+              {tab === "css" ? <CssFilesTab pages={pages} /> : null}
               {tab === "fonts" ? <FontsTab saveNow={deferSave} /> : null}
             </div>
             {asking ? (

@@ -6,7 +6,8 @@ export const DESIGN_TABS = [
   { id: "spacing", label: "Spacing", hint: "Fluid spacing scale" },
   { id: "variables", label: "Variables", hint: "All design tokens" },
   { id: "classes", label: "Classes", hint: "Global class manager" },
-  { id: "fonts", label: "Fonts & Icons", hint: "Google, uploaded, self-hosted" }
+  { id: "fonts", label: "Fonts & Icons", hint: "Google, uploaded, self-hosted" },
+  { id: "css", label: "Custom CSS", hint: "Ordered CSS files, global or per page" }
 ] as const;
 export type DesignTabId = (typeof DESIGN_TABS)[number]["id"];
 

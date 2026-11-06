@@ -1,5 +1,5 @@
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
-import { buildDynamicContext, resolveTheme } from "@nextomic/schema";
+import { buildDynamicContext, customCssFor, resolveTheme } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
@@ -98,6 +98,7 @@ export default async function PreviewPage({
         fonts={settings.fonts}
         fontBase={`/fonts/${id}`}
         theme={theme}
+        customCss={customCssFor(settings.cssFiles, page.id)}
         dynamic={buildDynamicContext({
           page: { name: page.name, route: page.route, settings: page.settings },
           tree: page.tree,

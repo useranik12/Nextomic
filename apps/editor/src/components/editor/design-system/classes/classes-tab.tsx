@@ -10,12 +10,14 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { classUsageAction } from "@/app/(builder)/editor/[id]/actions";
 import { ActionButton } from "@/components/ui/controls";
+import { VirtualList } from "@/components/ui/virtual-list";
 import { useEditorStore } from "../../store/editor-store";
 import { useDesignNav } from "../design-nav";
 import { useFramework } from "../framework/use-framework";
 import { CategoryPanel } from "../manager/category-panel";
 import { SelectionBar } from "../manager/selection-bar";
 import { ManagerToolbar } from "../manager/manager-toolbar";
+import { ClassImportExport } from "./class-import-export";
 import { ClassDeleteDialog } from "./class-delete-dialog";
 import { ClassEditPanel, validClassName } from "./class-edit-panel";
 import {
@@ -29,6 +31,8 @@ import {
   type ClassFilter,
   type ClassSort
 } from "./class-model";
+
+const ROW_HEIGHT = 41;
 
 const SORTS = [
   { value: "name", label: "Name A to Z" },
@@ -247,6 +251,7 @@ export function ClassesTab() {
         >
           <div className="flex flex-col gap-1 border-b border-divider px-4 py-3">
             <h3 className="text-small font-semibold">Classes ({shown.length})</h3>
+            <ClassImportExport />
             <SelectionBar
               noun="classes"
               total={selectable.length}
@@ -271,21 +276,24 @@ export function ClassesTab() {
               {error}
             </p>
           ) : null}
-          <ul className="min-h-0 flex-1 overflow-y-auto">
-            {others === null && !error ? (
-              <li className="p-4 text-small text-default-500">Loading classes…</li>
-            ) : shown.length === 0 ? (
-              <li className="p-4 text-small text-default-500">
-                {include || filter !== "all"
-                  ? "No class matches."
-                  : "No classes yet. Add one below or from an element."}
-              </li>
-            ) : (
-              shown.map((r) => (
-                <li
-                  key={`${r.source}:${r.name}`}
+          {others === null && !error ? (
+            <p className="p-4 text-small text-default-500">Loading classes…</p>
+          ) : shown.length === 0 ? (
+            <p className="p-4 text-small text-default-500">
+              {include || filter !== "all"
+                ? "No class matches."
+                : "No classes yet. Add one below or from an element."}
+            </p>
+          ) : (
+            <VirtualList
+              className="min-h-0 flex-1 overflow-y-auto"
+              items={shown}
+              rowHeight={ROW_HEIGHT}
+              getKey={(r) => `${r.source}:${r.name}`}
+              renderRow={(r) => (
+                <div
                   className={
-                    "flex items-center border-b border-divider transition-colors duration-300 " +
+                    "flex h-full items-center border-b border-divider transition-colors duration-300 " +
                     (selected === r.name
                       ? "bg-default-800 text-default-50"
                       : "hover:bg-default-100")
@@ -311,7 +319,7 @@ export function ClassesTab() {
                     type="button"
                     aria-current={selected === r.name}
                     onClick={() => setSelected(r.name)}
-                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left font-mono text-small"
+                    className="flex h-full min-w-0 flex-1 items-center gap-2 px-3 text-left font-mono text-small"
                   >
                     <span className="min-w-0 flex-1 truncate">.{r.name}</span>
                     {r.locked && r.source === "project" ? (
@@ -324,10 +332,10 @@ export function ClassesTab() {
                       {r.used}
                     </span>
                   </button>
-                </li>
-              ))
-            )}
-          </ul>
+                </div>
+              )}
+            />
+          )}
           <form
             className="flex items-center gap-2 border-t border-divider p-2"
             onSubmit={(e) => {

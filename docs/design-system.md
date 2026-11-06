@@ -127,6 +127,7 @@ Superseded by `templates-and-themes.md` (themes are built; see the decisions log
 
 - Multiple files per project with order, enable/disable, scope (global or per page), minify on publish.
 - Validated on save; syntax errors never break publishing (file is skipped with a warning).
+- Built: Design System > Custom CSS tab. Files are written after the theme and before classes, in list order. Scope is every page or chosen pages. Minify (comments and whitespace only) applies to the published site; the canvas and preview use the source. `</style` is refused.
 
 ## 9. Animations
 
