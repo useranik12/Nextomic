@@ -253,6 +253,12 @@ For the page or template being edited. Route, Page Parameters, "Requires Authent
 - Side panels are resizable up to 25% of the window. The Navigator header has a reset icon that restores both side panels to their default width.
 - App Settings > "Show time in the editor" shows a running clock (hh:mm:ss, AM or PM) in the top bar, left of the open page link.
 
+- The Design tab remembers, per element, the group last opened; an element never opened keeps the group open last. Margin, padding, border width and radius boxes carry a variable picker and a dynamic tag button that fill the side touched last.
+- Choosing a pseudo state (hover, focus, active, disabled) makes the canvas draw that state's design on the element or class being edited.
+- Element right-click menu: "Move element styles to class" opens a searchable class list and moves the element's own design (not its added classes) into the chosen class; the element's values win.
+- Navigator header: collapse or expand all elements (the icon follows the action), and reset the side panels.
+- The builder UI font is DM Sans (built sites use their own fonts). The editor clock is 12px in a dimmer white.
+
 ### 4.13 Animations editor (replicate `inspiration/bricksforge-gsap-animation-timeline.png`)
 
 - Opened from the left rail item "Animations". A full-height layer over the editor body; the top bar stays. The real page canvas shows through the middle, so previews play on the actual elements. Esc or "Back to editor" closes it.

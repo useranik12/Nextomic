@@ -13,9 +13,11 @@ import {
 import { useState, type ReactNode } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
+import { DynamicBolt } from "./dynamic-bolt";
 import { LengthInput } from "./length-input";
 import { SettingRow } from "./setting-row";
 import { useDesignTarget } from "./use-design-target";
+import { VariablePicker } from "./variable-picker";
 
 type Link = "free" | "pairs" | "all";
 
@@ -123,6 +125,8 @@ export function SidesField({
   const inherited =
     set && target.inheritedDeclarations ? readSides(target.inheritedDeclarations, set) : null;
   const [link, setLink] = useState<Link | null>(null);
+  // The side the variable and dynamic tag buttons fill: the one touched last.
+  const [active, setActive] = useState(0);
   if (!set || !own) return null;
 
   const corners = set.kind === "corners";
@@ -160,11 +164,22 @@ export function SidesField({
       onReset={() => apply(node.id, sidesPatch([undefined, undefined, undefined, undefined], set))}
       responsive
       actions={
-        <div role="group" aria-label={`${label} sides`} className="flex items-center gap-0.5">
-          {(["free", "pairs", "all"] as const).map((l) => (
-            <LinkButton key={l} link={l} active={mode === l} onPick={() => pick(l)} />
-          ))}
-        </div>
+        <>
+          <VariablePicker
+            label={`${label} ${(corners ? CORNER_NAME : SIDE_NAME)[active]}`}
+            property={set.props[active] ?? set.props[0] ?? ""}
+            onPick={(ref) => edit(active, ref)}
+          />
+          <DynamicBolt
+            label={`${label} ${(corners ? CORNER_NAME : SIDE_NAME)[active]}`}
+            onInsert={(token) => edit(active, `${own[active] ?? ""}{{${token}}}`)}
+          />
+          <div role="group" aria-label={`${label} sides`} className="flex items-center gap-0.5">
+            {(["free", "pairs", "all"] as const).map((l) => (
+              <LinkButton key={l} link={l} active={mode === l} onPick={() => pick(l)} />
+            ))}
+          </div>
+        </>
       }
     >
       <div
@@ -187,6 +202,8 @@ export function SidesField({
               "absolute flex items-center rounded-medium " +
               (corners ? CORNER_POSITION[i] : SIDE_POSITION[i])
             }
+            onFocusCapture={() => setActive(i)}
+            onPointerDownCapture={() => setActive(i)}
           >
             <LengthInput
               compact

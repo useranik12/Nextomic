@@ -5,7 +5,9 @@ import {
   buildDynamicContext,
   customCssFor,
   findNode,
-  setStyle
+  setStyle,
+  type PseudoState,
+  type StyleMap
 } from "@nextomic/schema";
 import {
   memo,
@@ -62,6 +64,14 @@ function useViewportSize() {
     return () => observer.disconnect();
   }, []);
   return { ref, size };
+}
+
+/** Copies a state's declarations over the default ones of a breakpoint, so the state is drawn at rest. */
+function showState(styles: StyleMap, breakpointId: string, state: PseudoState): void {
+  const byState = styles.breakpoints[breakpointId];
+  const declarations = byState?.[state];
+  if (!byState || !declarations) return;
+  byState.default = { ...(byState.default ?? {}), ...declarations };
 }
 
 export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" | "dark" }) {
@@ -277,6 +287,19 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
         const found = findNode(tree, selectedId);
         if (found)
           setStyle(found.node, activeId, activeState, stylePreview.property, stylePreview.value);
+      }
+    }
+    // With a pseudo state chosen, the canvas shows that state's design (hover, focus ...) on the
+    // element or class being edited, by drawing a copy where the state's values are the default.
+    if (activeState !== "default" && selectedId) {
+      if (activeClass) {
+        const styles = structuredClone(sentClasses[activeClass] ?? { breakpoints: {} });
+        showState(styles, activeId, activeState);
+        sentClasses = { ...sentClasses, [activeClass]: styles };
+      } else {
+        if (tree === doc.tree) tree = structuredClone(doc.tree);
+        const found = findNode(tree, selectedId);
+        if (found) showState(found.node.styles, activeId, activeState);
       }
     }
     send({

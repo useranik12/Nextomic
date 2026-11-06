@@ -22,7 +22,7 @@ export function EditorClock() {
     <time
       dateTime={now.toISOString()}
       aria-label="Current time"
-      className="font-mono text-small tabular-nums text-default-600"
+      className="font-mono text-[12px] tabular-nums text-default-500"
     >
       {formatClock(now)}
     </time>

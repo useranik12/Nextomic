@@ -97,6 +97,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const setDesignGroup = useEditorStore((s) => s.setDesignGroup);
   const setHideSelection = useEditorStore((s) => s.setHideSelection);
   const memory = useEditorStore((s) => s.designMemory[node.id]);
+  const rememberDesign = useEditorStore((s) => s.rememberDesign);
   const renamingId = useEditorStore((s) => s.renamingId);
   const setRenamingId = useEditorStore((s) => s.setRenamingId);
 
@@ -123,7 +124,8 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const memoryProperty = memory?.property;
   useEffect(() => {
     if (tab !== "design") return;
-    setDesignGroup(memoryGroup ?? "layout");
+    // An element never opened keeps the group that was open last.
+    if (memoryGroup !== undefined) setDesignGroup(memoryGroup);
     if (!memoryProperty) return;
     const frame = requestAnimationFrame(() => {
       scroller.current
@@ -141,7 +143,11 @@ export function ElementPanel({ node }: { node: ElementNode }) {
     return () => setHideSelection(false);
   }, [hideBorderSetting, editingBorder, setHideSelection]);
 
-  const toggleGroup = (id: string) => setDesignGroup(designGroup === id ? null : id);
+  const toggleGroup = (id: string) => {
+    const opening = designGroup !== id;
+    setDesignGroup(opening ? id : null);
+    if (opening) rememberDesign(node.id, id, memory?.group === id ? memory.property : "");
+  };
   const toggleElementSection = (id: string) => setElementSection(elementSection === id ? "" : id);
 
   return (

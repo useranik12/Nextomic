@@ -163,6 +163,19 @@ export function Navigator({
   const rootEnd = useDroppable({ id: ROOT_END_ID });
   const drop = useDropTarget();
 
+  // Every element that has children can fold; the toggle folds all or opens all.
+  const foldable = useMemo(() => {
+    const ids: string[] = [];
+    const visit = (n: ElementNode) =>
+      n.children.forEach((c) => {
+        if (c.children.length > 0) ids.push(c.id);
+        visit(c);
+      });
+    if (tree) visit(tree);
+    return ids;
+  }, [tree]);
+  const allCollapsed = foldable.length > 0 && foldable.every((id) => collapsed.has(id));
+
   const rows = useMemo(() => (tree ? flatten(tree, collapsed, 0, []) : []), [tree, collapsed]);
 
   function toggle(id: string) {
@@ -179,6 +192,20 @@ export function Navigator({
       <div className="flex items-center justify-between px-3 py-2">
         <h2 className="text-small font-medium text-foreground">Navigator</h2>
         <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            aria-label={allCollapsed ? "Expand all elements" : "Collapse all elements"}
+            title={allCollapsed ? "Expand all elements" : "Collapse all elements"}
+            disabled={foldable.length === 0}
+            onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(foldable))}
+            className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground disabled:opacity-40"
+          >
+            {allCollapsed ? (
+              <Icon name="ph:arrows-out-line-vertical" width={16} height={16} />
+            ) : (
+              <Icon name="ph:arrows-in-line-vertical" width={16} height={16} />
+            )}
+          </button>
           <button
             type="button"
             aria-label="Reset side panel sizes"

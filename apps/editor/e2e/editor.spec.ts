@@ -494,3 +494,36 @@ test("CSS animation setting with element picker, clock toggle and panel size res
   await page.getByRole("button", { name: "Navigator", exact: true }).click();
   await expect(page.getByRole("button", { name: "Reset side panel sizes" })).toBeVisible();
 });
+
+test("design group is remembered, states show on the canvas, styles move to a class", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading")).toBeVisible();
+
+  // A group opened without editing anything is remembered across selection changes.
+  await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByRole("button", { name: "Typography", exact: true }).click();
+  await page.getByLabel("Font size", { exact: true }).fill("48");
+  await page.getByRole("button", { name: "Border", exact: true }).click();
+  await page.getByRole("treeitem").first().click();
+  await page.getByRole("treeitem").first().click();
+  await expect(page.getByRole("button", { name: "Border", exact: true })).toHaveAttribute(
+    "aria-expanded",
+    "true"
+  );
+
+  // The Margin box (Spacing) has a variable picker and a dynamic tag button.
+  await page.getByRole("button", { name: "Spacing", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: /Use a variable for Margin/ }).first()
+  ).toBeVisible();
+
+  // Right-click > Move element styles to class.
+  await page.getByRole("treeitem").first().click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Move element styles to class" }).click();
+  await expect(page.getByText("This project has no classes yet.")).toBeVisible();
+});
