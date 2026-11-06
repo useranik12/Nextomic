@@ -7,6 +7,7 @@ import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { AppSettings } from "./app-settings";
 import { OPEN_DESIGN_SYSTEM_EVENT } from "./right-panel/font-picker";
+import { AnimationsEditor } from "./animations/animations-editor";
 import { DesignSystemModal } from "./design-system/design-system-modal";
 import { ConflictDialog } from "./conflict-dialog";
 import { EditorDndProvider } from "./dnd";
@@ -84,6 +85,7 @@ export function EditorShell({
   const [pages, setPages] = useState(initialPages);
   const [rail, setRail] = useState<RailItemId>("navigator");
   const [designSystemOpen, setDesignSystemOpen] = useState(false);
+  const [animationsOpen, setAnimationsOpen] = useState(false);
   const [designSystemTab, setDesignSystemTab] = useState<string | undefined>();
   const [collapsed, setCollapsed] = useState(false);
   const [flyout, setFlyout] = useState(false);
@@ -173,6 +175,10 @@ export function EditorShell({
               active={rail}
               collapsed={collapsed}
               onSelect={(id) => {
+                if (id === "animations") {
+                  setAnimationsOpen(true);
+                  return;
+                }
                 if (id === "design-system") {
                   setDesignSystemTab(undefined);
                   setDesignSystemOpen(true);
@@ -223,6 +229,9 @@ export function EditorShell({
           <main className="min-w-0 flex-1 bg-content1/20">
             <CanvasFrame mode={mode} />
           </main>
+          {animationsOpen ? (
+            <AnimationsEditor pages={pages} onClose={() => setAnimationsOpen(false)} />
+          ) : null}
           <div
             className="relative shrink-0 border-l border-divider"
             style={{ width: rightWidth.width }}

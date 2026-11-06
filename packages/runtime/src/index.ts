@@ -1,3 +1,4 @@
-// Client runtime shipped with built apps (actions, state, queries, auth client).
-// Tree-shakable. Real work starts Phase 5.
+// Client runtime shipped with built apps (animations now; actions, state, queries and the auth
+// client arrive in later phases). Tree-shakable.
 export const RUNTIME_PACKAGE_READY = false;
+export * from "./animations";

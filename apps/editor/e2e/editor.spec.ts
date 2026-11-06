@@ -408,3 +408,45 @@ test("custom CSS file applies, and a heading's styles convert to a class", async
   await expect(canvas.getByRole("heading")).toHaveCSS("width", "120px");
   await expect(canvas.getByRole("heading")).toHaveClass(/wide/);
 });
+
+test("animations: build a timeline, preview it on the canvas, see its GSAP code", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading")).toBeVisible();
+
+  await page.getByRole("button", { name: "Animations", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Animations" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "New timeline" }).click();
+  await dialog.getByLabel("Trigger", { exact: true }).click();
+  await page.getByRole("option", { name: "Page load" }).click();
+
+  // Every setting carries an info tip.
+  await expect(dialog.getByRole("button", { name: /^Trigger:/ })).toBeVisible();
+
+  await dialog.getByRole("button", { name: "Add animation" }).click();
+  // Target the page's heading and make it fade out (opacity 0 -> a value we can see mid-way).
+  await dialog.getByLabel("Target", { exact: true }).fill("h1,h2,h3,h4,h5,h6");
+  await dialog.getByLabel("Method", { exact: true }).click();
+  await page.getByRole("option", { name: /^To \(/ }).click();
+  await dialog.getByLabel("Duration", { exact: true }).fill("0.5");
+
+  // The animation shows as a bar on the timeline.
+  await expect(
+    dialog.getByRole("button", { name: /^Animation, starts at 0 seconds/ })
+  ).toBeVisible();
+
+  // The preview reloads shortly after an edit; its length shows when it has.
+  await expect(dialog.getByText(/\/ 00\.50s/)).toBeVisible();
+  await dialog.getByRole("button", { name: "Play preview" }).click();
+  await expect(canvas.getByRole("heading")).toHaveCSS("opacity", "0", { timeout: 10_000 });
+  await dialog.getByRole("button", { name: "Stop preview and go to the start" }).click();
+  await expect(canvas.getByRole("heading")).toHaveCSS("opacity", "1");
+
+  await dialog.getByRole("tab", { name: "GSAP Code" }).click();
+  await expect(dialog.getByLabel("GSAP code of the timeline")).toContainText("gsap.timeline");
+});

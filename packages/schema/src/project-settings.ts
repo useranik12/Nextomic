@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DEFAULT_BREAKPOINTS, breakpointListSchema } from "./breakpoint";
+import { animationSettingsSchema, emptyAnimationSettings } from "./animations";
 import { cssFileListSchema } from "./css-files";
 import { CLASS_NAME_PATTERN } from "./element";
 import { fontListSchema } from "./fonts";
@@ -51,7 +52,9 @@ export const projectSettingsSchema = z.object({
   // Text fonts: files in storage, written to the output as @font-face while active.
   fonts: fontListSchema.default([]),
   // Custom CSS files: written after the theme and before classes, in this order.
-  cssFiles: cssFileListSchema.default([])
+  cssFiles: cssFileListSchema.default([]),
+  // Animations: GSAP timelines in folders (docs/design-system.md section 9).
+  animations: animationSettingsSchema.default(emptyAnimationSettings())
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -74,5 +77,6 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   variables: [],
   themes: [mainTheme()],
   fonts: [],
-  cssFiles: []
+  cssFiles: [],
+  animations: emptyAnimationSettings()
 });

@@ -21,6 +21,7 @@ const project: ProjectSettings = {
   variables: [],
   fonts: [],
   cssFiles: [],
+  animations: { folders: [], timelines: [] },
   themes: []
 };
 

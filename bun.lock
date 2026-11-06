@@ -31,6 +31,7 @@
         "@iconify/react": "5.2.0",
         "@nextomic/db": "workspace:*",
         "@nextomic/renderer": "workspace:*",
+        "@nextomic/runtime": "workspace:*",
         "@nextomic/schema": "workspace:*",
         "@nextomic/storage": "workspace:*",
         "better-auth": "1.1.13",
@@ -98,6 +99,10 @@
     "packages/runtime": {
       "name": "@nextomic/runtime",
       "version": "0.0.0",
+      "dependencies": {
+        "@nextomic/schema": "workspace:*",
+        "gsap": "3.15.1",
+      },
     },
     "packages/schema": {
       "name": "@nextomic/schema",
@@ -1214,6 +1219,8 @@
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="],
 
     "graphemer": ["graphemer@1.4.0", "", {}, "sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag=="],
+
+    "gsap": ["gsap@3.15.1", "", {}, "sha512-63yjWRFWj3QRP1UOuD8kcidCcy3nxb1mMRpwHr/xJRvPfm9GtWOXFAYUiL0ro1fgPq2nY53LR+98pAgy9BumBg=="],
 
     "has-flag": ["has-flag@4.0.0", "", {}, "sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ=="],
 
