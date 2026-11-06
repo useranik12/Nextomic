@@ -30,7 +30,9 @@ export const hostMessageSchema = z.discriminatedUnion("type", [
   renderMessageSchema,
   // Drag in progress: find the element under (x, y) in canvas coordinates and show a drop marker.
   z.object({ type: z.literal("probe"), x: finite, y: finite }),
-  z.object({ type: z.literal("probe-clear") })
+  z.object({ type: z.literal("probe-clear") }),
+  // Ask for the bounds of an element (document coordinates) so the host can fit it on screen.
+  z.object({ type: z.literal("measure"), id: z.string() })
 ]);
 export type HostMessage = z.infer<typeof hostMessageSchema>;
 
@@ -55,6 +57,14 @@ export const canvasMessageSchema = z.discriminatedUnion("type", [
     phase: z.enum(["start", "move", "end"]),
     screenX: finite,
     screenY: finite
+  }),
+  z.object({
+    type: z.literal("measure-result"),
+    id: z.string(),
+    x: finite,
+    y: finite,
+    width: finite.min(0),
+    height: finite.min(0)
   }),
   z.object({
     type: z.literal("probe-result"),
