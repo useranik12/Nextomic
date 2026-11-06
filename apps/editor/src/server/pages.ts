@@ -8,6 +8,7 @@ import {
   emptyPageTree,
   pageSettingsSchema,
   projectSettingsSchema,
+  renameCssVarsInTree,
   renameVariableInTree,
   replaceClassInTree,
   type ElementNode,
@@ -401,6 +402,32 @@ export async function renameVariableInOtherPages(
     for (const row of rows) {
       const tree = elementNodeSchema.parse(row.tree);
       if (!renameVariableInTree(tree, from, to)) continue;
+      await tx
+        .update(pages)
+        .set({ tree, version: sql`${pages.version} + 1`, updatedAt: new Date() })
+        .where(and(eq(pages.id, row.id), eq(pages.projectId, projectId)));
+      updated += 1;
+    }
+    return updated;
+  });
+}
+
+/** Points `var(--from)` at `var(--to)` for every pair on every saved page except `exceptPageId`. */
+export async function renameCssVarsInOtherPages(
+  projectId: string,
+  exceptPageId: string,
+  pairs: readonly (readonly [string, string])[]
+): Promise<number> {
+  const renames = new Map(pairs);
+  return getDb().transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: pages.id, tree: pages.tree })
+      .from(pages)
+      .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
+    let updated = 0;
+    for (const row of rows) {
+      const tree = elementNodeSchema.parse(row.tree);
+      if (!renameCssVarsInTree(tree, renames)) continue;
       await tx
         .update(pages)
         .set({ tree, version: sql`${pages.version} + 1`, updatedAt: new Date() })

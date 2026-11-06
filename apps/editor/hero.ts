@@ -2,7 +2,7 @@ import { heroui } from "@heroui/theme";
 import tokens from "../../blueprint/tokens.json" with { type: "json" };
 
 // blueprint/tokens.json is the single source of truth for builder UI colors (see
-// docs/design-system.md and CLAUDE.md "Design sources"). Never hand-duplicate these hex values —
+// docs/design-system.md "Design sources"). Never hand-duplicate these hex values —
 // if the Figma sheet changes, update tokens.json and this file picks it up automatically.
 function colorScale(mode: "dark" | "light", name: keyof typeof tokens.modes.dark.colors) {
   return tokens.modes[mode].colors[name];

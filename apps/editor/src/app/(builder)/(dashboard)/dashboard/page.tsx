@@ -1,7 +1,7 @@
 import { Button } from "@heroui/react";
 import Link from "next/link";
 
-// The dashboard body (KPIs, charts, activity feed) is designed by Claude and built last, after
+// The dashboard body (KPIs, charts, activity feed) is designed in-house and built last, after
 // owner approval of a proposal (docs/ui-reference.md 4.1, docs/spec.md decisions log). Phase 0
 // ships only the shell + this empty state.
 export default function DashboardPage() {

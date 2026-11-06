@@ -11,6 +11,9 @@ const project: ProjectSettings = {
   breakpoints: DEFAULT_BREAKPOINTS,
   generateElementIds: true,
   classes: {},
+  classCategories: [],
+  classMeta: {},
+  variableCategories: [],
   variables: [],
   fonts: [],
   themes: []

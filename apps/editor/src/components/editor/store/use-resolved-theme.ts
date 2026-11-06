@@ -1,4 +1,4 @@
-import { resolveTheme, type Theme } from "@nextomic/schema";
+import { resolveTheme, themeDefaultMode, themeModes, type Theme } from "@nextomic/schema";
 import { useMemo } from "react";
 import { useEditorStore } from "./editor-store";
 
@@ -17,5 +17,5 @@ export function useResolvedTheme(): Theme | null {
 /** The top bar switch previews light or dark; a theme without that mode shows its default mode. */
 export function themeModeFor(theme: Theme | null, preferred: "light" | "dark"): string {
   if (!theme) return preferred;
-  return theme.modes.some((m) => m.id === preferred) ? preferred : theme.defaultMode;
+  return themeModes(theme).some((m) => m.id === preferred) ? preferred : themeDefaultMode(theme);
 }

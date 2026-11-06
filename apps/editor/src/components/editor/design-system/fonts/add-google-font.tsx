@@ -1,9 +1,13 @@
 "use client";
 
-import { Checkbox, Switch } from "@heroui/react";
+import { Checkbox, Slider, Switch } from "@heroui/react";
 import type { ProjectFont } from "@nextomic/schema";
 import { useEffect, useState } from "react";
-import { installFontAction, searchFontsAction } from "@/app/(builder)/editor/[id]/font-actions";
+import {
+  fontAxisAction,
+  installFontAction,
+  searchFontsAction
+} from "@/app/(builder)/editor/[id]/font-actions";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import type { CatalogFont } from "@/server/fonts";
 import { useEditorStore } from "../../store/editor-store";
@@ -28,6 +32,11 @@ function InstallForm({
   onInstalled: (font: ProjectFont) => Promise<void>;
 }) {
   const [variable, setVariable] = useState(false);
+  // The catalog says "variable" for fonts with any axis; only a real weight axis counts here.
+  const [axis, setAxis] = useState<{ min: number; max: number } | null | "checking">(
+    font.variable ? "checking" : null
+  );
+  const [range, setRange] = useState<[number, number]>([100, 900]);
   const [weights, setWeights] = useState<number[]>(
     font.weights.includes(400) ? [400] : font.weights.slice(0, 1)
   );
@@ -38,7 +47,23 @@ function InstallForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasItalic = font.styles.includes("italic");
+  const low = axis && axis !== "checking" ? Math.ceil(axis.min / 100) * 100 : 100;
+  const high = axis && axis !== "checking" ? Math.floor(axis.max / 100) * 100 : 900;
   const files = (variable ? 1 : weights.length) * (italic ? 2 : 1) * subsets.length;
+
+  useEffect(() => {
+    if (!font.variable) return;
+    let live = true;
+    void fontAxisAction(useEditorStore.getState().projectId, font.id).then((result) => {
+      if (!live) return;
+      const found = result.error === null ? result.data : null;
+      setAxis(found);
+      if (found) setRange([Math.ceil(found.min / 100) * 100, Math.floor(found.max / 100) * 100]);
+    });
+    return () => {
+      live = false;
+    };
+  }, [font.id, font.variable]);
 
   async function install() {
     setBusy(true);
@@ -48,7 +73,8 @@ function InstallForm({
       weights,
       italic: italic && hasItalic,
       subsets,
-      variable
+      variable,
+      ...(variable && axis && axis !== "checking" ? { range } : {})
     });
     if (result.error !== null) {
       setBusy(false);
@@ -63,10 +89,34 @@ function InstallForm({
       <p className="text-small font-medium">
         {font.family} <span className="font-normal text-default-500">· {font.license}</span>
       </p>
-      {font.variable ? (
-        <Switch size="sm" isSelected={variable} onValueChange={setVariable}>
-          <span className="text-small">Variable font (one file covers every weight)</span>
-        </Switch>
+      {axis === "checking" ? (
+        <p className="text-tiny text-default-500">Checking for a variable version…</p>
+      ) : null}
+      {axis && axis !== "checking" ? (
+        <>
+          <Switch size="sm" isSelected={variable} onValueChange={setVariable}>
+            <span className="text-small">Variable font (one file covers every weight)</span>
+          </Switch>
+          {variable && high > low ? (
+            <Slider
+              size="sm"
+              step={100}
+              minValue={low}
+              maxValue={high}
+              showSteps
+              label="Weights the font may use"
+              value={range}
+              onChange={(v) =>
+                Array.isArray(v) && v.length === 2 && setRange([v[0] ?? low, v[1] ?? high])
+              }
+              getValue={(v) => (Array.isArray(v) ? `${v[0]} to ${v[1]}` : String(v))}
+              classNames={{
+                label: "text-tiny font-medium text-default-600",
+                value: "text-tiny text-default-600"
+              }}
+            />
+          ) : null}
+        </>
       ) : null}
       {variable ? null : (
         <fieldset className="flex flex-wrap gap-x-4 gap-y-1">

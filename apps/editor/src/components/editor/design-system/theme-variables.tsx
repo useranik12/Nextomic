@@ -1,9 +1,10 @@
 "use client";
 
+import { ColorField } from "@/components/ui/color-field";
 import {
   SAFE_VALUE,
+  themeModes,
   VARIABLE_PREFIX,
-  isHexColor,
   type ProjectVariable,
   type Theme
 } from "@nextomic/schema";
@@ -63,20 +64,18 @@ export function ThemeVariables({
               </button>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
-              {theme.modes.map((mode) => {
+              {themeModes(theme).map((mode) => {
                 const value = overrides[name]?.[mode.id] ?? "";
                 return (
-                  <div key={mode.id} className="flex items-end gap-2">
+                  <div key={mode.id} className="min-w-0">
                     {original?.type === "color" ? (
-                      <input
-                        type="color"
-                        aria-label={`${name} ${mode.name} color`}
-                        value={isHexColor(value) ? value : "#000000"}
-                        onChange={(e) => setValue(name, mode.id, e.target.value)}
-                        className="mb-1 h-6 w-6 shrink-0 cursor-pointer rounded border border-divider bg-transparent p-0"
+                      <ColorField
+                        label={`${name} ${mode.name} color`}
+                        value={value}
+                        display={original.value}
+                        onChange={(v) => setValue(name, mode.id, v)}
                       />
-                    ) : null}
-                    <div className="min-w-0 flex-1">
+                    ) : (
                       <FormInput
                         compact
                         label={mode.name}
@@ -84,7 +83,7 @@ export function ThemeVariables({
                         value={value}
                         onValueChange={(v) => setValue(name, mode.id, v)}
                       />
-                    </div>
+                    )}
                   </div>
                 );
               })}

@@ -1,10 +1,11 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   FONT_MIME,
   FONT_FAMILY_PATTERN,
   fontFileSchema,
   fontSchema,
   slugifyFontId,
+  sortFontFiles,
   sniffFontFormat,
   type FontFile,
   type ProjectFont
@@ -152,7 +153,9 @@ export const installFontInputSchema = z.object({
   weights: z.array(z.number().int().min(1).max(1000)).max(20),
   italic: z.boolean(),
   subsets: z.array(z.string().trim().min(1).max(32)).min(1).max(12),
-  variable: z.boolean()
+  variable: z.boolean(),
+  /** Variable fonts: the weights to declare (inside the font's own range). */
+  range: z.tuple([z.number().int().min(1).max(1000), z.number().int().min(1).max(1000)]).optional()
 });
 export type InstallFontInput = z.infer<typeof installFontInputSchema>;
 
@@ -224,6 +227,18 @@ async function storeFiles(
   return result;
 }
 
+/** The weight range a catalog font really offers as one variable file, or null when it has none. */
+export async function fontWeightAxis(id: string): Promise<{ min: number; max: number } | null> {
+  const entry = (await loadCatalog()).find((f) => f.id === id);
+  if (!entry || !entry.variable) return null;
+  try {
+    const wght = (await fetchJson(`${API}/variable/${entry.id}`, axesSchema)).axes.wght;
+    return wght ? { min: Math.round(wght.min), max: Math.round(wght.max) } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Downloads the chosen weights, styles and subsets of a catalog font into project storage. */
 export async function installCatalogFont(
   projectId: string,
@@ -244,13 +259,16 @@ export async function installCatalogFont(
     const axes = await fetchJson(`${API}/variable/${entry.id}`, axesSchema);
     const wght = axes.axes.wght;
     if (!entry.variable || !wght) throw new FontError("This font has no variable weight axis.");
+    const low = Math.max(Math.round(wght.min), Math.min(...(input.range ?? [wght.min, wght.max])));
+    const high = Math.min(Math.round(wght.max), Math.max(...(input.range ?? [wght.min, wght.max])));
+    if (low > high) throw new FontError("Pick a weight range inside the font's range.");
     for (const style of styles)
       for (const subset of subsets)
         planned.push({
           url: `https://${FILE_HOST}/fontsource/fonts/${entry.id}:vf@${detail.npmVersion}/${subset}-wght-${style}.woff2`,
           name: `${fileSlug(subset)}-wght-${style}.woff2`,
-          weight: Math.round(wght.min),
-          weightMax: Math.round(wght.max),
+          weight: low,
+          ...(high > low ? { weightMax: high } : {}),
           style,
           subset,
           unicodeRange: detail.unicodeRange[subset]
@@ -300,7 +318,7 @@ export async function installCatalogFont(
     active: true,
     preload: false,
     display: "swap",
-    files
+    files: sortFontFiles(files)
   });
 }
 
@@ -353,7 +371,8 @@ export async function storeUploadedFont(
     seen.add(key);
     const range = m.weightMax ? `${m.weight}-${m.weightMax}` : String(m.weight);
     return {
-      name: `${range}-${m.style}.${format}`,
+      // A random part keeps a replaced file from overwriting the one another face still points at.
+      name: `${range}-${m.style}-${randomBytes(3).toString("hex")}.${format}`,
       data: blob.data,
       meta: { weight: m.weight, weightMax: m.weightMax, style: m.style, subset: "latin" }
     };
@@ -369,6 +388,6 @@ export async function storeUploadedFont(
     active: true,
     preload: false,
     display: "swap",
-    files: stored
+    files: sortFontFiles(stored)
   });
 }

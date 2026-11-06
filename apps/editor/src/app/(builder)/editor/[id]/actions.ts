@@ -2,6 +2,7 @@
 
 import {
   CLASS_NAME_PATTERN,
+  FRAMEWORK_VAR_PATTERN,
   VARIABLE_NAME_PATTERN,
   createPageInputSchema,
   projectSettingsSchema,
@@ -22,6 +23,7 @@ import {
   getPage,
   listPages,
   listVersions,
+  renameCssVarsInOtherPages,
   renameVariableInOtherPages,
   replaceClassInOtherPages,
   restoreVersion,
@@ -250,6 +252,7 @@ export async function replaceClassAction(
 }
 
 const variableNameSchema = z.string().regex(VARIABLE_NAME_PATTERN).max(48);
+const frameworkVarNameSchema = z.string().regex(FRAMEWORK_VAR_PATTERN).max(64);
 
 export async function variableUsageAction(
   projectId: string,
@@ -267,6 +270,28 @@ export async function variableUsageAction(
 }
 
 /** Rewrites references on the other pages; the open page and classes change in the editor. */
+export async function renameCssVarsAction(
+  projectId: string,
+  exceptPageId: string,
+  pairs: [string, string][]
+): Promise<ActionResult<number>> {
+  try {
+    await authorize(projectId);
+    const checked = z
+      .array(z.tuple([frameworkVarNameSchema, frameworkVarNameSchema]))
+      .max(1000)
+      .parse(pairs);
+    const updated = await renameCssVarsInOtherPages(
+      projectId,
+      idSchema.parse(exceptPageId),
+      checked
+    );
+    return { data: updated, error: null };
+  } catch (error) {
+    return fail(error, "Could not update the other pages.");
+  }
+}
+
 export async function renameVariableAction(
   projectId: string,
   exceptPageId: string,

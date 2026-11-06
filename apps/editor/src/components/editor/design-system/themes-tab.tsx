@@ -1,12 +1,13 @@
 "use client";
 
-import { Switch } from "@heroui/react";
 import { newTheme, themeListSchema, uniqueThemeSlug, type Theme } from "@nextomic/schema";
 import { useState } from "react";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import type { PageSummary } from "@/server/pages";
 import { useEditorStore } from "../store/editor-store";
+import { InfoTip, LabelWithTip } from "@/components/ui/info-tip";
+import { SwitchRow } from "@/components/ui/switch-row";
 import { ThemeConditions } from "./theme-conditions";
 import { ThemeVariables } from "./theme-variables";
 
@@ -16,10 +17,21 @@ function conditionSummary(theme: Theme): string {
   return n === 0 ? "Only pages that choose it" : `${n} rule${n === 1 ? "" : "s"}`;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  tip,
+  children
+}: {
+  title: string;
+  tip?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-small font-semibold text-foreground">{title}</h3>
+      <h3 className="flex items-center gap-1.5 text-small font-semibold text-foreground">
+        {title}
+        {tip ? <InfoTip text={tip} /> : null}
+      </h3>
       {children}
     </section>
   );
@@ -97,6 +109,7 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
             }}
           />
           <ActionButton size="sm" onPress={create}>
+            <Icon name="ph:plus" width={14} height={14} />
             New theme
           </ActionButton>
         </div>
@@ -114,6 +127,11 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
               >
                 <span className="flex items-center gap-2 text-small font-medium">
                   <span className="truncate">{t.name}</span>
+                  {t.active ? null : (
+                    <span className="rounded-full bg-default-200 px-2 text-tiny text-default-700">
+                      Off
+                    </span>
+                  )}
                   {t.isDefault ? (
                     <span className="rounded-full bg-default-800 px-2 text-tiny text-default-50">
                       Default
@@ -152,7 +170,10 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
                 </ActionButton>
               </div>
             </div>
-            <Section title="General">
+            <Section
+              title="General"
+              tip="The name of the theme, how it looks to visitors in light and dark, and which pages use it."
+            >
               <FormInput
                 compact
                 label="Name"
@@ -162,43 +183,54 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
               <p className="text-tiny text-default-500">
                 Used in CSS as <code>[data-nxt-theme=&quot;{selected.slug}&quot;]</code>
               </p>
-              <SelectField
-                compact
-                label="Default color mode"
-                value={selected.defaultMode}
-                onValueChange={(v) => patch(selected.id, { defaultMode: v })}
-                options={selected.modes.map((m) => ({ value: m.id, label: m.name }))}
+              <SwitchRow
+                label="Theme is active"
+                tip="On: the theme can be used by pages. Off: the theme is kept but never applied, not by its conditions, not as the default and not when a page picks it."
+                selected={selected.active}
+                onChange={(active) => patch(selected.id, { active })}
               />
-              <Switch
-                size="sm"
-                isSelected={selected.allowModeSwitch}
-                onValueChange={(allowModeSwitch) => patch(selected.id, { allowModeSwitch })}
-              >
-                <span className="text-small">Allow visitors to change the color mode</span>
-              </Switch>
-              <p className="-mt-2 text-tiny text-default-500">
-                {selected.allowModeSwitch
-                  ? "A visitor's saved choice is remembered. Off locks the site to the default mode."
-                  : "Locked: every visitor sees the default mode, whatever they chose before."}
-              </p>
-              <Switch
-                size="sm"
-                isDisabled={!selected.allowModeSwitch}
-                isSelected={selected.respectSystemPreference}
-                onValueChange={(respectSystemPreference) =>
-                  patch(selected.id, { respectSystemPreference })
-                }
-              >
-                <span className="text-small">
-                  Follow the visitor&apos;s system light/dark preference
-                </span>
-              </Switch>
+              <SwitchRow
+                label="Dark mode for the whole site"
+                tip="Gives the whole site a dark version. Pages on this theme can then show light or dark colors. Off: the site is light only and the dark color options are hidden."
+                selected={selected.darkMode}
+                onChange={(darkMode) => patch(selected.id, { darkMode })}
+              />
+              {selected.darkMode ? (
+                <div className="flex flex-col gap-3 rounded-large border border-divider p-3">
+                  <SelectField
+                    compact
+                    label="Color mode a visitor sees first"
+                    value={selected.defaultMode}
+                    onValueChange={(v) => patch(selected.id, { defaultMode: v })}
+                    options={selected.modes.map((m) => ({ value: m.id, label: m.name }))}
+                  />
+                  <SwitchRow
+                    label="Let visitors change the color mode"
+                    tip="Visitors can switch between light and dark and their choice is remembered. Off locks every visitor to the first mode above, whatever they chose before."
+                    selected={selected.allowModeSwitch}
+                    onChange={(allowModeSwitch) => patch(selected.id, { allowModeSwitch })}
+                  />
+                  <SwitchRow
+                    label="Follow the visitor's device setting"
+                    tip="A visitor who has not chosen a mode gets dark when their device is set to dark, and light otherwise."
+                    selected={selected.respectSystemPreference}
+                    disabled={!selected.allowModeSwitch}
+                    onChange={(respectSystemPreference) =>
+                      patch(selected.id, { respectSystemPreference })
+                    }
+                  />
+                </div>
+              ) : null}
               {selected.isDefault ? null : (
                 <>
                   <FormInput
                     compact
                     type="number"
-                    label="Priority (higher wins when several themes match)"
+                    label={
+                      <LabelWithTip tip="When a page matches more than one theme, the theme with the highest number is used.">
+                        Priority
+                      </LabelWithTip>
+                    }
                     value={String(selected.priority)}
                     onValueChange={(v) =>
                       patch(selected.id, { priority: Math.max(0, Math.round(Number(v) || 0)) })
@@ -214,18 +246,27 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
                     >
                       Make default
                     </ActionButton>
+                    <span className="ml-1.5 align-middle">
+                      <InfoTip text="The default theme is used on every page that matches no other theme and has no theme chosen in its settings. Only one theme is the default." />
+                    </span>
                   </div>
                 </>
               )}
             </Section>
-            <Section title="Variables">
+            <Section
+              title="Variables"
+              tip="Change the value of a project variable for this theme only, for example a different brand color. Pages on this theme use the new value."
+            >
               <ThemeVariables
                 theme={selected}
                 variables={variables}
                 onChange={(next) => patch(selected.id, { variables: next })}
               />
             </Section>
-            <Section title="Conditions">
+            <Section
+              title="Conditions"
+              tip="Choose which pages use this theme. A page can also pick a theme by hand in its settings, which always wins."
+            >
               <ThemeConditions
                 theme={selected}
                 pages={pages}

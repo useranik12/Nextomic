@@ -1,7 +1,7 @@
 "use client";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
-import { SYSTEM_FONT_STACKS, fontStack } from "@nextomic/schema";
+import { SYSTEM_FONT_STACKS, fontStack, isFontUsable } from "@nextomic/schema";
 import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
@@ -52,25 +52,23 @@ export function FontPicker({
       </PopoverTrigger>
       <PopoverContent className="w-64 items-stretch gap-1 p-2">
         <ul className="max-h-64 overflow-y-auto">
-          {fonts
-            .filter((f) => f.active)
-            .map((f) => (
-              <li key={f.id}>
-                <button
-                  type="button"
-                  className={rowClass}
-                  onClick={() => choose(fontStack(f))}
-                  {...previewProps(preview, fontStack(f))}
-                >
-                  <span style={{ fontFamily: fontStack(f) }} className="truncate text-small">
-                    {f.family}
-                  </span>
-                  <span className="text-tiny text-default-500">
-                    {f.source === "upload" ? "uploaded" : "Google"}
-                  </span>
-                </button>
-              </li>
-            ))}
+          {fonts.filter(isFontUsable).map((f) => (
+            <li key={f.id}>
+              <button
+                type="button"
+                className={rowClass}
+                onClick={() => choose(fontStack(f))}
+                {...previewProps(preview, fontStack(f))}
+              >
+                <span style={{ fontFamily: fontStack(f) }} className="truncate text-small">
+                  {f.family}
+                </span>
+                <span className="text-tiny text-default-500">
+                  {f.source === "upload" ? "uploaded" : "Google"}
+                </span>
+              </button>
+            </li>
+          ))}
           {SYSTEM_FONT_STACKS.map((s) => (
             <li key={s.label}>
               <button

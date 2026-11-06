@@ -20,6 +20,9 @@ import {
   reassignBreakpointStyles,
   removeNode,
   renameRefsInStyles,
+  renameCssVarRefs,
+  renameCssVarsInStyles,
+  renameCssVarsInTree,
   renameVariableInTree,
   replaceClassInTree,
   setProp,
@@ -132,8 +135,16 @@ interface EditorState {
   setThemes: (themes: Theme[]) => void;
   /** Replaces the font list (install, upload, activate, preload, remove). */
   setFonts: (fonts: ProjectFont[]) => void;
+  /** Merges settings (categories, framework-independent project fields) and marks the project dirty. */
+  patchProject: (patch: Partial<ProjectSettings>) => void;
+  /** Server-side work (other saved pages) that waits for Save in the Design System. */
+  pendingOps: PendingOp[];
+  queueOp: (op: PendingOp) => void;
+  clearOps: () => void;
   /** Renames and rewrites references on the open page and in class styles; other pages are server side. */
   renameVariable: (from: string, to: string) => boolean;
+  /** Points `var(--from)` at `var(--to)` in the open page, classes and variables, and queues the other pages. */
+  renameCssVars: (pairs: [string, string][]) => void;
   /** Class manager operations. They return false when the name is taken or the source is missing. */
   createClass: (name: string) => boolean;
   duplicateClass: (from: string, to: string) => boolean;
@@ -190,6 +201,13 @@ export function createElementNode(
   return node;
 }
 
+/** Cross-page changes the server applies when the Design System is saved. */
+export type PendingOp =
+  | { type: "renameClass"; from: string; to: string }
+  | { type: "deleteClass"; name: string; to: string | null }
+  | { type: "renameVariable"; from: string; to: string }
+  | { type: "renameCssVars"; pairs: [string, string][] };
+
 export const useEditorStore = create<EditorState>((set, get) => {
   /** Applies an edit to the document, recording history. Edits with the same key coalesce. */
   function edit(key: string | null, recipe: (doc: PageDoc) => void): boolean {
@@ -216,6 +234,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
       breakpoints: [],
       generateElementIds: true,
       classes: {},
+      classCategories: [],
+      classMeta: {},
+      variableCategories: [],
       variables: [],
       themes: [],
       fonts: []
@@ -491,6 +512,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     setThemes: (themes) => {
       set({
         project: { ...get().project, themes },
+        classesTick: get().classesTick + 1,
         saveStatus: dirtyStatus(get().saveStatus)
       });
     },
@@ -498,9 +520,22 @@ export const useEditorStore = create<EditorState>((set, get) => {
     setFonts: (fonts) => {
       set({
         project: { ...get().project, fonts },
+        classesTick: get().classesTick + 1,
         saveStatus: dirtyStatus(get().saveStatus)
       });
     },
+
+    patchProject: (patch) => {
+      set({
+        project: { ...get().project, ...patch },
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+    },
+
+    pendingOps: [],
+    queueOp: (op) => set({ pendingOps: [...get().pendingOps, op] }),
+    clearOps: () => set({ pendingOps: [] }),
 
     deleteVariable: (name) => {
       const { project } = get();
@@ -533,6 +568,34 @@ export const useEditorStore = create<EditorState>((set, get) => {
         saveStatus: dirtyStatus(get().saveStatus)
       });
       return true;
+    },
+
+    renameCssVars: (pairs) => {
+      if (pairs.length === 0) return;
+      const renames = new Map(pairs);
+      const { project } = get();
+      const classes = Object.fromEntries(
+        Object.entries(project.classes).map(([name, styles]) => [
+          name,
+          renameCssVarsInStyles(styles, renames)
+        ])
+      );
+      edit(null, (draft) => {
+        renameCssVarsInTree(draft.tree, renames);
+      });
+      set({
+        project: {
+          ...project,
+          classes,
+          variables: project.variables.map((v) => ({
+            ...v,
+            value: renameCssVarRefs(v.value, renames)
+          }))
+        },
+        pendingOps: [...get().pendingOps, { type: "renameCssVars", pairs }],
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
     },
 
     createClass: (name) => {

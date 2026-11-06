@@ -1,6 +1,14 @@
 import { parse, type ChildNode, type Rule } from "postcss";
 import { z } from "zod";
+import {
+  colorOptionsMapSchema,
+  colorUtilityRules,
+  derivedColorVariables,
+  shadeNames
+} from "./framework-colors";
 import { SAFE_VALUE, fluidClamp } from "./variables";
+
+export * from "./framework-colors";
 
 // CSS frameworks (docs/design-system.md). Every theme owns one framework: a list of CSS custom
 // properties (`--primary`, `--space-m`, light value plus optional dark value), a stylesheet of
@@ -16,13 +24,20 @@ export const frameworkVariableSchema = z.object({
   name: z.string().regex(FRAMEWORK_VAR_PATTERN).max(64),
   value: z.string().trim().min(1).max(500).regex(SAFE_VALUE),
   /** Value in the dark color mode, when it differs. */
-  dark: z.string().trim().min(1).max(500).regex(SAFE_VALUE).optional()
+  dark: z.string().trim().min(1).max(500).regex(SAFE_VALUE).optional(),
+  /** Category in the variable and color managers (a color palette name). Guessed from the name when unset. */
+  group: z.string().trim().min(1).max(48).optional()
 });
 export type FrameworkVariable = z.infer<typeof frameworkVariableSchema>;
 
 // A fluid scale: `names[baseIndex]` is the base step; each step away multiplies by the ratio, the
 // minor ratio at the narrow screen and the major ratio at the wide one (like Core Framework).
+export const SCALE_KINDS = ["text", "space", "radius"] as const;
+export type ScaleKind = (typeof SCALE_KINDS)[number];
+
 export const scaleSchema = z.object({
+  /** What the scale sizes. Unset on older data, where the prefix says it. */
+  kind: z.enum(SCALE_KINDS).optional(),
   prefix: z.string().regex(FRAMEWORK_VAR_PATTERN).max(24),
   names: z
     .array(
@@ -43,6 +58,10 @@ export const scaleSchema = z.object({
 });
 export type ScaleSettings = z.infer<typeof scaleSchema>;
 
+/** The kind of a scale (text, space or radius), from `kind` or else from its prefix. */
+export const scaleKind = (s: Pick<ScaleSettings, "kind" | "prefix">): ScaleKind =>
+  s.kind ?? SCALE_KINDS.find((k) => k === s.prefix) ?? "text";
+
 export const frameworkSchema = z.object({
   name: z.string().trim().min(1).max(64),
   source: z.enum(["main", "import"]),
@@ -54,7 +73,19 @@ export const frameworkSchema = z.object({
     }),
   /** The stylesheet of classes. Empty for the main framework, whose classes are generated. */
   css: z.string().max(MAX_CSS).default(""),
-  scales: z.array(scaleSchema).max(6).default([])
+  scales: z.array(scaleSchema).max(6).default([]),
+  /** Start of the name of new colors (for example `brand-`), so palettes of one theme stay together. */
+  colorPrefix: z
+    .string()
+    .max(24)
+    .regex(/^[A-Za-z0-9_-]*$/)
+    .default(""),
+  /** Palettes that have no colors yet, so an empty group survives a reload. */
+  colorGroups: z.array(z.string().trim().min(1).max(48)).max(40).default([]),
+  /** Shades and utility classes to generate per color name. */
+  colorOptions: colorOptionsMapSchema.default({}),
+  /** Counts exports, so exported files get distinct names: nextomic-framework-<site>-<version>.css. */
+  version: z.number().int().min(1).max(100000).default(1)
 });
 export type Framework = z.infer<typeof frameworkSchema>;
 
@@ -75,6 +106,7 @@ const round = (n: number): number => Math.round(n * 1000) / 1000;
 
 export const DEFAULT_SCALES: ScaleSettings[] = [
   {
+    kind: "text",
     prefix: "text",
     names: ["xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"],
     baseIndex: 2,
@@ -86,6 +118,7 @@ export const DEFAULT_SCALES: ScaleSettings[] = [
     maxScreen: 1400
   },
   {
+    kind: "space",
     prefix: "space",
     names: ["4xs", "3xs", "2xs", "xs", "s", "m", "l", "xl", "2xl", "3xl", "4xl"],
     baseIndex: 5,
@@ -97,6 +130,7 @@ export const DEFAULT_SCALES: ScaleSettings[] = [
     maxScreen: 1400
   },
   {
+    kind: "radius",
     prefix: "radius",
     names: ["xs", "s", "m", "l", "xl"],
     baseIndex: 2,
@@ -133,21 +167,74 @@ export function scaleSteps(s: ScaleSettings): ScaleStep[] {
   });
 }
 
-/** The framework with this scale's variables set (replacing their values, keeping their order). */
+/**
+ * The framework with this scale's variables set (replacing their values, keeping their order).
+ * Steps the scale no longer has are removed from the variables.
+ */
 export function applyScale(fw: Framework, scale: ScaleSettings): Framework {
   const steps = new Map(scaleSteps(scale).map((s) => [s.variable, s.value]));
+  const previous = fw.scales.find((s) => s.prefix === scale.prefix);
+  const gone = new Set(
+    (previous?.names ?? [])
+      .filter((n) => !scale.names.includes(n))
+      .map((n) => `${scale.prefix}-${n}`)
+  );
   const seen = new Set<string>();
-  const variables = fw.variables.map((v) => {
+  const variables = fw.variables.flatMap((v) => {
+    if (gone.has(v.name)) return [];
     const value = steps.get(v.name);
-    if (value === undefined) return v;
+    if (value === undefined) return [v];
     seen.add(v.name);
-    return { name: v.name, value };
+    return [{ ...v, name: v.name, value }];
   });
   for (const [name, value] of steps) if (!seen.has(name)) variables.push({ name, value });
   const scales = fw.scales.some((s) => s.prefix === scale.prefix)
     ? fw.scales.map((s) => (s.prefix === scale.prefix ? scale : s))
     : [...fw.scales, scale];
   return { ...fw, variables, scales };
+}
+
+const STEP_NAMES = [
+  "4xs",
+  "3xs",
+  "2xs",
+  "xs",
+  "s",
+  "m",
+  "l",
+  "xl",
+  "2xl",
+  "3xl",
+  "4xl",
+  "5xl",
+  "6xl"
+];
+export const MAX_SCALE_STEPS = 16;
+export const MIN_SCALE_STEPS = 3;
+
+/** A new step at the larger or smaller end of a scale, named from the usual xs, s, m, l, xl sequence. */
+export function addScaleStep(scale: ScaleSettings, side: "larger" | "smaller"): ScaleSettings {
+  if (scale.names.length >= MAX_SCALE_STEPS) return scale;
+  const edge = side === "larger" ? scale.names[scale.names.length - 1] : scale.names[0];
+  const at = STEP_NAMES.indexOf(edge ?? "");
+  const wanted = at < 0 ? undefined : STEP_NAMES[side === "larger" ? at + 1 : at - 1];
+  let name = wanted && !scale.names.includes(wanted) ? wanted : "";
+  for (let n = scale.names.length + 1; name === "" || scale.names.includes(name); n += 1)
+    name = `s${n}`;
+  return side === "larger"
+    ? { ...scale, names: [...scale.names, name] }
+    : { ...scale, names: [name, ...scale.names], baseIndex: scale.baseIndex + 1 };
+}
+
+/** Removes the step at the larger or smaller end. The base step and the last three steps stay. */
+export function removeScaleStep(scale: ScaleSettings, side: "larger" | "smaller"): ScaleSettings {
+  if (scale.names.length <= MIN_SCALE_STEPS) return scale;
+  if (side === "larger") {
+    if (scale.baseIndex >= scale.names.length - 1) return scale;
+    return { ...scale, names: scale.names.slice(0, -1) };
+  }
+  if (scale.baseIndex === 0) return scale;
+  return { ...scale, names: scale.names.slice(1), baseIndex: scale.baseIndex - 1 };
 }
 
 const CLAMP = /^clamp\(\s*(-?[\d.]+)(rem|px)\s*,[\s\S]*,\s*(-?[\d.]+)(rem|px)\s*\)$/i;
@@ -195,6 +282,7 @@ export function inferScales(vars: readonly FrameworkVariable[]): ScaleSettings[]
     const clampRatio = (r: number): number => Math.min(3, Math.max(1, r));
     out.push(
       scaleSchema.parse({
+        kind: prefix,
         prefix,
         names: steps.map((s) => s.name),
         baseIndex,
@@ -274,7 +362,32 @@ const UNSAFE_DECL = /javascript:|expression\(|<\/?script|@import|\/\*|\*\//i;
 const ROOT_BASE = /^(?::root|html)$/;
 const ROOT_DARK = /^(?::root|html)(?:\.[\w-]*dark[\w-]*|\[[^\]]*dark[^\]]*\])$/i;
 const ROOT_LIGHT = /^(?::root|html)(?:\.[\w-]*light[\w-]*|\[[^\]]*light[^\]]*\])$/i;
-const SCALES_COMMENT = /\/\*\s*nextomic:scales\s+(\{[\s\S]*?\})\s*\*\//;
+const META_COMMENT = /\/\*\s*nextomic:framework\s+(\{[\s\S]*?\})\s*\*\//;
+
+// Settings that plain CSS cannot hold, written as a comment on export and read back on import.
+const metaSchema = z.object({
+  scales: z.array(scaleSchema).max(6).optional(),
+  colorPrefix: z
+    .string()
+    .max(24)
+    .regex(/^[A-Za-z0-9_-]*$/)
+    .optional(),
+  colorGroups: z.array(z.string().trim().min(1).max(48)).max(40).optional(),
+  colorOptions: colorOptionsMapSchema.optional(),
+  groups: z.record(z.string().max(64), z.string().trim().min(1).max(48)).optional()
+});
+type FrameworkMeta = z.infer<typeof metaSchema>;
+
+function readMeta(source: string): FrameworkMeta | null {
+  const text = META_COMMENT.exec(source)?.[1];
+  if (!text) return null;
+  try {
+    const parsed = metaSchema.safeParse(JSON.parse(text));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 function isVariableRule(rule: Rule): boolean {
   const decls = (rule.nodes ?? []).filter(
@@ -312,7 +425,7 @@ export function importFrameworkCss(
     return { error: "That is not valid CSS." };
   }
   const warnings: string[] = [];
-  const saved = SCALES_COMMENT.exec(source)?.[1];
+  const meta = readMeta(source);
   const variables = new Map<string, FrameworkVariable>();
   let dropped = 0;
   let skippedVars = 0;
@@ -367,7 +480,7 @@ export function importFrameworkCss(
       d.remove();
     }
   });
-  const css = root.toString().trim();
+  let css = root.toString().trim();
   if (dropped > 0)
     warnings.push(
       `${dropped} nested color-mode selector${dropped === 1 ? " was" : "s were"} dropped from the variable blocks.`
@@ -378,22 +491,38 @@ export function importFrameworkCss(
     );
   if (unsafe > 0) warnings.push(`${unsafe} unsafe declaration${unsafe === 1 ? "" : "s"} removed.`);
 
-  const list = [...variables.values()].slice(0, 2000);
-  let scales: ScaleSettings[] = inferScales(list);
-  if (saved) {
-    try {
-      const parsed = z.array(scaleSchema).max(6).safeParse(JSON.parse(saved));
-      if (parsed.success) scales = parsed.data;
-    } catch {
-      // The comment is only a hint; inference above already ran.
-    }
+  const colorOptions = meta?.colorOptions ?? {};
+  const generated = shadeNames({ variables: [...variables.values()], colorOptions });
+  const groups = meta?.groups ?? {};
+  const list = [...variables.values()]
+    .filter((v) => !generated.has(v.name))
+    .slice(0, 2000)
+    .map((v) => (groups[v.name] ? { ...v, group: groups[v.name] } : v));
+  const scales: ScaleSettings[] = meta?.scales ?? inferScales(list);
+  // Utility classes that the color options generate again are not kept in the stylesheet twice.
+  const regenerated = new Set(
+    colorUtilityRules({ variables: list, colorOptions }).map((r) => r.selector)
+  );
+  if (regenerated.size > 0) {
+    const sheet = parse(css);
+    sheet.walkRules((rule) => {
+      if (
+        rule.parent?.type === "root" &&
+        rule.selectors.every((sel) => regenerated.has(sel.trim()))
+      )
+        rule.remove();
+    });
+    css = sheet.toString().trim();
   }
   const framework = frameworkSchema.parse({
     name: name.trim().slice(0, 64) || "Imported framework",
     source: "import",
     variables: list,
     css,
-    scales
+    scales,
+    colorPrefix: meta?.colorPrefix ?? "",
+    colorGroups: meta?.colorGroups ?? [],
+    colorOptions
   });
   return {
     framework,
@@ -460,30 +589,47 @@ export function scopeFrameworkCss(css: string, slug: string): string {
   });
 }
 
+/** Every variable of a framework: the stored ones plus the shades its color options generate. */
+export function resolvedVariables(fw: Framework): FrameworkVariable[] {
+  return [...fw.variables, ...derivedColorVariables(fw)];
+}
+
 /** Variable blocks of a framework for a theme: light/base values, then dark values when the theme has a dark mode. */
 export function frameworkVariablesCss(fw: Framework, slug: string, hasDark: boolean): string {
   const root = `:root[data-nxt-theme="${slug}"]`;
+  const all = resolvedVariables(fw);
   const dark = hasDark
     ? varBlock(
         `${root}[data-nxt-mode="dark"]`,
-        fw.variables.flatMap((v) => (v.dark !== undefined ? [{ name: v.name, value: v.dark }] : []))
+        all.flatMap((v) => (v.dark !== undefined ? [{ name: v.name, value: v.dark }] : []))
       )
     : "";
-  return varBlock(root, fw.variables) + dark;
+  return varBlock(root, all) + dark;
 }
 
-/** The framework as a stylesheet file: variables, dark variables, the scale settings, then the classes. */
-export function exportFrameworkCss(fw: Framework, generatedClasses = ""): string {
-  const light = fw.variables.map((v) => `  --${v.name}: ${v.value};`).join("\n");
-  const dark = fw.variables
+/** The framework as a stylesheet file: variables, dark variables, the settings plain CSS cannot hold, then the classes. */
+export function exportFrameworkCss(fw: Framework, classes = ""): string {
+  const all = resolvedVariables(fw);
+  const light = all.map((v) => `  --${v.name}: ${v.value};`).join("\n");
+  const dark = all
     .flatMap((v) => (v.dark !== undefined ? [`  --${v.name}: ${v.dark};`] : []))
     .join("\n");
+  const groups = Object.fromEntries(
+    fw.variables.flatMap((v) => (v.group ? [[v.name, v.group]] : []))
+  );
+  const meta: FrameworkMeta = {
+    scales: fw.scales,
+    colorPrefix: fw.colorPrefix,
+    colorGroups: fw.colorGroups,
+    colorOptions: fw.colorOptions,
+    groups
+  };
   const parts = [
     `/* ${fw.name} - exported from Nextomic */`,
-    fw.scales.length > 0 ? `/* nextomic:scales ${JSON.stringify(fw.scales)} */` : "",
+    `/* nextomic:framework ${JSON.stringify(meta).replace(/\*\//g, "*\\/")} */`,
     light ? `:root {\n${light}\n}` : "",
     dark ? `:root[data-nxt-mode="dark"] {\n${dark}\n}` : "",
-    (fw.css || generatedClasses).trim()
+    (fw.css || classes).trim()
   ];
   return parts.filter(Boolean).join("\n") + "\n";
 }
