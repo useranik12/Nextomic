@@ -54,6 +54,7 @@ export default async function PublishedPage({ params }: { params: Params }) {
         fontBase={`/fonts/${id}`}
         theme={theme}
         bootScript
+        pruneUnusedClasses
       />
     </>
   );

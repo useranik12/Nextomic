@@ -91,6 +91,7 @@ Design sources are in `blueprint/` (see `ui-reference.md` for the index, coverag
 - 2026-11-06 Phase 1: the canvas is a sandboxed iframe (`sandbox="allow-scripts"`, opaque origin, no cookies) loading `/canvas`, which has its own root layout (no builder CSS) and renders trees received by postMessage. The preview route `/preview/[id]` shares that layout. Route groups: `(builder)` for the app, `(canvas)` for canvas and preview.
 - 2026-11-06 Phase 1: pages are stored as jsonb trees with an integer `version`. Saves send `baseVersion`; a mismatch returns a conflict and the editor shows a dialog (keep mine or load newer). Every save writes a `page_versions` row (last 50 kept); restore writes the old snapshot as a new version.
 - 2026-11-06 Phase 1: breakpoint icons are a fixed set (desktop, laptop, tablet, mobile) so `icons:lint` can keep literal icon names.
+- 2026-11-06 Phase 2: built output prunes framework classes no element uses (preview and published site); user classes always ship; the editor canvas never prunes; `@keyframes`, `@font-face` and variables always stay. Opt-in per render (`pruneUnusedClasses`) with a `keepClasses` safelist for classes added at runtime. See `design-system.md` section 7.
   for the owner
 
 1. Confirm "icons.js.com" means Icônes (icones.js.org, the Iconify browser).

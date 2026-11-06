@@ -4,6 +4,7 @@ import {
   fontPreloads,
   fontsCss,
   themeCss,
+  usedClassNames,
   variablesCss,
   type BreakpointDef,
   type ElementNode,
@@ -30,6 +31,13 @@ export interface RenderOptions {
   theme?: Theme | null;
   /** Built pages set theme and mode on <html> before first paint; the editor canvas sets them itself. */
   bootScript?: boolean;
+  /**
+   * Ship only the framework classes some element of the page uses. For built output (preview and
+   * the published site); the editor canvas leaves it off so a class added while editing shows at once.
+   */
+  pruneUnusedClasses?: boolean;
+  /** Class names to keep even when no element has them (classes a script or action adds later). */
+  keepClasses?: readonly string[];
   resolveToken?: TokenResolver;
 }
 
@@ -66,10 +74,13 @@ export function renderNode(node: ElementNode, options: RenderOptions): ReactNode
 /** The page tree plus the CSS for every element at every breakpoint. */
 export function PageRenderer({ tree, ...options }: RenderOptions & { tree: ElementNode }) {
   const fontBase = options.fontBase ?? "";
+  const used = options.pruneUnusedClasses
+    ? new Set([...usedClassNames(tree), ...(options.keepClasses ?? [])])
+    : undefined;
   const css =
     fontsCss(options.fonts ?? [], fontBase) +
     variablesCss(options.variables ?? []) +
-    (options.theme ? themeCss(options.theme) : "") +
+    (options.theme ? themeCss(options.theme, used) : "") +
     pageCss(tree, options.breakpoints, options.classes);
   return (
     <>

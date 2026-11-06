@@ -110,7 +110,8 @@ Superseded by `templates-and-themes.md` (themes are built; see the decisions log
 - Core framework package `packages/css-framework`: reset, variables, utility and component classes, built-in element default classes (shadcn-like look).
 - Output is plain CSS with CSS variables only. No Tailwind dependency in built sites.
 - Users can import another CSS framework as a project file (e.g. a custom framework). Imported classes appear read-only in the class manager (`source: "import"`) and can be cloned to edit.
-- Generated CSS is split per project: framework, variables/themes, classes, per-page CSS. Unused class pruning on publish.
+- Generated CSS is split per project: framework, variables/themes, classes, per-page CSS.
+- **Unused class pruning** (`packages/schema/src/css-prune.ts`, built): preview and the published site ship only the framework classes some element of the page uses. A rule stays when its selector has no class (`:root`, tags, `*`) or when every class one of its selectors needs is used (classes inside `:not()`, `:is()`, `:where()`, `:has()` and attribute values do not count; a selector list is trimmed to its used selectors; emptied `@media` blocks go). `@keyframes`, `@font-face` and all variables always stay, and CSS that cannot be parsed is returned unchanged. User classes (the author's own) always ship. Classes added by a script or action later go in the renderer's `keepClasses` safelist. The editor canvas never prunes, so a class added while editing shows at once. Pruning runs before the theme scope is added, and results are cached per used-class set.
 
 ### Frameworks per theme (built)
 

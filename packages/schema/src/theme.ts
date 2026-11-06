@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pruneUnusedClasses } from "./css-prune";
 import { frameworkSchema, frameworkVariablesCss, scopeFrameworkCss } from "./framework";
 import { frameworkStylesheet } from "./main-framework";
 import { SAFE_VALUE, VARIABLE_NAME_PATTERN, variableCssName } from "./variables";
@@ -174,7 +175,7 @@ export function themeDefaultMode(theme: Theme): string {
  * Variable overrides of a theme, one rule per mode. The default mode also applies before any
  * `data-nxt-mode` is set, so a page without scripting still gets the default look.
  */
-export function themeCss(theme: Theme): string {
+export function themeCss(theme: Theme, usedClasses?: ReadonlySet<string>): string {
   const root = `:root[data-nxt-theme="${theme.slug}"]`;
   const rules: string[] = [];
   const defaultMode = themeDefaultMode(theme);
@@ -198,7 +199,13 @@ export function themeCss(theme: Theme): string {
         fw,
         theme.slug,
         themeModes(theme).some((m) => m.id === "dark")
-      ) + scopeFrameworkCss(frameworkStylesheet(fw), theme.slug)
+      ) +
+      scopeFrameworkCss(
+        usedClasses
+          ? pruneUnusedClasses(frameworkStylesheet(fw), usedClasses)
+          : frameworkStylesheet(fw),
+        theme.slug
+      )
     : "";
   return framework + rules.join("");
 }

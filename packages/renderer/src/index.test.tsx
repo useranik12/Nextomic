@@ -167,6 +167,32 @@ describe("themes", () => {
     );
     expect(built).toContain("<script");
   });
+
+  it("prunes unused framework classes only when asked, and keeps safelisted ones", () => {
+    const themed = {
+      ...newTheme("t", "Brand", []),
+      framework: {
+        name: "Imported",
+        source: "import" as const,
+        variables: [],
+        css: ".used{color:red}.unused{color:blue}.later{color:green}",
+        scales: [],
+        colorOptions: {},
+        version: 1
+      }
+    } as unknown as typeof theme;
+    const tree = emptyPageTree();
+    tree.classIds = ["used"];
+    const html = (props: { pruneUnusedClasses?: boolean; keepClasses?: string[] }) =>
+      renderToStaticMarkup(
+        <PageRenderer tree={tree} breakpoints={DEFAULT_BREAKPOINTS} theme={themed} {...props} />
+      );
+    expect(html({})).toContain(".unused");
+    const pruned = html({ pruneUnusedClasses: true, keepClasses: ["later"] });
+    expect(pruned).toContain(".used");
+    expect(pruned).toContain(".later");
+    expect(pruned).not.toContain(".unused");
+  });
 });
 
 describe("fonts in output", () => {
