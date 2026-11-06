@@ -4,7 +4,8 @@ import {
   CLASS_NAME_PATTERN,
   HTML_ID_PATTERN,
   collectHtmlIds,
-  type ElementNode
+  type ElementNode,
+  type PseudoState
 } from "@nextomic/schema";
 import { useEffect, useId, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -13,6 +14,8 @@ import { SettingRow, compactFieldClass } from "./setting-row";
 
 const CLASS_CHIP = "bg-sky-500/15 text-sky-700 dark:text-sky-300";
 const ID_CHIP = "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+const STATE_CHIP = "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+const STATES: PseudoState[] = ["default", "hover", "focus", "active", "disabled"];
 const ID_FIELD = "!border-amber-500/50 bg-amber-500/10 font-mono";
 const CLASS_FIELD = "!border-sky-500/50 bg-sky-500/15 font-mono";
 
@@ -31,6 +34,12 @@ export function IdentityField({ node }: { node: ElementNode }) {
   const setActiveClass = useEditorStore((s) => s.setActiveClass);
   // With automatic IDs on, every element keeps an ID: it can be renamed but not removed.
   const idRequired = useEditorStore((s) => s.project.generateElementIds);
+  const activeState = useEditorStore((s) => s.activeState);
+  const setActiveState = useEditorStore((s) => s.setActiveState);
+  const breakpointId = useEditorStore((s) => s.activeBreakpointId);
+  const targetStyles = useEditorStore((s) =>
+    activeClass ? s.project.classes[activeClass] : node.styles
+  );
   const base = activeClass ?? (node.htmlId ? `#${node.htmlId}` : "");
   const [text, setText] = useState(base);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +163,44 @@ export function IdentityField({ node }: { node: ElementNode }) {
             : "Design edits change this element only."}
         </p>
       )}
+      <ul aria-label="State being edited" className="flex flex-wrap gap-1.5">
+        {STATES.map((state) => {
+          const active = activeState === state;
+          const set =
+            Object.keys(targetStyles?.breakpoints[breakpointId]?.[state] ?? {}).length > 0;
+          return (
+            <li
+              key={state}
+              className={
+                "flex h-6 items-center rounded-full text-tiny " +
+                STATE_CHIP +
+                (active ? " ring-2 ring-emerald-500" : "")
+              }
+            >
+              <button
+                type="button"
+                aria-pressed={active}
+                title={
+                  active && state !== "default"
+                    ? "Click to return to the default state"
+                    : "Edit this state"
+                }
+                onClick={() => setActiveState(active && state !== "default" ? "default" : state)}
+                className="flex items-center gap-1 px-2.5 font-mono font-medium capitalize"
+              >
+                {state === "default" ? "default" : `:${state}`}
+                {set ? (
+                  <span
+                    role="img"
+                    aria-label="Has styles in this state"
+                    className="h-1.5 w-1.5 rounded-full bg-warning"
+                  />
+                ) : null}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
       {node.htmlId || node.classIds.length > 0 ? (
         <ul aria-label="Applied ID and classes" className="flex flex-wrap gap-1.5">
           {node.htmlId ? (

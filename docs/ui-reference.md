@@ -179,6 +179,7 @@ Cards, top to bottom:
 - Saving is explicit (Save in the Publish menu, Ctrl+S, or Publish). Nothing autosaves; unsaved edits are lost on refresh and switching pages warns first. Preview and the public site only show saved or published content. Publish becomes a disabled "Published" button when the saved draft equals what is live.
 - The top bar is a three-column grid so the breakpoint switcher stays centered. The breakpoint change dot shows the save state: yellow unsaved, green saved, grey saving, red failed or conflict.
 - Fit to screen frames the selected element (the canvas reports its bounds); with nothing selected it fits the page. Double-clicking an active class chip releases it. Clickable controls show the pointer cursor.
+- The pseudo state being edited (default, :hover, :focus, :active, :disabled) is a row of green chips under the ID and class chips, in every tab; a dot on a chip means that state has styles at the current breakpoint. Click selects, click again returns to default. Code fields (CSS) use syntax colors: VS Code Dark+ on dark, GitHub Light on light (`components/ui/code-editor.tsx`, `lib/css-highlight.ts`).
 
 - Element tab starts with: Query loop toggle (div-based elements only), HTML tag select, then the element's own content and properties (with data binding), conditional visibility, custom attributes.
 - Bottom: "Search settings" input that filters all settings across tabs, plus a settings gear.

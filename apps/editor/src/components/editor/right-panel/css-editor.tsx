@@ -8,6 +8,7 @@ import {
   type StyleMap
 } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
+import { CssCodeEditor } from "@/components/ui/code-editor";
 import { useEditorStore } from "../store/editor-store";
 
 /**
@@ -48,23 +49,19 @@ export function CssEditor({ node }: { node: ElementNode }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <textarea
-        aria-label={`CSS for ${selector}`}
-        aria-invalid={error !== null}
-        spellCheck={false}
+      <CssCodeEditor
+        label={`CSS for ${selector}`}
+        invalid={error !== null}
         value={text}
-        placeholder={`${selector} {\n  color: red;\n}`}
-        rows={Math.min(14, Math.max(5, text.split("\n").length + 1))}
+        placeholder={`${selector} {
+  color: red;
+}`}
         onFocus={() => (focused.current = true)}
         onBlur={() => {
           focused.current = false;
           if (error === null) setText(generated);
         }}
-        onChange={(e) => onChange(e.target.value)}
-        className={
-          "w-full resize-y rounded-medium bg-default-100 p-2.5 font-mono text-tiny leading-5 text-foreground outline-none placeholder:text-default-400 focus-visible:ring-2 focus-visible:ring-default-800/30 " +
-          (error ? "ring-2 ring-danger" : "")
-        }
+        onChange={onChange}
       />
       {error ? (
         <p role="alert" className="text-tiny text-danger">
