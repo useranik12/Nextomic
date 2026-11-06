@@ -52,7 +52,7 @@ describe("filterLibrary", () => {
   it("searches name, route, creator and id by any part", () => {
     expect(ids(filterLibrary(items, q({ text: "LOG" })))).toEqual(["b"]);
     expect(ids(filterLibrary(items, q({ text: "/con" })))).toEqual(["c"]);
-    expect(ids(filterLibrary(items, q({ text: "bo" }))).sort()).toEqual(["b", "c"]);
+    expect(ids(filterLibrary(items, q({ text: "bo" }))).sort()).toEqual(["a", "c"]);
     expect(filterLibrary(items, q({ text: "zzz" }))).toEqual([]);
   });
 

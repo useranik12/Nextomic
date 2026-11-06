@@ -10,32 +10,18 @@ Two systems that decide how a page looks and what surrounds it. Both pick what a
 - **Page:** a routed document.
 - **Reusable component:** NOT part of this scope. It comes later (see `phases.md`). Reserve a `componentInstance` node type in the schema, but do not implement it.
 
-## 2. Conditions (shared by themes and templates)
+## 2. Rules (conditions shared by templates, and later themes, popups and elements)
 
-```ts
-type ConditionScope = "static" | "runtime";
+> BUILT for templates (`packages/schema/src/rules.ts`, editor `components/editor/rules/rule-builder.tsx`). Themes still use their older page and route conditions; moving them onto rules is open.
 
-type Condition =
-  | { type: "page"; op: "is" | "isNot"; pageIds: string[] } // static
-  | { type: "route"; op: "matches" | "notMatches"; pattern: string } // static, glob like /blog/*
-  | { type: "template"; op: "is" | "isNot"; templateTypes: TemplateType[] } // static
-  | { type: "locale"; op: "is" | "isNot"; locales: string[] } // static
-  | { type: "auth"; op: "loggedIn" | "loggedOut" } // runtime
-  | { type: "role"; op: "has" | "hasNot"; roles: string[] } // runtime
-  | { type: "queryParam"; name: string; op: "equals" | "exists"; value?: string } // runtime
-  | { type: "appState"; variableId: string; op: ConditionOp; value: Binding } // runtime
-  | { type: "dateRange"; from?: string; to?: string }; // runtime
+A **rule** compares one **field** with a **value** using an **operator**. Rules join in **groups**: **all** (AND) or **any** (OR). A group can hold other groups (4 levels, 100 rules). An empty set applies everywhere.
 
-interface ConditionSet {
-  mode: "all" | "any"; // empty set means "applies everywhere"
-  items: Condition[];
-  exclude?: Condition[]; // if any matches, the set does not apply
-}
-```
-
-- Static conditions are resolved at build/render time. Runtime conditions are resolved in the browser (or in server middleware for SSR).
-- Specificity (higher wins): page > route pattern > template type > locale > runtime-only > everywhere. Priority (an integer the user sets) is checked first, then specificity, then name order, so the result is deterministic.
-- The editor shows a "Why is this applied?" explanation for the current page: which theme, header, and footer apply and which rule matched.
+- **Fields:** Page (name, id, created by, published date, route, parameter, state, element attribute by ID, element with class, element with attribute), User (name, email, role, username, id, joined on, workspace, project name, project id, image, email verified, verification status, logged in), Date and time (date, time, ISO, day of week, day of month, month, year, hour, minute, is weekend), Browser (name, version, language, mobile), Operating system (name, device type), URL (full, host, path, query, referrer), Document (is a page, is a template, template type), Dynamic data.
+- **Dynamic data field:** the key holds a dynamic tag such as `{{param.id}}`. The rule compares what the tag resolves to with the value. The value field also accepts dynamic tags (bolt).
+- **Operators by kind:** text (equals, does not equal, contains, does not contain, starts with, ends with, is in, is not in, is empty, is not empty), number (equals, does not equal, more than, less than, is in, is not in), date and time (equals, does not equal, before, after, is in, is not in), true or false (is true, is false). Text compares ignore case. "is in" takes a comma separated list.
+- **Where rules run:** on the server for every request of the live site and the owner preview (`server/site-layout.ts`). Date and time use UTC for now. Fields that only exist in the visitor browser (page state, element rules) never match on the server and the editor says so; they start working with the browser runtime (Phase 5). User fields stay empty until built-app authentication exists (`app-auth.md`).
+- Specificity (higher wins when priority ties): page id or name, then route or path, then anything else, then everywhere. Priority (an integer the user sets) is checked first, then specificity, then name order, so the result is deterministic.
+- The editor shows "Why is this applied?" in the editing chip popover for a page: which header and footer apply and the reason (chosen in page settings, rules match, applies everywhere, or none).
 
 ## 3. Themes
 
@@ -168,6 +154,15 @@ type PopupTrigger =
 - **Single:** a route with a param (for example `blog/[slug]`). The route param feeds the query parameter. If the query returns nothing, show the 404 template (configurable).
 - **Search results:** a route (for example `search`) reading `q` from the query string.
 - **Rendering mode** (per template and per page): Static, Server (SSR), or Static with revalidate. For Static single/archive pages, a "list query for static params" generates all paths at build (Next.js static params, Astro static paths). Decide defaults when Phase 11 starts and record them in `spec.md`.
+
+### 4.7 Pages & Templates manager
+
+A left rail item "Pages & Templates" replaces the canvas with a manager (pages and templates tabs). Both tabs have search (name, route, creator, ID), filters (category, tag, status, template type, a date range on created, updated or published), sorting (name or a date, either way) and a grid or column layout (the choice is remembered). Grid cards show a screenshot, name, route or type, status, creator and last update. Selecting a card or row shows Edit, status change and Delete icons; column rows also have a three-dot menu (Edit, Duplicate, status change, Regenerate screenshot, Delete). Columns: ID, 60px screenshot, Name, Created by, Published on, Updated on, Status chip.
+
+- **Status:** draft (not going out: a page left out of publishing, or a draft template), published (live and unchanged), modified (live, but the saved draft changed since).
+- **Screenshots:** App Settings > Generate Screenshots. When on, the manager renders each outdated page or template in a hidden preview frame, shrinks it to a 480 by 300 WebP and uploads it to `screenshots/<projectId>/<kind>-<id>.webp`. A new one replaces the old file, so there is one per item. They are served only to people who can open the project (`/api/screenshots/...`).
+- **Marking (categories and tags):** a "Marking" group in the right panel (collapsible like Route Settings) for pages and for templates. Pages and templates each have their own category and tag lists (four lists in `ProjectSettings.taxonomy`). The input searches by any part of a name; with no match a plus inside the input creates the term and applies it. Applied terms show as small chips (12px): lime green for categories, yellow for tags.
+- **Dynamic data:** groups for page properties (id, status, created by, created on, last updated, published on), page categories and tags, template properties (name, type, id, status and the same dates) and template categories and tags.
 
 ## 5. Pages
 

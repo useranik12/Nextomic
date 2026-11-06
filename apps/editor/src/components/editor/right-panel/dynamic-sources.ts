@@ -25,6 +25,58 @@ const BUILT_IN: DynamicGroup[] = [
     ]
   },
   {
+    id: "page-properties",
+    label: "Page properties",
+    tags: [
+      { token: "page.id", label: "Page ID", hint: "text" },
+      {
+        token: "page.status",
+        label: "Page status",
+        hint: "draft, published or modified",
+        help: "draft: not going out. published: live and unchanged. modified: live, but the saved draft has changed since."
+      },
+      { token: "page.createdBy", label: "Created by", hint: "text" },
+      { token: "page.createdAt", label: "Created on", hint: "date and time" },
+      { token: "page.updatedAt", label: "Last updated", hint: "date and time" },
+      { token: "page.publishedAt", label: "Published on", hint: "date and time" }
+    ]
+  },
+  {
+    id: "page-marking",
+    label: "Page categories and tags",
+    tags: [
+      { token: "page.categories", label: "Categories", hint: "names, comma separated" },
+      { token: "page.tags", label: "Tags", hint: "names, comma separated" }
+    ]
+  },
+  {
+    id: "template-properties",
+    label: "Template properties",
+    tags: [
+      { token: "template.name", label: "Template name", hint: "text" },
+      { token: "template.type", label: "Template type", hint: "header, footer or error-404" },
+      { token: "template.id", label: "Template ID", hint: "text" },
+      {
+        token: "template.status",
+        label: "Template status",
+        hint: "draft, published or modified",
+        help: "Empty on a page. On a template: draft, published, or modified (live, but changed since)."
+      },
+      { token: "template.createdBy", label: "Created by", hint: "text" },
+      { token: "template.createdAt", label: "Created on", hint: "date and time" },
+      { token: "template.updatedAt", label: "Last updated", hint: "date and time" },
+      { token: "template.publishedAt", label: "Published on", hint: "date and time" }
+    ]
+  },
+  {
+    id: "template-marking",
+    label: "Template categories and tags",
+    tags: [
+      { token: "template.categories", label: "Categories", hint: "names, comma separated" },
+      { token: "template.tags", label: "Tags", hint: "names, comma separated" }
+    ]
+  },
+  {
     id: "request",
     label: "Request",
     tags: [

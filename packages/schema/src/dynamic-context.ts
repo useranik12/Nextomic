@@ -7,8 +7,40 @@ import type { PropValue } from "./value";
 // canvas, the preview and the published site each build one and hand it to the renderer. It is
 // plain data so it can cross the canvas iframe boundary.
 
+const text = (max = 200) => z.string().max(max).default("");
+
+/** Properties every page and template has, readable as {{page.status}}, {{template.status}} and so on. */
+function pageMetaShape() {
+  return {
+    id: text(100),
+    /** draft, published or modified */
+    status: text(20),
+    createdBy: text(),
+    createdAt: text(40),
+    updatedAt: text(40),
+    publishedAt: text(40),
+    /** Category and tag names, joined with ", ". */
+    categories: text(1000),
+    tags: text(1000)
+  };
+}
+
+export const templateMetaSchema = z.object({
+  name: z.string().max(200),
+  /** header, footer or error-404 */
+  type: text(20),
+  ...pageMetaShape()
+});
+export type TemplateMeta = z.infer<typeof templateMetaSchema>;
+
 export const dynamicContextSchema = z.object({
-  page: z.object({ name: z.string().max(200), route: z.string().max(300) }),
+  page: z.object({
+    name: z.string().max(200),
+    route: z.string().max(300),
+    ...pageMetaShape()
+  }),
+  /** The template being shown, when a template is. */
+  template: templateMetaSchema.nullable().default(null),
   /** Page parameter values by name (the route or query value, else the default). */
   params: z.record(z.string(), z.string().max(2000)),
   /** Page state variables by name: their starting value as text (json stays JSON text). */
@@ -55,7 +87,13 @@ function flatten(value: PropValue | undefined): string {
 }
 
 export interface DynamicContextInput {
-  page: { name: string; route: string; settings: Pick<PageSettings, "params" | "state"> };
+  page: {
+    name: string;
+    route: string;
+    settings: Pick<PageSettings, "params" | "state">;
+    meta?: Partial<DynamicContext["page"]>;
+  };
+  template?: DynamicContext["template"];
   mode: DynamicContext["mode"];
   /** Parameter values from the address (route segments and query string), by name. */
   paramValues?: Readonly<Record<string, string>>;
@@ -94,7 +132,20 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
   for (const v of page.settings.state) state[v.name] = flatten(v.defaultValue);
   const query = input.query ?? "";
   return {
-    page: { name: page.name, route: page.route },
+    page: {
+      id: "",
+      status: "",
+      createdBy: "",
+      createdAt: "",
+      updatedAt: "",
+      publishedAt: "",
+      categories: "",
+      tags: "",
+      ...page.meta,
+      name: page.name,
+      route: page.route
+    },
+    template: input.template ?? null,
     params,
     state,
     nowIso: input.nowIso ?? new Date().toISOString(),
@@ -173,8 +224,14 @@ export function createTokenResolver(context: DynamicContext): (token: string) =>
     const [group, name, ...rest] = raw.trim().split(".");
     if (!group || !name) return "";
     switch (group) {
-      case "page":
-        return name === "name" ? context.page.name : name === "route" ? context.page.route : "";
+      case "page": {
+        const p = context.page as Record<string, string>;
+        return typeof p[name] === "string" ? (p[name] as string) : "";
+      }
+      case "template": {
+        const t = context.template as Record<string, string> | null;
+        return t && typeof t[name] === "string" ? (t[name] as string) : "";
+      }
       case "request":
         return name === "url"
           ? context.request.url

@@ -61,7 +61,9 @@ export function LibraryToolbar({
               type="button"
               role="tab"
               aria-selected={query.tab === tab}
-              onClick={() => onQuery({ tab, categoryId: "all", tagId: "all", type: "all" })}
+              onClick={() =>
+                onQuery({ tab, text: "", categoryId: "all", tagId: "all", type: "all" })
+              }
               className={
                 "h-9 rounded-full px-4 text-small font-medium transition-colors duration-300 " +
                 (query.tab === tab

@@ -58,14 +58,17 @@ Docs: `design-system.md`, `templates-and-themes.md` (sections 1 to 3)
 
 ## Phase 3: Templates v1 (header, footer, 404)
 
-Docs: `templates-and-themes.md` (sections 2, 4.1 to 4.4)
+Docs: `templates-and-themes.md` (sections 2, 4.1 to 4.7)
 
-- [ ] Templates in the page select (Pages and Templates groups, "New template"), template editing in the same canvas with the template editing chip, Page Settings template section
-- [ ] Header and footer templates with conditions, priority, per-page opt-out or override
-- [ ] 404 template (one default; generated fallback if none)
-- [ ] "Why is this applied?" explanation in the editor
-- [ ] Layout composition in renderer output for Next.js and Astro
-- [ ] Tests: resolution, opt-out, 404 output
+- [x] Templates in the page select (Pages and Templates groups, New page or New template), template editing in the same canvas with the Template chip and a secondary-colored top bar line _Built: `templates` table, `server/templates.ts`, `open-item.ts`, store `kind`, Template options in the right panel (published, priority, theme, conditions, marking)._
+- [x] Pages & Templates manager (left rail), screenshots, categories and tags _Built: `components/editor/library/*`, `marking-group.tsx`, App Settings > Generate Screenshots, `/api/screenshots`. Open: bulk actions._
+- [x] Header and footer templates with rules, priority, per-page choice (Auto, None, specific) _Built: `rules.ts`, `template.ts`, `compose.ts`, Page Settings > Header and footer._
+- [x] 404 template (best published one; a plain default until one exists, status 404) _Built: `site/[id]/not-found.tsx`, `middleware.ts`._
+- [x] "Why is this applied?" in the editing chip popover
+- [x] Layout composition in the preview and published site (header, main, footer, skip link) _Next output only; the Astro output joins the exporter phase._
+- [x] Dynamic data groups: page and template properties (with status), categories, tags
+- [x] Tests: rules, resolution, opt-out, composition, 404, manager filters; e2e for manager, marking, header on the site, default 404, screenshots
+- [ ] Open: themes still use page and route conditions (move to rules), header and footer visible (locked) in the editing canvas, `Preview as...` menu on the chip, browser-only rules, user fields until auth, time zone setting for date rules
 
 ## Phase 4: Data layer
 
