@@ -1,10 +1,12 @@
 import {
   defaultPageSettings,
   defaultProjectSettings,
+  countClassUsage,
   elementNodeSchema,
   emptyPageTree,
   pageSettingsSchema,
   projectSettingsSchema,
+  replaceClassInTree,
   type ElementNode,
   type PageSettings,
   type ProjectSettings,
@@ -324,4 +326,44 @@ export async function countPages(projectId: string): Promise<number> {
     .from(pages)
     .where(eq(pages.projectId, projectId));
   return row?.count ?? 0;
+}
+
+/** Class usage over the saved pages of a project, leaving out `exceptPageId` (the editor counts that one live). */
+export async function classUsageInOtherPages(
+  projectId: string,
+  exceptPageId: string
+): Promise<Record<string, number>> {
+  const rows = await getDb()
+    .select({ tree: pages.tree })
+    .from(pages)
+    .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
+  const counts: Record<string, number> = {};
+  for (const row of rows) countClassUsage(elementNodeSchema.parse(row.tree), counts);
+  return counts;
+}
+
+/** Renames (or, with `to` null, removes) a class on every saved page except `exceptPageId`. */
+export async function replaceClassInOtherPages(
+  projectId: string,
+  exceptPageId: string,
+  from: string,
+  to: string | null
+): Promise<number> {
+  return getDb().transaction(async (tx) => {
+    const rows = await tx
+      .select({ id: pages.id, tree: pages.tree })
+      .from(pages)
+      .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
+    let updated = 0;
+    for (const row of rows) {
+      const tree = elementNodeSchema.parse(row.tree);
+      if (!replaceClassInTree(tree, from, to)) continue;
+      await tx
+        .update(pages)
+        .set({ tree, version: sql`${pages.version} + 1`, updatedAt: new Date() })
+        .where(and(eq(pages.id, row.id), eq(pages.projectId, projectId)));
+      updated += 1;
+    }
+    return updated;
+  });
 }

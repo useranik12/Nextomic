@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  CLASS_NAME_PATTERN,
   createPageInputSchema,
   projectSettingsSchema,
   savePageInputSchema,
@@ -10,12 +11,14 @@ import { z } from "zod";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
 import {
+  classUsageInOtherPages,
   createPage,
   deletePage,
   duplicatePage,
   getPage,
   listPages,
   listVersions,
+  replaceClassInOtherPages,
   restoreVersion,
   savePage,
   saveProjectSettings,
@@ -218,5 +221,43 @@ export async function unpublishAction(projectId: string): Promise<ActionResult<P
     return { data: toInfo(await unpublishProject(projectId)), error: null };
   } catch (error) {
     return fail(error, "Could not unpublish the project.");
+  }
+}
+
+const classNameSchema = z.string().regex(CLASS_NAME_PATTERN).max(64);
+
+export async function classUsageAction(
+  projectId: string,
+  exceptPageId: string
+): Promise<ActionResult<Record<string, number>>> {
+  try {
+    await authorize(projectId);
+    return {
+      data: await classUsageInOtherPages(projectId, idSchema.parse(exceptPageId)),
+      error: null
+    };
+  } catch (error) {
+    return fail(error, "Could not count class usage.");
+  }
+}
+
+/** `to` null removes the class from the other pages; the open page is changed in the editor. */
+export async function replaceClassAction(
+  projectId: string,
+  exceptPageId: string,
+  from: string,
+  to: string | null
+): Promise<ActionResult<number>> {
+  try {
+    await authorize(projectId);
+    const updated = await replaceClassInOtherPages(
+      projectId,
+      idSchema.parse(exceptPageId),
+      classNameSchema.parse(from),
+      to === null ? null : classNameSchema.parse(to)
+    );
+    return { data: updated, error: null };
+  } catch (error) {
+    return fail(error, "Could not update the other pages.");
   }
 }

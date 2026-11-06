@@ -43,7 +43,7 @@ Docs: `ui-reference.md`, `elements.md`, `design-system.md` (sections 1 to 4), `t
 Docs: `design-system.md`, `templates-and-themes.md` (sections 1 to 3)
 
 - [x] Style data model (StyleMap) and full Design tab groups _Groups: layout, spacing, size, typography, background, border, position, effects._
-- [ ] Classes: create, add to element, active-target editing, class manager (folders, usage, rename, delete/replace)
+- [ ] Classes: create, add to element, active-target editing, class manager (folders, usage, rename, delete/replace) _Built: create, duplicate, rename and delete with replacement (also updates other saved pages), usage counts, search, add to selected element. Remaining: folders, filter by usage, convert element styles to class, import/export, list virtualization._
 - [x] Bidirectional CSS editor with round-trip tests _Built: `packages/schema/src/css-text.ts` (PostCSS), CSS section in the Design tab, `raw` kept and emitted. Class manager UI and variables come next._
 - [ ] Variables manager, fluid typography, spacing scale, color palettes
 - [ ] Themes: multiple per project, conditions (static first), priority, default, per-theme variables and element defaults, forced theme per page
