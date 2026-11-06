@@ -6,6 +6,7 @@ import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { AppSettings } from "./app-settings";
+import { ClassManager } from "./class-manager";
 import { ConflictDialog } from "./conflict-dialog";
 import { EditorDndProvider } from "./dnd";
 import { ElementContextMenu } from "./element-context-menu";
@@ -170,6 +171,8 @@ export function EditorShell({
               </>
             ) : rail === "history" ? (
               <VersionHistory saveNow={saveNow} />
+            ) : rail === "design-system" ? (
+              <ClassManager saveNow={saveNow} />
             ) : rail === "app-settings" ? (
               <AppSettings />
             ) : (

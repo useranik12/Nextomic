@@ -19,6 +19,7 @@ import {
   newElementId,
   reassignBreakpointStyles,
   removeNode,
+  replaceClassInTree,
   setProp,
   setStyle,
   walkElements,
@@ -117,6 +118,13 @@ interface EditorState {
   /** Adds a class name, or swaps `replacing` for it; duplicates are ignored. */
   setElementClass: (id: string, name: string, replacing?: string) => void;
   removeElementClass: (id: string, name: string) => void;
+  /** Class manager operations. They return false when the name is taken or the source is missing. */
+  createClass: (name: string) => boolean;
+  duplicateClass: (from: string, to: string) => boolean;
+  /** Renames on the open page and in the project classes; other pages are updated by the server. */
+  renameClass: (from: string, to: string) => boolean;
+  /** `replaceWith` null removes the class from the elements of the open page. */
+  deleteClass: (name: string, replaceWith: string | null) => void;
   setElementStyle: (id: string, property: string, value: string | null) => void;
   /** Replaces every style of the active target (the active class, else the element), e.g. from the CSS editor. */
   setTargetStyles: (id: string, styles: StyleMap) => void;
@@ -441,6 +449,60 @@ export const useEditorStore = create<EditorState>((set, get) => {
       edit(null, (draft) => {
         const found = findNode(draft.tree, id);
         if (found) found.node.classIds = found.node.classIds.filter((c) => c !== name);
+      });
+    },
+
+    createClass: (name) => {
+      const { project } = get();
+      if (project.classes[name]) return false;
+      get().replaceProject({
+        ...project,
+        classes: { ...project.classes, [name]: { breakpoints: {} } }
+      });
+      set({ classesTick: get().classesTick + 1, saveStatus: dirtyStatus(get().saveStatus) });
+      return true;
+    },
+
+    duplicateClass: (from, to) => {
+      const { project } = get();
+      const source = project.classes[from];
+      if (!source || project.classes[to]) return false;
+      get().replaceProject({
+        ...project,
+        classes: { ...project.classes, [to]: structuredClone(source) }
+      });
+      set({ classesTick: get().classesTick + 1, saveStatus: dirtyStatus(get().saveStatus) });
+      return true;
+    },
+
+    renameClass: (from, to) => {
+      const { project, activeClass } = get();
+      if (from === to || project.classes[to]) return false;
+      const { [from]: moved, ...rest } = project.classes;
+      const classes = moved ? { ...rest, [to]: moved } : rest;
+      edit(null, (draft) => {
+        replaceClassInTree(draft.tree, from, to);
+      });
+      set({
+        project: { ...project, classes },
+        activeClass: activeClass === from ? to : activeClass,
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+      return true;
+    },
+
+    deleteClass: (name, replaceWith) => {
+      const { project, activeClass } = get();
+      const { [name]: _removed, ...classes } = project.classes;
+      edit(null, (draft) => {
+        replaceClassInTree(draft.tree, name, replaceWith);
+      });
+      set({
+        project: { ...project, classes },
+        activeClass: activeClass === name ? null : activeClass,
+        classesTick: get().classesTick + 1,
+        saveStatus: dirtyStatus(get().saveStatus)
       });
     },
 
