@@ -274,6 +274,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
       generateElementIds: true,
       hideEditBorder: false,
       showClock: false,
+      taxonomy: { pageCategories: [], pageTags: [], templateCategories: [], templateTags: [] },
+      generateScreenshots: false,
       versionControl: true,
       versionLimit: 200,
       classes: {},

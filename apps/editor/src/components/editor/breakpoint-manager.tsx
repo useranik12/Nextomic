@@ -131,7 +131,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
               return (
                 <li
                   key={bp.id}
-                  className="grid grid-cols-[1fr_1fr] gap-3 rounded-large border-2 border-default-200 p-3 sm:grid-cols-[1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto]"
+                  className="grid grid-cols-[1fr_1fr] gap-3 rounded-large border border-default-200 p-3 sm:grid-cols-[1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto]"
                 >
                   <FormInput
                     compact

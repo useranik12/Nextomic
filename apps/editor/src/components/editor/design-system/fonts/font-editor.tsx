@@ -104,7 +104,7 @@ export function FontEditor({
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
-          className="h-9 min-w-0 flex-1 rounded-medium border-2 border-default-200 bg-transparent px-3 text-small outline-none focus:border-default-800 disabled:opacity-70"
+          className="h-9 min-w-0 flex-1 rounded-medium border border-default-200 bg-transparent px-3 text-small outline-none focus:border-default-800 disabled:opacity-70"
         />
         <IconButton
           label={font.favorite ? "Remove from favorites" : "Add to favorites"}

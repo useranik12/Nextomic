@@ -114,7 +114,7 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
               data-effective={own === undefined && effective === o ? "true" : undefined}
               onClick={() => set(own === o ? null : o)}
               className={
-                "flex h-10 items-center justify-center rounded-medium outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-default-800/50 " +
+                "flex h-10 items-center justify-center rounded-medium outline-none transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-default-800/50 " +
                 (own === o
                   ? "bg-default-300 text-foreground"
                   : effective === o

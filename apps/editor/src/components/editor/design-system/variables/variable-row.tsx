@@ -16,7 +16,7 @@ import { VariableFields } from "../variable-editor";
 import type { VarRow } from "./variable-model";
 
 const inputClass =
-  "h-8 min-w-0 flex-1 rounded-full border-2 border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800 disabled:opacity-60";
+  "h-8 min-w-0 flex-1 rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800 disabled:opacity-60";
 
 function RowButton({
   label,

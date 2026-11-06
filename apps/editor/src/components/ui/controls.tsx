@@ -25,7 +25,7 @@ const INPUT_CLASSES: InputProps["classNames"] = {
   base: "gap-1",
   label: "pb-1 text-small font-medium !text-foreground",
   inputWrapper:
-    "h-11 min-h-11 flex-row flex-nowrap items-center gap-2 rounded-full border-2 border-default-200 bg-transparent px-5 shadow-none transition-colors " +
+    "h-11 min-h-11 flex-row flex-nowrap items-center gap-2 rounded-full border border-default-200 bg-transparent px-5 shadow-none transition-colors " +
     "data-[hover=true]:border-default-400 group-data-[focus=true]:border-default-800 " +
     "group-data-[focus=true]:ring-4 group-data-[focus=true]:ring-default-800/10 " +
     "group-data-[invalid=true]:border-danger group-data-[invalid=true]:ring-0",
@@ -40,9 +40,9 @@ const COMPACT_INPUT_CLASSES: InputProps["classNames"] = {
   ...INPUT_CLASSES,
   label: "pb-0.5 text-tiny font-medium !text-default-600",
   inputWrapper:
-    "h-8 min-h-8 flex-row flex-nowrap items-center gap-2 rounded-full border-2 border-default-200 bg-transparent px-3 shadow-none transition-colors " +
+    "h-8 min-h-8 flex-row flex-nowrap items-center gap-2 rounded-full border border-default-200 bg-transparent px-3 shadow-none transition-colors " +
     "data-[hover=true]:border-default-400 group-data-[focus=true]:border-default-800 " +
-    "group-data-[focus=true]:ring-2 group-data-[focus=true]:ring-default-800/10 " +
+    "group-data-[focus=true]:ring-1 group-data-[focus=true]:ring-default-800/10 " +
     "group-data-[invalid=true]:border-danger group-data-[invalid=true]:ring-0",
   input:
     "h-full min-w-0 flex-1 text-small text-foreground outline-none placeholder:text-default-400 data-[focus-visible=true]:outline-none"
@@ -74,9 +74,9 @@ const SELECT_CLASSES = (compact: boolean): SelectProps["classNames"] => ({
     : "pb-1 text-small font-medium !text-foreground",
   trigger:
     (compact ? "h-8 min-h-8 px-3 " : "h-11 min-h-11 px-5 ") +
-    "rounded-full border-2 border-default-200 bg-transparent shadow-none transition-colors " +
+    "rounded-full border border-default-200 bg-transparent shadow-none transition-colors " +
     "data-[hover=true]:border-default-400 data-[focus=true]:border-default-800 " +
-    "data-[open=true]:border-default-800 data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-default-800/10",
+    "data-[open=true]:border-default-800 data-[focus-visible=true]:ring-1 data-[focus-visible=true]:ring-default-800/10",
   value: (compact ? "text-small " : "text-base ") + "text-foreground",
   selectorIcon: "text-default-500",
   popoverContent: "min-w-[160px] rounded-large border border-default-200 bg-content1 p-1 shadow-xl",
@@ -88,7 +88,7 @@ const ITEM_CLASSES = {
     "rounded-medium px-3 py-1.5 text-small text-default-700 transition-colors " +
     "data-[hover=true]:bg-default-100 data-[hover=true]:text-foreground " +
     "data-[selected=true]:bg-default-200 data-[selected=true]:font-medium data-[selected=true]:text-foreground " +
-    "data-[focus-visible=true]:ring-2 data-[focus-visible=true]:ring-default-800/20"
+    "data-[focus-visible=true]:ring-1 data-[focus-visible=true]:ring-default-800/20"
 };
 
 export interface SelectFieldProps {
@@ -166,7 +166,7 @@ export function PasswordInput(props: InputProps) {
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
-          className="rounded-full p-1 text-default-500 outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-default-800"
+          className="rounded-full p-1 text-default-500 outline-none transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800"
         >
           {visible ? (
             <Icon name="ph:eye-slash" width={20} height={20} />

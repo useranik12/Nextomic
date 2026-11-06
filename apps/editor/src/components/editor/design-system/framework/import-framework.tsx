@@ -38,7 +38,7 @@ export function ImportFramework({
 
   return (
     <div className="flex flex-col gap-3 p-3">
-      <label className="flex cursor-pointer flex-col items-center gap-1 rounded-large border-2 border-dashed border-default-300 px-4 py-6 text-center focus-within:ring-2 focus-within:ring-default-800/40 hover:border-default-500">
+      <label className="flex cursor-pointer flex-col items-center gap-1 rounded-large border border-dashed border-default-300 px-4 py-6 text-center focus-within:ring-1 focus-within:ring-default-800/40 hover:border-default-500">
         <span className="text-small font-medium">Choose a .css file</span>
         <span className="text-tiny text-default-500">
           or paste the CSS below. Up to 2 MB. This replaces the theme framework.
@@ -61,7 +61,7 @@ export function ImportFramework({
         onChange={(e) => setCss(e.target.value)}
         rows={8}
         spellCheck={false}
-        className="w-full rounded-large border-2 border-default-200 bg-transparent p-2 font-mono text-tiny outline-none focus:border-default-800"
+        className="w-full rounded-large border border-default-200 bg-transparent p-2 font-mono text-tiny outline-none focus:border-default-800"
       />
       {error ? (
         <p role="alert" className="text-tiny text-danger">

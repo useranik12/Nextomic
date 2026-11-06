@@ -15,13 +15,13 @@ import { SettingRow, compactFieldClass } from "./setting-row";
 const CLASS_CHIP = "bg-sky-500/15 text-sky-700 dark:text-sky-300";
 const ID_CHIP = "bg-amber-500/15 text-amber-700 dark:text-amber-300";
 const STATE_CHIP = "bg-violet-500/15 text-violet-700 dark:text-violet-300";
-const STATE_ACTIVE = "bg-pink-500/20 text-pink-700 ring-2 ring-pink-500 dark:text-pink-300";
+const STATE_ACTIVE = "bg-pink-500/20 text-pink-700 ring-1 ring-pink-500 dark:text-pink-300";
 const FADED = "opacity-40 hover:opacity-80";
 const STATES: PseudoState[] = ["default", "hover", "focus", "active", "disabled"];
 const ID_FIELD = "!border-amber-500/50 bg-amber-500/10 font-mono";
 const CLASS_FIELD = "!border-sky-500/50 bg-sky-500/15 font-mono";
 const ICON_BUTTON =
-  "flex h-6 w-6 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-200 hover:text-foreground focus-visible:ring-2 focus-visible:ring-default-800/40";
+  "flex h-6 w-6 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-200 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800/40";
 
 type FieldMode = "view" | "edit" | "add";
 
@@ -327,7 +327,7 @@ function Chip({
       className={
         "flex h-6 select-none items-center rounded-full text-tiny transition-opacity duration-300 " +
         tone +
-        (active ? ` ring-2 ${ring}` : " " + FADED)
+        (active ? ` ring-1 ${ring}` : " " + FADED)
       }
     >
       <button

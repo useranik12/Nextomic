@@ -131,7 +131,7 @@ export function TimelineTrack({
               <button
                 type="button"
                 onClick={() => onSelect(animation.id)}
-                className="min-w-0 flex-1 truncate text-left text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/40"
+                className="min-w-0 flex-1 truncate text-left text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/40"
               >
                 {animation.name || "Animation"}
               </button>
@@ -217,9 +217,9 @@ export function TimelineTrack({
                   }}
                   style={{ left: slot.start * pps, width: Math.max(slot.length * pps, 8) }}
                   className={
-                    "absolute top-1 flex h-6 cursor-grab items-center rounded px-2 text-tiny text-white outline-none focus-visible:ring-2 focus-visible:ring-default-800 " +
+                    "absolute top-1 flex h-6 cursor-grab items-center rounded px-2 text-tiny text-white outline-none focus-visible:ring-1 focus-visible:ring-default-800 " +
                     METHOD_COLOR[animation.method] +
-                    (animation.id === selectedId ? " ring-2 ring-foreground" : "")
+                    (animation.id === selectedId ? " ring-1 ring-foreground" : "")
                   }
                 >
                   <span className="truncate">{animation.name}</span>

@@ -266,7 +266,7 @@ export function VariablesTab() {
             value={name}
             spellCheck={false}
             onChange={(e) => setName(e.target.value)}
-            className="h-8 min-w-0 flex-1 rounded-full border-2 border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
+            className="h-8 min-w-0 flex-1 rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
           />
           <span aria-hidden className="text-default-400">
             =
@@ -277,7 +277,7 @@ export function VariablesTab() {
             value={value}
             spellCheck={false}
             onChange={(e) => setValue(e.target.value)}
-            className="h-8 min-w-0 flex-1 rounded-full border-2 border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
+            className="h-8 min-w-0 flex-1 rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
           />
           <ActionButton
             size="sm"

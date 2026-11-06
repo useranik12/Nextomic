@@ -86,7 +86,7 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
                   <button
                     type="button"
                     onClick={() => setSelectedId(file.id)}
-                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/50"
+                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/50"
                   >
                     <span className={"truncate " + (file.enabled ? "" : "text-default-400")}>
                       {file.name}

@@ -59,7 +59,7 @@ function MoveButton({
       title={label}
       disabled={disabled}
       onClick={onPress}
-      className="flex h-7 w-7 items-center justify-center rounded-medium bg-default-100 text-foreground outline-none transition-colors duration-300 hover:bg-default-200 focus-visible:ring-2 focus-visible:ring-default-800 disabled:cursor-not-allowed disabled:text-default-300 disabled:hover:bg-default-100"
+      className="flex h-7 w-7 items-center justify-center rounded-medium bg-default-100 text-foreground outline-none transition-colors duration-300 hover:bg-default-200 focus-visible:ring-1 focus-visible:ring-default-800 disabled:cursor-not-allowed disabled:text-default-300 disabled:hover:bg-default-100"
     >
       {children}
     </button>
@@ -180,7 +180,7 @@ export function ElementContextMenu() {
             placeholder="Search classes"
             value={classQuery}
             onChange={(e) => setClassQuery(e.target.value)}
-            className="mx-1 h-8 rounded-full border-2 border-default-200 bg-transparent px-3 text-small outline-none focus:border-default-800"
+            className="mx-1 h-8 rounded-full border border-default-200 bg-transparent px-3 text-small outline-none focus:border-default-800"
           />
           <p className="px-2 text-tiny text-default-500">
             Moves this element&apos;s own design into the class you pick. Its added classes stay.

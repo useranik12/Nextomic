@@ -30,7 +30,7 @@ export function ColorField({
   const shown = parseColor(value) ?? (display ? parseColor(display) : null);
   return (
     <div
-      className={`flex h-8 min-w-0 items-center gap-2 rounded-full border-2 border-default-200 pl-1.5 pr-3 focus-within:border-default-800 ${className ?? ""}`}
+      className={`flex h-8 min-w-0 items-center gap-2 rounded-full border border-default-200 pl-1.5 pr-3 focus-within:border-default-800 ${className ?? ""}`}
     >
       <Popover isOpen={open} onOpenChange={setOpen} placement="bottom-start">
         <PopoverTrigger>

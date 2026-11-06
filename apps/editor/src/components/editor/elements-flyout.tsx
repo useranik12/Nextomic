@@ -27,7 +27,7 @@ function Tile({ definition, onInsert }: { definition: ElementDefinition; onInser
       type="button"
       onClick={onInsert}
       className={
-        "flex h-[78px] flex-col items-center justify-center gap-1.5 rounded-large bg-default-100 text-small text-default-600 outline-none transition-colors duration-300 hover:bg-default-200 hover:text-foreground focus-visible:ring-2 focus-visible:ring-default-800 " +
+        "flex h-[78px] flex-col items-center justify-center gap-1.5 rounded-large bg-default-100 text-small text-default-600 outline-none transition-colors duration-300 hover:bg-default-200 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800 " +
         (isDragging ? "opacity-40" : "")
       }
       {...attributes}
@@ -75,7 +75,7 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search elements"
           aria-label="Search elements"
-          className="h-9 w-full rounded-full border-2 border-default-200 bg-transparent pl-9 pr-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:border-default-400 focus:border-default-800"
+          className="h-9 w-full rounded-full border border-default-200 bg-transparent pl-9 pr-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:border-default-400 focus:border-default-800"
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">

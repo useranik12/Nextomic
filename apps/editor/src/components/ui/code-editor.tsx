@@ -105,8 +105,8 @@ export function CssCodeEditor({
     <div
       style={{ height: lines * LINE_HEIGHT + 20 }}
       className={
-        "relative overflow-hidden rounded-medium bg-default-100 focus-within:ring-2 focus-within:ring-default-800/30 " +
-        (invalid ? "ring-2 ring-danger" : "")
+        "relative overflow-hidden rounded-medium bg-default-100 focus-within:ring-1 focus-within:ring-default-800/30 " +
+        (invalid ? "ring-1 ring-danger" : "")
       }
     >
       <pre

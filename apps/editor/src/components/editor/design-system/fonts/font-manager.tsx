@@ -169,7 +169,7 @@ export function FontManager({
             placeholder="Search fonts"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-9 w-full rounded-medium border-2 border-default-200 bg-transparent pl-9 pr-3 text-small outline-none focus:border-default-800"
+            className="h-9 w-full rounded-medium border border-default-200 bg-transparent pl-9 pr-3 text-small outline-none focus:border-default-800"
           />
         </div>
         <div role="group" aria-label="Add a font" className="flex gap-1">

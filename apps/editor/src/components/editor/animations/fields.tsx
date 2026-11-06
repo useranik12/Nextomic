@@ -156,7 +156,7 @@ export function Section({
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex flex-1 items-center gap-2 text-left text-small font-semibold outline-none focus-visible:ring-2 focus-visible:ring-default-800/40"
+          className="flex flex-1 items-center gap-2 text-left text-small font-semibold outline-none focus-visible:ring-1 focus-visible:ring-default-800/40"
         >
           <Icon
             name="ph:caret-right"

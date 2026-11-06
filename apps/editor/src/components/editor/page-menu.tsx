@@ -71,7 +71,7 @@ export function PageMenu({
         <DropdownTrigger>
           <button
             type="button"
-            className="flex h-9 items-center gap-2 rounded-full border-2 border-default-200 px-4 text-small text-foreground transition-colors duration-300 hover:border-default-400"
+            className="flex h-9 items-center gap-2 rounded-full border border-default-200 px-4 text-small text-foreground transition-colors duration-300 hover:border-default-400"
           >
             <span className="max-w-[140px] truncate">{name}</span>
             <Icon name="ph:caret-down" width={14} height={14} />

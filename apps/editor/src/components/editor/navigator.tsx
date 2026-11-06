@@ -71,7 +71,7 @@ const NavigatorRow = memo(function NavigatorRow({
         "group relative flex h-8 items-center gap-1 rounded-medium pr-1 text-small transition-colors duration-300 " +
         (selected ? "bg-default-200 text-foreground" : "text-default-600 hover:bg-default-100") +
         (draggable.isDragging ? " opacity-40" : node.hidden ? " opacity-50" : "") +
-        (dropZone === "inside" ? " ring-2 ring-primary" : "")
+        (dropZone === "inside" ? " ring-1 ring-primary" : "")
       }
     >
       {dropZone === "before" || dropZone === "after" ? (
@@ -108,7 +108,7 @@ const NavigatorRow = memo(function NavigatorRow({
         <button
           type="button"
           onClick={() => select(node.id)}
-          className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-default-800"
+          className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-1 focus-visible:ring-default-800"
           {...draggable.attributes}
           {...draggable.listeners}
         >

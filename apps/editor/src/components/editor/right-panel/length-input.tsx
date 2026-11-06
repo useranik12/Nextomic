@@ -6,7 +6,7 @@ import { previewProps, useStylePreview } from "./design-field-tools";
 import { isNumberText, lengthMode, parseLength, unitSpecFor, type UnitSpec } from "./length-units";
 
 const TRIGGER =
-  "flex shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-tiny font-medium text-default-600 transition-colors duration-300 hover:bg-default-300 hover:text-foreground focus-visible:ring-2 focus-visible:ring-default-800/40";
+  "flex shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-tiny font-medium text-default-600 transition-colors duration-300 hover:bg-default-300 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800/40";
 
 /** The unit a fresh field starts with: a plain number where that is the usual choice (line-height). */
 function defaultUnit(spec: UnitSpec | null): string {

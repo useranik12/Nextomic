@@ -132,7 +132,7 @@ function DynamicDataModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Type here to filter the dynamic tags"
-              className="h-11 w-full rounded-full border-2 border-default-200 bg-transparent pl-10 pr-4 text-small outline-none transition-colors hover:border-default-400 focus:border-default-800"
+              className="h-11 w-full rounded-full border border-default-200 bg-transparent pl-10 pr-4 text-small outline-none transition-colors hover:border-default-400 focus:border-default-800"
             />
           </label>
           <div role="group" aria-label="Tag groups" className="flex flex-wrap gap-2">

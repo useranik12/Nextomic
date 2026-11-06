@@ -1,3 +1,4 @@
+import { layoutChoiceSchema } from "./template";
 import { z } from "zod";
 import { elementNodeSchema, type ElementNode } from "./element";
 import { propValueSchema } from "./value";
@@ -73,6 +74,12 @@ export const pageSettingsSchema = z.object({
   versionControl: z.boolean().default(true),
   // Snapshots kept for this page (5 to 200); null follows the app-wide limit.
   versionLimit: z.number().int().min(5).max(200).nullable().default(null),
+  // Header and footer: "auto" (rules decide), "none", or the id of one template.
+  header: layoutChoiceSchema,
+  footer: layoutChoiceSchema,
+  // Marking: ids of page categories and page tags (the lists live in the project settings).
+  categoryIds: z.array(z.string().max(64)).max(50).default([]),
+  tagIds: z.array(z.string().max(64)).max(50).default([]),
   params: z.array(pageParamSchema).max(20).default([]),
   state: z.array(pageStateVariableSchema).max(100).default([])
 });
