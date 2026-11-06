@@ -123,6 +123,27 @@ describe("scoping and theme output", () => {
     expect(css).toContain(".bg-primary");
   });
 
+  it("themeCss ships only the framework classes in use and keeps every variable", () => {
+    const fw = mainFramework();
+    const theme = {
+      ...newTheme("t1", "Main", []),
+      framework: {
+        ...fw,
+        colorOptions: {
+          ...fw.colorOptions,
+          primary: { ...NO_COLOR_OPTIONS, utility: ["background-color" as const, "color" as const] }
+        }
+      }
+    };
+    const all = themeCss(theme);
+    const pruned = themeCss(theme, new Set(["bg-primary"]));
+    expect(all).toContain(".text-primary");
+    expect(pruned).toContain(".bg-primary");
+    expect(pruned).not.toContain(".text-primary");
+    expect(pruned).toContain("--primary:#4f46e5");
+    expect(pruned.length).toBeLessThan(all.length);
+  });
+
   it("types variables for pickers", () => {
     expect(frameworkVariableMeta({ name: "primary", value: "#fff" }).type).toBe("color");
     expect(frameworkVariableMeta({ name: "space-m", value: "clamp(1rem, 2vw, 2rem)" }).type).toBe(

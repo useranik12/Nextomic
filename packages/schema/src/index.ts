@@ -15,6 +15,7 @@ export * from "./color";
 export * from "./variables";
 export * from "./variable-refs";
 export * from "./color-math";
+export * from "./css-prune";
 export * from "./framework";
 export * from "./framework-color-ops";
 export * from "./main-framework";

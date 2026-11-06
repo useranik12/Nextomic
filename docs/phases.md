@@ -53,7 +53,7 @@ Docs: `design-system.md`, `templates-and-themes.md` (sections 1 to 3)
 - [x] Design System managers in the Bricks and Core Framework style, with draft + Save _Built: Colors (palettes, prefix, picker with Hex/RGB/HSL/CSS and alpha), Typography and Spacing scales, Variables manager with categories, Classes manager with categories, lock, usage, Fonts manager and font editor with variations and favorites, Save button in the modal header with Save/Discard prompt._
 - [ ] Custom CSS files (order, scope, validation)
 - [ ] Pre-built animations and GSAP visual editor; reusable named animations
-- [ ] Output CSS generation: base plus per-theme CSS, unused-class pruning
+- [ ] Output CSS generation: base plus per-theme CSS, unused-class pruning _Built: layered output (fonts, variables, theme framework and variables, classes, elements) and unused framework class pruning for preview and the published site (`css-prune.ts`, renderer `pruneUnusedClasses` and `keepClasses`). Open: per-theme CSS files instead of inline `<style>`, custom CSS files layer, pruning of user classes once templates and actions can add classes._
 - [ ] Tests: theme resolution, CSS scoping, round trip
 
 ## Phase 3: Templates v1 (header, footer, 404)

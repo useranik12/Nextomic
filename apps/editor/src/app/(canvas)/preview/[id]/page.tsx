@@ -91,6 +91,7 @@ export default async function PreviewPage({
         fontBase={`/fonts/${id}`}
         theme={theme}
         bootScript
+        pruneUnusedClasses
       />
     </>
   );
