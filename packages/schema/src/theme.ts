@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { frameworkSchema, frameworkVariablesCss, scopeFrameworkCss } from "./framework";
+import { frameworkStylesheet } from "./main-framework";
 import { SAFE_VALUE, VARIABLE_NAME_PATTERN, variableCssName } from "./variables";
 
 // Themes (docs/templates-and-themes.md section 3): named style sets. The default theme (the first
@@ -40,6 +42,11 @@ export const themeSchema = z.object({
   modes: z.array(themeModeSchema).min(1).max(6).default(DEFAULT_THEME_MODES),
   defaultMode: z.string().default("light"),
   respectSystemPreference: z.boolean().default(false),
+  // Off: visitors cannot change the color mode; a saved choice and the system preference are ignored
+  // and the page always uses the default mode.
+  allowModeSwitch: z.boolean().default(true),
+  // The CSS framework this theme runs on (docs/design-system.md). Null: variables and classes only.
+  framework: frameworkSchema.nullable().default(null),
   // Overrides of project variables, by variable name then mode id.
   variables: z
     .record(
@@ -162,7 +169,15 @@ export function themeCss(theme: Theme): string {
         : `${root}[data-nxt-mode="${mode.id}"]`;
     rules.push(`${selector}{${body}}`);
   }
-  return rules.join("");
+  const fw = theme.framework;
+  const framework = fw
+    ? frameworkVariablesCss(
+        fw,
+        theme.slug,
+        theme.modes.some((m) => m.id === "dark")
+      ) + scopeFrameworkCss(frameworkStylesheet(fw), theme.slug)
+    : "";
+  return framework + rules.join("");
 }
 
 /** Blocking script: sets theme and mode on <html> before first paint (saved choice wins). */
@@ -171,10 +186,11 @@ export function themeBootScript(theme: Theme): string {
   const system = theme.respectSystemPreference
     ? 'if(!v&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches&&m.indexOf("dark")>-1)v="dark";'
     : "";
+  const stored = theme.allowModeSwitch ? 'try{v=localStorage.getItem("nxt-mode")}catch(e){}' : "";
   return (
     `(function(){var d=document.documentElement,m=${modes},v=null;` +
-    `try{v=localStorage.getItem("nxt-mode")}catch(e){}` +
-    system +
+    stored +
+    (theme.allowModeSwitch ? system : "") +
     `if(m.indexOf(v)<0)v=${JSON.stringify(theme.defaultMode)};` +
     `d.setAttribute("data-nxt-theme",${JSON.stringify(theme.slug)});d.setAttribute("data-nxt-mode",v)})()`
   );

@@ -1,10 +1,13 @@
 import {
   CLASS_NAME_PATTERN,
   themeBootScript,
+  fontPreloads,
+  fontsCss,
   themeCss,
   variablesCss,
   type BreakpointDef,
   type ElementNode,
+  type ProjectFont,
   type ProjectVariable,
   type StyleMap,
   type Theme
@@ -19,6 +22,10 @@ export interface RenderOptions {
   breakpoints: readonly BreakpointDef[];
   classes?: Readonly<Record<string, StyleMap>>;
   variables?: readonly ProjectVariable[];
+  /** Project fonts; active ones become @font-face rules loading from `fontBase`. */
+  fonts?: readonly ProjectFont[];
+  /** URL prefix the font files are served from, no trailing slash, e.g. /fonts/<projectId>. */
+  fontBase?: string;
   /** The resolved theme: its variable overrides are emitted after the base variables. */
   theme?: Theme | null;
   /** Built pages set theme and mode on <html> before first paint; the editor canvas sets them itself. */
@@ -58,7 +65,9 @@ export function renderNode(node: ElementNode, options: RenderOptions): ReactNode
 
 /** The page tree plus the CSS for every element at every breakpoint. */
 export function PageRenderer({ tree, ...options }: RenderOptions & { tree: ElementNode }) {
+  const fontBase = options.fontBase ?? "";
   const css =
+    fontsCss(options.fonts ?? [], fontBase) +
     variablesCss(options.variables ?? []) +
     (options.theme ? themeCss(options.theme) : "") +
     pageCss(tree, options.breakpoints, options.classes);
@@ -67,6 +76,11 @@ export function PageRenderer({ tree, ...options }: RenderOptions & { tree: Eleme
       {options.theme && options.bootScript ? (
         <script dangerouslySetInnerHTML={{ __html: themeBootScript(options.theme) }} />
       ) : null}
+      {options.bootScript
+        ? fontPreloads(options.fonts ?? [], fontBase).map((p) => (
+            <link key={p.href} rel="preload" as="font" type={p.type} href={p.href} crossOrigin="" />
+          ))
+        : null}
       {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
       {renderNode(tree, options)}
     </>

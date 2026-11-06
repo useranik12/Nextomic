@@ -30,6 +30,7 @@ import {
   type PageSettings,
   type StyleMap,
   type ProjectSettings,
+  type ProjectFont,
   type ProjectVariable,
   type Theme,
   type PropValue,
@@ -71,6 +72,8 @@ interface EditorState {
   selectedId: string | null;
   /** The class being edited in the Design tab; null means the element (its ID) is edited. */
   activeClass: string | null;
+  /** A style shown on the canvas while a picker option is hovered. Never saved, never in history. */
+  stylePreview: { property: string; value: string } | null;
   /** Increments when a class style changes so the shell can save the project settings. */
   classesTick: number;
   pageDrafts: PageDrafts;
@@ -127,6 +130,8 @@ interface EditorState {
   deleteVariable: (name: string) => void;
   /** Replaces the theme list (create, edit, delete, default); the editor keeps it valid. */
   setThemes: (themes: Theme[]) => void;
+  /** Replaces the font list (install, upload, activate, preload, remove). */
+  setFonts: (fonts: ProjectFont[]) => void;
   /** Renames and rewrites references on the open page and in class styles; other pages are server side. */
   renameVariable: (from: string, to: string) => boolean;
   /** Class manager operations. They return false when the name is taken or the source is missing. */
@@ -137,6 +142,7 @@ interface EditorState {
   /** `replaceWith` null removes the class from the elements of the open page. */
   deleteClass: (name: string, replaceWith: string | null) => void;
   setElementStyle: (id: string, property: string, value: string | null) => void;
+  setStylePreview: (preview: { property: string; value: string } | null) => void;
   /** Replaces every style of the active target (the active class, else the element), e.g. from the CSS editor. */
   setTargetStyles: (id: string, styles: StyleMap) => void;
   updatePageMeta: (patch: Partial<Pick<PageDoc, "name" | "route">>) => void;
@@ -206,7 +212,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
   return {
     projectId: "",
-    project: { breakpoints: [], generateElementIds: true, classes: {}, variables: [], themes: [] },
+    project: {
+      breakpoints: [],
+      generateElementIds: true,
+      classes: {},
+      variables: [],
+      themes: [],
+      fonts: []
+    },
     page: null,
     doc: null,
     past: [],
@@ -215,6 +228,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
     lastEditAt: 0,
     selectedId: null,
     activeClass: null,
+    stylePreview: null,
     classesTick: 0,
     pageDrafts: NO_DRAFTS,
     activeBreakpointId: BASE_BREAKPOINT_ID,
@@ -481,6 +495,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
       });
     },
 
+    setFonts: (fonts) => {
+      set({
+        project: { ...get().project, fonts },
+        saveStatus: dirtyStatus(get().saveStatus)
+      });
+    },
+
     deleteVariable: (name) => {
       const { project } = get();
       set({
@@ -567,6 +588,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
         saveStatus: dirtyStatus(get().saveStatus)
       });
     },
+
+    setStylePreview: (stylePreview) => set({ stylePreview }),
 
     setElementStyle: (id, property, value) => {
       const { activeBreakpointId, activeState, activeClass, project } = get();

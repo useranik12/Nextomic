@@ -12,6 +12,7 @@ const project: ProjectSettings = {
   generateElementIds: true,
   classes: {},
   variables: [],
+  fonts: [],
   themes: []
 };
 

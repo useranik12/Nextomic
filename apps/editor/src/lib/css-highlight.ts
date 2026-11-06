@@ -14,6 +14,8 @@ export type CssTokenType =
   | "color"
   | "string"
   | "function"
+  | "variable"
+  | "keyword"
   | "important"
   | "punct"
   | "text";
@@ -43,6 +45,8 @@ const VALUE_PARTS: [RegExp, CssTokenType][] = [
   [/^!\s*important/i, "important"],
   [/^-?(?:\d+\.?\d*|\.\d+)(?:%|[a-zA-Z]+)?/, "number"],
   [/^[a-zA-Z_-][\w-]*(?=\()/, "function"],
+  [/^--[\w-]+/, "variable"],
+  [/^[a-zA-Z][\w-]*/, "keyword"],
   [/^[(),/]/, "punct"]
 ];
 

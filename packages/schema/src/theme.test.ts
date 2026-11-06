@@ -91,3 +91,25 @@ describe("themes", () => {
     expect(themeBootScript(t)).toContain('"data-nxt-theme","a"');
   });
 });
+
+describe("allowModeSwitch", () => {
+  it("defaults on and reads a saved choice and the system preference", () => {
+    const theme = make({ respectSystemPreference: true }, "t1", "Main");
+    expect(theme.allowModeSwitch).toBe(true);
+    const script = themeBootScript(theme);
+    expect(script).toContain("localStorage");
+    expect(script).toContain("prefers-color-scheme");
+  });
+
+  it("off locks the page to the default mode", () => {
+    const theme = make(
+      { allowModeSwitch: false, respectSystemPreference: true, defaultMode: "dark" },
+      "t1",
+      "Main"
+    );
+    const script = themeBootScript(theme);
+    expect(script).not.toContain("localStorage");
+    expect(script).not.toContain("prefers-color-scheme");
+    expect(script).toContain('"dark"');
+  });
+});

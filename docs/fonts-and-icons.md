@@ -36,8 +36,7 @@ Adobe Fonts and other paid or licensed-per-domain services are out of scope for 
 
 ### 2.3 Data
 
-`project_fonts`: id, project_id, family, source (`google|fontsource|upload|system`), source_version, license, license_text_path, files jsonb (weight, style, format, subset, unicodeRange, path, bytes, sha256), variable_axes jsonb, display, preload, created_by, created_at.
-Files are stored through the storage adapter under `fonts/<projectId>/<family>/`.
+**As built:** font metadata is stored as JSON in `ProjectSettings.fonts` (`packages/schema/src/fonts.ts`), not in a `project_fonts` table, so it saves, versions and publishes with the rest of the project (the published snapshot keeps its own list). Each font: id, family, source (`google|upload`), sourceNote, category, license, active, preload, display, files (file, format, weight, weightMax for variable, style, subset, unicodeRange, bytes, sha256). Files are stored through the storage adapter under `fonts/<projectId>/<fontId>/<file>` and served by the app at `/fonts/<projectId>/<fontId>/<file>` (public, immutable cache, CORS `*` for the sandboxed canvas). Google Fonts are listed and downloaded through the Fontsource API and jsDelivr (`api.fontsource.org`, `cdn.jsdelivr.net` only, https, no redirects, 2 MB per file, 60 files per font); only the active fonts are written as `@font-face`. A variable font uses the Fontsource `wght` axis file. Uploads take weight and style from the user (guessed from the file name); the format comes from the file bytes. Removed fonts keep their files in storage because the published site may still use them.
 
 ## 3. Icon libraries
 
@@ -87,7 +86,7 @@ List of installed libraries: name, source, version, icon count, license, mode (S
 
 ## 5. Phase placement
 
-- Phase 2: Fonts sub-tab (Google, Fontsource, upload, self-hosting, variable fonts, roles to variables, licenses) because typography, variables, and themes need it.
+- Phase 2: Fonts sub-tab (Google, Fontsource, upload, self-hosting, variable fonts, roles to variables, licenses) because typography, variables, and themes need it. Built, see `phases.md` for what is still open.
 - Phase 6: Icons sub-tab (catalog, import, custom libraries, picker, output modes) together with the Media manager.
 - Phase 7: Icon, Icon List, and other elements consume the picker.
 - Phase 11: export includes fonts, icons, and credits.

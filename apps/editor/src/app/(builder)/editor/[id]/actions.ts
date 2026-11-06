@@ -9,8 +9,11 @@ import {
   type ProjectSettings
 } from "@nextomic/schema";
 import { z } from "zod";
-import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
-import { getServerSession } from "@/lib/session";
+import {
+  authorizeProject as authorize,
+  failResult as fail,
+  type ActionResult
+} from "@/server/authorize";
 import {
   classUsageInOtherPages,
   createPage,
@@ -37,26 +40,7 @@ import {
   type PublishState
 } from "@/server/publish";
 
-export type ActionResult<T> = { data: T; error: null } | { data: null; error: string };
-
 const idSchema = z.string().min(1).max(100);
-
-async function authorize(projectId: string): Promise<string> {
-  const parsed = idSchema.safeParse(projectId);
-  if (!parsed.success) throw new AccessDeniedError();
-  const session = await getServerSession();
-  if (!session) throw new AccessDeniedError("Sign in to continue.");
-  await requireProjectAccess(session.user.id, parsed.data);
-  return session.user.id;
-}
-
-function fail<T>(error: unknown, fallback: string): ActionResult<T> {
-  if (error instanceof AccessDeniedError) return { data: null, error: error.message };
-  if (error instanceof z.ZodError) {
-    return { data: null, error: error.issues[0]?.message ?? "Invalid input." };
-  }
-  return { data: null, error: fallback };
-}
 
 export async function listPagesAction(projectId: string): Promise<ActionResult<PageSummary[]>> {
   try {

@@ -6,6 +6,7 @@ import {
   type PseudoState,
   type StyleMap
 } from "@nextomic/schema";
+import { getElementDefinition } from "./registry";
 
 const PSEUDO_SELECTOR: Record<PseudoState, string> = {
   default: "",
@@ -19,9 +20,31 @@ const STATE_ORDER: PseudoState[] = ["default", "hover", "focus", "active", "disa
 // A declaration value that could close the rule or open another one is dropped, never escaped.
 const UNSAFE_VALUE = /[{};<>]|\/\*|\*\/|@import|expression\(|javascript:/i;
 
+/** Container tags that start as a column flexbox; any style set on them wins. */
+export const FLEX_COLUMN_TAGS = [
+  "div",
+  "section",
+  "header",
+  "main",
+  "nav",
+  "aside",
+  "article",
+  "footer"
+];
+const FLEX_COLUMN_DEFAULT: Record<string, string> = { display: "flex", "flex-direction": "column" };
+
+/** The built-in value of a style property for an element (before any style is set), if it has one. */
+export function builtinStyle(
+  node: Pick<ElementNode, "type" | "htmlTag">,
+  property: string
+): string | undefined {
+  if (!getElementDefinition(node.type)?.canHaveChildren) return undefined;
+  const tag = node.htmlTag ?? (node.type === "section" ? "section" : "div");
+  return FLEX_COLUMN_TAGS.includes(tag) ? FLEX_COLUMN_DEFAULT[property] : undefined;
+}
+
 /** Minimal base for built pages. The editor canvas uses the same rules so it matches the output. */
-export const BASE_CSS =
-  "*,*::before,*::after{box-sizing:border-box}html,body{margin:0}body{display:flow-root;background:#fff;color:#111;font-family:system-ui,sans-serif}";
+export const BASE_CSS = `*,*::before,*::after{box-sizing:border-box}html,body{margin:0}:where([data-nid]:is(${FLEX_COLUMN_TAGS.join(",")})){display:flex;flex-direction:column}body{display:flow-root;background:#fff;color:#111;font-family:system-ui,sans-serif}`;
 
 export function isSafeCssValue(value: string): boolean {
   return value.trim() !== "" && !UNSAFE_VALUE.test(value);

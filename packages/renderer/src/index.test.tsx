@@ -167,3 +167,70 @@ describe("themes", () => {
     expect(built).toContain("<script");
   });
 });
+
+describe("fonts in output", () => {
+  const font = {
+    id: "acme",
+    family: "Acme",
+    source: "upload" as const,
+    sourceNote: "",
+    category: "sans-serif" as const,
+    license: "",
+    active: true,
+    preload: true,
+    display: "swap" as const,
+    files: [
+      {
+        file: "400-normal.woff2",
+        format: "woff2" as const,
+        weight: 400,
+        style: "normal" as const,
+        subset: "latin",
+        bytes: 10,
+        sha256: "a".repeat(64)
+      }
+    ]
+  };
+  const tree = emptyPageTree();
+
+  it("writes @font-face from the project's own origin and a preload link on built pages", () => {
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        fonts={[font]}
+        fontBase="/fonts/p1"
+        bootScript
+      />
+    );
+    expect(html).toContain(
+      "src:url(&quot;/fonts/p1/acme/400-normal.woff2&quot;)".replace(/&quot;/g, '"')
+    );
+    expect(html).toContain('rel="preload"');
+    expect(html).not.toContain("googleapis");
+    expect(html).not.toContain("gstatic");
+  });
+
+  it("writes nothing for inactive fonts and no preload on the editor canvas", () => {
+    const off = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        fonts={[{ ...font, active: false }]}
+        fontBase="/fonts/p1"
+        bootScript
+      />
+    );
+    expect(off).not.toContain("@font-face");
+    const canvas = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        fonts={[font]}
+        fontBase="/fonts/p1"
+      />
+    );
+    expect(canvas).toContain("@font-face");
+    expect(canvas).not.toContain("preload");
+  });
+});

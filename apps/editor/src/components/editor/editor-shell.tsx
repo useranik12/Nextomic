@@ -6,6 +6,7 @@ import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { AppSettings } from "./app-settings";
+import { OPEN_DESIGN_SYSTEM_EVENT } from "./right-panel/font-picker";
 import { DesignSystemModal } from "./design-system/design-system-modal";
 import { ConflictDialog } from "./conflict-dialog";
 import { EditorDndProvider } from "./dnd";
@@ -75,10 +76,21 @@ export function EditorShell({
   const [pages, setPages] = useState(initialPages);
   const [rail, setRail] = useState<RailItemId>("navigator");
   const [designSystemOpen, setDesignSystemOpen] = useState(false);
+  const [designSystemTab, setDesignSystemTab] = useState<string | undefined>();
   const [collapsed, setCollapsed] = useState(false);
   const [flyout, setFlyout] = useState(false);
   const [mode, setMode] = useState<"light" | "dark">("light");
   const { saveNow } = useAutosave();
+
+  // The font picker in Design asks for the Design System on its Fonts tab.
+  useEffect(() => {
+    function open(event: Event) {
+      setDesignSystemTab(event instanceof CustomEvent ? String(event.detail) : undefined);
+      setDesignSystemOpen(true);
+    }
+    window.addEventListener(OPEN_DESIGN_SYSTEM_EVENT, open);
+    return () => window.removeEventListener(OPEN_DESIGN_SYSTEM_EVENT, open);
+  }, []);
   const selectedId = useEditorStore((s) => s.selectedId);
   useShortcuts();
 
@@ -154,6 +166,7 @@ export function EditorShell({
               collapsed={collapsed}
               onSelect={(id) => {
                 if (id === "design-system") {
+                  setDesignSystemTab(undefined);
                   setDesignSystemOpen(true);
                   return;
                 }
@@ -198,6 +211,7 @@ export function EditorShell({
         <ElementContextMenu />
         {designSystemOpen ? (
           <DesignSystemModal
+            initialTab={designSystemTab}
             onClose={() => setDesignSystemOpen(false)}
             saveNow={saveNow}
             pages={pages}

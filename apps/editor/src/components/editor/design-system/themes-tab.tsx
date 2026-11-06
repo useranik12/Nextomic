@@ -1,5 +1,6 @@
 "use client";
 
+import { Switch } from "@heroui/react";
 import { newTheme, themeListSchema, uniqueThemeSlug, type Theme } from "@nextomic/schema";
 import { useState } from "react";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
@@ -168,16 +169,30 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
                 onValueChange={(v) => patch(selected.id, { defaultMode: v })}
                 options={selected.modes.map((m) => ({ value: m.id, label: m.name }))}
               />
-              <label className="flex items-center gap-2 text-small">
-                <input
-                  type="checkbox"
-                  checked={selected.respectSystemPreference}
-                  onChange={(e) =>
-                    patch(selected.id, { respectSystemPreference: e.target.checked })
-                  }
-                />
-                Follow the visitor&apos;s system light/dark preference
-              </label>
+              <Switch
+                size="sm"
+                isSelected={selected.allowModeSwitch}
+                onValueChange={(allowModeSwitch) => patch(selected.id, { allowModeSwitch })}
+              >
+                <span className="text-small">Allow visitors to change the color mode</span>
+              </Switch>
+              <p className="-mt-2 text-tiny text-default-500">
+                {selected.allowModeSwitch
+                  ? "A visitor's saved choice is remembered. Off locks the site to the default mode."
+                  : "Locked: every visitor sees the default mode, whatever they chose before."}
+              </p>
+              <Switch
+                size="sm"
+                isDisabled={!selected.allowModeSwitch}
+                isSelected={selected.respectSystemPreference}
+                onValueChange={(respectSystemPreference) =>
+                  patch(selected.id, { respectSystemPreference })
+                }
+              >
+                <span className="text-small">
+                  Follow the visitor&apos;s system light/dark preference
+                </span>
+              </Switch>
               {selected.isDefault ? null : (
                 <>
                   <FormInput

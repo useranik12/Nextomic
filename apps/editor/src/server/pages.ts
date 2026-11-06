@@ -2,6 +2,7 @@ import {
   defaultPageSettings,
   defaultProjectSettings,
   countClassUsage,
+  countFamilyInTree,
   countVariableUsageInTree,
   elementNodeSchema,
   emptyPageTree,
@@ -408,4 +409,25 @@ export async function renameVariableInOtherPages(
     }
     return updated;
   });
+}
+
+/** Elements naming each family in their styles, on every saved page except `exceptPageId`. */
+export async function fontUsageInOtherPages(
+  projectId: string,
+  exceptPageId: string,
+  families: readonly string[]
+): Promise<Record<string, number>> {
+  const rows = await getDb()
+    .select({ tree: pages.tree })
+    .from(pages)
+    .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    const tree = elementNodeSchema.parse(row.tree);
+    for (const family of families) {
+      const n = countFamilyInTree(tree, family);
+      if (n > 0) counts[family] = (counts[family] ?? 0) + n;
+    }
+  }
+  return counts;
 }

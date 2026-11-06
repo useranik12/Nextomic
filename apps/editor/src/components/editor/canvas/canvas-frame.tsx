@@ -1,6 +1,6 @@
 "use client";
 
-import { breakpointPreviewWidth } from "@nextomic/schema";
+import { breakpointPreviewWidth, findNode, setStyle } from "@nextomic/schema";
 import {
   memo,
   useCallback,
@@ -62,9 +62,14 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const breakpoints = useEditorStore((s) => s.project.breakpoints);
   const classes = useEditorStore((s) => s.project.classes);
   const variables = useEditorStore((s) => s.project.variables);
+  const fonts = useEditorStore((s) => s.project.fonts);
+  const projectId = useEditorStore((s) => s.projectId);
   const theme = useResolvedTheme();
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
+  const stylePreview = useEditorStore((s) => s.stylePreview);
+  const activeClass = useEditorStore((s) => s.activeClass);
+  const activeState = useEditorStore((s) => s.activeState);
   const select = useEditorStore((s) => s.select);
   const openContextMenu = useEditorStore((s) => s.openContextMenu);
   const closeContextMenu = useEditorStore((s) => s.closeContextMenu);
@@ -233,17 +238,50 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
 
   useEffect(() => {
     if (!ready || !doc) return;
+    // A hovered picker option is drawn on a copy, so nothing is saved or added to the history.
+    let tree = doc.tree;
+    let sentClasses = classes;
+    if (stylePreview && selectedId) {
+      if (activeClass) {
+        const styles = structuredClone(classes[activeClass] ?? { breakpoints: {} });
+        setStyle({ styles }, activeId, activeState, stylePreview.property, stylePreview.value);
+        sentClasses = { ...classes, [activeClass]: styles };
+      } else {
+        tree = structuredClone(doc.tree);
+        const found = findNode(tree, selectedId);
+        if (found)
+          setStyle(found.node, activeId, activeState, stylePreview.property, stylePreview.value);
+      }
+    }
     send({
       type: "render",
-      tree: doc.tree,
+      tree,
       breakpoints,
-      classes,
+      classes: sentClasses,
       variables,
+      fonts,
+      fontBase: `/fonts/${projectId}`,
       theme,
       mode: themeModeFor(theme, mode),
       selectedId
     });
-  }, [ready, doc, breakpoints, classes, variables, theme, mode, selectedId, send]);
+  }, [
+    ready,
+    doc,
+    breakpoints,
+    classes,
+    variables,
+    fonts,
+    projectId,
+    theme,
+    mode,
+    selectedId,
+    stylePreview,
+    activeClass,
+    activeState,
+    activeId,
+    send
+  ]);
 
   // Wheel over the canvas surround zooms around the cursor. Native listener: React's is passive.
   useEffect(() => {
