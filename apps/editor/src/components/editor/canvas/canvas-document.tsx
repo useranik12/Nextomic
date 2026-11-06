@@ -1,6 +1,6 @@
 "use client";
 
-import { PageRenderer, getElementDefinition } from "@nextomic/renderer";
+import { BASE_CSS, PageRenderer, getElementDefinition } from "@nextomic/renderer";
 import { findNode } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
 import { hostMessageSchema, type CanvasMessage, type RenderMessage } from "./protocol";
@@ -8,9 +8,7 @@ import { hostMessageSchema, type CanvasMessage, type RenderMessage } from "./pro
 // Runs INSIDE the sandboxed iframe. It renders whatever tree the editor posts, reports clicks,
 // forwards wheel and middle-button gestures, and hit-tests drags for the editor.
 
-const EDITOR_CSS = `
-html,body{margin:0}
-body{display:flow-root;background:#fff;color:#111;font-family:system-ui,sans-serif}
+const EDITOR_CSS = `${BASE_CSS}
 html[data-nxt-mode="dark"] body{background:#0b0b0c;color:#f2f2f2}
 [data-nid]{box-sizing:border-box}
 [data-nid]:empty:not(img){min-height:48px;outline:1px dashed rgba(128,128,128,.55);outline-offset:-1px}
@@ -97,8 +95,19 @@ export function CanvasDocument() {
       const id = target?.getAttribute("data-nid") ?? null;
       postToHost({ type: "select", id: id === payloadRef.current?.tree.id ? null : id });
     }
+    function onContextMenu(event: MouseEvent) {
+      event.preventDefault();
+      const target = event.target instanceof Element ? event.target.closest("[data-nid]") : null;
+      const id = target?.getAttribute("data-nid");
+      if (!id || id === payloadRef.current?.tree.id) return;
+      postToHost({ type: "context", id, clientX: event.clientX, clientY: event.clientY });
+    }
     document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    document.addEventListener("contextmenu", onContextMenu, true);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("contextmenu", onContextMenu, true);
+    };
   }, []);
 
   // Wheel zooms the canvas and the middle button drags it. Both are forwarded to the host.

@@ -1,4 +1,4 @@
-import { PageRenderer } from "@nextomic/renderer";
+import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
@@ -74,6 +74,13 @@ export default async function PreviewPage({
   const { path } = await searchParams;
   const { page, settings } = await resolvePreview(id, path);
   return (
-    <PageRenderer tree={page.tree} breakpoints={settings.breakpoints} classes={settings.classes} />
+    <>
+      <style>{BASE_CSS}</style>
+      <PageRenderer
+        tree={page.tree}
+        breakpoints={settings.breakpoints}
+        classes={settings.classes}
+      />
+    </>
   );
 }

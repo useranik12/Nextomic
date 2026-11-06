@@ -19,6 +19,10 @@ const STATE_ORDER: PseudoState[] = ["default", "hover", "focus", "active", "disa
 // A declaration value that could close the rule or open another one is dropped, never escaped.
 const UNSAFE_VALUE = /[{};<>]|\/\*|\*\/|@import|expression\(|javascript:/i;
 
+/** Minimal base for built pages. The editor canvas uses the same rules so it matches the output. */
+export const BASE_CSS =
+  "*,*::before,*::after{box-sizing:border-box}html,body{margin:0}body{display:flow-root;background:#fff;color:#111;font-family:system-ui,sans-serif}";
+
 export function isSafeCssValue(value: string): boolean {
   return value.trim() !== "" && !UNSAFE_VALUE.test(value);
 }

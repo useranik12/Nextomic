@@ -9,8 +9,13 @@ import {
   duplicateNode,
   findNode,
   generateHtmlId,
+  indentNode,
   insertNode,
   moveNode,
+  outdentNode,
+  shiftNode,
+  unwrapNode,
+  wrapNode,
   newElementId,
   reassignBreakpointStyles,
   removeNode,
@@ -93,6 +98,15 @@ interface EditorState {
   insertElement: (type: string, parentId?: string, index?: number) => string | null;
   moveElement: (id: string, parentId: string, index: number) => boolean;
   removeElement: (id: string) => void;
+  /** Direction of a one-step move: up/down among siblings, out to the parent's level, in to the previous sibling. */
+  shiftElement: (id: string, direction: "up" | "down" | "out" | "in") => boolean;
+  wrapElement: (id: string) => void;
+  unwrapElement: (id: string) => void;
+  toggleElementHidden: (id: string) => void;
+  /** Right-click menu position (viewport pixels) and its target element. */
+  contextMenu: { x: number; y: number; id: string } | null;
+  openContextMenu: (x: number, y: number, id: string) => void;
+  closeContextMenu: () => void;
   duplicateElement: (id: string) => void;
   copyElement: (id: string) => void;
   pasteElement: (parentId?: string) => void;
@@ -281,6 +295,52 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (doc && selectedId && !findNode(doc.tree, selectedId)) set({ selectedId: null });
     },
 
+    shiftElement: (id, direction) => {
+      let moved = false;
+      edit(null, (draft) => {
+        if (direction === "up") moved = shiftNode(draft.tree, id, -1);
+        else if (direction === "down") moved = shiftNode(draft.tree, id, 1);
+        else if (direction === "out") moved = outdentNode(draft.tree, id);
+        else moved = indentNode(draft.tree, id, canHaveChildren);
+      });
+      return moved;
+    },
+
+    wrapElement: (id) => {
+      const { doc, project } = get();
+      if (!doc) return;
+      const wrapper = createElementNode(
+        "container",
+        collectHtmlIds(doc.tree),
+        project.generateElementIds
+      );
+      if (!wrapper) return;
+      edit(null, (draft) => {
+        wrapNode(draft.tree, id, wrapper);
+      });
+      set({ selectedId: wrapper.id });
+    },
+
+    unwrapElement: (id) => {
+      edit(null, (draft) => {
+        unwrapNode(draft.tree, id);
+      });
+      const { doc, selectedId } = get();
+      if (doc && selectedId && !findNode(doc.tree, selectedId)) set({ selectedId: null });
+    },
+
+    toggleElementHidden: (id) =>
+      void edit(null, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (!found?.parent) return;
+        if (found.node.hidden) delete found.node.hidden;
+        else found.node.hidden = true;
+      }),
+
+    contextMenu: null,
+    openContextMenu: (x, y, id) => set({ contextMenu: { x, y, id }, selectedId: id }),
+    closeContextMenu: () => set({ contextMenu: null }),
+
     duplicateElement: (id) => {
       const { project } = get();
       let copyId: string | null = null;
@@ -354,7 +414,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
           const { [replacing]: _moved, ...rest } = project.classes;
           set({
             project: { ...project, classes: { ...rest, [name]: styles } },
-            classesTick: get().classesTick + 1
+            classesTick: get().classesTick + 1,
+            saveStatus: dirtyStatus(get().saveStatus)
           });
         }
         if (activeClass === replacing) set({ activeClass: name });
@@ -391,7 +452,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const classes = { ...project.classes };
         if (Object.keys(styles.breakpoints).length === 0) delete classes[activeClass];
         else classes[activeClass] = styles;
-        set({ project: { ...project, classes }, classesTick: get().classesTick + 1 });
+        set({
+          project: { ...project, classes },
+          classesTick: get().classesTick + 1,
+          saveStatus: dirtyStatus(get().saveStatus)
+        });
         return;
       }
       edit(`style:${id}:${activeBreakpointId}:${activeState}:${property}`, (draft) => {
@@ -483,6 +548,10 @@ export function countElements(doc: PageDoc | null): number {
   if (doc) walkElements(doc.tree, () => (count += 1));
   return count;
 }
+
+/** Edits make a page "dirty", but never hide an unresolved conflict or an in-flight save. */
+const dirtyStatus = (status: SaveStatus): SaveStatus =>
+  status === "conflict" || status === "saving" ? status : "dirty";
 
 const sameJson = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
 

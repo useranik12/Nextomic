@@ -77,7 +77,7 @@ export function PageSettingsModal({
     }
     const list = await listPagesAction(projectId);
     if (list.error === null) onPagesChange(list.data);
-    const openError = await openPage(result.data.id, saveNow);
+    const openError = await openPage(result.data.id);
     setDuplicating(false);
     if (openError) setError(openError);
     else onClose();
@@ -94,7 +94,7 @@ export function PageSettingsModal({
     if (list.error === null) {
       onPagesChange(list.data);
       const next = list.data[0];
-      if (next) await openPage(next.id, saveNow);
+      if (next) await openPage(next.id);
     }
     onClose();
   }

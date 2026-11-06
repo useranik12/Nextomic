@@ -6,8 +6,13 @@ import {
   emptyPageTree,
   findNode,
   getStyle,
+  indentNode,
   insertNode,
   moveNode,
+  outdentNode,
+  shiftNode,
+  unwrapNode,
+  wrapNode,
   reassignBreakpointStyles,
   removeNode,
   setStyle,
@@ -116,5 +121,34 @@ describe("tree operations", () => {
     setStyle(target, "mobile", "default", "color", "x");
     reassignBreakpointStyles(root, "mobile", null);
     expect(anyStylesAt(root, "mobile")).toBe(false);
+  });
+});
+
+describe("element menu operations", () => {
+  it("shifts among siblings and stops at the edges", () => {
+    const root = sample();
+    expect(shiftNode(root, "a", -1)).toBe(false);
+    expect(shiftNode(root, "a", 1)).toBe(true);
+    expect(root.children.map((c) => c.id)).toEqual(["b", "a"]);
+  });
+
+  it("indents into the previous container and outdents after the parent", () => {
+    const root = sample();
+    expect(indentNode(root, "b", canHaveChildren)).toBe(true);
+    expect(findNode(root, "b")?.parent?.id).toBe("a");
+    expect(outdentNode(root, "b")).toBe(true);
+    expect(root.children.map((c) => c.id)).toEqual(["a", "b"]);
+    expect(outdentNode(root, "a")).toBe(false);
+    expect(indentNode(root, "a2x", canHaveChildren)).toBe(false);
+  });
+
+  it("wraps a node and unwraps it again", () => {
+    const root = sample();
+    expect(wrapNode(root, "a1", n("w", "container"))).toBe(true);
+    expect(findNode(root, "a1")?.parent?.id).toBe("w");
+    expect(findNode(root, "w")?.parent?.id).toBe("a");
+    expect(unwrapNode(root, "w")).toBe(true);
+    expect(findNode(root, "a1")?.parent?.id).toBe("a");
+    expect(unwrapNode(root, "b")).toBe(false);
   });
 });

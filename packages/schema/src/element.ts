@@ -18,6 +18,8 @@ export interface ElementNode {
   attributes?: Record<string, PropValue> | undefined;
   styles: StyleMap;
   customCss?: string | undefined;
+  /** Hidden in the editor and in output; set from the element menu. */
+  hidden?: boolean | undefined;
   visibility?: ConditionGroup | undefined;
   // Action flows land in Phase 5; flows are stored opaque until then.
   actions: Record<string, unknown[]>;
@@ -40,6 +42,7 @@ export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = 
     attributes: z.record(z.string(), propValueSchema).optional(),
     styles: styleMapSchema.default({ breakpoints: {} }),
     customCss: z.string().max(100_000).optional(),
+    hidden: z.boolean().optional(),
     visibility: conditionGroupSchema.optional(),
     actions: z.record(z.string(), z.array(z.unknown())).default({}),
     children: z.array(elementNodeSchema).default([])

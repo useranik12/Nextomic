@@ -17,22 +17,50 @@ export interface PublishState {
   publishedAt: Date | null;
   /** Pages that went out in the last publish. */
   publishedPages: number;
+  /** True when the saved draft differs from what is live (or nothing is live yet). */
+  hasUnpublishedChanges: boolean;
+}
+
+function stable(value: unknown): string {
+  return JSON.stringify(value, (_key, v: unknown) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
+      : v
+  );
+}
+
+/** What publishing would write for a page row, or null when the page is left out. */
+function snapshotOf(row: { name: string; route: string; settings: unknown; tree: unknown }) {
+  const settings = pageSettingsSchema.parse(row.settings);
+  if (!settings.includeInPublish) return null;
+  return { name: row.name, route: row.route, settings, tree: elementNodeSchema.parse(row.tree) };
 }
 
 export async function getPublishState(projectId: string): Promise<PublishState> {
   const db = getDb();
   const [project] = await db
-    .select({ publishedAt: projects.publishedAt })
+    .select({
+      publishedAt: projects.publishedAt,
+      publishedSettings: projects.publishedSettings
+    })
     .from(projects)
     .where(eq(projects.id, projectId))
     .limit(1);
-  const rows = await db
-    .select({ snapshot: pages.publishedSnapshot })
-    .from(pages)
-    .where(eq(pages.projectId, projectId));
+  const rows = await db.select().from(pages).where(eq(pages.projectId, projectId));
+  const publishedAt = project?.publishedAt ?? null;
+  let hasUnpublishedChanges = publishedAt === null;
+  if (publishedAt !== null) {
+    const live = projectSettingsSchema.safeParse(project?.publishedSettings);
+    const current = await getProjectSettings(projectId);
+    hasUnpublishedChanges =
+      !live.success ||
+      stable(live.data) !== stable(current) ||
+      rows.some((row) => stable(row.publishedSnapshot) !== stable(snapshotOf(row)));
+  }
   return {
-    publishedAt: project?.publishedAt ?? null,
-    publishedPages: rows.filter((row) => row.snapshot !== null).length
+    publishedAt,
+    publishedPages: rows.filter((row) => row.publishedSnapshot !== null).length,
+    hasUnpublishedChanges
   };
 }
 
@@ -42,15 +70,7 @@ export async function publishProject(projectId: string): Promise<PublishState> {
   await getDb().transaction(async (tx) => {
     const rows = await tx.select().from(pages).where(eq(pages.projectId, projectId));
     for (const row of rows) {
-      const pageSettings = pageSettingsSchema.parse(row.settings);
-      const snapshot: PublishedPage | null = pageSettings.includeInPublish
-        ? {
-            name: row.name,
-            route: row.route,
-            settings: pageSettings,
-            tree: elementNodeSchema.parse(row.tree)
-          }
-        : null;
+      const snapshot: PublishedPage | null = snapshotOf(row);
       await tx
         .update(pages)
         .set({ publishedSnapshot: snapshot })

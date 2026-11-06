@@ -37,6 +37,8 @@ export type HostMessage = z.infer<typeof hostMessageSchema>;
 export const canvasMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ready") }),
   z.object({ type: z.literal("select"), id: z.string().nullable() }),
+  // Right-click on an element; coordinates are inside the canvas document.
+  z.object({ type: z.literal("context"), id: z.string(), clientX: finite, clientY: finite }),
   // Document height so the frame can grow to the page and the canvas pans instead of scrolling.
   z.object({ type: z.literal("size"), height: finite.min(0).max(100_000) }),
   // Wheel and middle-button gestures happen over the iframe, so it forwards them to the host.

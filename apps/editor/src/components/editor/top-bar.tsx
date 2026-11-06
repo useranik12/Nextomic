@@ -192,12 +192,21 @@ function PublishControl({
   const [busy, setBusy] = useState<"publish" | "unpublish" | null>(null);
   const [message, setMessage] = useState<{ text: string; tone: "ok" | "error" } | null>(null);
   const [unsaved, setUnsaved] = useState<string[] | null>(null);
+  const [hasChanges, setHasChanges] = useState(true);
+  const saveStatus = useEditorStore((s) => s.saveStatus);
+  const savedTick = useEditorStore((s) => s.savedTick);
+  const breakpoints = useEditorStore((s) => s.project.breakpoints);
 
+  // The server compares the saved draft with what is live; refresh after every save.
   useEffect(() => {
     void getPublishStateAction(projectId).then((result) => {
-      if (result.error === null) setPublishedAt(result.data.publishedAt);
+      if (result.error !== null) return;
+      setPublishedAt(result.data.publishedAt);
+      setHasChanges(result.data.hasUnpublishedChanges);
     });
-  }, [projectId, setPublishedAt]);
+  }, [projectId, setPublishedAt, savedTick, breakpoints]);
+
+  const upToDate = publishedAt !== null && !hasChanges && saveStatus === "saved";
 
   // Publishing waits until every edited group is saved with its check icon (or discarded).
   function requestPublish() {
@@ -219,6 +228,7 @@ function PublishControl({
       return;
     }
     setPublishedAt(result.data.publishedAt);
+    setHasChanges(result.data.hasUnpublishedChanges);
     setMessage({ text: kind === "publish" ? "Published" : "Unpublished", tone: "ok" });
     window.setTimeout(() => setMessage(null), 3000);
   }
@@ -269,10 +279,10 @@ function PublishControl({
         <ActionButton
           className="rounded-r-none"
           isLoading={busy === "publish"}
-          isDisabled={busy !== null}
+          isDisabled={busy !== null || upToDate}
           onPress={requestPublish}
         >
-          Publish
+          {upToDate ? "Published" : "Publish"}
         </ActionButton>
         <Dropdown placement="bottom-end">
           <DropdownTrigger>
@@ -300,7 +310,10 @@ function PublishControl({
               if (key === "history") onOpenHistory();
             }}
           >
-            <DropdownItem key="save" description="Saves the draft. Only signed-in members see it">
+            <DropdownItem
+              key="save"
+              description="Saves the draft (Ctrl+S). Only signed-in members see it"
+            >
               Save
             </DropdownItem>
             <DropdownItem key="preview" description="Opens the saved draft in a new tab">
@@ -379,7 +392,7 @@ export function TopBar({
             className="dark:hidden"
           />
         </Link>
-        <PageMenu pages={pages} onPagesChange={onPagesChange} saveNow={saveNow} />
+        <PageMenu pages={pages} onPagesChange={onPagesChange} />
         <button
           type="button"
           aria-label="Page settings"

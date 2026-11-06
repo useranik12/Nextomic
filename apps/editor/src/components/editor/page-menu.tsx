@@ -33,14 +33,14 @@ export function slugify(name: string): string {
   return `/${slug}`;
 }
 
-export async function openPage(
-  pageId: string,
-  saveNow: () => Promise<void>
-): Promise<string | null> {
+export async function openPage(pageId: string): Promise<string | null> {
   const store = useEditorStore.getState();
-  if (store.saveStatus === "dirty") await saveNow();
-  if (useEditorStore.getState().saveStatus === "conflict")
-    return "Resolve the save conflict first.";
+  if (store.saveStatus === "conflict") return "Resolve the save conflict first.";
+  if (
+    (store.saveStatus === "dirty" || store.saveStatus === "error") &&
+    !window.confirm("This page has unsaved changes. Switch anyway and discard them?")
+  )
+    return null;
   const result = await loadPageAction(store.projectId, pageId);
   if (result.error !== null) return result.error;
   const page = result.data;
@@ -55,12 +55,10 @@ export async function openPage(
 
 export function PageMenu({
   pages,
-  onPagesChange,
-  saveNow
+  onPagesChange
 }: {
   pages: PageSummary[];
   onPagesChange: (pages: PageSummary[]) => void;
-  saveNow: () => Promise<void>;
 }) {
   const pageId = useEditorStore((s) => s.page?.id);
   const name = useEditorStore((s) => s.doc?.name ?? "Page");
@@ -84,7 +82,7 @@ export function PageMenu({
           selectionMode="single"
           selectedKeys={pageId ? [pageId] : []}
           onAction={async (key) => {
-            const error = await openPage(String(key), saveNow);
+            const error = await openPage(String(key));
             setMessage(error);
           }}
         >
@@ -121,7 +119,7 @@ export function PageMenu({
           onCreated={async (id) => {
             const list = await listPagesAction(useEditorStore.getState().projectId);
             if (list.error === null) onPagesChange(list.data);
-            setMessage(await openPage(id, saveNow));
+            setMessage(await openPage(id));
           }}
         />
       ) : null}
