@@ -9,7 +9,7 @@ import {
   type PublishedPage,
   type PublishedTemplate
 } from "@nextomic/schema";
-import { getDb, pages, projects, templates } from "@nextomic/db";
+import { getDb, pages, projects, templates, user } from "@nextomic/db";
 import { and, asc, eq } from "drizzle-orm";
 import { getProjectSettings } from "./pages";
 
@@ -149,6 +149,8 @@ export interface PublishedView {
   page: PublishedPage;
   /** Id of the page row; theme conditions match on it. */
   pageId: string;
+  /** Facts about the page for {{page.*}} tags and rules. */
+  meta: { createdBy: string; createdAt: string; updatedAt: string; publishedAt: string };
   settings: ProjectSettings;
 }
 
@@ -168,11 +170,34 @@ export async function getPublishedView(
     .limit(1);
   if (!project?.publishedAt) return null;
   const rows = await db
-    .select({ id: pages.id, snapshot: pages.publishedSnapshot })
+    .select({
+      id: pages.id,
+      snapshot: pages.publishedSnapshot,
+      createdAt: pages.createdAt,
+      updatedAt: pages.updatedAt,
+      publishedAt: pages.publishedAt,
+      creator: user.name
+    })
     .from(pages)
+    .leftJoin(user, eq(user.id, pages.createdBy))
     .where(eq(pages.projectId, projectId))
     .orderBy(asc(pages.createdAt));
-  const snapshots = rows.flatMap((row) => (row.snapshot ? [{ ...row.snapshot, id: row.id }] : []));
+  const snapshots = rows.flatMap((row) =>
+    row.snapshot
+      ? [
+          {
+            ...row.snapshot,
+            id: row.id,
+            meta: {
+              createdBy: row.creator ?? "",
+              createdAt: row.createdAt.toISOString(),
+              updatedAt: row.updatedAt.toISOString(),
+              publishedAt: row.publishedAt?.toISOString() ?? ""
+            }
+          }
+        ]
+      : []
+  );
   const found =
     route === null
       ? (snapshots.find((p) => p.settings.isHome) ?? snapshots[0])
@@ -183,6 +208,7 @@ export async function getPublishedView(
   return {
     publishedAt: project.publishedAt,
     pageId: found.id,
+    meta: found.meta,
     page: {
       name: found.name,
       route: found.route,
@@ -224,4 +250,18 @@ export async function getPublishedThemeCss(
     if (tree.success) for (const name of usedClassNames(tree.data)) used.add(name);
   }
   return { css: themeCss(theme, used), publishedAt: project.publishedAt };
+}
+
+/** Public read: the project settings of the live site, or null when nothing is published. */
+export async function getPublishedSite(
+  projectId: string
+): Promise<{ settings: ProjectSettings; publishedAt: Date } | null> {
+  const [project] = await getDb()
+    .select({ publishedAt: projects.publishedAt, settings: projects.publishedSettings })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  if (!project?.publishedAt) return null;
+  const settings = projectSettingsSchema.safeParse(project.settings);
+  return settings.success ? { settings: settings.data, publishedAt: project.publishedAt } : null;
 }

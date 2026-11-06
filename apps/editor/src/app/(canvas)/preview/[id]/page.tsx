@@ -2,6 +2,11 @@ import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
 import { AnimationPlayer } from "@/components/runtime/animation-player";
 import {
   buildDynamicContext,
+  composePage,
+  emptyPageTree,
+  type ElementNode,
+  type ProjectSettings,
+  type PublishedTemplate,
   collectElementAnimations,
   customCssFor,
   elementAnimationCss,
@@ -10,10 +15,14 @@ import {
 } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { cache } from "react";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
-import { getPageByRoute, getProjectSettings, listPages } from "@/server/pages";
+import { getPageByRoute, getProjectSettings, listPages, type StoredPage } from "@/server/pages";
+import { requestFacts } from "@/server/request-facts";
+import { layoutForNotFound, layoutForPage, type RequestFacts } from "@/server/site-layout";
+import { getDraftTemplates, getTemplate } from "@/server/templates";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +84,70 @@ export async function generateMetadata({
 
 // Renders the SAVED draft of a page through the same renderer the exporter will use. Owner-only;
 // it is not the published site.
+/** A template shown the way it will look: a header or footer around sample content, a 404 as is. */
+async function previewTemplate(
+  projectId: string,
+  templateId: string,
+  page: StoredPage,
+  settings: ProjectSettings,
+  all: readonly PublishedTemplate[],
+  request: RequestFacts
+) {
+  const stored = await getTemplate(projectId, templateId);
+  if (!stored) return null;
+  const forced = {
+    id: stored.id,
+    type: stored.type,
+    name: stored.name,
+    settings: { ...stored.settings, status: "published" as const },
+    tree: stored.tree
+  };
+  if (stored.type === "error-404") {
+    const others = all.filter((t) => t.id !== stored.id);
+    const { tree, dynamic } = layoutForNotFound({
+      templates: [...others, forced],
+      settings,
+      request,
+      mode: "preview",
+      projectId
+    });
+    return { tree, dynamic };
+  }
+  const sample = sampleContent();
+  const dynamic = buildDynamicContext({
+    page: { name: page.name, route: page.route, settings: page.settings },
+    mode: "preview"
+  });
+  return {
+    tree:
+      stored.type === "header"
+        ? composePage(sample, stored.tree, null)
+        : composePage(sample, null, stored.tree),
+    dynamic
+  };
+}
+
+/** Stand-in page content so a header or footer is seen in place. */
+function sampleContent(): ElementNode {
+  const root = emptyPageTree();
+  return {
+    ...root,
+    children: [
+      {
+        id: "sample-content",
+        type: "text",
+        name: "Page content",
+        htmlTag: "p",
+        classIds: [],
+        props: { text: "Page content appears here." },
+        styles: { breakpoints: {} },
+        actions: {},
+        children: []
+      }
+    ]
+  };
+}
+
 export default async function PreviewPage({
   params,
   searchParams
@@ -90,6 +163,41 @@ export default async function PreviewPage({
   for (const [key, value] of Object.entries(search)) {
     if (key !== "path" && typeof value === "string") values[key] = value;
   }
+  const incoming = await headers();
+  const request = requestFacts(incoming, page.route, new URLSearchParams(values).toString());
+  const draftTemplates = await getDraftTemplates(id);
+  const templateId = typeof search.template === "string" ? search.template : null;
+  const shown = templateId
+    ? await previewTemplate(id, templateId, page, settings, draftTemplates, request)
+    : null;
+  const { tree, dynamic } =
+    shown ??
+    layoutForPage({
+      tree: page.tree,
+      templates: draftTemplates,
+      settings,
+      page: {
+        id: page.id,
+        name: page.name,
+        route: page.route,
+        settings: page.settings,
+        meta: {
+          id: page.id,
+          status: "draft",
+          createdBy: "",
+          createdAt: "",
+          updatedAt: page.updatedAt.toISOString(),
+          publishedAt: "",
+          categoryIds: page.settings.categoryIds,
+          tagIds: page.settings.tagIds
+        }
+      },
+      params: values,
+      request,
+      mode: "preview",
+      creatorName: "",
+      projectId: id
+    });
   const { theme } = resolveTheme(settings.themes, {
     pageId: page.id,
     route: page.route,
@@ -97,13 +205,13 @@ export default async function PreviewPage({
   });
   return (
     <>
-      <style>{BASE_CSS + elementAnimationCss(page.tree)}</style>
+      <style>{BASE_CSS + elementAnimationCss(tree)}</style>
       <AnimationPlayer
         timelines={timelinesForPage(settings.animations, page.id)}
-        elementAnimations={collectElementAnimations(page.tree)}
+        elementAnimations={collectElementAnimations(tree)}
       />
       <PageRenderer
-        tree={page.tree}
+        tree={tree}
         breakpoints={settings.breakpoints}
         classes={settings.classes}
         variables={settings.variables}
@@ -111,13 +219,7 @@ export default async function PreviewPage({
         fontBase={`/fonts/${id}`}
         theme={theme}
         customCss={customCssFor(settings.cssFiles, page.id)}
-        dynamic={buildDynamicContext({
-          page: { name: page.name, route: page.route, settings: page.settings },
-          tree: page.tree,
-          mode: "preview",
-          paramValues: values,
-          query: new URLSearchParams(values).toString()
-        })}
+        dynamic={dynamic}
         bootScript
         pruneUnusedClasses
       />

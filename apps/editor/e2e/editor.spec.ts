@@ -592,3 +592,68 @@ test("custom color mode: add it, preview it from the top bar, remove it", async 
   await expect(page.getByRole("button", { name: "Preview a color mode" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Preview the site in/ })).toBeVisible();
 });
+
+test("Pages & Templates: manager, marking, header template on the site, default 404", async ({
+  page,
+  request
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+
+  // Marking on the page: a missing category is created from the plus inside the box.
+  await page.getByLabel("Category", { exact: true }).fill("News");
+  await page.getByRole("button", { name: /Create category News/ }).click();
+  await expect(
+    page.getByRole("list", { name: "Applied categories" }).getByText("News")
+  ).toBeVisible();
+  await page.getByLabel("Tags", { exact: true }).fill("launch");
+  await page.getByRole("button", { name: /Create tag launch/ }).click();
+  await expect(page.getByRole("list", { name: "Applied tags" }).getByText("launch")).toBeVisible();
+  await page.keyboard.press("Control+s");
+
+  // Manager: tabs, layouts, search.
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  await expect(page.getByRole("tab", { name: /Pages/ })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByLabel("Select Home")).toBeVisible();
+  await page.getByRole("button", { name: "Column layout" }).click();
+  await expect(page.getByRole("columnheader", { name: "Created by" })).toBeVisible();
+  await expect(page.getByRole("row", { name: /Home/ })).toBeVisible();
+  await page.getByLabel("Search pages").fill("zzz");
+  await expect(page.getByText("No pages match these filters.")).toBeVisible();
+  await page.getByLabel("Search pages").fill("hom");
+  await expect(page.getByRole("row", { name: /Home/ })).toBeVisible();
+
+  // A header template: create it, edit it, publish it.
+  await page.getByRole("tab", { name: /Templates/ }).click();
+  await page.getByRole("button", { name: "New template" }).click();
+  await page.getByRole("dialog").getByLabel("Name").fill("Main header");
+  await page.getByRole("button", { name: "Create template" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "More actions for Main header" }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  await expect(page.getByLabel("Editing context")).toContainText("Template");
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByRole("button", { name: "Template settings" }).click();
+  await page.getByRole("switch", { name: "Published" }).check({ force: true });
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
+
+  // Live: the header wraps the page content in landmarks; an unknown address shows the default 404.
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
+  const home = await (await request.get(`/site/${projectId}`)).text();
+  expect(home).toContain("<header");
+  expect(home).toContain('id="main-content"');
+  expect(home).toContain("Skip to content");
+  const missing = await request.get(`/site/${projectId}/no-such-page`);
+  expect(missing.status()).toBe(404);
+  expect(await missing.text()).toContain("Page not found");
+});
+
+test("Generate Screenshots makes one picture per page for the grid", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await page.getByRole("switch", { name: "Generate Screenshots" }).check({ force: true });
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  await expect(page.getByAltText("Screenshot of Home")).toBeVisible({ timeout: 25000 });
+});
