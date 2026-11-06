@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { elementAnimationSchema, type ElementAnimation } from "./css-animation";
 import { conditionGroupSchema, type ConditionGroup } from "./condition";
 import { styleMapSchema, type StyleMap } from "./style";
 import { propValueSchema, type PropValue } from "./value";
@@ -21,6 +22,8 @@ export interface ElementNode {
   /** Hidden in the editor and in output; set from the element menu. */
   hidden?: boolean | undefined;
   visibility?: ConditionGroup | undefined;
+  /** A ready-made CSS animation played by a trigger (Design > Animations). */
+  animation?: ElementAnimation | undefined;
   // Action flows land in Phase 5; flows are stored opaque until then.
   actions: Record<string, unknown[]>;
   children: ElementNode[];
@@ -44,6 +47,7 @@ export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = 
     customCss: z.string().max(100_000).optional(),
     hidden: z.boolean().optional(),
     visibility: conditionGroupSchema.optional(),
+    animation: elementAnimationSchema.optional(),
     actions: z.record(z.string(), z.array(z.unknown())).default({}),
     children: z.array(elementNodeSchema).default([])
   })

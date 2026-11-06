@@ -253,6 +253,12 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
     iframeRef.current?.contentWindow?.postMessage(message, "*");
   }, []);
 
+  // Element picking: the canvas dims the page while a picker waits for an element.
+  const picking = useEditorStore((s) => s.picker !== null);
+  useEffect(() => {
+    if (ready) send({ type: "pick", on: picking });
+  }, [ready, picking, send]);
+
   // Commands from the Animations editor go to the canvas that holds the page.
   useEffect(() => onAnimationCommand((command) => ready && send(command)), [ready, send]);
 

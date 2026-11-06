@@ -12,6 +12,7 @@ import {
 import { getBrandAsset } from "@/lib/assets";
 import { Icon } from "@/lib/icons/Icon";
 import { ActionButton } from "@/components/ui/controls";
+import { EditorClock } from "./editor-clock";
 import { BreakpointManager } from "./breakpoint-manager";
 import { BreakpointGlyph } from "./icons";
 import { PageMenu } from "./page-menu";
@@ -188,6 +189,7 @@ function PublishControl({
   onOpenHistory: () => void;
 }) {
   const publishedAt = useEditorStore((s) => s.publishedAt);
+  const showClock = useEditorStore((s) => s.project.showClock);
   const setPublishedAt = useEditorStore((s) => s.setPublishedAt);
   const route = useEditorStore((s) => s.doc?.route ?? "/");
   const [busy, setBusy] = useState<"publish" | "unpublish" | null>(null);
@@ -264,6 +266,7 @@ function PublishControl({
           {message.text}
         </span>
       ) : null}
+      {showClock ? <EditorClock /> : null}
       <Tooltip
         content={
           publishedAt

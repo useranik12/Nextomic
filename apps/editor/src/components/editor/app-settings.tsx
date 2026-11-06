@@ -12,6 +12,7 @@ export function AppSettings() {
   const generateIds = useEditorStore((s) => s.project.generateElementIds);
   const versionControl = useEditorStore((s) => s.project.versionControl);
   const hideEditBorder = useEditorStore((s) => s.project.hideEditBorder);
+  const showClock = useEditorStore((s) => s.project.showClock);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -79,6 +80,18 @@ export function AppSettings() {
           <p className="text-tiny text-default-500">
             Hides the blue outline of the selected element while you edit its Border settings, so
             you see the real border.
+          </p>
+        </div>
+        <div className="flex flex-col gap-1">
+          <Switch
+            isSelected={showClock}
+            isDisabled={saving}
+            onValueChange={(on) => void change({ showClock: on })}
+          >
+            <span className="text-small text-foreground">Show time in the editor</span>
+          </Switch>
+          <p className="text-tiny text-default-500">
+            Shows a running clock (hh:mm:ss, AM or PM) in the top bar, left of the open page link.
           </p>
         </div>
         {error ? (

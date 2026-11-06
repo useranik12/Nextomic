@@ -23,6 +23,8 @@ html[data-nxt-mode="dark"] body{background:#0b0b0c;color:#f2f2f2}
 [data-nid]:hover{outline:1px solid rgba(0,111,238,.55);outline-offset:-1px}
 [data-nid][data-nxt-selected]{outline:2px solid #006fee!important;outline-offset:-2px}
 html[data-nxt-hide-selection] [data-nid][data-nxt-selected]{outline:none!important}
+#nxt-pick{position:fixed;display:none;pointer-events:none;z-index:2147483646;box-shadow:0 0 0 200vmax rgba(255,105,180,.28);outline:2px solid #ff4fa3;outline-offset:-2px}
+html[data-nxt-picking],html[data-nxt-picking] *{cursor:crosshair!important}
 #nxt-drop{position:fixed;display:none;pointer-events:none;z-index:2147483647;background:rgba(0,111,238,.9)}
 #nxt-drop[data-zone="inside"]{background:rgba(0,111,238,.12);outline:2px solid #006fee;outline-offset:-2px}
 `;
@@ -43,6 +45,8 @@ export function CanvasDocument() {
   const markerRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<PreviewHandle | null>(null);
   const loadSeq = useRef(0);
+  const pickRef = useRef<HTMLDivElement>(null);
+  const [picking, setPicking] = useState(false);
 
   payloadRef.current = payload;
 
@@ -138,6 +142,7 @@ export function CanvasDocument() {
       if (!parsed.success) return;
       const message = parsed.data;
       if (message.type === "render") setPayload(message);
+      else if (message.type === "pick") setPicking(message.on);
       else if (
         message.type === "anim-load" ||
         message.type === "anim-control" ||
@@ -244,6 +249,42 @@ export function CanvasDocument() {
     };
   }, []);
 
+  // Element picking: everything is covered by a light pink fill except the element under the pointer.
+  useEffect(() => {
+    const cover = pickRef.current;
+    if (!picking || !cover) return;
+    document.documentElement.setAttribute("data-nxt-picking", "");
+    function show(rect: { left: number; top: number; width: number; height: number }) {
+      if (!cover) return;
+      cover.style.display = "block";
+      cover.style.left = `${rect.left}px`;
+      cover.style.top = `${rect.top}px`;
+      cover.style.width = `${rect.width}px`;
+      cover.style.height = `${rect.height}px`;
+    }
+    function onMove(event: MouseEvent) {
+      const hit = document.elementFromPoint(event.clientX, event.clientY);
+      const el = hit instanceof Element ? hit.closest("[data-nid]") : null;
+      show(
+        el
+          ? el.getBoundingClientRect()
+          : { left: event.clientX, top: event.clientY, width: 0, height: 0 }
+      );
+    }
+    function onLeave() {
+      show({ left: 0, top: 0, width: 0, height: 0 });
+    }
+    show({ left: 0, top: 0, width: 0, height: 0 });
+    document.addEventListener("mousemove", onMove, true);
+    document.addEventListener("mouseleave", onLeave);
+    return () => {
+      document.documentElement.removeAttribute("data-nxt-picking");
+      document.removeEventListener("mousemove", onMove, true);
+      document.removeEventListener("mouseleave", onLeave);
+      cover.style.display = "none";
+    };
+  }, [picking]);
+
   // Report the document height so the host can size the frame to the page.
   const hasPayload = payload !== null;
   useEffect(() => {
@@ -288,6 +329,7 @@ export function CanvasDocument() {
         dynamic={payload.dynamic}
       />
       <div id="nxt-drop" ref={markerRef} />
+      <div id="nxt-pick" ref={pickRef} />
     </>
   );
 }

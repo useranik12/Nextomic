@@ -450,3 +450,47 @@ test("animations: build a timeline, preview it on the canvas, see its GSAP code"
   await dialog.getByRole("tab", { name: "GSAP Code" }).click();
   await expect(dialog.getByLabel("GSAP code of the timeline")).toContainText("gsap.timeline");
 });
+
+test("CSS animation setting with element picker, clock toggle and panel size reset", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading")).toBeVisible();
+
+  await page.getByRole("tab", { name: /design/i }).click();
+  await page.getByLabel("Animations").getByRole("button", { name: "Animations" }).click();
+  await page.getByRole("button", { name: "Animation", exact: true }).click();
+  await page.getByLabel("Search animations").fill("fade in d");
+  await page.getByRole("option", { name: "Fade in down" }).click();
+  await expect(page.getByRole("button", { name: "Animation", exact: true })).toHaveText(
+    "Fade in down"
+  );
+
+  // Pick the trigger from the canvas.
+  await page.getByRole("button", { name: "Pick an element for Trigger selector" }).click();
+  await canvas.getByRole("heading").click();
+  await expect(page.getByLabel("Trigger selector", { exact: true })).toHaveValue(/^#nxtomc-/);
+
+  // The saved page plays the animation in the browser.
+  await page.getByLabel("Trigger selector", { exact: true }).focus();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  await expect(preview.getByRole("heading")).toHaveCSS("animation-name", "nxt-anim-fade-in-down");
+  await preview.close();
+
+  // The clock appears when the App Settings switch is on.
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await page.getByRole("switch", { name: "Show time in the editor" }).click();
+  await expect(page.getByLabel("Current time")).toHaveText(/^\d\d:\d\d:\d\d (AM|PM)$/);
+
+  // The Navigator header resets the side panel sizes.
+  await page.getByRole("button", { name: "Navigator", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Reset side panel sizes" })).toBeVisible();
+});

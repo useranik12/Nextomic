@@ -1,14 +1,26 @@
 "use client";
 
-import { startTimelines } from "@nextomic/runtime";
-import type { Timeline } from "@nextomic/schema";
+import { startCssAnimations, startTimelines } from "@nextomic/runtime";
+import type { ElementAnimationSpec, Timeline } from "@nextomic/schema";
 import { useEffect } from "react";
 
 /**
- * Starts the page's animation timelines in the browser (preview and published site). It renders
- * nothing. The timelines are cleaned up when the page unmounts.
+ * Starts the page's animations in the browser (preview and published site): the GSAP timelines and
+ * the ready-made CSS animations of elements. It renders nothing and cleans up on unmount.
  */
-export function AnimationPlayer({ timelines }: { timelines: Timeline[] }) {
+export function AnimationPlayer({
+  timelines,
+  elementAnimations
+}: {
+  timelines: Timeline[];
+  elementAnimations: ElementAnimationSpec[];
+}) {
+  useEffect(() => {
+    if (elementAnimations.length === 0) return;
+    const handle = startCssAnimations(elementAnimations);
+    return () => handle.destroy();
+  }, [elementAnimations]);
+
   useEffect(() => {
     if (timelines.length === 0) return;
     let destroyed = false;

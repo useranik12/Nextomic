@@ -9,10 +9,10 @@ import {
   type PointerEvent
 } from "react";
 
-const MAX_FRACTION = 0.35;
+const MAX_FRACTION = 0.25;
 const KEY_STEP = 16;
 
-/** The widest a side panel may be: 35% of the window, never narrower than its minimum. */
+/** The widest a side panel may be: 25% of the window, never narrower than its minimum. */
 export const maxPanelWidth = (min: number): number =>
   Math.max(min, Math.floor(window.innerWidth * MAX_FRACTION));
 
@@ -28,13 +28,13 @@ function readStored(key: string): number | null {
 
 /**
  * A side panel width the user can drag, remembered in this browser. The width always stays between
- * `min` and 35% of the window, also when the window is made smaller.
+ * `min` and 25% of the window, also when the window is made smaller.
  */
 export function usePanelWidth(
   storageKey: string,
   initial: number,
   min: number
-): { width: number; setWidth: (next: number) => void } {
+): { width: number; setWidth: (next: number) => void; reset: () => void } {
   const [width, setRaw] = useState(initial);
 
   const clamp = useCallback(
@@ -62,7 +62,16 @@ export function usePanelWidth(
     [clamp, storageKey]
   );
 
-  return { width, setWidth };
+  const reset = useCallback(() => {
+    setRaw(clamp(initial));
+    try {
+      window.localStorage.removeItem(storageKey);
+    } catch {
+      // Nothing stored to clear.
+    }
+  }, [clamp, initial, storageKey]);
+
+  return { width, setWidth, reset };
 }
 
 /**

@@ -142,6 +142,14 @@ Superseded by `templates-and-themes.md` (themes are built; see the decisions log
   - Every control has an (i) tip. Timelines can be exported to and imported from JSON (ids are renewed on import).
   - Open: pre-built animation presets, reusable named animations called from action flows, `prefers-reduced-motion`, drag between folders, keyframe-level editing.
 
+### 9.1 Element CSS animations (Design tab > Animations)
+
+- Per element: `ElementNode.animation` (`packages/schema/src/css-animation.ts`). Settings: trigger (click, hover, focus, enter view, leave view, scroll, content loaded), trigger selector (empty = the element), delay in ms, scroll offset in px (scroll trigger only), animation, duration in seconds (decimals allowed), target (self or CSS selector), target selector, run only once per session.
+- The library holds Animate.css-style keyframes (attention seekers, fade, bounce, flip, rotate, hinge, roll, zoom, slide; in and out, four sides each), searchable by name. `@keyframes` are written only for animations a page uses (`elementAnimationCss`), in preview and the published site.
+- `startCssAnimations` (`packages/runtime`) wires triggers; entrance animations start invisible until played. Reduced-motion visitors get no animation. Once-per-session uses `sessionStorage`.
+- Element picker: the crosshair beside a selector field puts the editor in pick mode. The canvas covers the page with a light pink fill and clears the element under the pointer; a click on the canvas or a Navigator row picks it (an ID is added if it has none) and Esc cancels.
+- Not previewed on the editor canvas; use Preview.
+
 ## 10. Element IDs
 
 - `nxtomc-` + 8 chars from `a-z0-9`, cryptographically random, unique per page, generated when the project setting "Generate element ID automatically" is on. Never regenerate an ID once published unless the user asks.
