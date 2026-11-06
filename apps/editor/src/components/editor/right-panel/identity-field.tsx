@@ -12,7 +12,8 @@ import { useEditorStore } from "../store/editor-store";
 import { SettingRow, compactFieldClass } from "./setting-row";
 
 const CLASS_CHIP = "bg-sky-500/15 text-sky-700 dark:text-sky-300";
-const ID_FIELD = "!border-violet-500/40 bg-violet-500/10 font-mono";
+const ID_CHIP = "bg-amber-500/15 text-amber-700 dark:text-amber-300";
+const ID_FIELD = "!border-amber-500/50 bg-amber-500/10 font-mono";
 const CLASS_FIELD = "!border-sky-500/50 bg-sky-500/15 font-mono";
 
 /**
@@ -149,13 +150,29 @@ export function IdentityField({ node }: { node: ElementNode }) {
             : "Design edits change this element only."}
         </p>
       )}
-      {node.classIds.length > 0 ? (
-        <ul aria-label="Applied classes" className="flex flex-wrap gap-1.5">
+      {node.htmlId || node.classIds.length > 0 ? (
+        <ul aria-label="Applied ID and classes" className="flex flex-wrap gap-1.5">
+          {node.htmlId ? (
+            <Chip
+              prefix="#"
+              value={node.htmlId}
+              tone={ID_CHIP}
+              ring="ring-amber-500"
+              active={!activeClass}
+              hint="Double-click to edit the ID"
+              onActivate={() => setActiveClass(null)}
+              onRemove={() => setHtmlId(node.id, "")}
+            />
+          ) : null}
           {node.classIds.map((name) => (
             <Chip
               key={name}
+              prefix="."
               value={name}
+              tone={CLASS_CHIP}
+              ring="ring-sky-500"
               active={activeClass === name}
+              hint="Double-click to edit this class"
               onActivate={() => setActiveClass(name)}
               onRemove={() => removeClass(node.id, name)}
             />
@@ -167,40 +184,50 @@ export function IdentityField({ node }: { node: ElementNode }) {
 }
 
 function Chip({
+  prefix,
   value,
+  tone,
+  ring,
   active,
+  hint,
   onActivate,
   onRemove
 }: {
+  prefix: "#" | ".";
   value: string;
+  tone: string;
+  ring: string;
   active: boolean;
+  hint: string;
   onActivate: () => void;
   onRemove: () => void;
 }) {
   return (
     <li
       className={
-        "flex h-6 items-center rounded-full text-tiny " +
-        CLASS_CHIP +
-        (active ? " ring-2 ring-sky-500" : "")
+        "flex h-6 items-center rounded-full text-tiny " + tone + (active ? ` ring-2 ${ring}` : "")
       }
     >
       <button
         type="button"
         aria-pressed={active}
-        aria-label={`Class ${value}. Double-click to edit it`}
-        title="Double-click to edit this class"
-        onDoubleClick={onActivate}
+        aria-label={`${prefix}${value}. ${hint}`}
+        title={hint}
+        // Only a double click or double tap activates; a single click does nothing.
+        onClick={(e) => {
+          if (e.detail >= 2) onActivate();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") onActivate();
         }}
         className="max-w-[170px] truncate pl-2.5 pr-1 font-mono font-medium"
       >
+        {prefix}
         {value}
       </button>
       <button
         type="button"
-        aria-label={`Remove ${value}`}
+        aria-label={`Remove ${prefix}${value}`}
         onClick={onRemove}
         className="mr-1 flex h-4 w-4 items-center justify-center rounded-full opacity-70 transition-opacity duration-300 hover:opacity-100"
       >
