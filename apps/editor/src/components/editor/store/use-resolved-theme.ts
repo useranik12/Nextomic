@@ -14,8 +14,8 @@ export function useResolvedTheme(): Theme | null {
   );
 }
 
-/** The top bar switch previews light or dark; a theme without that mode shows its default mode. */
-export function themeModeFor(theme: Theme | null, preferred: "light" | "dark"): string {
+/** The top bar previews one mode id; a theme without that mode shows its default mode. */
+export function themeModeFor(theme: Theme | null, preferred: string): string {
   if (!theme) return preferred;
   return themeModes(theme).some((m) => m.id === preferred) ? preferred : themeDefaultMode(theme);
 }

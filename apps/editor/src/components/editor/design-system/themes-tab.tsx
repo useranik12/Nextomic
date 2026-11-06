@@ -8,6 +8,7 @@ import type { PageSummary } from "@/server/pages";
 import { useEditorStore } from "../store/editor-store";
 import { InfoTip, LabelWithTip } from "@/components/ui/info-tip";
 import { SwitchRow } from "@/components/ui/switch-row";
+import { ThemeModes } from "./theme-modes";
 import { ThemeConditions } from "./theme-conditions";
 import { ThemeVariables } from "./theme-variables";
 
@@ -197,6 +198,10 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
               />
               {selected.darkMode ? (
                 <div className="flex flex-col gap-3 rounded-large border border-divider p-3">
+                  <ThemeModes
+                    theme={selected}
+                    onChange={(next) => commit(themes.map((t) => (t.id === next.id ? next : t)))}
+                  />
                   <SelectField
                     compact
                     label="Color mode a visitor sees first"
