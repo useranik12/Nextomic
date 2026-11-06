@@ -29,6 +29,8 @@ export function IdentityField({ node }: { node: ElementNode }) {
   const removeClass = useEditorStore((s) => s.removeElementClass);
   const activeClass = useEditorStore((s) => s.activeClass);
   const setActiveClass = useEditorStore((s) => s.setActiveClass);
+  // With automatic IDs on, every element keeps an ID: it can be renamed but not removed.
+  const idRequired = useEditorStore((s) => s.project.generateElementIds);
   const base = activeClass ?? (node.htmlId ? `#${node.htmlId}` : "");
   const [text, setText] = useState(base);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,9 @@ export function IdentityField({ node }: { node: ElementNode }) {
   function applyId(raw: string) {
     const value = raw.slice(1);
     if (value === "") {
-      setHtmlId(node.id, "");
+      if (idRequired)
+        setError("Automatic IDs are on, so an element always keeps an ID. Rename it instead.");
+      else setHtmlId(node.id, "");
       return;
     }
     if (!HTML_ID_PATTERN.test(value) || value.length > 64) {
@@ -159,9 +163,12 @@ export function IdentityField({ node }: { node: ElementNode }) {
               tone={ID_CHIP}
               ring="ring-amber-500"
               active={!activeClass}
-              hint="Double-click to edit the ID"
-              onActivate={() => setActiveClass(null)}
-              onRemove={() => setHtmlId(node.id, "")}
+              hint={
+                idRequired
+                  ? "Active whenever no class is selected. Rename it in the field above."
+                  : "Active whenever no class is selected"
+              }
+              onRemove={idRequired ? undefined : () => setHtmlId(node.id, "")}
             />
           ) : null}
           {node.classIds.map((name) => (
@@ -199,8 +206,9 @@ function Chip({
   ring: string;
   active: boolean;
   hint: string;
-  onActivate: () => void;
-  onRemove: () => void;
+  /** Omitted for the ID chip, which is active automatically and cannot be selected. */
+  onActivate?: () => void;
+  onRemove?: (() => void) | undefined;
 }) {
   return (
     <li
@@ -217,24 +225,28 @@ function Chip({
         title={hint}
         // Only a double click or double tap activates; a single click does nothing.
         onClick={(e) => {
-          if (e.detail >= 2) onActivate();
+          if (e.detail >= 2) onActivate?.();
         }}
         onKeyDown={(e) => {
-          if (e.key === "Enter") onActivate();
+          if (e.key === "Enter") onActivate?.();
         }}
-        className="max-w-[170px] truncate pl-2.5 pr-1 font-mono font-medium"
+        className={
+          "max-w-[170px] truncate pl-2.5 font-mono font-medium " + (onRemove ? "pr-1" : "pr-2.5")
+        }
       >
         {prefix}
         {value}
       </button>
-      <button
-        type="button"
-        aria-label={`Remove ${prefix}${value}`}
-        onClick={onRemove}
-        className="mr-1 flex h-4 w-4 items-center justify-center rounded-full opacity-70 transition-opacity duration-300 hover:opacity-100"
-      >
-        <Icon name="ph:x" width={10} height={10} />
-      </button>
+      {onRemove ? (
+        <button
+          type="button"
+          aria-label={`Remove ${prefix}${value}`}
+          onClick={onRemove}
+          className="mr-1 flex h-4 w-4 items-center justify-center rounded-full opacity-70 transition-opacity duration-300 hover:opacity-100"
+        >
+          <Icon name="ph:x" width={10} height={10} />
+        </button>
+      ) : null}
     </li>
   );
 }

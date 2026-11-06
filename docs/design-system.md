@@ -51,6 +51,7 @@ interface StyleClass {
 - Editing the CSS text parses it back into the `StyleMap`. Declarations/selectors the parser cannot model go to `raw` and are preserved verbatim, never dropped.
 - Use a real CSS parser (e.g. PostCSS or lightningcss). Round-trip tests are mandatory: visual edit → CSS → parse → same `StyleMap`; CSS edit → `StyleMap` → CSS → equal after normalization.
 - Invalid CSS: show inline errors, do not overwrite the last valid state.
+- Implementation: `styleMapToCss` / `parseStyleCss` in `packages/schema/src/css-text.ts`. A rule maps to the map only when its selector is exactly the target (`.class`, `#id`) plus an optional `:hover|:focus|:active|:disabled`, inside no at-rule or a `@media` that equals a project breakpoint. Everything else (other selectors, other at-rules, comments, vendor properties) goes to `raw` and is output verbatim after the structured rules (never able to close the `<style>` tag). Bare declarations count as base/default.
 
 ## 5. Design tab groups
 

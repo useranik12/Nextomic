@@ -20,6 +20,10 @@ export function DesignIcon({ id }: { id: string }) {
       return <Icon name="ph:text-aa" width={18} height={18} />;
     case "group-background":
       return <Icon name="ph:paint-bucket" width={18} height={18} />;
+    case "group-position":
+      return <Icon name="ph:crosshair" width={18} height={18} />;
+    case "group-effects":
+      return <Icon name="ph:sparkle" width={18} height={18} />;
     case "group-border":
       return <Icon name="ph:square" width={18} height={18} />;
     case "row":

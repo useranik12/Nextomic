@@ -15,6 +15,7 @@ import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { STATUS_DOT } from "../top-bar";
 import { DESIGN_GROUPS, type DesignProperty } from "./design-groups";
+import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
 import { IdentityField } from "./identity-field";
@@ -335,6 +336,21 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 </div>
               </details>
             ))}
+            {!q || "css".includes(q) ? (
+              <details className="group flex flex-col gap-3">
+                <summary className="flex cursor-pointer list-none items-center gap-2 text-small font-medium text-foreground">
+                  <Icon name="ph:code" width={18} height={18} />
+                  CSS
+                  <Icon
+                    name="ph:caret-down"
+                    width={12}
+                    height={12}
+                    className="ml-auto transition-transform group-open:rotate-180"
+                  />
+                </summary>
+                <CssEditor key={node.id} node={node} />
+              </details>
+            ) : null}
             {q && groups.length === 0 ? (
               <p className="text-small text-default-500">No settings match.</p>
             ) : null}

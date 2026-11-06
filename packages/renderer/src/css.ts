@@ -79,6 +79,8 @@ function stylesCss(
     if (rules.length === 0) continue;
     out.push(media ? `@media ${media}{${rules.join("")}}` : rules.join(""));
   }
+  // CSS the structured map cannot hold is kept verbatim; it must not be able to close the <style> tag.
+  if (styles.raw && !/<\/style/i.test(styles.raw)) out.push(styles.raw);
   return out.join("");
 }
 
