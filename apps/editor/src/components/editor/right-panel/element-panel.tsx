@@ -11,6 +11,7 @@ import { STATUS_DOT } from "../top-bar";
 import { DESIGN_GROUPS } from "./design-groups";
 import { GroupBody } from "./group-body";
 import { AccordionSection } from "./accordion";
+import { AutoTextarea } from "./auto-textarea";
 import { AttributesEditor } from "./attributes-editor";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
@@ -46,12 +47,11 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
     <SettingRow label={control.label} htmlFor={id}>
       <div className="relative">
         {control.kind === "textarea" ? (
-          <textarea
+          <AutoTextarea
             id={id}
             value={value}
-            rows={3}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full rounded-large border-2 border-default-200 bg-transparent py-2 pl-3 pr-9 text-small text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
+            className="w-full resize-none rounded-large border-2 border-default-200 bg-transparent py-2 pl-3 pr-9 text-small text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
           />
         ) : (
           <input

@@ -1,12 +1,12 @@
 "use client";
 
-import { isElementNameTaken, type ElementNode } from "@nextomic/schema";
+import type { ElementNode } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
 import { useEditorStore } from "./store/editor-store";
 
 /**
  * Inline name editor for an element. The name is how action flows and queries find the element, so
- * it is saved on Enter or blur only when it is not empty and no other element has it. Escape drops
+ * it is saved on Enter or blur when it is not empty. Names need not be unique. Escape drops
  * the edit.
  */
 export function RenameField({
@@ -24,13 +24,10 @@ export function RenameField({
   onDone?: () => void;
 }) {
   const rename = useEditorStore((s) => s.renameElement);
-  const tree = useEditorStore((s) => s.doc?.tree ?? null);
   const current = node.name ?? fallback;
   const [draft, setDraft] = useState(current);
   const ref = useRef<HTMLInputElement>(null);
-  const taken =
-    tree !== null && draft.trim() !== "" && isElementNameTaken(tree, draft.trim(), node.id);
-  const invalid = taken || draft.trim() === "";
+  const invalid = draft.trim() === "";
 
   useEffect(() => setDraft(current), [current]);
   useEffect(() => {
@@ -76,11 +73,6 @@ export function RenameField({
           (invalid ? "text-danger" : "")
         }
       />
-      {taken ? (
-        <p role="alert" className="text-tiny text-danger">
-          Another element already has this name.
-        </p>
-      ) : null}
     </div>
   );
 }

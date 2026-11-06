@@ -23,7 +23,8 @@ export function typesForProperty(property: string): VariableType[] | null {
     )
   )
     return ["size", "fluid-size"];
-  return null;
+  // Any other text value (aspect ratio, origin, transition ...) can still be a string or number variable.
+  return ["string", "number"];
 }
 
 /** The variable button beside a Design value: pick a project variable to use as the value. */

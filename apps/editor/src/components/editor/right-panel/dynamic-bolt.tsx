@@ -86,13 +86,12 @@ function DynamicDataModal({
   onPick: (token: string) => void;
 }) {
   const settings = useEditorStore((s) => s.doc?.settings);
-  const tree = useEditorStore((s) => s.doc?.tree ?? null);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("all");
   const excludeKey = exclude?.join(",") ?? "";
   const groups = useMemo(
-    () => dynamicGroups(settings, excludeKey ? (excludeKey.split(",") as Exclude) : [], tree),
-    [settings, excludeKey, tree]
+    () => dynamicGroups(settings, excludeKey ? (excludeKey.split(",") as Exclude) : []),
+    [settings, excludeKey]
   );
   const q = query.trim().toLowerCase();
   const visible = groups
@@ -168,7 +167,8 @@ function DynamicDataModal({
                       key={tag.token}
                       type="button"
                       onClick={() => onPick(tag.token)}
-                      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-large bg-default-100 px-4 py-2 text-left transition-colors duration-300 hover:bg-default-200"
+                      title={tag.help}
+                      className="group flex min-h-11 w-full items-center justify-between gap-3 rounded-large bg-default-100 px-4 py-2 text-left transition-colors duration-300 hover:bg-default-200"
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-mono text-small text-foreground">
@@ -177,6 +177,11 @@ function DynamicDataModal({
                         <span className="block truncate text-tiny text-default-500">
                           {tag.label}
                         </span>
+                        {tag.help ? (
+                          <span className="mt-1 hidden whitespace-normal text-tiny text-default-600 group-hover:block group-focus-visible:block">
+                            {tag.help}
+                          </span>
+                        ) : null}
                       </span>
                       <span className="shrink-0 text-tiny text-default-500">{tag.hint}</span>
                     </button>

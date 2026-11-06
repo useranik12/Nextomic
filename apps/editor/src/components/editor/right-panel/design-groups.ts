@@ -13,6 +13,8 @@ export interface DesignProperty {
   fontOption?: "weight" | "style";
   /** Shown at half width beside the next half-width property (min and max width, the two gaps). */
   half?: boolean;
+  /** Ready-made values listed under the field while it has focus. */
+  suggestions?: string[];
   /** Settings with the same cluster id sit close together; clusters are spaced further apart. */
   cluster?: string;
   /** A visual editor in a popover instead of a text field. */
@@ -167,7 +169,22 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         half: true,
         cluster: "height"
       },
-      { property: "aspect-ratio", label: "Aspect ratio", placeholder: "16 / 9" },
+      {
+        property: "aspect-ratio",
+        label: "Aspect ratio",
+        placeholder: "16 / 9",
+        suggestions: [
+          "21 / 9",
+          "16 / 9",
+          "4 / 3",
+          "3 / 2",
+          "1 / 1",
+          "2 / 3",
+          "3 / 4",
+          "9 / 16",
+          "9 / 21"
+        ]
+      },
       {
         property: "object-fit",
         label: "Object fit",

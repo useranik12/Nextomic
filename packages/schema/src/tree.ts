@@ -243,13 +243,3 @@ export function unwrapNode(root: ElementNode, id: string): boolean {
   found.parent.children.splice(found.index, 1, ...found.node.children);
   return true;
 }
-
-/** True when another element on the page already has this name (case-insensitive). */
-export function isElementNameTaken(root: ElementNode, name: string, exceptId: string): boolean {
-  const wanted = name.trim().toLowerCase();
-  let taken = false;
-  walkElements(root, (node) => {
-    if (node.id !== exceptId && node.name?.trim().toLowerCase() === wanted) taken = true;
-  });
-  return taken;
-}

@@ -25,15 +25,14 @@ export const dynamicContextSchema = z.object({
     query: z.string().max(2000)
   }),
   /**
-   * Elements that have an ID, by that ID: their attributes and props as text. Read with
-   * `{{attr.NAME@ELEMENT_ID}}` and `{{prop.NAME@ELEMENT_ID}}`.
+   * Elements that have an ID, by that ID: their attributes as text. Read with
+   * `{{attr @ ELEMENT_ID:attribute-name}}`.
    */
   elements: z
     .record(
       z.string(),
       z.object({
-        attrs: z.record(z.string(), z.string().max(5000)),
-        props: z.record(z.string(), z.string().max(5000))
+        attrs: z.record(z.string(), z.string().max(5000))
       })
     )
     .default({}),
@@ -73,7 +72,7 @@ function plainText(value: PropValue | undefined): string {
   return flatten(value);
 }
 
-/** Attributes and props of every element that has an ID, as plain text (tokens inside are dropped). */
+/** Attributes of every element that has an ID, as plain text (tokens inside are dropped). */
 function elementValues(root: ElementNode): DynamicContext["elements"] {
   const out: DynamicContext["elements"] = {};
   walkElements(root, (node) => {
@@ -81,9 +80,7 @@ function elementValues(root: ElementNode): DynamicContext["elements"] {
     const attrs: Record<string, string> = {};
     for (const [name, value] of Object.entries(node.attributes ?? {}))
       attrs[name] = plainText(value);
-    const props: Record<string, string> = {};
-    for (const [name, value] of Object.entries(node.props)) props[name] = plainText(value);
-    out[node.htmlId] = { attrs, props };
+    out[node.htmlId] = { attrs };
   });
   return out;
 }
@@ -156,14 +153,12 @@ function jsonPath(text: string, path: readonly string[]): string {
   return typeof node === "object" ? JSON.stringify(node) : String(node);
 }
 
-/** `attr.NAME` or `prop.NAME` read from the element with this ID; anything missing gives "". */
-function fromElement(context: DynamicContext, what: string, elementId: string): string {
-  const [group, name] = what.split(".");
-  const element = context.elements[elementId];
-  if (!element || !name) return "";
-  if (group === "attr") return element.attrs[name] ?? "";
-  if (group === "prop") return element.props[name] ?? "";
-  return "";
+/** The target-attribute tag: `attr @ ELEMENT_ID:attribute-name`. Anything missing gives "". */
+const ELEMENT_ATTRIBUTE = /^attr\s*@\s*([^\s:]+)\s*:\s*([^\s]+)$/;
+
+function fromElement(context: DynamicContext, match: RegExpExecArray): string {
+  const element = context.elements[match[1] as string];
+  return element?.attrs[match[2] as string] ?? "";
 }
 
 /**
@@ -173,8 +168,8 @@ function fromElement(context: DynamicContext, what: string, elementId: string): 
 export function createTokenResolver(context: DynamicContext): (token: string) => string {
   const when = nowParts(context.nowIso, context.timeZone);
   return (raw) => {
-    const at = raw.lastIndexOf("@");
-    if (at > 0) return fromElement(context, raw.slice(0, at).trim(), raw.slice(at + 1).trim());
+    const target = ELEMENT_ATTRIBUTE.exec(raw.trim());
+    if (target) return fromElement(context, target);
     const [group, name, ...rest] = raw.trim().split(".");
     if (!group || !name) return "";
     switch (group) {

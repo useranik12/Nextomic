@@ -63,17 +63,92 @@ export interface CallField {
   step: number;
   /** The value that does nothing: the call is dropped when the field returns to it. */
   neutral: number;
+  /** CSS background for the slider track: the colors or shades the control moves through. */
+  track: string;
 }
 
 export const FILTER_FIELDS: readonly CallField[] = [
-  { name: "blur", label: "Blur", unit: "px", min: 0, max: 40, step: 0.5, neutral: 0 },
-  { name: "brightness", label: "Brightness", unit: "", min: 0, max: 3, step: 0.05, neutral: 1 },
-  { name: "contrast", label: "Contrast", unit: "", min: 0, max: 3, step: 0.05, neutral: 1 },
-  { name: "hue-rotate", label: "Hue", unit: "deg", min: 0, max: 360, step: 1, neutral: 0 },
-  { name: "invert", label: "Invert", unit: "", min: 0, max: 1, step: 0.05, neutral: 0 },
-  { name: "opacity", label: "Opacity", unit: "", min: 0, max: 1, step: 0.05, neutral: 1 },
-  { name: "saturate", label: "Saturation", unit: "", min: 0, max: 3, step: 0.05, neutral: 1 },
-  { name: "sepia", label: "Sepia", unit: "", min: 0, max: 1, step: 0.05, neutral: 0 }
+  {
+    name: "blur",
+    label: "Blur",
+    unit: "px",
+    min: 0,
+    max: 40,
+    step: 0.5,
+    neutral: 0,
+    track: "linear-gradient(90deg,#e4e4e7,#a1a1aa 60%,#52525b)"
+  },
+  {
+    name: "brightness",
+    label: "Brightness",
+    unit: "",
+    min: 0,
+    max: 3,
+    step: 0.05,
+    neutral: 1,
+    track: "linear-gradient(90deg,#000,#fff)"
+  },
+  {
+    name: "contrast",
+    label: "Contrast",
+    unit: "",
+    min: 0,
+    max: 3,
+    step: 0.05,
+    neutral: 1,
+    track: "linear-gradient(90deg,#8c8c8c,#303030 60%,#000)"
+  },
+  {
+    name: "hue-rotate",
+    label: "Hue",
+    unit: "deg",
+    min: 0,
+    max: 360,
+    step: 1,
+    neutral: 0,
+    track: "linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"
+  },
+  {
+    name: "invert",
+    label: "Invert",
+    unit: "",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    neutral: 0,
+    track: "linear-gradient(90deg,#fff,#000)"
+  },
+  {
+    name: "opacity",
+    label: "Opacity",
+    unit: "",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    neutral: 1,
+    track:
+      "linear-gradient(90deg,transparent,#52525b),conic-gradient(#d4d4d8 25%,#fff 0 50%,#d4d4d8 0 75%,#fff 0) 0 0/8px 8px"
+  },
+  {
+    name: "saturate",
+    label: "Saturation",
+    unit: "",
+    min: 0,
+    max: 3,
+    step: 0.05,
+    neutral: 1,
+    track: "linear-gradient(90deg,#808080,#3b82f6,#ec4899)"
+  },
+  {
+    name: "sepia",
+    label: "Sepia",
+    unit: "",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    neutral: 0,
+    track: "linear-gradient(90deg,#d4d4d8,#704214)"
+  }
 ];
 
 export const TRANSFORM_FIELDS: readonly CallField[] = [
@@ -84,7 +159,8 @@ export const TRANSFORM_FIELDS: readonly CallField[] = [
     min: -500,
     max: 500,
     step: 1,
-    neutral: 0
+    neutral: 0,
+    track: "linear-gradient(90deg,#3b82f6,#e4e4e7 50%,#f97316)"
   },
   {
     name: "translateY",
@@ -93,7 +169,8 @@ export const TRANSFORM_FIELDS: readonly CallField[] = [
     min: -500,
     max: 500,
     step: 1,
-    neutral: 0
+    neutral: 0,
+    track: "linear-gradient(90deg,#3b82f6,#e4e4e7 50%,#f97316)"
   },
   {
     name: "translateZ",
@@ -102,15 +179,79 @@ export const TRANSFORM_FIELDS: readonly CallField[] = [
     min: -500,
     max: 500,
     step: 1,
-    neutral: 0
+    neutral: 0,
+    track: "linear-gradient(90deg,#3b82f6,#e4e4e7 50%,#f97316)"
   },
-  { name: "scale", label: "Scale", unit: "", min: 0, max: 3, step: 0.05, neutral: 1 },
-  { name: "rotate", label: "Rotate", unit: "deg", min: -360, max: 360, step: 1, neutral: 0 },
-  { name: "rotateX", label: "Rotate X", unit: "deg", min: -360, max: 360, step: 1, neutral: 0 },
-  { name: "rotateY", label: "Rotate Y", unit: "deg", min: -360, max: 360, step: 1, neutral: 0 },
-  { name: "skewX", label: "Skew X", unit: "deg", min: -90, max: 90, step: 1, neutral: 0 },
-  { name: "skewY", label: "Skew Y", unit: "deg", min: -90, max: 90, step: 1, neutral: 0 },
-  { name: "perspective", label: "Perspective", unit: "px", min: 0, max: 2000, step: 10, neutral: 0 }
+  {
+    name: "scale",
+    label: "Scale",
+    unit: "",
+    min: 0,
+    max: 3,
+    step: 0.05,
+    neutral: 1,
+    track: "linear-gradient(90deg,#e4e4e7,#22c55e)"
+  },
+  {
+    name: "rotate",
+    label: "Rotate",
+    unit: "deg",
+    min: -360,
+    max: 360,
+    step: 1,
+    neutral: 0,
+    track: "linear-gradient(90deg,#8b5cf6,#e4e4e7 50%,#ec4899)"
+  },
+  {
+    name: "rotateX",
+    label: "Rotate X",
+    unit: "deg",
+    min: -360,
+    max: 360,
+    step: 1,
+    neutral: 0,
+    track: "linear-gradient(90deg,#8b5cf6,#e4e4e7 50%,#ec4899)"
+  },
+  {
+    name: "rotateY",
+    label: "Rotate Y",
+    unit: "deg",
+    min: -360,
+    max: 360,
+    step: 1,
+    neutral: 0,
+    track: "linear-gradient(90deg,#8b5cf6,#e4e4e7 50%,#ec4899)"
+  },
+  {
+    name: "skewX",
+    label: "Skew X",
+    unit: "deg",
+    min: -90,
+    max: 90,
+    step: 1,
+    neutral: 0,
+    track: "linear-gradient(90deg,#14b8a6,#e4e4e7 50%,#eab308)"
+  },
+  {
+    name: "skewY",
+    label: "Skew Y",
+    unit: "deg",
+    min: -90,
+    max: 90,
+    step: 1,
+    neutral: 0,
+    track: "linear-gradient(90deg,#14b8a6,#e4e4e7 50%,#eab308)"
+  },
+  {
+    name: "perspective",
+    label: "Perspective",
+    unit: "px",
+    min: 0,
+    max: 2000,
+    step: 10,
+    neutral: 0,
+    track: "linear-gradient(90deg,#e4e4e7,#0ea5e9)"
+  }
 ];
 
 /** The number a call holds for a field, or null when it is not a plain number with the field's unit. */

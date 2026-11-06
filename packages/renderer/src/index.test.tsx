@@ -308,7 +308,7 @@ describe("element attributes and element tokens", () => {
       id: "dst",
       type: "container",
       attributes: {
-        "aria-label": { kind: "mixed", parts: [{ token: "attr.data-label@nxtomc-source01" }] },
+        "aria-label": { kind: "mixed", parts: [{ token: "attr @ nxtomc-source01:data-label" }] },
         href: "javascript:alert(1)",
         required: ""
       }
@@ -328,5 +328,21 @@ describe("element attributes and element tokens", () => {
     expect(html).toContain('aria-label="Hello"');
     expect(html).not.toContain("javascript:");
     expect(html).toContain('required=""');
+  });
+});
+
+describe("dynamic style values", () => {
+  it("fills tokens in style values and drops them without a resolver", () => {
+    const el = node({
+      id: "c",
+      type: "container",
+      styles: {
+        breakpoints: { base: { default: { width: "{{page.name}}px", color: "{{page.name}}" } } }
+      }
+    });
+    expect(elementCss(el, DEFAULT_BREAKPOINTS)).toBe("");
+    expect(elementCss(el, DEFAULT_BREAKPOINTS, () => "40")).toBe(
+      '[data-nid="c"]{width:40px;color:40}'
+    );
   });
 });
