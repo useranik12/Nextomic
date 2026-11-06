@@ -16,6 +16,7 @@ Two systems that decide how a page looks and what surrounds it. Both pick what a
 
 A **rule** compares one **field** with a **value** using an **operator**. Rules join in **groups**: **all** (AND) or **any** (OR). A group can hold other groups (4 levels, 100 rules). An empty set applies everywhere.
 
+- **Whole site** (group Site) is a field that is always true. **Excluding** turns a rule, or a nested group, into "must NOT match"; a browser-only fact is never matched and never counts as excluded.
 - **Fields:** Page (name, id, created by, published date, route, parameter, state, element attribute by ID, element with class, element with attribute), User (name, email, role, username, id, joined on, workspace, project name, project id, image, email verified, verification status, logged in), Date and time (date, time, ISO, day of week, day of month, month, year, hour, minute, is weekend), Browser (name, version, language, mobile), Operating system (name, device type), URL (full, host, path, query, referrer), Document (is a page, is a template, template type), Dynamic data.
 - **Dynamic data field:** the key holds a dynamic tag such as `{{param.id}}`. The rule compares what the tag resolves to with the value. The value field also accepts dynamic tags (bolt).
 - **Operators by kind:** text (equals, does not equal, contains, does not contain, starts with, ends with, is in, is not in, is empty, is not empty), number (equals, does not equal, more than, less than, is in, is not in), date and time (equals, does not equal, before, after, is in, is not in), true or false (is true, is false). Text compares ignore case. "is in" takes a comma separated list.
@@ -110,7 +111,9 @@ interface Template {
 ### 4.3 Header and footer
 
 - At most one header and one footer apply to a page: highest priority, then specificity.
-- A page can choose No header, No footer, or a specific template (page settings).
+- Templates render by their own conditions. Page Settings has no header or footer picker (the schema keeps the per-page `header` and `footer` choice for later use; the editor does not expose it).
+- The editor canvas shows the header and footer that apply to the open page, above and below the page elements. They are shown, not editable (clicks pass through); edit them by opening the template. They are the saved templates, reloaded when another page or template opens.
+- **Sticky header** (header templates only, `TemplateSettings.sticky`): a toggle; when on, _Sticky after_ (px, rem and other units: the header sticks once the page scrolled that far), _Slide up after_ (the header slides out after that distance; empty never), _Slide in and out animation_ (any built-in CSS animation, played forward to hide and in reverse to show), _duration_ (ms), and _Sticky on scroll_ (past the slide distance the header hides on scroll down and returns on scroll up). `composePage` puts the settings on the header wrapper as `data-nxt-sticky` and the runtime (`startStickyHeaders`) does the work; reduced motion removes the animation time and a hidden header is `inert`.
 - Output: a layout component per resolved combination (Next.js layouts, Astro layouts) so header/footer markup is shared, not copied into every page.
 - Landmarks: header renders `<header>`, footer renders `<footer>`; the page content renders inside `<main>`. Provide a skip-to-content link by default.
 

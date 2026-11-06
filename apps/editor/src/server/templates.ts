@@ -4,6 +4,7 @@ import {
   templateSettingsSchema,
   defaultTemplateSettings,
   type ElementNode,
+  type ItemStatus,
   type PublishedTemplate,
   type SaveTemplateInput,
   type TemplateSettings,
@@ -48,7 +49,7 @@ export interface TemplateSummary {
   id: string;
   name: string;
   type: TemplateType;
-  status: "draft" | "published";
+  status: ItemStatus;
   settings: TemplateSettings;
 }
 

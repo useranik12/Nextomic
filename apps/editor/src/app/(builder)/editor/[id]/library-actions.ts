@@ -4,6 +4,7 @@ import {
   createTemplateInputSchema,
   pageSettingsSchema,
   saveTemplateInputSchema,
+  type PublishedTemplate,
   templateSettingsSchema
 } from "@nextomic/schema";
 import { z } from "zod";
@@ -18,6 +19,7 @@ import {
   createTemplate,
   deleteTemplate,
   duplicateTemplate,
+  getDraftTemplates,
   getTemplate,
   listTemplates,
   saveTemplate,
@@ -45,6 +47,19 @@ export async function listTemplatesAction(
     return { data: await listTemplates(projectId), error: null };
   } catch (error) {
     return fail(error, "Could not load templates.");
+  }
+}
+
+/** The saved header and footer templates with their content, for showing them around a page in the canvas. */
+export async function loadLayoutTemplatesAction(
+  projectId: string
+): Promise<ActionResult<PublishedTemplate[]>> {
+  try {
+    await authorize(projectId);
+    const all = await getDraftTemplates(projectId);
+    return { data: all.filter((t) => t.type !== "error-404"), error: null };
+  } catch (error) {
+    return fail(error, "Could not load the header and footer.");
   }
 }
 
@@ -137,7 +152,10 @@ export async function setLiveAction(
       if (!page) return { data: null, error: "Page not found." };
       const result = await savePage(projectId, itemId, userId, {
         baseVersion: page.version,
-        settings: pageSettingsSchema.parse({ ...page.settings, includeInPublish: live })
+        settings: pageSettingsSchema.parse({
+          ...page.settings,
+          status: live ? "published" : "draft"
+        })
       });
       return result.ok
         ? { data: true, error: null }

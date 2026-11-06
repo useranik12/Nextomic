@@ -5,7 +5,7 @@ import { snapshotOfPage, templateSnapshotOf } from "./publish";
 
 // The Pages & Templates manager reads one flat list of both kinds.
 
-export type LibraryStatus = "draft" | "published" | "modified";
+export type LibraryStatus = "draft" | "published" | "modified" | "scheduled";
 
 export interface LibraryItem {
   kind: "page" | "template";
@@ -63,8 +63,11 @@ export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
       createdAt: page.createdAt.toISOString(),
       updatedAt: page.updatedAt.toISOString(),
       publishedAt: page.publishedAt?.toISOString() ?? null,
-      status: statusOf(page.publishedSnapshot, snapshotOfPage(page)),
-      live: settings.includeInPublish,
+      status:
+        settings.status === "scheduled"
+          ? "scheduled"
+          : statusOf(page.publishedSnapshot, snapshotOfPage(page)),
+      live: settings.status !== "draft",
       categoryIds: settings.categoryIds,
       tagIds: settings.tagIds,
       screenshotAt: page.screenshotAt?.toISOString() ?? null
@@ -82,8 +85,11 @@ export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
       createdAt: template.createdAt.toISOString(),
       updatedAt: template.updatedAt.toISOString(),
       publishedAt: template.publishedAt?.toISOString() ?? null,
-      status: statusOf(template.publishedSnapshot, templateSnapshotOf(template)),
-      live: settings.status === "published",
+      status:
+        settings.status === "scheduled"
+          ? "scheduled"
+          : statusOf(template.publishedSnapshot, templateSnapshotOf(template)),
+      live: settings.status !== "draft",
       categoryIds: settings.categoryIds,
       tagIds: settings.tagIds,
       screenshotAt: template.screenshotAt?.toISOString() ?? null

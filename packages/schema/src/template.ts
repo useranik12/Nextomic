@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { elementNodeSchema } from "./element";
+import { ITEM_STATUSES, isLive, scheduledAtSchema } from "./status";
 import { evaluateRules, ruleSetSchema, ruleSpecificity, type RuleContext } from "./rules";
 
 // Templates (docs/templates-and-themes.md section 4): a header, a footer and a 404 page in v1.
@@ -21,6 +22,30 @@ export const LAYOUT_NONE = "none";
 
 export const emptyRules = () => ({ id: "root", match: "all" as const, items: [] });
 
+const cssLengthSchema = z
+  .string()
+  .max(40)
+  .refine(
+    (v) => v === "" || /^-?(\d+\.?\d*|\.\d+)(px|rem|em|%|vw|vh|dvh|svh|lvh|vmin|vmax|ch)?$/.test(v),
+    "Use a number with a unit, such as 80px or 5rem"
+  );
+
+/** Sticky header behavior, only used by header templates (runtime `startStickyHeaders`). */
+export const stickyHeaderSchema = z.object({
+  enabled: z.boolean().default(false),
+  /** The header sticks to the top after the page scrolled this far. */
+  stickyAfter: cssLengthSchema.default("0px"),
+  /** The header slides away after the page scrolled this far; empty never slides it away. */
+  slideAfter: cssLengthSchema.default("200px"),
+  /** Id from CSS_ANIMATIONS, played forward to hide the header and in reverse to show it. */
+  animation: z.string().max(40).default("slide-out-up"),
+  /** Milliseconds. */
+  duration: z.number().int().min(0).max(5000).default(300),
+  /** Past the slide distance, the header hides on scroll down and comes back on scroll up. */
+  onScroll: z.boolean().default(false)
+});
+export type StickyHeader = z.infer<typeof stickyHeaderSchema>;
+
 export const templateSettingsSchema = z.object({
   description: z.string().max(500).default(""),
   /** Where it applies. An empty set means everywhere. Not used by the 404 template. */
@@ -29,8 +54,11 @@ export const templateSettingsSchema = z.object({
   priority: z.number().int().min(0).max(1000).default(0),
   /** Forced theme id; null follows the page. */
   themeId: z.string().max(64).nullable().default(null),
-  /** Draft templates are never applied. */
-  status: z.enum(["draft", "published"]).default("draft"),
+  /** Draft templates are never applied; scheduled ones apply from their time. */
+  status: z.enum(ITEM_STATUSES).default("draft"),
+  scheduledAt: scheduledAtSchema,
+  /** Header templates only. */
+  sticky: stickyHeaderSchema.default({}),
   /** A 404 template may hide the header or footer. */
   header: layoutChoiceSchema,
   footer: layoutChoiceSchema,
@@ -79,8 +107,17 @@ export interface LayoutCandidate {
   id: string;
   type: TemplateType;
   name: string;
-  settings: Pick<TemplateSettings, "priority" | "status" | "rules">;
+  settings: Pick<TemplateSettings, "priority" | "status" | "rules"> & {
+    scheduledAt?: string | null;
+    sticky?: StickyHeader;
+  };
 }
+
+const liveAt = (t: LayoutCandidate, ctx: RuleContext): boolean =>
+  isLive(
+    { status: t.settings.status, scheduledAt: t.settings.scheduledAt ?? null },
+    Date.parse(ctx.nowIso) || Date.now()
+  );
 
 export type LayoutSlot = "header" | "footer";
 export type LayoutReason = "chosen" | "rules" | "everywhere" | "none-chosen" | "none-matched";
@@ -96,9 +133,7 @@ function pickBest<T extends LayoutCandidate>(
   list: readonly T[],
   ctx: RuleContext
 ): { best: T | null; matchedRules: boolean } {
-  const matching = list.filter(
-    (t) => t.settings.status === "published" && evaluateRules(t.settings.rules, ctx)
-  );
+  const matching = list.filter((t) => liveAt(t, ctx) && evaluateRules(t.settings.rules, ctx));
   matching.sort(
     (a, b) =>
       b.settings.priority - a.settings.priority ||
@@ -120,7 +155,7 @@ export function resolveSlot<T extends LayoutCandidate>(
   if (choice === LAYOUT_NONE)
     return { template: null, decision: { slot, template: null, reason: "none-chosen" } };
   if (choice !== LAYOUT_AUTO) {
-    const chosen = own.find((t) => t.id === choice && t.settings.status === "published");
+    const chosen = own.find((t) => t.id === choice && liveAt(t, ctx));
     if (chosen) return { template: chosen, decision: { slot, template: chosen, reason: "chosen" } };
   }
   const { best, matchedRules } = pickBest(own, ctx);

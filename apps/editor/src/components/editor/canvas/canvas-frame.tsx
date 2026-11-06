@@ -24,6 +24,7 @@ import { themeModeFor, useResolvedTheme } from "../store/use-resolved-theme";
 import { onAnimationCommand, reportAnimationState } from "./animation-bridge";
 import { setCanvasDropTarget } from "./canvas-drop";
 import { CanvasToolbar } from "./canvas-toolbar";
+import { useLayoutComposer } from "./use-layout";
 import { canvasMessageSchema, type HostMessage } from "./protocol";
 
 const PADDING = 32;
@@ -88,6 +89,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const selectedId = useEditorStore((s) => s.selectedId);
   const hideSelection = useEditorStore((s) => s.hideSelection);
   const stylePreview = useEditorStore((s) => s.stylePreview);
+  const withLayout = useLayoutComposer();
   const activeClass = useEditorStore((s) => s.activeClass);
   const activeState = useEditorStore((s) => s.activeState);
   const select = useEditorStore((s) => s.select);
@@ -304,7 +306,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     }
     send({
       type: "render",
-      tree,
+      tree: withLayout(tree),
       breakpoints,
       classes: sentClasses,
       variables,
@@ -325,6 +327,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   }, [
     ready,
     doc,
+    withLayout,
     breakpoints,
     classes,
     variables,

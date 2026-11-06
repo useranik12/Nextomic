@@ -20,6 +20,16 @@ export function previewAddress(projectId: string, item: LibraryItem): string {
     : `/preview/${projectId}?template=${encodeURIComponent(item.id)}`;
 }
 
+/** A transparent pixel used for an image that cannot be fetched, so one bad image does not stop the picture. */
+const PLACEHOLDER =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+/** Browsers reject with an Event (not an Error) when an image or font fails; say that in words. */
+function reasonOf(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  return "an image or font in the page could not be loaded";
+}
+
 function loadFrame(address: string): Promise<{ frame: HTMLIFrameElement; doc: Document }> {
   return new Promise((resolve, reject) => {
     const frame = document.createElement("iframe");
@@ -61,28 +71,50 @@ function loadFrame(address: string): Promise<{ frame: HTMLIFrameElement; doc: Do
 export async function generateScreenshot(projectId: string, item: LibraryItem): Promise<void> {
   const { frame, doc } = await loadFrame(previewAddress(projectId, item));
   try {
-    const source = await toCanvas(doc.documentElement, {
-      width: FRAME_WIDTH,
-      height: FRAME_HEIGHT,
-      pixelRatio: 1,
-      cacheBust: true
-    });
+    const base = { width: FRAME_WIDTH, height: FRAME_HEIGHT, pixelRatio: 1, cacheBust: true };
+    let source: HTMLCanvasElement;
+    try {
+      source = await toCanvas(doc.documentElement, base);
+    } catch {
+      // Web fonts or remote images that refuse to be copied: draw the page without them.
+      try {
+        source = await toCanvas(doc.documentElement, {
+          ...base,
+          skipFonts: true,
+          imagePlaceholder: PLACEHOLDER
+        });
+      } catch (error) {
+        throw new Error(`The page could not be drawn: ${reasonOf(error)}.`);
+      }
+    }
     const out = document.createElement("canvas");
     out.width = OUT_WIDTH;
     out.height = OUT_HEIGHT;
     const context = out.getContext("2d");
     if (!context) throw new Error("Canvas is not available.");
     context.drawImage(source, 0, 0, OUT_WIDTH, OUT_HEIGHT);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      out.toBlob(resolve, "image/webp", 0.8)
-    );
-    if (!blob) throw new Error("The screenshot could not be encoded.");
+    const blob = await new Promise<Blob | null>((resolve) => {
+      try {
+        out.toBlob(resolve, "image/webp", 0.8);
+      } catch {
+        resolve(null);
+      }
+    });
+    if (!blob)
+      throw new Error(
+        "The screenshot could not be encoded (the page holds a picture the browser would not copy)."
+      );
     const response = await fetch(`/api/screenshots/${projectId}/${item.kind}/${item.id}`, {
       method: "PUT",
       body: blob,
       headers: { "Content-Type": "image/webp" }
     });
-    if (!response.ok) throw new Error("The screenshot could not be saved.");
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new Error(
+        `The screenshot could not be saved (${response.status}${detail ? `: ${detail.slice(0, 120)}` : ""}).`
+      );
+    }
   } finally {
     frame.remove();
   }
@@ -101,9 +133,11 @@ export function useScreenshotQueue(
   items: readonly LibraryItem[],
   enabled: boolean,
   onDone: () => void
-): { busy: boolean; failed: number } {
+): { busy: boolean; failed: number; reason: string | null; retry: () => void } {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(0);
+  const [reason, setReason] = useState<string | null>(null);
+  const [round, setRound] = useState(0);
   const tried = useRef(new Set<string>());
   const running = useRef(false);
 
@@ -120,14 +154,24 @@ export function useScreenshotQueue(
     setBusy(true);
     tried.current.add(`${next.id}:${next.updatedAt}`);
     generateScreenshot(projectId, next)
-      .catch(() => setFailed((n) => n + 1))
+      .then(() => setReason(null))
+      .catch((error: unknown) => {
+        setFailed((n) => n + 1);
+        setReason(reasonOf(error));
+      })
       .finally(() => {
         running.current = false;
         onDone();
       });
-  }, [enabled, items, projectId, onDone]);
+  }, [enabled, items, projectId, onDone, round]);
 
-  return { busy, failed };
+  const retry = () => {
+    tried.current.clear();
+    setFailed(0);
+    setReason(null);
+    setRound((n) => n + 1);
+  };
+  return { busy, failed, reason, retry };
 }
 
 /** A stored screenshot, or a quiet placeholder until one exists. */

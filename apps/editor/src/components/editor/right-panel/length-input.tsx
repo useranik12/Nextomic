@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { previewProps, useStylePreview } from "./design-field-tools";
 import { isNumberText, lengthMode, parseLength, unitSpecFor, type UnitSpec } from "./length-units";
 
+const SILENT_PREVIEW = { show: () => undefined, clear: () => undefined };
+
 const TRIGGER =
   "flex shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-tiny font-medium text-default-600 transition-colors duration-300 hover:bg-default-300 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800/40";
 
@@ -44,6 +46,7 @@ export function LengthInput({
   id,
   onChange,
   compact,
+  noPreview,
   fieldClass
 }: {
   property: string;
@@ -55,6 +58,8 @@ export function LengthInput({
   onChange: (next: string | null) => void;
   /** Smaller, for the cells of the box editor. */
   compact?: boolean;
+  /** Settings that are not a style of the selected element: hovering a unit shows no canvas preview. */
+  noPreview?: boolean;
   /** Classes for the input. */
   fieldClass: string;
 }) {
@@ -64,14 +69,15 @@ export function LengthInput({
   const [unit, setUnit] = useState(shape.unit || defaultUnit(spec));
   const [text, setText] = useState(shape.amount);
   const [open, setOpen] = useState(false);
-  const preview = useStylePreview(property);
+  const stylePreview = useStylePreview(property);
+  const preview = noPreview ? SILENT_PREVIEW : stylePreview;
 
   // Follow the stored value when it changes from outside (reset, undo, another element).
   useEffect(() => {
     if (shape.mode === "number") {
       setText(shape.amount);
       setUnit(shape.unit);
-    } else if (shape.mode === "empty") setText("");
+    } else if (shape.mode === "empty") setText((t) => (/^-?\.?$/.test(t) && t !== "" ? t : ""));
     if (shape.mode !== "custom") setCustom(false);
   }, [value]);
 
@@ -124,8 +130,18 @@ export function LengthInput({
           id={id}
           aria-label={ariaLabel}
           value={shape.unit}
-          readOnly
-          className={fieldClass + " cursor-default text-default-600"}
+          autoComplete="off"
+          onChange={(e) => {
+            // Typing over a word (auto, none) starts a number in the usual unit at once.
+            const typed = e.target.value.replace(shape.unit, "");
+            if (typed !== "" && isNumberText(typed, spec)) {
+              const start = unit || defaultUnit(spec);
+              setUnit(start);
+              setText(typed);
+              commit(typed, start);
+            } else onChange(null);
+          }}
+          className={fieldClass + " text-default-600"}
         />
       ) : (
         <input

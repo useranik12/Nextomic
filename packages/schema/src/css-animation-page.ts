@@ -1,4 +1,5 @@
 import { cssAnimationById, cssAnimationKeyframes, type ElementAnimation } from "./css-animation";
+import { STICKY_ATTRIBUTE } from "./compose";
 import { walkElements, type ElementNode } from "./element";
 
 /** What the runtime needs to wire one element's animation. */
@@ -20,5 +21,16 @@ export function collectElementAnimations(tree: ElementNode): ElementAnimationSpe
 
 /** The keyframes CSS a page needs for its element animations. */
 export function elementAnimationCss(tree: ElementNode): string {
-  return cssAnimationKeyframes(collectElementAnimations(tree).map((s) => s.animation));
+  const ids = collectElementAnimations(tree).map((s) => s.animation);
+  walkElements(tree, (node) => {
+    const raw = node.attributes?.[STICKY_ATTRIBUTE];
+    if (typeof raw !== "string") return;
+    try {
+      const spec = JSON.parse(raw) as { animation?: unknown };
+      if (typeof spec.animation === "string") ids.push(spec.animation);
+    } catch {
+      // A broken attribute simply adds no keyframes.
+    }
+  });
+  return cssAnimationKeyframes(ids);
 }

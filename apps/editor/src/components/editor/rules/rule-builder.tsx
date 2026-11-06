@@ -2,7 +2,6 @@
 
 import {
   MAX_RULE_DEPTH,
-  RULE_FIELDS,
   RULE_OP_LABELS,
   VALUELESS_OPS,
   dynamicTextOf,
@@ -18,11 +17,10 @@ import {
 } from "@nextomic/schema";
 import { useState } from "react";
 import { SelectField } from "@/components/ui/controls";
+import { FieldPicker } from "./field-picker";
 import { Icon } from "@/lib/icons/Icon";
 import { DynamicBolt } from "../right-panel/dynamic-bolt";
 import { compactFieldClass } from "../right-panel/setting-row";
-
-const FIELD_OPTIONS = RULE_FIELDS.map((f) => ({ value: f.id, label: `${f.group}: ${f.label}` }));
 
 function newRule(): Rule {
   return {
@@ -30,6 +28,7 @@ function newRule(): Rule {
     field: "page.route",
     key: "",
     op: "startsWith",
+    exclude: false,
     value: ""
   };
 }
@@ -62,6 +61,35 @@ function BoltText({
   );
 }
 
+/** Switches a rule or group between "must match" and "must NOT match". */
+function ExcludeToggle({
+  label,
+  on,
+  onChange
+}: {
+  label: string;
+  on: boolean;
+  onChange: (on: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={label}
+      title={on ? "Excluding: applies where this does NOT match" : "Exclude where this matches"}
+      onClick={() => onChange(!on)}
+      className={
+        "flex h-7 shrink-0 items-center rounded-full px-2.5 text-tiny font-medium transition-colors duration-300 " +
+        (on
+          ? "bg-danger/15 text-danger"
+          : "text-default-600 hover:bg-default-200 hover:text-foreground")
+      }
+    >
+      Excluding
+    </button>
+  );
+}
+
 function RuleRow({
   rule,
   index,
@@ -80,23 +108,26 @@ function RuleRow({
   return (
     <li className="flex flex-col gap-2 rounded-large border border-divider p-2">
       <div className="flex items-center gap-2">
-        <SelectField
-          compact
-          label={`Rule ${n} field`}
-          hideLabel
-          className="min-w-0 flex-1"
-          value={rule.field}
-          options={FIELD_OPTIONS}
-          onValueChange={(field) => {
-            const next = ruleFieldById(field);
-            const allowed = next ? opsForKind(next.kind) : [];
-            onChange({
-              ...rule,
-              field,
-              key: "",
-              op: allowed.includes(rule.op) ? rule.op : (allowed[0] ?? "equals")
-            } as Rule);
-          }}
+        <div className="min-w-0 flex-1">
+          <FieldPicker
+            label={`Rule ${n} field`}
+            value={rule.field}
+            onChange={(field) => {
+              const next = ruleFieldById(field);
+              const allowed = next ? opsForKind(next.kind) : [];
+              onChange({
+                ...rule,
+                field,
+                key: "",
+                op: allowed.includes(rule.op) ? rule.op : (allowed[0] ?? "equals")
+              } as Rule);
+            }}
+          />
+        </div>
+        <ExcludeToggle
+          label={`Rule ${n} excluding`}
+          on={rule.exclude}
+          onChange={(exclude) => onChange({ ...rule, exclude })}
         />
         <button
           type="button"
@@ -115,12 +146,12 @@ function RuleRow({
           onChange={(key) => onChange({ ...rule, key })}
         />
       ) : null}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2">
         <SelectField
           compact
           label={`Rule ${n} operator`}
           hideLabel
-          className="w-44 shrink-0"
+          className="w-full"
           value={rule.op}
           options={ops.map((op) => ({ value: op, label: RULE_OP_LABELS[op] }))}
           onValueChange={(op) => onChange({ ...rule, op: op as RuleOp })}
@@ -183,6 +214,13 @@ function GroupView({
           ]}
           onValueChange={(match) => onChange({ ...group, match: match as "all" | "any" })}
         />
+        {onRemove ? (
+          <ExcludeToggle
+            label="Group excluding"
+            on={group.exclude === true}
+            onChange={(exclude) => onChange({ ...group, exclude })}
+          />
+        ) : null}
         <button
           type="button"
           className={SMALL_BUTTON}

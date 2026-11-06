@@ -25,6 +25,7 @@ import {
 } from "./store/editor-store";
 import { themeModeFor, useResolvedTheme } from "./store/use-resolved-theme";
 import {
+  ITEM_STATUS_LABELS,
   TEMPLATE_TYPE_LABELS,
   evaluateRules,
   explainLayout,
@@ -102,10 +103,7 @@ function ChipPopover({
               label="Type"
               value={page?.templateType ? TEMPLATE_TYPE_LABELS[page.templateType] : ""}
             />
-            <ChipFact
-              label="Status"
-              value={doc?.template?.status === "published" ? "Published" : "Draft"}
-            />
+            <ChipFact label="Status" value={ITEM_STATUS_LABELS[doc?.template?.status ?? "draft"]} />
             <ChipFact
               label="Applies to"
               value={

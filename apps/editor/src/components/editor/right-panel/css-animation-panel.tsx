@@ -145,7 +145,13 @@ function SelectorPicker({
 }
 
 /** The searchable list of ready-made animations. */
-function AnimationPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+export function AnimationPicker({
+  value,
+  onChange
+}: {
+  value: string;
+  onChange: (id: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const current = cssAnimationById(value);

@@ -13,7 +13,7 @@ import { headers } from "next/headers";
 import { cache } from "react";
 import { getPublishedView } from "@/server/publish";
 import { requestFacts } from "@/server/request-facts";
-import { layoutForPage } from "@/server/site-layout";
+import { layoutForPage, resolveSeo } from "@/server/site-layout";
 import { getPublishedTemplates } from "@/server/templates";
 
 export const dynamic = "force-dynamic";
@@ -28,10 +28,40 @@ const resolve = cache(async (id: string, path: string[] | undefined) => {
   return view;
 });
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams
+}: {
+  params: Params;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
   const { id, path } = await params;
-  const { page } = await resolve(id, path);
-  const seo = page.settings.seo;
+  const search = await searchParams;
+  const values: Record<string, string> = {};
+  for (const [key, value] of Object.entries(search)) {
+    if (typeof value === "string") values[key] = value;
+  }
+  const { page, pageId, settings, meta } = await resolve(id, path);
+  const seo = resolveSeo({
+    tree: page.tree,
+    settings,
+    page: {
+      id: pageId,
+      name: page.name,
+      route: page.route,
+      settings: page.settings,
+      meta: {
+        id: pageId,
+        status: "published",
+        ...meta,
+        categoryIds: page.settings.categoryIds,
+        tagIds: page.settings.tagIds
+      }
+    },
+    params: values,
+    request: requestFacts(await headers(), page.route, new URLSearchParams(values).toString()),
+    mode: "live"
+  });
   return {
     title: seo.title || page.name,
     description: seo.description || undefined,

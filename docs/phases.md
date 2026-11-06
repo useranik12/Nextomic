@@ -68,7 +68,8 @@ Docs: `templates-and-themes.md` (sections 2, 4.1 to 4.7)
 - [x] Layout composition in the preview and published site (header, main, footer, skip link) _Next output only; the Astro output joins the exporter phase._
 - [x] Dynamic data groups: page and template properties (with status), categories, tags
 - [x] Tests: rules, resolution, opt-out, composition, 404, manager filters; e2e for manager, marking, header on the site, default 404, screenshots
-- [ ] Open: themes still use page and route conditions (move to rules), header and footer visible (locked) in the editing canvas, `Preview as...` menu on the chip, browser-only rules, user fields until auth, time zone setting for date rules
+- [x] Follow-up fixes: nested groups, Whole site and Excluding, wrapping searchable field picker, stacked rule layout, header and footer in the editing canvas, Page Settings without header and footer choice, sticky header settings with runtime, Draft/Published/Scheduled status with date and time picker (replaces include in publish), dynamic bolt on page SEO and description fields with tags resolved in page metadata, compact settings fields, margin/padding/border value tools beside each side, screenshot fallbacks with a visible reason
+- [ ] Open: themes still use page and route conditions (move to rules), `Preview as...` menu on the chip, browser-only rules, user fields until auth, time zone setting for date rules
 
 ## Phase 4: Data layer
 

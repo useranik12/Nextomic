@@ -131,14 +131,16 @@ test("page settings: SEO, language, duplicate and home page", async ({ page }) =
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "Page settings" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("SEO title").fill("My landing page");
+  await dialog.getByLabel("SEO title", { exact: true }).fill("My landing page");
   await dialog.getByRole("button", { name: /Page language/ }).click();
   await page.locator("[role=option]", { hasText: "French (fr)" }).click();
   await dialog.getByRole("button", { name: "Duplicate page" }).click();
   // The copy opens, with its own name, and is not the home page.
   await expect(page.getByRole("button", { name: /copy/ }).first()).toBeVisible();
   await page.getByRole("button", { name: "Page settings" }).click();
-  await expect(page.getByRole("dialog").getByLabel("SEO title")).toHaveValue("My landing page");
+  await expect(page.getByRole("dialog").getByLabel("SEO title", { exact: true })).toHaveValue(
+    "My landing page"
+  );
   await expect(
     page.getByRole("dialog").getByRole("switch", { name: "Home page" })
   ).not.toBeChecked();
@@ -634,7 +636,8 @@ test("Pages & Templates: manager, marking, header template on the site, default 
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   await page.getByRole("button", { name: "Template settings" }).click();
-  await page.getByRole("switch", { name: "Published" }).check({ force: true });
+  await page.getByRole("button", { name: /^Status/ }).click();
+  await page.getByRole("option", { name: "Published", exact: true }).click();
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 
@@ -656,4 +659,84 @@ test("Generate Screenshots makes one picture per page for the grid", async ({ pa
   await page.getByRole("switch", { name: "Generate Screenshots" }).check({ force: true });
   await page.getByRole("button", { name: "Pages & Templates" }).click();
   await expect(page.getByAltText("Screenshot of Home")).toBeVisible({ timeout: 25000 });
+});
+
+async function newHeaderTemplate(page: Page, name: string): Promise<void> {
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  await page.getByRole("button", { name: "Column layout" }).click();
+  await page.getByRole("tab", { name: /Templates/ }).click();
+  await page.getByRole("button", { name: "New template" }).click();
+  await page.getByRole("dialog").getByLabel("Name").fill(name);
+  await page.getByRole("button", { name: "Create template" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: `More actions for ${name}` }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  await expect(page.getByLabel("Editing context")).toContainText("Template");
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByRole("button", { name: "Template settings" }).click();
+}
+
+test("conditions: nested group, excluding, whole site and the wrapping field picker", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await newHeaderTemplate(page, "Rules header");
+  const conditions = page.getByRole("region", { name: "Conditions" });
+  await conditions.getByRole("button", { name: "Rule", exact: true }).click();
+  await conditions.getByRole("button", { name: "Group", exact: true }).click();
+  // A group inside the new group.
+  await conditions.getByRole("button", { name: "Group", exact: true }).nth(1).click();
+  await expect(conditions.getByRole("button", { name: /Rule \d+ field/ })).toHaveCount(3);
+
+  // The field picker searches and shows the whole name.
+  await conditions.getByRole("button", { name: "Rule 1 field" }).first().click();
+  await page.getByLabel("Search Rule 1 field").fill("whole");
+  await page.getByRole("option", { name: "Whole site" }).click({ force: true });
+  await expect(conditions.getByRole("button", { name: "Rule 1 field" }).first()).toContainText(
+    "Whole site"
+  );
+  const exclude = conditions.getByRole("button", { name: "Rule 1 excluding" }).first();
+  await exclude.click();
+  await expect(exclude).toHaveAttribute("aria-pressed", "true");
+});
+
+test("sticky header settings reach the live site; scheduled status shows a date picker", async ({
+  page,
+  request
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await newHeaderTemplate(page, "Sticky header");
+  await page.getByRole("button", { name: /^Status/ }).click();
+  await page.getByRole("option", { name: "Scheduled", exact: true }).click();
+  await expect(page.getByLabel("Go live at").first()).toBeVisible();
+  await page.getByRole("button", { name: /^Status/ }).click();
+  await page.getByRole("option", { name: "Published", exact: true }).click();
+  await page.getByRole("switch", { name: "Sticky header" }).check({ force: true });
+  await expect(page.getByLabel("Slide up after", { exact: true })).toBeVisible();
+  await page.getByRole("switch", { name: "Sticky on scroll" }).check({ force: true });
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
+  // The header also shows around the page in the editor canvas.
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  await page.getByRole("tab", { name: /Pages/ }).click();
+  await page.getByRole("button", { name: "More actions for Home" }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  await expect(page.frameLocator('iframe[title="Page canvas"]').getByRole("heading")).toBeVisible();
+  const home = await (await request.get(`/site/${projectId}`)).text();
+  expect(home).toContain("data-nxt-sticky");
+  expect(home).toContain("nxt-anim-slide-out-up");
+});
+
+test("page settings: no header and footer choice, status can be scheduled", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Page settings", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("Header and footer")).toHaveCount(0);
+  await expect(dialog.getByText("Include in publish")).toHaveCount(0);
+  await dialog.getByRole("button", { name: /^Status/ }).click();
+  await page.locator("[role=option]", { hasText: "Scheduled" }).click();
+  await expect(dialog.getByLabel("Go live at").first()).toBeVisible();
 });

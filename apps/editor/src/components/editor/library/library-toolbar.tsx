@@ -153,7 +153,8 @@ export function LibraryToolbar({
             { value: "all", label: "Any status" },
             { value: "draft", label: "Draft" },
             { value: "published", label: "Published" },
-            { value: "modified", label: "Modified" }
+            { value: "modified", label: "Modified" },
+            { value: "scheduled", label: "Scheduled" }
           ]}
         />
         {templates ? (

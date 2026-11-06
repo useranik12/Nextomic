@@ -1,6 +1,6 @@
 "use client";
 
-import { startCssAnimations, startTimelines } from "@nextomic/runtime";
+import { startCssAnimations, startStickyHeaders, startTimelines } from "@nextomic/runtime";
 import type { ElementAnimationSpec, Timeline } from "@nextomic/schema";
 import { useEffect } from "react";
 
@@ -20,6 +20,11 @@ export function AnimationPlayer({
     const handle = startCssAnimations(elementAnimations);
     return () => handle.destroy();
   }, [elementAnimations]);
+
+  useEffect(() => {
+    const handle = startStickyHeaders();
+    return () => handle.destroy();
+  }, []);
 
   useEffect(() => {
     if (timelines.length === 0) return;

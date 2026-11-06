@@ -26,6 +26,7 @@ const text = (
 ): RuleFieldDef => ({ id, label, group, kind: "text", ...extra });
 
 export const RULE_FIELDS: readonly RuleFieldDef[] = [
+  { id: "site.whole", label: "Whole site", group: "Site", kind: "boolean" },
   text("page.name", "Page name", "Page"),
   text("page.id", "Page ID", "Page"),
   text("page.createdBy", "Page created by", "Page"),
@@ -171,6 +172,8 @@ export const ruleSchema = z.object({
   field: z.enum(RULE_FIELD_IDS),
   key: z.string().max(200).default(""),
   op: z.enum(RULE_OPS),
+  /** Excluding: the rule must NOT match. */
+  exclude: z.boolean().default(false),
   /** Static text mixed with dynamic tags; tags are resolved before comparing. */
   value: propValueSchema.default("")
 });
@@ -179,6 +182,8 @@ export type Rule = z.infer<typeof ruleSchema>;
 export interface RuleGroup {
   id: string;
   match: "all" | "any";
+  /** Excluding: the group must NOT match. */
+  exclude?: boolean;
   items: (Rule | RuleGroup)[];
 }
 
@@ -186,6 +191,7 @@ export const ruleGroupSchema: z.ZodType<RuleGroup, z.ZodTypeDef, unknown> = z.la
   z.object({
     id: z.string().min(1).max(64),
     match: z.enum(["all", "any"]).default("all"),
+    exclude: z.boolean().optional(),
     items: z.array(z.union([ruleSchema, ruleGroupSchema])).max(50)
   })
 );
@@ -388,6 +394,8 @@ export function readField(field: string, key: string, ctx: RuleContext): string 
       return ctx.url.query;
     case "url.referrer":
       return ctx.url.referrer;
+    case "site.whole":
+      return "true";
     case "is.page":
       return bool(ctx.kind === "page");
     case "is.template":
@@ -429,11 +437,17 @@ function compare(kind: RuleKind, left: string, right: string): number | null {
 /** Whether one rule matches. A browser-only field matches nothing on the server. */
 export function evaluateRule(rule: Rule, ctx: RuleContext): boolean {
   const def = ruleFieldById(rule.field);
-  if (!def) return false;
+  // Browser-only facts are unknown on the server: never a match, and never "excluded" either.
+  if (!def || def.browserOnly) return false;
   const left = readField(rule.field, rule.key, ctx);
+  // A fact that is not known never matches, and never counts as "excluded" either.
   if (left === null) return false;
+  const found = ruleMatches(rule, def.kind, left, ctx);
+  return rule.exclude ? !found : found;
+}
+
+function ruleMatches(rule: Rule, kind: RuleKind, left: string, ctx: RuleContext): boolean {
   const right = valueText(rule.value, ctx);
-  const kind: RuleKind = def.kind;
   const lower = (s: string) => s.toLowerCase();
   const same = (a: string, b: string) =>
     kind === "text" ? lower(a) === lower(b) : compare(kind, a, b) === 0;
@@ -480,7 +494,8 @@ export function evaluateRules(group: RuleGroup, ctx: RuleContext): boolean {
   if (group.items.length === 0) return true;
   const test = (item: Rule | RuleGroup) =>
     isRuleGroup(item) ? evaluateRules(item, ctx) : evaluateRule(item, ctx);
-  return group.match === "all" ? group.items.every(test) : group.items.some(test);
+  const found = group.match === "all" ? group.items.every(test) : group.items.some(test);
+  return group.exclude ? !found : found;
 }
 
 /** How narrowly a set targets: page (3) beats route (2) beats anything else (1) beats everywhere (0). */
@@ -488,6 +503,7 @@ export function ruleSpecificity(group: RuleGroup): number {
   let best = 0;
   for (const i of group.items) {
     if (isRuleGroup(i)) best = Math.max(best, ruleSpecificity(i));
+    else if (i.field === "site.whole") continue;
     else if (i.field === "page.id" || i.field === "page.name") best = Math.max(best, 3);
     else if (i.field === "page.route" || i.field === "url.path") best = Math.max(best, 2);
     else best = Math.max(best, 1);
