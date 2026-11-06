@@ -6,8 +6,7 @@ import {
   findNode,
   getStyle,
   parseDynamicText,
-  type ElementNode,
-  type PseudoState
+  type ElementNode
 } from "@nextomic/schema";
 import { useId, useMemo, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
@@ -20,8 +19,6 @@ import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
 import { IdentityField } from "./identity-field";
 import { SettingRow, compactFieldClass, designFieldClass } from "./setting-row";
-
-const STATES: PseudoState[] = ["default", "hover", "focus", "active", "disabled"];
 
 type Tab = "element" | "design" | "action";
 
@@ -178,8 +175,6 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const [tab, setTab] = useState<Tab>("element");
   const [query, setQuery] = useState("");
   const bp = useEditorStore((s) => s.activeBreakpointId);
-  const state = useEditorStore((s) => s.activeState);
-  const setState = useEditorStore((s) => s.setActiveState);
   const rename = useEditorStore((s) => s.renameElement);
   const duplicate = useEditorStore((s) => s.duplicateElement);
   const copy = useEditorStore((s) => s.copyElement);
@@ -295,24 +290,6 @@ export function ElementPanel({ node }: { node: ElementNode }) {
         ) : null}
         {showDesign ? (
           <section className="flex flex-col gap-4" aria-label="Design settings">
-            <div role="group" aria-label="Pseudo state" className="flex flex-wrap gap-1">
-              {STATES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={state === s}
-                  onClick={() => setState(s)}
-                  className={
-                    "rounded-full px-2.5 py-1 text-tiny capitalize transition-colors duration-300 " +
-                    (state === s
-                      ? "bg-default-300 text-foreground"
-                      : "bg-default-100 text-default-600 hover:bg-default-200")
-                  }
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
             {groups.map((group) => (
               <details
                 key={group.id}
