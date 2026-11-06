@@ -55,7 +55,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full resize-none rounded-large border-2 border-default-200 bg-transparent py-2 pl-3 pr-9 text-small text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
+            className="w-full resize-none rounded-large border border-default-200 bg-transparent py-2 pl-3 pr-9 text-small text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
           />
         ) : (
           <input

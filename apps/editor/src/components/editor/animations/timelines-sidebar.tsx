@@ -27,7 +27,7 @@ function IconButton({
       title={label}
       onClick={onClick}
       className={
-        "rounded p-1 text-default-500 outline-none focus-visible:ring-2 focus-visible:ring-default-800/40 " +
+        "rounded p-1 text-default-500 outline-none focus-visible:ring-1 focus-visible:ring-default-800/40 " +
         (danger ? "hover:text-danger" : "hover:text-foreground")
       }
     >
@@ -58,7 +58,7 @@ function TimelineRow({
         type="button"
         onClick={() => onSelect(timeline.id)}
         aria-current={selected ? "true" : undefined}
-        className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/40"
+        className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/40"
       >
         <Icon name="ph:timer" width={14} height={14} className="shrink-0 text-default-500" />
         <span className={"truncate " + (timeline.enabled ? "" : "text-default-400 line-through")}>

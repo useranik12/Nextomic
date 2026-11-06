@@ -1,3 +1,4 @@
+import { emptyTaxonomy, taxonomySchema } from "./taxonomy";
 import { z } from "zod";
 import { DEFAULT_BREAKPOINTS, breakpointListSchema } from "./breakpoint";
 import { animationSettingsSchema, emptyAnimationSettings } from "./animations";
@@ -55,6 +56,10 @@ export const projectSettingsSchema = z.object({
   fonts: fontListSchema.default([]),
   // Custom CSS files: written after the theme and before classes, in this order.
   cssFiles: cssFileListSchema.default([]),
+  // Categories and tags of pages and templates (four separate lists).
+  taxonomy: taxonomySchema.default(emptyTaxonomy()),
+  // Generate a screenshot of each page and template for the grid view in Pages & Templates.
+  generateScreenshots: z.boolean().default(false),
   // Animations: GSAP timelines in folders (docs/design-system.md section 9).
   animations: animationSettingsSchema.default(emptyAnimationSettings())
 });
@@ -71,6 +76,8 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   generateElementIds: true,
   hideEditBorder: false,
   showClock: false,
+  taxonomy: emptyTaxonomy(),
+  generateScreenshots: false,
   versionControl: true,
   versionLimit: VERSION_LIMIT_MAX,
   classes: {},

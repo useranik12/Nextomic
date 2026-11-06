@@ -101,7 +101,7 @@ function FieldRow({
           value={Math.min(field.max, Math.max(field.min, shown))}
           onChange={(e) => onChange(Number(e.target.value))}
           style={{ background: field.track }}
-          className="h-2.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full ring-1 ring-inset ring-default-300 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-default-800 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-default-800 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
+          className="h-2.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full ring-1 ring-inset ring-default-300 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-default-800 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-default-800 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
         />
         <input
           type="number"
@@ -111,7 +111,7 @@ function FieldRow({
           step={field.step}
           value={shown}
           onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-          className="h-8 w-16 rounded-medium bg-default-100 px-2 text-right text-small text-foreground outline-none focus:bg-default-200 focus:ring-2 focus:ring-default-800/30"
+          className="h-8 w-16 rounded-medium bg-default-100 px-2 text-right text-small text-foreground outline-none focus:bg-default-200 focus:ring-1 focus:ring-default-800/30"
         />
         <span className="w-7 text-tiny text-default-500">{field.unit}</span>
       </div>

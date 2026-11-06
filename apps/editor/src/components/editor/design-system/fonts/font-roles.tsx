@@ -79,7 +79,7 @@ export function FontRoles({ font, use }: { font: ProjectFont; use: FontUse }) {
               aria-pressed={on}
               onClick={() => toggle(r.name)}
               className={
-                "h-8 rounded-full px-4 text-small font-medium transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-default-800/40 " +
+                "h-8 rounded-full px-4 text-small font-medium transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-default-800/40 " +
                 (on
                   ? "bg-default-800 text-default-50"
                   : "border border-default-200 text-default-700 hover:bg-default-100")

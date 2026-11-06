@@ -54,7 +54,7 @@ function NumberBox({
           const n = parseFloat(e.target.value);
           if (Number.isFinite(n)) onChange(clamp(n, 0, max));
         }}
-        className="h-8 w-full rounded-medium border-2 border-default-200 bg-transparent px-1 text-center text-small text-foreground outline-none focus:border-default-800"
+        className="h-8 w-full rounded-medium border border-default-200 bg-transparent px-1 text-center text-small text-foreground outline-none focus:border-default-800"
       />
       {label}
     </label>
@@ -151,7 +151,7 @@ export function ColorPicker({
         aria-valuetext={`Saturation ${Math.round(hsva.s)} percent, brightness ${Math.round(hsva.v)} percent`}
         aria-valuenow={Math.round(hsva.s)}
         style={{ backgroundColor: hueColor }}
-        className="relative h-36 w-full cursor-crosshair touch-none overflow-hidden rounded-large focus-visible:ring-2 focus-visible:ring-default-800/40"
+        className="relative h-36 w-full cursor-crosshair touch-none overflow-hidden rounded-large focus-visible:ring-1 focus-visible:ring-default-800/40"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
           moveArea(e.clientX, e.clientY);
@@ -173,7 +173,7 @@ export function ColorPicker({
         <span
           aria-hidden
           style={{ left: `${hsva.s}%`, top: `${100 - hsva.v}%`, background: solid }}
-          className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-md"
+          className="absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white shadow-md"
         />
       </div>
 
@@ -191,7 +191,7 @@ export function ColorPicker({
             value={hsva.h}
             aria-label="Hue"
             onChange={(e) => commit({ ...hsva, h: Number(e.target.value) })}
-            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-800 [&::-webkit-slider-thumb]:shadow"
+            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-800 [&::-webkit-slider-thumb]:shadow"
             style={{
               background: "linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"
             }}
@@ -203,7 +203,7 @@ export function ColorPicker({
             value={Math.round(hsva.a * 100)}
             aria-label="Alpha"
             onChange={(e) => commit({ ...hsva, a: Number(e.target.value) / 100 })}
-            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-800 [&::-webkit-slider-thumb]:shadow"
+            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-800 [&::-webkit-slider-thumb]:shadow"
             style={{
               background: `linear-gradient(to right, transparent, ${solid}), repeating-conic-gradient(#d4d4d8 0 25%, #fff 0 50%) 0 0/8px 8px`
             }}
@@ -259,7 +259,7 @@ export function ColorPicker({
           value={cssText}
           spellCheck={false}
           onChange={(e) => applyText(e.target.value)}
-          className="h-8 w-full rounded-full border-2 border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
+          className="h-8 w-full rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
         />
       ) : null}
       {format === "rgb" ? (

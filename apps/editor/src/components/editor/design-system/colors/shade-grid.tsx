@@ -76,7 +76,7 @@ function ShadeBox({
             type="button"
             aria-label={`Change the shade ${name}-${shade.suffix}`}
             title={`${name}-${shade.suffix}${overridden ? " (set by hand)" : ""}`}
-            className={`absolute inset-0 overflow-hidden rounded-medium border border-divider transition-transform duration-300 hover:scale-[1.04] focus-visible:ring-2 focus-visible:ring-default-800/40 ${CHECKER}`}
+            className={`absolute inset-0 overflow-hidden rounded-medium border border-divider transition-transform duration-300 hover:scale-[1.04] focus-visible:ring-1 focus-visible:ring-default-800/40 ${CHECKER}`}
           >
             <span className="absolute inset-0" style={{ background: shade.paint }} />
             {overridden ? (
@@ -108,7 +108,7 @@ function ShadeBox({
         onClick={() => void copy()}
         aria-label={`Copy ${shade.text}`}
         title={copied ? "Copied" : `Copy ${shade.text}`}
-        className="absolute left-1/2 top-1/2 z-10 max-w-[calc(100%-4px)] -translate-x-1/2 -translate-y-1/2 truncate rounded-full bg-black/60 px-1.5 py-0.5 font-mono text-[10px] leading-none text-white transition-colors duration-300 hover:bg-black/80 focus-visible:ring-2 focus-visible:ring-white"
+        className="absolute left-1/2 top-1/2 z-10 max-w-[calc(100%-4px)] -translate-x-1/2 -translate-y-1/2 truncate rounded-full bg-black/60 px-1.5 py-0.5 font-mono text-[10px] leading-none text-white transition-colors duration-300 hover:bg-black/80 focus-visible:ring-1 focus-visible:ring-white"
       >
         {copied ? "Copied" : shade.text}
       </button>

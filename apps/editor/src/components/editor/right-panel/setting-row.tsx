@@ -89,11 +89,11 @@ export function SettingRow({
 }
 
 export const compactFieldClass =
-  "h-8 w-full rounded-full border-2 border-default-200 bg-transparent px-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:border-default-400 focus:border-default-800 focus:ring-2 focus:ring-default-800/10";
+  "h-8 w-full rounded-full border border-default-200 bg-transparent px-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:border-default-400 focus:border-default-800 focus:ring-1 focus:ring-default-800/10";
 
 /** The grey shell around a Design value and its tools (unit, color, variable). */
 export const fieldShellClass =
-  "flex items-center rounded-medium bg-default-100 transition-colors hover:bg-default-200 focus-within:bg-default-200 focus-within:ring-2 focus-within:ring-default-800/30";
+  "flex items-center rounded-medium bg-default-100 transition-colors hover:bg-default-200 focus-within:bg-default-200 focus-within:ring-1 focus-within:ring-default-800/30";
 
 /** The input inside the shell: no background of its own. */
 export const bareFieldClass =
@@ -101,4 +101,4 @@ export const bareFieldClass =
 
 /** Square field used in the Design tab; sits flush against a tile button when joined. */
 export const designFieldClass =
-  "h-9 w-full min-w-0 bg-default-100 px-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:bg-default-200 focus:bg-default-200 focus-visible:ring-2 focus-visible:ring-default-800/30";
+  "h-9 w-full min-w-0 bg-default-100 px-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:bg-default-200 focus:bg-default-200 focus-visible:ring-1 focus-visible:ring-default-800/30";

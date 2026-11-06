@@ -222,9 +222,9 @@ export function ColorPalette({
                     setHovered(null);
                   }}
                   className={
-                    "relative block aspect-square w-full overflow-hidden rounded-lg border border-black/10 transition-transform hover:z-[1] hover:scale-110 focus-visible:ring-2 focus-visible:ring-default-800/60 dark:border-white/15 " +
+                    "relative block aspect-square w-full overflow-hidden rounded-lg border border-black/10 transition-transform hover:z-[1] hover:scale-110 focus-visible:ring-1 focus-visible:ring-default-800/60 dark:border-white/15 " +
                     CHECKER +
-                    (selected ? " ring-2 ring-default-800 dark:ring-default-700" : "")
+                    (selected ? " ring-1 ring-default-800 dark:ring-default-700" : "")
                   }
                 >
                   <span aria-hidden style={{ background: s.color }} className="absolute inset-0" />

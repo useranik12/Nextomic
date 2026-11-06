@@ -74,7 +74,7 @@ export function CategoryPanel({
               if (e.key === "Escape") setRenaming(null);
             }}
             onBlur={() => setRenaming(null)}
-            className="h-9 w-full rounded-medium bg-default-100 px-3 text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/30"
+            className="h-9 w-full rounded-medium bg-default-100 px-3 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
           />
         ) : (
           <div

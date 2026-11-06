@@ -84,7 +84,7 @@ function SaveChip({ saveNow }: { saveNow: () => Promise<void> }) {
       <div
         tabIndex={0}
         aria-label="Editing context"
-        className="flex items-center gap-2 rounded-full bg-default-100 px-3 py-1.5 text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/30"
+        className="flex items-center gap-2 rounded-full bg-default-100 px-3 py-1.5 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
       >
         <span className="text-default-500">Page</span>
         <span className="max-w-[160px] truncate font-medium text-foreground">{doc?.name}</span>
@@ -295,7 +295,7 @@ function PublishControl({
           role="img"
           aria-label={dot.label}
           title={dot.label}
-          className={`pointer-events-none absolute -right-0.5 -top-0.5 z-10 h-2.5 w-2.5 rounded-full ring-2 ring-background ${dot.color}`}
+          className={`pointer-events-none absolute -right-0.5 -top-0.5 z-10 h-2.5 w-2.5 rounded-full ring-1 ring-background ${dot.color}`}
         />
         <ActionButton
           className="rounded-r-none"

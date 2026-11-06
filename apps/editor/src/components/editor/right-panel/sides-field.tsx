@@ -190,7 +190,7 @@ export function SidesField({
         {corners ? (
           <div
             aria-hidden
-            className="absolute inset-0 rounded-large border-2 border-dashed border-default-300 bg-default-100"
+            className="absolute inset-0 rounded-large border border-dashed border-default-300 bg-default-100"
           />
         ) : (
           <BoxFrame />

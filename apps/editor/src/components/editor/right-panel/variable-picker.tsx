@@ -77,7 +77,7 @@ export function VariablePicker({
             placeholder="Search variables"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-8 w-full rounded-medium bg-default-100 px-2.5 text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/30"
+            className="h-8 w-full rounded-medium bg-default-100 px-2.5 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
           />
         ) : null}
         <ul className="max-h-64 overflow-y-auto">

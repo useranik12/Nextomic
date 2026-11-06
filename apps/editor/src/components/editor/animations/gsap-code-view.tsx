@@ -39,7 +39,7 @@ export function GsapCodeView({ timeline }: { timeline: Timeline }) {
       <pre
         tabIndex={0}
         aria-label="GSAP code of the timeline"
-        className="max-h-[60vh] overflow-auto rounded-medium bg-default-100 p-3 font-mono text-tiny leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-default-800/30"
+        className="max-h-[60vh] overflow-auto rounded-medium bg-default-100 p-3 font-mono text-tiny leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
       >
         {code}
       </pre>

@@ -259,8 +259,8 @@ export function AnimationSettings({
             placeholder='{ "transformOrigin": "center" }'
             onChange={(e) => patch({ vars: e.target.value })}
             className={
-              "w-full resize-y rounded-medium bg-default-100 p-3 font-mono text-small outline-none focus-visible:ring-2 focus-visible:ring-default-800/30 " +
-              (varsCheck?.ok === false ? "ring-2 ring-danger" : "")
+              "w-full resize-y rounded-medium bg-default-100 p-3 font-mono text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30 " +
+              (varsCheck?.ok === false ? "ring-1 ring-danger" : "")
             }
           />
         </TipField>
