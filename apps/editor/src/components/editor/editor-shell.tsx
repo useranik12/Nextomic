@@ -210,7 +210,13 @@ export function EditorShell({
             ) : null}
             {rail === "navigator" ? (
               <>
-                <Navigator onOpenElements={() => setFlyout((v) => !v)} />
+                <Navigator
+                  onOpenElements={() => setFlyout((v) => !v)}
+                  onResetSizes={() => {
+                    navigatorWidth.reset();
+                    rightWidth.reset();
+                  }}
+                />
                 {flyout ? <ElementsFlyout onClose={() => setFlyout(false)} /> : null}
               </>
             ) : rail === "history" ? (

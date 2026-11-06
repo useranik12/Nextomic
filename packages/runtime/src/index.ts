@@ -2,3 +2,4 @@
 // client arrive in later phases). Tree-shakable.
 export const RUNTIME_PACKAGE_READY = false;
 export * from "./animations";
+export * from "./css-animations";

@@ -11,6 +11,7 @@ import { STATUS_DOT } from "../top-bar";
 import { DESIGN_GROUPS } from "./design-groups";
 import { GroupBody } from "./group-body";
 import { AccordionSection } from "./accordion";
+import { CssAnimationPanel } from "./css-animation-panel";
 import { AutoTextarea } from "./auto-textarea";
 import { AttributesEditor } from "./attributes-editor";
 import { ConvertToClass } from "./convert-to-class";
@@ -274,6 +275,18 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 <GroupBody node={node} groupId={group.id} properties={group.properties} />
               </AccordionSection>
             ))}
+            {!q || "animations".includes(q) ? (
+              <AccordionSection
+                id="animations"
+                title="Animations"
+                icon={<Icon name="ph:sparkle" width={18} height={18} />}
+                open={q ? true : designGroup === "animations"}
+                onToggle={toggleGroup}
+                changed={node.animation !== undefined}
+              >
+                <CssAnimationPanel node={node} />
+              </AccordionSection>
+            ) : null}
             {!q || "css".includes(q) ? (
               <AccordionSection
                 id="css"

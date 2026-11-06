@@ -12,6 +12,7 @@ const project: ProjectSettings = {
   breakpoints: DEFAULT_BREAKPOINTS,
   generateElementIds: true,
   hideEditBorder: false,
+  showClock: false,
   versionControl: true,
   versionLimit: 200,
   classes: {},

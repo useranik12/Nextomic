@@ -248,6 +248,11 @@ For the page or template being edited. Route, Page Parameters, "Requires Authent
   For a template, this dialog shows the template's name, type, conditions (with a link to edit them), priority, theme override, and type-specific settings (popup triggers, archive and single route and query).
   Sections appear as the features that back them are built; hide a section until its phase is done instead of showing disabled controls.
 
+### 4.12a Panel sizes, clock
+
+- Side panels are resizable up to 25% of the window. The Navigator header has a reset icon that restores both side panels to their default width.
+- App Settings > "Show time in the editor" shows a running clock (hh:mm:ss, AM or PM) in the top bar, left of the open page link.
+
 ### 4.13 Animations editor (replicate `inspiration/bricksforge-gsap-animation-timeline.png`)
 
 - Opened from the left rail item "Animations". A full-height layer over the editor body; the top bar stays. The real page canvas shows through the middle, so previews play on the actual elements. Esc or "Back to editor" closes it.

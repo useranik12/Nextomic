@@ -149,7 +149,13 @@ const NavigatorRow = memo(function NavigatorRow({
   );
 });
 
-export function Navigator({ onOpenElements }: { onOpenElements: () => void }) {
+export function Navigator({
+  onOpenElements,
+  onResetSizes
+}: {
+  onOpenElements: () => void;
+  onResetSizes: () => void;
+}) {
   const tree = useEditorStore((s) => s.doc?.tree ?? null);
   const selectedId = useEditorStore((s) => s.selectedId);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
@@ -172,14 +178,25 @@ export function Navigator({ onOpenElements }: { onOpenElements: () => void }) {
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between px-3 py-2">
         <h2 className="text-small font-medium text-foreground">Navigator</h2>
-        <button
-          type="button"
-          aria-label="Add element"
-          onClick={onOpenElements}
-          className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground"
-        >
-          <Icon name="ph:plus" width={16} height={16} />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            aria-label="Reset side panel sizes"
+            title="Reset the width of the side panels"
+            onClick={onResetSizes}
+            className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground"
+          >
+            <Icon name="ph:arrows-in-line-horizontal" width={16} height={16} />
+          </button>
+          <button
+            type="button"
+            aria-label="Add element"
+            onClick={onOpenElements}
+            className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground"
+          >
+            <Icon name="ph:plus" width={16} height={16} />
+          </button>
+        </div>
       </div>
       <div
         role="tree"

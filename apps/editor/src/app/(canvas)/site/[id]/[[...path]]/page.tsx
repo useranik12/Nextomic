@@ -2,7 +2,9 @@ import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
 import { AnimationPlayer } from "@/components/runtime/animation-player";
 import {
   buildDynamicContext,
+  collectElementAnimations,
   customCssFor,
+  elementAnimationCss,
   resolveTheme,
   timelinesForPage
 } from "@nextomic/schema";
@@ -61,8 +63,11 @@ export default async function PublishedPage({
   });
   return (
     <>
-      <style>{BASE_CSS}</style>
-      <AnimationPlayer timelines={timelinesForPage(settings.animations, pageId)} />
+      <style>{BASE_CSS + elementAnimationCss(page.tree)}</style>
+      <AnimationPlayer
+        timelines={timelinesForPage(settings.animations, pageId)}
+        elementAnimations={collectElementAnimations(page.tree)}
+      />
       <PageRenderer
         tree={page.tree}
         breakpoints={settings.breakpoints}

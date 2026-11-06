@@ -19,6 +19,8 @@ export * from "./css-prune";
 export * from "./sides";
 export * from "./attributes";
 export * from "./animations";
+export * from "./css-animation";
+export * from "./css-animation-page";
 export * from "./css-files";
 export * from "./dynamic-context";
 export * from "./framework";

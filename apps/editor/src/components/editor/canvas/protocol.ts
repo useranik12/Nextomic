@@ -58,7 +58,9 @@ export const hostMessageSchema = z.discriminatedUnion("type", [
     type: z.literal("anim-control"),
     command: z.enum(["play", "pause", "stop", "clear"])
   }),
-  z.object({ type: z.literal("anim-seek"), time: finite.min(0) })
+  z.object({ type: z.literal("anim-seek"), time: finite.min(0) }),
+  // Element picking: the canvas dims the page and clears the element under the pointer.
+  z.object({ type: z.literal("pick"), on: z.boolean() })
 ]);
 export type HostMessage = z.infer<typeof hostMessageSchema>;
 

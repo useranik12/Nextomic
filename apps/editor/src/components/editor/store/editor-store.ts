@@ -29,6 +29,7 @@ import {
   setStyle,
   walkElements,
   type BreakpointDef,
+  type ElementAnimation,
   type ElementNode,
   type PageSettings,
   type StyleMap,
@@ -100,6 +101,12 @@ interface EditorState {
 
   setPublishedAt: (at: number | null) => void;
   select: (id: string | null) => void;
+  /** Element picking: the next element chosen on the canvas or in the Navigator is passed to `onPick` as a selector. */
+  picker: { onPick: (selector: string) => void } | null;
+  startPicking: (onPick: (selector: string) => void) => void;
+  cancelPicking: () => void;
+  /** Sets or clears (null) the element's CSS animation settings. */
+  setElementAnimation: (id: string, animation: ElementAnimation | null) => void;
   setActiveClass: (name: string | null) => void;
   setPageDraft: <K extends keyof PageDrafts>(kind: K, value: PageDrafts[K]) => void;
   clearPageDrafts: () => void;
@@ -264,6 +271,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       breakpoints: [],
       generateElementIds: true,
       hideEditBorder: false,
+      showClock: false,
       versionControl: true,
       versionLimit: 200,
       classes: {},
@@ -343,7 +351,32 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     setPublishedAt: (publishedAt) => set({ publishedAt }),
-    select: (id) => set({ selectedId: id, activeClass: null }),
+    picker: null,
+    startPicking: (onPick) => set({ picker: { onPick } }),
+    cancelPicking: () => set({ picker: null }),
+    select: (id) => {
+      const { picker, doc } = get();
+      if (picker && id && doc) {
+        let htmlId: string | undefined;
+        edit(`pick-id:${id}`, (draft) => {
+          const found = findNode(draft.tree, id);
+          if (!found) return;
+          found.node.htmlId ??= generateHtmlId(collectHtmlIds(draft.tree));
+          htmlId = found.node.htmlId;
+        });
+        set({ picker: null });
+        if (htmlId) picker.onPick(`#${htmlId}`);
+        return;
+      }
+      set({ selectedId: id, activeClass: null });
+    },
+    setElementAnimation: (id, animation) =>
+      void edit(`anim:${id}`, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (!found) return;
+        if (animation) found.node.animation = animation;
+        else delete found.node.animation;
+      }),
     setActiveClass: (name) => set({ activeClass: name }),
     setPageDraft: (kind, value) =>
       set((state) => ({ pageDrafts: { ...state.pageDrafts, [kind]: value } })),

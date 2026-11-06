@@ -130,6 +130,7 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:folder-plus" },
   { id: "ph:download-simple" },
   { id: "ph:film-strip" },
+  { id: "ph:arrows-in-line-horizontal" },
   { id: "ph:hash" },
   { id: "ph:tag-simple" },
   { id: "ph:tag" },
