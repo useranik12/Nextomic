@@ -74,7 +74,7 @@ function showState(styles: StyleMap, breakpointId: string, state: PseudoState): 
   byState.default = { ...(byState.default ?? {}), ...declarations };
 }
 
-export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" | "dark" }) {
+export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string }) {
   const doc = useEditorStore((s) => s.doc);
   const breakpoints = useEditorStore((s) => s.project.breakpoints);
   const classes = useEditorStore((s) => s.project.classes);

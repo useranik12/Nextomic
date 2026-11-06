@@ -89,7 +89,7 @@ export function EditorShell({
   const [designSystemTab, setDesignSystemTab] = useState<string | undefined>();
   const [collapsed, setCollapsed] = useState(false);
   const [flyout, setFlyout] = useState(false);
-  const [mode, setMode] = useState<"light" | "dark">("light");
+  const [mode, setMode] = useState<string>("light");
   const { saveNow } = useAutosave();
 
   // The font picker in Design asks for the Design System on its Fonts tab.

@@ -565,3 +565,30 @@ test("icon tooltips, new class is created, button HTML tag shows names", async (
   await page.getByRole("button", { name: /^Classes/ }).click();
   await expect(page.getByText("fresh-class").first()).toBeVisible();
 });
+
+test("custom color mode: add it, preview it from the top bar, remove it", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Design System" }).click();
+  await page.getByRole("button", { name: /^Themes/ }).click();
+
+  // Light and dark only: the top bar keeps its two-way switch.
+  await page.getByRole("switch", { name: /Dark mode for the whole site/ }).check({ force: true });
+  await page.getByLabel("New mode name").fill("Sepia");
+  await page.getByRole("button", { name: "Add mode" }).click();
+  await expect(page.getByLabel("Mode sepia")).toHaveValue("Sepia");
+
+  await page.getByRole("button", { name: "Close the Design System" }).click();
+  await page.getByRole("button", { name: "Save and close" }).click();
+  await page.getByRole("button", { name: "Preview a color mode" }).click();
+  await expect(page.getByRole("menuitemradio", { name: "Sepia" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // Removing the mode brings the two-way switch back.
+  await page.getByRole("button", { name: "Design System" }).click();
+  await page.getByRole("button", { name: /^Themes/ }).click();
+  await page.getByRole("button", { name: "Remove the Sepia mode" }).click();
+  await page.getByRole("button", { name: "Close the Design System" }).click();
+  await page.getByRole("button", { name: "Save and close" }).click();
+  await expect(page.getByRole("button", { name: "Preview a color mode" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Preview the site in/ })).toBeVisible();
+});

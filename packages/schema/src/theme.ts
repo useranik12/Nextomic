@@ -106,6 +106,38 @@ export function newTheme(id: string, name: string, themes: readonly Theme[]): Th
   });
 }
 
+/** The built-in mode ids: always present, never removed. */
+export const BUILTIN_MODE_IDS: readonly string[] = DEFAULT_THEME_MODES.map((m) => m.id);
+
+/** Adds a color mode named by the user; its id is a unique slug. Null when the theme is full or the name is empty. */
+export function addThemeMode(theme: Theme, name: string): Theme | null {
+  const clean = name.trim();
+  if (clean === "" || theme.modes.length >= 6) return null;
+  const taken = new Set(theme.modes.map((m) => m.id));
+  const base = slugifyTheme(clean).slice(0, 28);
+  let id = base;
+  for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
+  return { ...theme, modes: [...theme.modes, { id, name: clean.slice(0, 32) }] };
+}
+
+/** Removes a custom mode with its variable overrides; light and dark cannot be removed. */
+export function removeThemeMode(theme: Theme, modeId: string): Theme {
+  if (BUILTIN_MODE_IDS.includes(modeId) || !theme.modes.some((m) => m.id === modeId)) return theme;
+  const variables = Object.fromEntries(
+    Object.entries(theme.variables).map(([name, byMode]) => {
+      const rest = { ...byMode };
+      delete rest[modeId];
+      return [name, rest];
+    })
+  );
+  return {
+    ...theme,
+    modes: theme.modes.filter((m) => m.id !== modeId),
+    defaultMode: theme.defaultMode === modeId ? "light" : theme.defaultMode,
+    variables
+  };
+}
+
 export function matchRoute(pattern: string, route: string): boolean {
   const re = pattern
     .split("*")
