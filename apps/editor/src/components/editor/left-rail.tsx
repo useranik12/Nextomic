@@ -9,6 +9,7 @@ export type RailItemId =
   | "supabase"
   | "api"
   | "design-system"
+  | "animations"
   | "custom-codes"
   | "git"
   | "history"
@@ -29,6 +30,8 @@ function RailIcon({ id }: { id: RailItemId }) {
       return <Icon name="ph:plugs-connected" {...props} />;
     case "design-system":
       return <Icon name="ph:palette" {...props} />;
+    case "animations":
+      return <Icon name="ph:film-strip" {...props} />;
     case "custom-codes":
       return <Icon name="ph:code" {...props} />;
     case "git":
@@ -47,6 +50,7 @@ export const RAIL_ITEMS: { id: RailItemId; label: string; ready: boolean }[] = [
   { id: "supabase", label: "Supabase", ready: false },
   { id: "api", label: "API Data", ready: false },
   { id: "design-system", label: "Design System", ready: true },
+  { id: "animations", label: "Animations", ready: true },
   { id: "custom-codes", label: "Custom Codes", ready: false },
   { id: "git", label: "Git Connection", ready: false },
   { id: "history", label: "Version History", ready: true }

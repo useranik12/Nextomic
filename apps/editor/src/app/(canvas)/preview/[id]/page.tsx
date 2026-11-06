@@ -1,5 +1,11 @@
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
-import { buildDynamicContext, customCssFor, resolveTheme } from "@nextomic/schema";
+import { AnimationPlayer } from "@/components/runtime/animation-player";
+import {
+  buildDynamicContext,
+  customCssFor,
+  resolveTheme,
+  timelinesForPage
+} from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
@@ -90,6 +96,7 @@ export default async function PreviewPage({
   return (
     <>
       <style>{BASE_CSS}</style>
+      <AnimationPlayer timelines={timelinesForPage(settings.animations, page.id)} />
       <PageRenderer
         tree={page.tree}
         breakpoints={settings.breakpoints}

@@ -133,7 +133,14 @@ Superseded by `templates-and-themes.md` (themes are built; see the decisions log
 
 - Pre-built animations (fade, slide, zoom, rotate, etc.) with trigger options (on load, on scroll into view, on hover, on click via action).
 - GSAP visual timeline editor: tweens, stagger, easing, ScrollTrigger. Saved animations are named, reusable, and callable from the action flow ("start animation" on a target).
-- Respect `prefers-reduced-motion` by default.
+- Respect `prefers-reduced-motion` by default (open).
+- Built: the Animations editor (left rail > Animations). Data is `ProjectSettings.animations` (`packages/schema/src/animations.ts`): folders hold timelines, a timeline is a GSAP timeline, an animation is a tween (`to`, `from`, `fromTo`, `set`).
+  - Timeline: trigger (scroll, page load, click, hover, custom), trigger element (each match runs its own copy), repeat, media query (`gsap.matchMedia`), pages. Scroll: start and end, toggle actions, scrub with smoothing, pin and pin spacing, markers, toggle class, snap. Click and hover: reverse, reverse button, reverse on outside click, ignored selectors, speed.
+  - Animation: target selector (`this` is the trigger), duration, delay, ease, repeat and yoyo, start position (after previous, with previous, or a GSAP position such as `2`, `+=0.5`, `<`), properties from a preset list plus custom names, split text (chars, words, lines), stagger, and extra GSAP vars as JSON merged over the visual values (invalid JSON is ignored).
+  - `planAnimation` produces the exact GSAP arguments and is shared by the runtime, the editor preview and the read-only "GSAP Code" view (`timelineToGsapCode`). `layoutAnimations` places the bars on the timeline the way GSAP resolves positions.
+  - `packages/runtime` builds the timelines (`startTimelines` on preview and published pages through the client `AnimationPlayer`; gsap, ScrollTrigger and SplitText load on demand). The editor previews a timeline on the real canvas: the Animations layer sits over the editor, and the sandboxed canvas runs `previewTimeline` for `anim-load`, `anim-control` and `anim-seek` messages and reports `anim-state`.
+  - Every control has an (i) tip. Timelines can be exported to and imported from JSON (ids are renewed on import).
+  - Open: pre-built animation presets, reusable named animations called from action flows, `prefers-reduced-motion`, drag between folders, keyframe-level editing.
 
 ## 10. Element IDs
 

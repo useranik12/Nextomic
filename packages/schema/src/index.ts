@@ -18,6 +18,7 @@ export * from "./color-math";
 export * from "./css-prune";
 export * from "./sides";
 export * from "./attributes";
+export * from "./animations";
 export * from "./css-files";
 export * from "./dynamic-context";
 export * from "./framework";

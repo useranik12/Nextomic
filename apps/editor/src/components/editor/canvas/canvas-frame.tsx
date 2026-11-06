@@ -19,6 +19,7 @@ import {
 import { useDragActive } from "../dnd";
 import { useEditorStore } from "../store/editor-store";
 import { themeModeFor, useResolvedTheme } from "../store/use-resolved-theme";
+import { onAnimationCommand, reportAnimationState } from "./animation-bridge";
 import { setCanvasDropTarget } from "./canvas-drop";
 import { CanvasToolbar } from "./canvas-toolbar";
 import { canvasMessageSchema, type HostMessage } from "./protocol";
@@ -231,6 +232,13 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
           });
           break;
         }
+        case "anim-state":
+          reportAnimationState({
+            time: message.time,
+            duration: message.duration,
+            playing: message.playing
+          });
+          break;
         case "probe-result":
           if (insideCanvas.current)
             setCanvasDropTarget({ id: message.id ?? "", zone: message.zone });
@@ -244,6 +252,9 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: "light" |
   const send = useCallback((message: HostMessage) => {
     iframeRef.current?.contentWindow?.postMessage(message, "*");
   }, []);
+
+  // Commands from the Animations editor go to the canvas that holds the page.
+  useEffect(() => onAnimationCommand((command) => ready && send(command)), [ready, send]);
 
   useEffect(() => {
     if (!ready || !doc) return;

@@ -1,9 +1,17 @@
 "use client";
 
 import { BASE_CSS, PageRenderer, getElementDefinition } from "@nextomic/renderer";
+import { previewTimeline, type PreviewHandle } from "@nextomic/runtime";
 import { findNode } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
-import { hostMessageSchema, type CanvasMessage, type RenderMessage } from "./protocol";
+import {
+  hostMessageSchema,
+  type CanvasMessage,
+  type HostMessage,
+  type RenderMessage
+} from "./protocol";
+
+type AnimationCommand = Extract<HostMessage, { type: "anim-load" | "anim-control" | "anim-seek" }>;
 
 // Runs INSIDE the sandboxed iframe. It renders whatever tree the editor posts, reports clicks,
 // forwards wheel and middle-button gestures, and hit-tests drags for the editor.
@@ -33,6 +41,8 @@ export function CanvasDocument() {
   const [payload, setPayload] = useState<RenderMessage | null>(null);
   const payloadRef = useRef<RenderMessage | null>(null);
   const markerRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<PreviewHandle | null>(null);
+  const loadSeq = useRef(0);
 
   payloadRef.current = payload;
 
@@ -70,12 +80,70 @@ export function CanvasDocument() {
       postToHost({ type: "probe-result", id, zone });
     }
 
+    function reportAnimation(handle: PreviewHandle, playing: boolean) {
+      postToHost({
+        type: "anim-state",
+        time: handle.time(),
+        duration: handle.duration(),
+        playing
+      });
+    }
+
+    function clearPreview() {
+      loadSeq.current += 1;
+      previewRef.current?.destroy();
+      previewRef.current = null;
+    }
+
+    function onAnimation(message: AnimationCommand) {
+      if (message.type === "anim-load") {
+        clearPreview();
+        const seq = loadSeq.current;
+        void previewTimeline(message.timeline).then((handle) => {
+          if (seq !== loadSeq.current) {
+            handle.destroy();
+            return;
+          }
+          previewRef.current = handle;
+          handle.onUpdate((_, playing) => reportAnimation(handle, playing));
+          reportAnimation(handle, false);
+        });
+        return;
+      }
+      if (message.type === "anim-control" && message.command === "clear") {
+        clearPreview();
+        postToHost({ type: "anim-state", time: 0, duration: 0, playing: false });
+        return;
+      }
+      const handle = previewRef.current;
+      if (!handle) return;
+      if (message.type === "anim-seek") {
+        handle.seek(message.time);
+        reportAnimation(handle, false);
+      } else if (message.command === "play") {
+        handle.play();
+        reportAnimation(handle, true);
+      } else if (message.command === "pause") {
+        handle.pause();
+        reportAnimation(handle, false);
+      } else if (message.command === "stop") {
+        handle.stop();
+        reportAnimation(handle, false);
+      }
+    }
+
     function onMessage(event: MessageEvent) {
       if (event.source !== window.parent) return;
       const parsed = hostMessageSchema.safeParse(event.data);
       if (!parsed.success) return;
       const message = parsed.data;
       if (message.type === "render") setPayload(message);
+      else if (
+        message.type === "anim-load" ||
+        message.type === "anim-control" ||
+        message.type === "anim-seek"
+      )
+        onAnimation(message);
       else if (message.type === "probe") probe(message.x, message.y);
       else if (message.type === "measure") {
         const el = document.querySelector(`[data-nid="${CSS.escape(message.id)}"]`);
@@ -93,7 +161,10 @@ export function CanvasDocument() {
     }
     window.addEventListener("message", onMessage);
     postToHost({ type: "ready" });
-    return () => window.removeEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      clearPreview();
+    };
   }, []);
 
   useEffect(() => {

@@ -19,6 +19,7 @@
     "@iconify/react": "5.2.0",
     "@nextomic/db": "workspace:*",
     "@nextomic/renderer": "workspace:*",
+    "@nextomic/runtime": "workspace:*",
     "@nextomic/schema": "workspace:*",
     "@nextomic/storage": "workspace:*",
     "better-auth": "1.1.13",

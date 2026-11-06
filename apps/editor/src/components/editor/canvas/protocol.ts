@@ -6,6 +6,7 @@ import {
   themeSchema,
   elementNodeSchema,
   styleMapSchema,
+  timelineSchema,
   type BreakpointDef,
   type ElementNode,
   type ProjectVariable,
@@ -50,12 +51,26 @@ export const hostMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("probe"), x: finite, y: finite }),
   z.object({ type: z.literal("probe-clear") }),
   // Ask for the bounds of an element (document coordinates) so the host can fit it on screen.
-  z.object({ type: z.literal("measure"), id: z.string() })
+  z.object({ type: z.literal("measure"), id: z.string() }),
+  // Animation preview in the Animations editor: load a timeline, then play, pause, seek or stop it.
+  z.object({ type: z.literal("anim-load"), timeline: timelineSchema }),
+  z.object({
+    type: z.literal("anim-control"),
+    command: z.enum(["play", "pause", "stop", "clear"])
+  }),
+  z.object({ type: z.literal("anim-seek"), time: finite.min(0) })
 ]);
 export type HostMessage = z.infer<typeof hostMessageSchema>;
 
 export const canvasMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ready") }),
+  // Where the animation preview is, in seconds.
+  z.object({
+    type: z.literal("anim-state"),
+    time: finite.min(0),
+    duration: finite.min(0),
+    playing: z.boolean()
+  }),
   z.object({ type: z.literal("select"), id: z.string().nullable() }),
   // Right-click on an element; coordinates are inside the canvas document.
   z.object({ type: z.literal("context"), id: z.string(), clientX: finite, clientY: finite }),

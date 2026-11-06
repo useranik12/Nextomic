@@ -248,6 +248,15 @@ For the page or template being edited. Route, Page Parameters, "Requires Authent
   For a template, this dialog shows the template's name, type, conditions (with a link to edit them), priority, theme override, and type-specific settings (popup triggers, archive and single route and query).
   Sections appear as the features that back them are built; hide a section until its phase is done instead of showing disabled controls.
 
+### 4.13 Animations editor (replicate `inspiration/bricksforge-gsap-animation-timeline.png`)
+
+- Opened from the left rail item "Animations". A full-height layer over the editor body; the top bar stays. The real page canvas shows through the middle, so previews play on the actual elements. Esc or "Back to editor" closes it.
+- Left: Timelines sidebar (New timeline, Folder; folders with rename and delete; per row on/off, duplicate, delete; Import and Export of JSON).
+- Top of the middle: transport bar (play or pause, stop, `time / length`). Stop puts the page back as it was.
+- Bottom of the middle: Animations track. Rows of animations (name, move up or down, duplicate, delete) beside a ruler with the playhead; bars drag to change the start and resize on the right edge to change the length; clicking the ruler seeks; zoom slider.
+- Right (tabs): Animation (Animation, Timing, Properties, Text and stagger, Custom GSAP object), Timeline (Timeline, Scroll or Interaction, Where it runs), GSAP Code (read-only, Copy).
+- Rules: every control has an (i) tip in plain words; selectors come with an element picker; invalid values are marked, never saved silently. See `design-system.md` section 9.
+
 ### 4.12 Breakpoints
 
 The three-dots menu next to the breakpoint switcher opens a manager:
