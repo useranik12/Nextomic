@@ -26,6 +26,7 @@ export function InfoTip({
     >
       <button
         type="button"
+        data-own-tip
         aria-label={`${label}: ${text}`}
         className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:text-foreground focus-visible:ring-2 focus-visible:ring-default-800/40"
       >

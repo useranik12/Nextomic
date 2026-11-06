@@ -5,11 +5,13 @@ import { safeUrl } from "./values";
 
 const LAYOUT_TAGS = ["div", "section", "header", "main", "nav", "aside", "article", "footer"];
 
+const BUTTON_TAGS = ["button", "a", "div", "span"];
+
 const tagControl = (tags: string[]): ControlDef => ({
   key: "htmlTag",
   label: "HTML tag",
   kind: "select",
-  options: tags.map((tag) => ({ value: tag, label: `<${tag}>` }))
+  options: tags.map((tag) => ({ value: tag, label: tag }))
 });
 
 registerElement({
@@ -88,18 +90,27 @@ registerElement({
   label: "Button",
   category: "basic",
   canHaveChildren: false,
-  defaults: () => ({ props: { text: "Button", href: "" }, name: "Button" }),
+  htmlTags: BUTTON_TAGS,
+  defaults: () => ({ props: { text: "Button", href: "" }, htmlTag: "button", name: "Button" }),
   propsSchema: z.object({ text: z.string(), href: z.string() }),
   controls: [
     { key: "text", label: "Text", kind: "text" },
+    tagControl(BUTTON_TAGS),
     { key: "href", label: "Link", kind: "url", placeholder: "https:// or /page" }
   ],
   bindable: { text: true, href: true },
-  render: ({ attrs, text }) => {
+  render: ({ node, attrs, text }) => {
     const href = safeUrl(text("href"));
-    return href
-      ? createElement("a", { ...attrs, href }, text("text"))
-      : createElement("button", { ...attrs, type: "button" }, text("text"));
+    const tag = node.htmlTag ?? "button";
+    // A button or link with an address is a link; a button without one stays a button.
+    if (tag === "a" || (tag === "button" && href)) {
+      return createElement("a", href ? { ...attrs, href } : attrs, text("text"));
+    }
+    return createElement(
+      tag,
+      tag === "button" ? { ...attrs, type: "button" } : attrs,
+      text("text")
+    );
   }
 });
 

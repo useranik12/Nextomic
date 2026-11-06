@@ -136,6 +136,24 @@ describe("PageRenderer", () => {
     expect(html).toContain("padding:24px");
   });
 
+  it("renders a button as the chosen HTML tag, and a link when it has an address", () => {
+    const render = (htmlTag: string | undefined, href: string) =>
+      renderToStaticMarkup(
+        <PageRenderer
+          tree={{
+            ...emptyPageTree(),
+            children: [node({ id: "b", type: "button", htmlTag, props: { text: "Go", href } })]
+          }}
+          breakpoints={DEFAULT_BREAKPOINTS}
+        />
+      );
+    expect(render("button", "")).toContain('<button data-nid="b" type="button">Go</button>');
+    expect(render("button", "/x")).toContain('<a data-nid="b" href="/x">Go</a>');
+    expect(render("div", "/x")).toContain('<div data-nid="b">Go</div>');
+    expect(render("span", "")).toContain('<span data-nid="b">Go</span>');
+    expect(render("a", "")).toContain('<a data-nid="b">Go</a>');
+  });
+
   it("skips unknown element types and unsafe attributes", () => {
     const root = emptyPageTree();
     root.children = [

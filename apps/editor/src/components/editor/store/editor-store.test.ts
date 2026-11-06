@@ -195,4 +195,13 @@ describe("rename and attributes", () => {
     expect(useEditorStore.getState().picker).toBeNull();
     expect(useEditorStore.getState().selectedId).toBeNull();
   });
+
+  it("naming a class on an element creates that class in the project", () => {
+    reset();
+    const id = useEditorStore.getState().insertElement("heading")!;
+    useEditorStore.getState().setElementClass(id, "hero");
+    const state = useEditorStore.getState();
+    expect(state.project.classes.hero).toEqual({ breakpoints: {} });
+    expect(findNode(state.doc!.tree, id)!.node.classIds).toContain("hero");
+  });
 });
