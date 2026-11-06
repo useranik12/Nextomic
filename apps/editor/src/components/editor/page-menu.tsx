@@ -12,17 +12,16 @@ import {
   ModalFooter,
   ModalHeader
 } from "@heroui/react";
-import { createPageInputSchema } from "@nextomic/schema";
+import { TEMPLATE_TYPE_LABELS, createPageInputSchema } from "@nextomic/schema";
 import { useState } from "react";
-import {
-  createPageAction,
-  listPagesAction,
-  loadPageAction
-} from "@/app/(builder)/editor/[id]/actions";
+import { createPageAction, listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import { ActionButton, FormInput } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
+import { NewTemplateModal } from "./library/new-template-modal";
+import { openPage, openTemplate } from "./open-item";
 import { useEditorStore } from "./store/editor-store";
 import type { PageSummary } from "@/server/pages";
+import type { TemplateSummary } from "@/server/templates";
 
 export function slugify(name: string): string {
   const slug = name
@@ -33,36 +32,21 @@ export function slugify(name: string): string {
   return `/${slug}`;
 }
 
-export async function openPage(pageId: string): Promise<string | null> {
-  const store = useEditorStore.getState();
-  if (store.saveStatus === "conflict") return "Resolve the save conflict first.";
-  if (
-    (store.saveStatus === "dirty" || store.saveStatus === "error") &&
-    !window.confirm("This page has unsaved changes. Switch anyway and discard them?")
-  )
-    return null;
-  const result = await loadPageAction(store.projectId, pageId);
-  if (result.error !== null) return result.error;
-  const page = result.data;
-  useEditorStore
-    .getState()
-    .loadPage(
-      { id: page.id, version: page.version },
-      { name: page.name, route: page.route, settings: page.settings, tree: page.tree }
-    );
-  return null;
-}
-
 export function PageMenu({
   pages,
-  onPagesChange
+  templates,
+  onPagesChange,
+  onTemplatesChange
 }: {
   pages: PageSummary[];
+  templates: TemplateSummary[];
   onPagesChange: (pages: PageSummary[]) => void;
+  onTemplatesChange: () => void;
 }) {
   const pageId = useEditorStore((s) => s.page?.id);
   const name = useEditorStore((s) => s.doc?.name ?? "Page");
   const [newOpen, setNewOpen] = useState(false);
+  const [newTemplateOpen, setNewTemplateOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   return (
@@ -82,8 +66,9 @@ export function PageMenu({
           selectionMode="single"
           selectedKeys={pageId ? [pageId] : []}
           onAction={async (key) => {
-            const error = await openPage(String(key));
-            setMessage(error);
+            const id = String(key);
+            const isTemplate = templates.some((t) => t.id === id);
+            setMessage(await (isTemplate ? openTemplate(id) : openPage(id)));
           }}
         >
           <DropdownSection title="Pages" showDivider>
@@ -94,24 +79,56 @@ export function PageMenu({
             ))}
           </DropdownSection>
           <DropdownSection title="Templates">
-            <DropdownItem key="no-templates" isDisabled textValue="No templates yet">
-              No templates yet
-            </DropdownItem>
+            {templates.length === 0 ? (
+              <DropdownItem key="no-templates" isDisabled textValue="No templates yet">
+                No templates yet
+              </DropdownItem>
+            ) : (
+              templates.map((t) => (
+                <DropdownItem
+                  key={t.id}
+                  description={TEMPLATE_TYPE_LABELS[t.type]}
+                  textValue={t.name}
+                >
+                  {t.name}
+                </DropdownItem>
+              ))
+            )}
           </DropdownSection>
         </DropdownMenu>
       </Dropdown>
-      <button
-        type="button"
-        aria-label="New page"
-        onClick={() => setNewOpen(true)}
-        className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
-      >
-        <Icon name="ph:plus" width={20} height={20} />
-      </button>
+      <Dropdown>
+        <DropdownTrigger>
+          <button
+            type="button"
+            aria-label="New page or template"
+            className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+          >
+            <Icon name="ph:plus" width={20} height={20} />
+          </button>
+        </DropdownTrigger>
+        <DropdownMenu
+          aria-label="Create"
+          onAction={(key) => (key === "page" ? setNewOpen(true) : setNewTemplateOpen(true))}
+        >
+          <DropdownItem key="page">New page</DropdownItem>
+          <DropdownItem key="template">New template</DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
       {message ? (
         <span role="alert" className="text-tiny text-danger">
           {message}
         </span>
+      ) : null}
+      {newTemplateOpen ? (
+        <NewTemplateModal
+          projectId={useEditorStore.getState().projectId}
+          onClose={() => setNewTemplateOpen(false)}
+          onCreated={async (id) => {
+            onTemplatesChange();
+            setMessage(await openTemplate(id));
+          }}
+        />
       ) : null}
       {newOpen ? (
         <NewPageModal
@@ -127,7 +144,7 @@ export function PageMenu({
   );
 }
 
-function NewPageModal({
+export function NewPageModal({
   onClose,
   onCreated
 }: {

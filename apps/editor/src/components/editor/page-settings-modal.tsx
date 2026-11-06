@@ -17,7 +17,7 @@ import {
 } from "@/app/(builder)/editor/[id]/actions";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
-import { openPage } from "./page-menu";
+import { openPage } from "./open-item";
 import { useEditorStore } from "./store/editor-store";
 import type { PageSummary } from "@/server/pages";
 

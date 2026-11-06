@@ -4,10 +4,12 @@ import {
   usedClassNames,
   pageSettingsSchema,
   projectSettingsSchema,
+  templateSettingsSchema,
   type ProjectSettings,
-  type PublishedPage
+  type PublishedPage,
+  type PublishedTemplate
 } from "@nextomic/schema";
-import { getDb, pages, projects } from "@nextomic/db";
+import { getDb, pages, projects, templates } from "@nextomic/db";
 import { and, asc, eq } from "drizzle-orm";
 import { getProjectSettings } from "./pages";
 
@@ -32,10 +34,34 @@ function stable(value: unknown): string {
 }
 
 /** What publishing would write for a page row, or null when the page is left out. */
-function snapshotOf(row: { name: string; route: string; settings: unknown; tree: unknown }) {
+export function snapshotOfPage(row: {
+  name: string;
+  route: string;
+  settings: unknown;
+  tree: unknown;
+}) {
   const settings = pageSettingsSchema.parse(row.settings);
   if (!settings.includeInPublish) return null;
   return { name: row.name, route: row.route, settings, tree: elementNodeSchema.parse(row.tree) };
+}
+
+/** What publishing would write for a template row: only published templates go out. */
+export function templateSnapshotOf(row: {
+  id: string;
+  type: "header" | "footer" | "error-404";
+  name: string;
+  settings: unknown;
+  tree: unknown;
+}): PublishedTemplate | null {
+  const settings = templateSettingsSchema.parse(row.settings);
+  if (settings.status !== "published") return null;
+  return {
+    id: row.id,
+    type: row.type,
+    name: row.name,
+    settings,
+    tree: elementNodeSchema.parse(row.tree)
+  };
 }
 
 export async function getPublishState(projectId: string): Promise<PublishState> {
@@ -49,6 +75,7 @@ export async function getPublishState(projectId: string): Promise<PublishState> 
     .where(eq(projects.id, projectId))
     .limit(1);
   const rows = await db.select().from(pages).where(eq(pages.projectId, projectId));
+  const templateRows = await db.select().from(templates).where(eq(templates.projectId, projectId));
   const publishedAt = project?.publishedAt ?? null;
   let hasUnpublishedChanges = publishedAt === null;
   if (publishedAt !== null) {
@@ -57,7 +84,8 @@ export async function getPublishState(projectId: string): Promise<PublishState> 
     hasUnpublishedChanges =
       !live.success ||
       stable(live.data) !== stable(current) ||
-      rows.some((row) => stable(row.publishedSnapshot) !== stable(snapshotOf(row)));
+      rows.some((row) => stable(row.publishedSnapshot) !== stable(snapshotOfPage(row))) ||
+      templateRows.some((row) => stable(row.publishedSnapshot) !== stable(templateSnapshotOf(row)));
   }
   return {
     publishedAt,
@@ -72,11 +100,22 @@ export async function publishProject(projectId: string): Promise<PublishState> {
   await getDb().transaction(async (tx) => {
     const rows = await tx.select().from(pages).where(eq(pages.projectId, projectId));
     for (const row of rows) {
-      const snapshot: PublishedPage | null = snapshotOf(row);
+      const snapshot: PublishedPage | null = snapshotOfPage(row);
       await tx
         .update(pages)
-        .set({ publishedSnapshot: snapshot })
+        .set({ publishedSnapshot: snapshot, publishedAt: snapshot ? publishedAt : null })
         .where(and(eq(pages.id, row.id), eq(pages.projectId, projectId)));
+    }
+    const templateRows = await tx
+      .select()
+      .from(templates)
+      .where(eq(templates.projectId, projectId));
+    for (const row of templateRows) {
+      const snapshot = templateSnapshotOf(row);
+      await tx
+        .update(templates)
+        .set({ publishedSnapshot: snapshot, publishedAt: snapshot ? publishedAt : null })
+        .where(and(eq(templates.id, row.id), eq(templates.projectId, projectId)));
     }
     await tx
       .update(projects)
@@ -88,7 +127,14 @@ export async function publishProject(projectId: string): Promise<PublishState> {
 
 export async function unpublishProject(projectId: string): Promise<PublishState> {
   await getDb().transaction(async (tx) => {
-    await tx.update(pages).set({ publishedSnapshot: null }).where(eq(pages.projectId, projectId));
+    await tx
+      .update(pages)
+      .set({ publishedSnapshot: null, publishedAt: null })
+      .where(eq(pages.projectId, projectId));
+    await tx
+      .update(templates)
+      .set({ publishedSnapshot: null, publishedAt: null })
+      .where(eq(templates.projectId, projectId));
     await tx
       .update(projects)
       .set({ publishedAt: null, publishedSettings: null })

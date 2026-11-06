@@ -143,7 +143,8 @@ export async function createPage(
           name: input.name,
           route: input.route,
           settings,
-          tree: emptyPageTree()
+          tree: emptyPageTree(),
+          createdBy: userId
         })
         .returning();
       if (!row) throw new Error("Page insert returned no row");

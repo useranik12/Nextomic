@@ -1,8 +1,12 @@
 "use client";
 
 import type { ProjectSettings } from "@nextomic/schema";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
+import { listTemplatesAction } from "@/app/(builder)/editor/[id]/library-actions";
+import type { TemplateSummary } from "@/server/templates";
+import { LibraryManager } from "./library/library-manager";
+import { openPage, openTemplate } from "./open-item";
 import type { PageSummary, StoredPage } from "@/server/pages";
 import { CanvasFrame } from "./canvas/canvas-frame";
 import { AppSettings } from "./app-settings";
@@ -83,6 +87,7 @@ export function EditorShell({
   const navigatorWidth = usePanelWidth("nxt:navigator-width", NAVIGATOR_MIN, NAVIGATOR_MIN);
   const rightWidth = usePanelWidth("nxt:right-panel-width", RIGHT_MIN, RIGHT_MIN);
   const [pages, setPages] = useState(initialPages);
+  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [rail, setRail] = useState<RailItemId>("navigator");
   const [designSystemOpen, setDesignSystemOpen] = useState(false);
   const [animationsOpen, setAnimationsOpen] = useState(false);
@@ -133,14 +138,19 @@ export function EditorShell({
     setFlyout(false);
   }, [selectedId, rail]);
 
-  // Keep the page list (names, routes, home flag) in step with saves.
-  const savedTick = useEditorStore((s) => s.savedTick);
-  useEffect(() => {
-    if (savedTick === 0) return;
+  // Keep the page and template lists (names, routes, home flag) in step with saves.
+  const refreshLists = useCallback(() => {
     void listPagesAction(projectId).then((result) => {
       if (result.error === null) setPages(result.data);
     });
-  }, [savedTick, projectId]);
+    void listTemplatesAction(projectId).then((result) => {
+      if (result.error === null) setTemplates(result.data);
+    });
+  }, [projectId]);
+  const savedTick = useEditorStore((s) => s.savedTick);
+  useEffect(() => {
+    refreshLists();
+  }, [savedTick, refreshLists]);
 
   if (!ready) {
     return (
@@ -161,7 +171,9 @@ export function EditorShell({
         <TopBar
           projectId={projectId}
           pages={pages}
+          templates={templates}
           onPagesChange={setPages}
+          onTemplatesChange={refreshLists}
           saveNow={saveNow}
           mode={mode}
           onModeChange={setMode}
@@ -195,7 +207,30 @@ export function EditorShell({
               onToggleCollapse={() => setCollapsed((v) => !v)}
             />
           </div>
+          {rail === "pages-templates" ? (
+            <main className="min-w-0 flex-1">
+              <LibraryManager
+                projectId={projectId}
+                onChanged={refreshLists}
+                onOpen={async (item) => {
+                  const error =
+                    item.kind === "page" ? await openPage(item.id) : await openTemplate(item.id);
+                  if (error === null) {
+                    setRail("navigator");
+                    setCollapsed(true);
+                    useEditorStore.getState().select(null);
+                  }
+                }}
+                onDeleted={async (item) => {
+                  if (useEditorStore.getState().page?.id !== item.id) return;
+                  const first = pages.find((p) => p.id !== item.id);
+                  if (first) await openPage(first.id);
+                }}
+              />
+            </main>
+          ) : null}
           <div
+            hidden={rail === "pages-templates"}
             className="relative shrink-0 border-r border-divider"
             style={{ width: rail === "navigator" ? navigatorWidth.width : LEFT_PANEL_WIDTH }}
           >
@@ -232,13 +267,14 @@ export function EditorShell({
               </div>
             )}
           </div>
-          <main className="min-w-0 flex-1 bg-content1/20">
+          <main hidden={rail === "pages-templates"} className="min-w-0 flex-1 bg-content1/20">
             <CanvasFrame mode={mode} />
           </main>
           {animationsOpen ? (
             <AnimationsEditor pages={pages} onClose={() => setAnimationsOpen(false)} />
           ) : null}
           <div
+            hidden={rail === "pages-templates"}
             className="relative shrink-0 border-l border-divider"
             style={{ width: rightWidth.width }}
           >

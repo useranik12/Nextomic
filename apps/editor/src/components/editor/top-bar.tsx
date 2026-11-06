@@ -27,6 +27,7 @@ import { themeModeFor, useResolvedTheme } from "./store/use-resolved-theme";
 import { themeModes } from "@nextomic/schema";
 import { UnsavedDraftsDialog } from "./unsaved-drafts-dialog";
 import type { PageSummary } from "@/server/pages";
+import type { TemplateSummary } from "@/server/templates";
 
 const STATUS_LABEL: Record<SaveStatus, string> = {
   saved: "Saved",
@@ -417,7 +418,9 @@ function ModePreview({
 export function TopBar({
   projectId,
   pages,
+  templates,
   onPagesChange,
+  onTemplatesChange,
   saveNow,
   mode,
   onModeChange,
@@ -425,7 +428,9 @@ export function TopBar({
 }: {
   projectId: string;
   pages: PageSummary[];
+  templates: TemplateSummary[];
   onPagesChange: (pages: PageSummary[]) => void;
+  onTemplatesChange: () => void;
   saveNow: () => Promise<void>;
   mode: string;
   onModeChange: (mode: string) => void;
@@ -471,7 +476,12 @@ export function TopBar({
             className="dark:hidden"
           />
         </Link>
-        <PageMenu pages={pages} onPagesChange={onPagesChange} />
+        <PageMenu
+          pages={pages}
+          templates={templates}
+          onPagesChange={onPagesChange}
+          onTemplatesChange={onTemplatesChange}
+        />
         <button
           type="button"
           aria-label="Page settings"

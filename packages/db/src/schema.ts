@@ -1,4 +1,11 @@
-import type { ElementNode, PageSettings, ProjectSettings, PublishedPage } from "@nextomic/schema";
+import type {
+  ElementNode,
+  PageSettings,
+  ProjectSettings,
+  PublishedPage,
+  PublishedTemplate,
+  TemplateSettings
+} from "@nextomic/schema";
 import {
   index,
   integer,
@@ -79,10 +86,40 @@ export const pages = pgTable(
     // Incremented on every save; saves send the base version and a mismatch is a conflict.
     version: integer("version").notNull().default(1),
     publishedSnapshot: jsonb("published_snapshot").$type<PublishedPage>(),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    // When this page last went live; cleared by Unpublish.
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    // When its screenshot was last generated (the file lives in storage at a fixed key).
+    screenshotAt: timestamp("screenshot_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [uniqueIndex("pages_project_route_idx").on(table.projectId, table.route)]
+);
+
+export const templates = pgTable(
+  "templates",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    type: text("type").$type<"header" | "footer" | "error-404">().notNull(),
+    name: text("name").notNull(),
+    settings: jsonb("settings").$type<TemplateSettings>().notNull(),
+    tree: jsonb("tree").$type<ElementNode>().notNull(),
+    // Incremented on every save; saves send the base version and a mismatch is a conflict.
+    version: integer("version").notNull().default(1),
+    publishedSnapshot: jsonb("published_snapshot").$type<PublishedTemplate>(),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    screenshotAt: timestamp("screenshot_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [index("templates_project_idx").on(table.projectId, table.type)]
 );
 
 export const pageVersions = pgTable(
