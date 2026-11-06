@@ -180,11 +180,21 @@ test("bolt, App Settings toggle, split publish", async ({ page, request }) => {
   expect((await request.get(site)).status()).toBe(404);
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
-  expect((await request.get(site)).status()).toBe(200);
+  const published = await request.get(site);
+  expect(published.status()).toBe(200);
+  // The theme's CSS is its own cacheable file, linked from the page.
+  const href = /href="(\/theme-css\/[^"]+\.css\?v=\d+)"/.exec(await published.text())?.[1];
+  expect(href).toBeTruthy();
+  const themeFile = await request.get(href ?? "");
+  expect(themeFile.status()).toBe(200);
+  expect(themeFile.headers()["content-type"]).toContain("text/css");
+  expect(themeFile.headers()["cache-control"]).toContain("immutable");
+  expect(await themeFile.text()).toContain("data-nxt-theme");
   await page.getByRole("button", { name: "More publish options" }).click();
   await page.getByRole("menuitem", { name: /Unpublish/ }).click();
   await expect(page.getByRole("status").filter({ hasText: "Unpublished" })).toBeVisible();
   expect((await request.get(site)).status()).toBe(404);
+  expect((await request.get(href ?? "")).status()).toBe(404);
 });
 
 test("breakpoints order themselves by width", async ({ page }) => {

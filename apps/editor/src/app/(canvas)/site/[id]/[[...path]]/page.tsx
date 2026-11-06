@@ -55,7 +55,7 @@ export default async function PublishedPage({
   for (const [key, value] of Object.entries(search)) {
     if (typeof value === "string") values[key] = value;
   }
-  const { page, pageId, settings } = await resolve(id, path);
+  const { page, pageId, settings, publishedAt } = await resolve(id, path);
   const { theme } = resolveTheme(settings.themes, {
     pageId,
     route: page.route,
@@ -76,6 +76,9 @@ export default async function PublishedPage({
         fonts={settings.fonts}
         fontBase={`/fonts/${id}`}
         theme={theme}
+        themeStylesheet={
+          theme ? `/theme-css/${id}/${theme.slug}.css?v=${publishedAt.getTime()}` : undefined
+        }
         customCss={customCssFor(settings.cssFiles, pageId, { minify: true })}
         dynamic={buildDynamicContext({
           page: { name: page.name, route: page.route, settings: page.settings },
