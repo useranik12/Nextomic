@@ -77,7 +77,7 @@ UI: see `ui-reference.md` 4.5 and `blueprint/pages/editor-api-data-*.png`.
 
 Structure: **API groups** contain **API calls**. Calls can also be ungrouped.
 
-- Group: `name`, `baseUrl` (https only; http allowed only for localhost in dev), shared `headers`, shared auth.
+- Group: `name`, `baseUrl` (https only; http and local hosts only with `ALLOW_PRIVATE_CONNECTOR_HOSTS` in development, see section 6), shared `headers`, shared auth.
 - Call: `name`, `active` (toggle), `method` (GET, POST, PUT, PATCH, DELETE), `endpoint` (path appended to the group base URL), `headers[]`, `body` (`none | text | json | multipart`, plus form-urlencoded if needed), `variables[]`, `advancedSettings` (not designed: timeout, retries, caching, pagination; ask before building the UI), `responseSchema` (saved structure).
 - Method badge colors: GET green, POST purple, PUT orange, PATCH amber, DELETE pink/red. An inactive call shows a muted badge with a red x.
 
@@ -107,7 +107,12 @@ Capabilities:
 - Encrypt with AES-256-GCM. Key from `ENCRYPTION_KEY` (32 bytes, base64). Store `ciphertext`, `iv`, `tag`, and `key_version`.
 - Support key rotation via `key_version`.
 - Decrypt only inside server routes at call time. Never log secrets. Never return secrets to the client; return only `hasSecret: true` and a masked tail.
-- Editing a connector with a blank secret field keeps the existing secret.
+- Editing a connector with a blank secret field keeps the existing secret; `null` removes it.
+- Environment: `ENCRYPTION_KEY` (current key), `ENCRYPTION_KEY_VERSION` (default 1), `ENCRYPTION_PREVIOUS_KEYS` (`version:base64,...`, older keys kept readable). Rotate by moving the old key into the previous list, setting a new key and raising the version; a secret is re-encrypted with the current key the next time its connector is saved.
+- All of a connector's secrets are one sealed JSON object. The connector id is bound in as additional authenticated data, so ciphertext copied to another row does not open.
+- The browser sees `{ hasSecret: true, tail }`; `tail` (last 4 characters) is shown only for secrets of 16 characters or more.
+
+Built (4b): `packages/integrations/src/secrets.ts`, `apps/editor/src/server/connectors/env.ts`.
 
 ## 6. Proxy (`apps/editor` server route)
 
@@ -120,6 +125,15 @@ Hard requirements:
 - Per-user and per-project rate limits.
 - Strip hop-by-hop headers and any attempt to override `Host` or auth headers outside the configured fields.
 - Audit log entry per call: project, connector, resource, status, duration (no bodies, no secrets).
+
+Built (4b):
+
+- Route: `POST /api/projects/{projectId}/connectors/{connectorId}` with `{ op: "test" | "resources" | "execute", request? }`. Same-origin JSON only (Origin must match the host, `content-type: application/json`, body up to 1 MB). Answers `{ ok: true, data }` or `{ ok: false, error: { code, message } }`; 400 invalid request, 401 signed out, 403 no access or cross-site, 404 unknown connector, 429 rate limited, 502 any other connector error.
+- `execute` needs the connector to be on; `test` and `resources` work while it is off. Saving a connector as on runs its test first and refuses when it fails.
+- Network access: connectors reach the network only through `safeFetch` (`packages/integrations/src/safe-fetch.ts`). Each hop resolves the host, refuses it when ANY address is blocked (`address-guard.ts`, which also decodes IPv4-mapped, NAT64 and 6to4 IPv6), then connects to the checked address itself with TLS verified by host name, so DNS cannot change between check and connect. https only. Up to 3 redirects, each checked again; credentials (`authorization`, `cookie`, `apikey`, `x-api-key`) are dropped when a redirect leaves the origin. Timeout 15s default, 30s max. 5 MB cap on decoded bytes (compressed bombs cannot pass). Allowed response types: JSON, `+json`, `text/*`, XML.
+- Private hosts: `ALLOW_PRIVATE_CONNECTOR_HOSTS=true` lets connectors reach loopback, private and CGNAT addresses and plain http, only when `NODE_ENV` is not production. Link-local and cloud metadata addresses (169.254.0.0/16, 100.100.100.200, fd00:ec2::254) stay blocked always.
+- Rate limits: 60 calls per minute per user and 300 per minute per project, in memory (one container; a second replica would need a shared store).
+- Files: `apps/editor/src/server/connectors/{operation,proxy,store,env}.ts`, `server/rate-limit.ts`, server actions in `app/(builder)/editor/[id]/connector-actions.ts` (list with masks, save, delete).
 
 ## 7. Bindings in page JSON (`packages/schema`)
 
@@ -153,11 +167,12 @@ type Action =
 ## 8. Platform tables (`packages/db`)
 
 - `connectors`: id, project_id, type, name, active, config jsonb, secret_ciphertext, secret_iv, secret_tag, key_version, created_by, created_at, updated_at
-- `connector_schemas`: id, connector_id, structure jsonb (tables, columns, types, buckets, or inferred response shapes; NO row data), fetched_at, hash
+- `connector_schemas`: connector_id (primary key, one saved structure per connector), structure jsonb (tables, columns, types, buckets, or inferred response shapes; NO row data), fetched_at, hash
 - `api_groups`: id, connector_id, name, base_url, headers jsonb, sort
 - `api_calls`: id, group_id (nullable), connector_id, name, active, method, endpoint, headers jsonb, body_type, body_template, variables jsonb, advanced jsonb, response_schema jsonb, sort
-- `connector_audit_log`: id, connector_id, user_id, resource_id, status, duration_ms, created_at
+- `connector_audit_log`: id, connector_id, user_id, operation (test, resources, execute), resource_id, status (HTTP status or error code), duration_ms, created_at
   All rows are scoped by workspace through the project. Every query enforces workspace membership.
+  Built (4b, migration `0005_connectors.sql`): `connectors` (unique name per project), `connector_schemas`, `connector_audit_log`. `api_groups` and `api_calls` come with 4c.
 
 ## 9. UI
 

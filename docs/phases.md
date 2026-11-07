@@ -80,7 +80,7 @@ Docs: `dynamic-data-and-actions.md`, `integrations.md`, `ui-reference.md` (Supab
 - [x] Data Types page (Custom Data Types and ENUM), the unified type list, n8n-style `{{ }}` expressions with a suggestion panel _Built: `schema/expression/*`, `components/editor/data-types/*`, `components/editor/expression/*`; awaiting owner approval of the screens. Supabase Row becomes selectable in 4d._
 - [x] Drafts with Save/Discard and an unsaved-changes guard on data forms, grouped expression suggestions with search, `{{` auto-close, tag highlighting with hover values and Navigator problem dots, scheduled publish _Built: `draft-scope.tsx`, `expression/*`, `schedule-dialog.tsx`, `ui/date-time-field.tsx`, `server/publish.ts` (`runDuePublish`)._
 - [ ] Supabase page and API Data page from the designs; schema fetch saves structure only
-- [ ] Connector secrets encryption and server proxy with SSRF protection
+- [x] Connector secrets encryption and server proxy with SSRF protection _Built (4b): `packages/integrations` (contract, registry, errors, secrets, address guard, safeFetch), `server/connectors/*`, proxy route, migration 0005. No connector type is registered yet: Supabase registers in 4d, REST in 4c._
 - [ ] Queries (page, element/loop, action-triggered), parameters, loading/empty/error states
 - [ ] Dynamic data modal (bolt icon): groups, scope rules, dot notation, live preview on canvas, type-aware
 - [ ] Universal bindability: every registered prop, attribute, style value, class toggle, SEO and route field accepts dynamic tokens
