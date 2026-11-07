@@ -12,6 +12,7 @@ import {
   workspaces
 } from "@nextomic/db";
 import { eq } from "drizzle-orm";
+import { authBaseUrl, authTrustedOrigins } from "@/lib/auth-url";
 import { isSmtpConfigured, sendAuthEmail } from "@/lib/mail";
 
 // First user on a fresh install becomes the owner of an auto-created workspace
@@ -38,6 +39,10 @@ async function provisionWorkspaceForNewUser(newUser: { id: string; email: string
 const requireEmailVerification = isSmtpConfigured();
 
 export const auth = betterAuth({
+  // Set explicitly so links and the origin check always use the public address, never the
+  // container's internal one (behind Traefik the app itself sees http://localhost:3000).
+  baseURL: authBaseUrl(),
+  trustedOrigins: authTrustedOrigins(),
   database: drizzleAdapter(getDb(), {
     provider: "pg",
     schema: { user, session, account, verification }
