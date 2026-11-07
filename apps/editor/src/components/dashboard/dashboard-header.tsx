@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  Avatar,
   Button,
   Dropdown,
   DropdownItem,
   DropdownMenu,
+  DropdownSection,
   DropdownTrigger,
   Tooltip
 } from "@heroui/react";
@@ -14,10 +14,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getBrandAsset } from "@/lib/assets";
 import { Icon } from "@/lib/icons/Icon";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { authClient } from "@/lib/auth-client";
 
 export interface DashboardHeaderProps {
   userName: string;
+  userEmail: string;
   userImage?: string | null;
 }
 
@@ -27,7 +29,7 @@ const SHORTCUTS = [
   { key: "settings", label: "Settings", href: "/settings" }
 ];
 
-export function DashboardHeader({ userName, userImage }: DashboardHeaderProps) {
+export function DashboardHeader({ userName, userEmail, userImage }: DashboardHeaderProps) {
   const router = useRouter();
   const firstName = userName.trim().split(/\s+/)[0] || "User";
 
@@ -98,21 +100,43 @@ export function DashboardHeader({ userName, userImage }: DashboardHeaderProps) {
         <Dropdown>
           <DropdownTrigger>
             <Button isIconOnly variant="light" aria-label="Account menu" className="rounded-full">
-              <Avatar size="sm" src={userImage ?? undefined} name={userName} />
+              <UserAvatar name={userName} image={userImage} />
             </Button>
           </DropdownTrigger>
-          <DropdownMenu aria-label="Account">
-            <DropdownItem key="settings" href="/settings">
-              Appearance settings
-            </DropdownItem>
-            <DropdownItem
-              key="sign-out"
-              color="danger"
-              startContent={<Icon name="ph:sign-out" />}
-              onPress={handleSignOut}
-            >
-              Sign out
-            </DropdownItem>
+          <DropdownMenu aria-label="Account" disabledKeys={["profile"]}>
+            <DropdownSection showDivider aria-label="Signed in as">
+              <DropdownItem
+                key="profile"
+                textValue={`${userName} ${userEmail}`}
+                className="cursor-default opacity-100"
+                classNames={{ base: "data-[disabled=true]:opacity-100" }}
+                startContent={<UserAvatar name={userName} image={userImage} size="md" />}
+              >
+                <span className="block max-w-56 truncate text-small font-semibold text-foreground">
+                  {userName}
+                </span>
+                <span className="block max-w-56 truncate text-tiny text-default-500">
+                  {userEmail}
+                </span>
+              </DropdownItem>
+            </DropdownSection>
+            <DropdownSection aria-label="Actions">
+              <DropdownItem
+                key="settings"
+                href="/settings"
+                startContent={<Icon name="ph:gear-six" />}
+              >
+                Settings
+              </DropdownItem>
+              <DropdownItem
+                key="sign-out"
+                color="danger"
+                startContent={<Icon name="ph:sign-out" />}
+                onPress={handleSignOut}
+              >
+                Sign out
+              </DropdownItem>
+            </DropdownSection>
           </DropdownMenu>
         </Dropdown>
       </div>

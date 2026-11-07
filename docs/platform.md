@@ -38,6 +38,17 @@ Builder authentication (this doc) is for people who use the builder. Authenticat
 - Exported apps read SMTP details from their own env vars at deploy time; the export includes a `.env.example` and never embeds credentials.
 - Send via a queue with retries and logging (no message bodies in logs by default).
 
+Built (2026-11-08):
+
+- Accounts are platform-wide (they send the platform's own email) and only workspace owners and admins can manage them, in Settings > Email. Fields: name, host, port, security (TLS from the start, STARTTLS required, or none = upgrade when offered), username, password (AES-256-GCM with `ENCRYPTION_KEY`, bound to the row; never sent back to the browser; blank keeps it), from name and address, reply-to, rate limit per minute.
+- The `SMTP_*` variables (set in Dokploy) appear as a read-only "Environment" account. With no saved default it is the default, so a deploy with only env variables sends email with no setup. "Make default" on a saved account takes over; "Make default" on the environment account gives it back.
+- Test connection (connects and signs in, sends nothing) and Send test email (through the queue; shows the first attempt's result).
+- Templates for Verify email, Reset password and Test email: subject, HTML and plain text with `{{name}}`, `{{email}}`, `{{url}}`, `{{appName}}` (`{{accountName}}` for the test). Values are HTML-escaped in the HTML part; line breaks are removed from the subject. Reset to default deletes the edited copy.
+- Queue (`email_queue` table): messages are rendered and stored, then sent right away and by a worker every 15 seconds (`instrumentation.ts`). Up to 5 attempts, waiting 30 s, 2 min, 10 min, 30 min. A message over its account's rate limit waits without spending an attempt. Rows stuck in "sending" for 5 minutes return to the queue. Bodies are cleared once a message is sent or gives up; the Recent emails log shows time, kind, recipient, account, status, attempts and the last error.
+- Better Auth verification and reset emails go through this queue with the default account.
+- Limits: email verification is required only when `SMTP_*` is set at server start (Better Auth reads it once); sending through a saved account works immediately, but turning verification on by adding the first saved account takes a restart. Per-project SMTP selection and per-project templates come with the Phase 5 "send email" action.
+- Files: `server/mail/{accounts,transport,templates,queue,checks,worker}.ts`, `lib/mail.ts`, `components/settings/smtp/*`, `app/(builder)/(dashboard)/settings/smtp-actions.ts`, migration `0006_smtp.sql`.
+
 ## 5. Backups
 
 - Automatic scheduled backups of: projects (JSON + assets), builder settings, design systems.

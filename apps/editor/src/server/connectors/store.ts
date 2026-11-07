@@ -11,7 +11,8 @@ import {
 } from "@nextomic/integrations";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { allowPrivateConnectorHosts, connectorKeyring } from "./env";
+import { platformKeyring } from "../keyring";
+import { allowPrivateConnectorHosts } from "./env";
 import { runOperation, storedSecrets, type StoredConnector } from "./operation";
 
 // Saved connectors of a project. Every function takes a project id the caller has already
@@ -73,7 +74,7 @@ export async function listConnectors(projectId: string): Promise<ConnectorSummar
     .leftJoin(connectorSchemas, eq(connectorSchemas.connectorId, connectors.id))
     .where(eq(connectors.projectId, projectId))
     .orderBy(asc(connectors.createdAt));
-  const keyring = () => connectorKeyring();
+  const keyring = () => platformKeyring();
   return rows.map(({ connector, fetchedAt }) => {
     const secrets = connector.secretCiphertext ? storedSecrets(toStored(connector), keyring) : {};
     return {
@@ -117,7 +118,7 @@ export async function saveConnector(
       "invalid_config",
       config.error.issues[0]?.message ?? "The settings are not valid."
     );
-  const keyring = () => connectorKeyring();
+  const keyring = () => platformKeyring();
   const id = existing?.id ?? crypto.randomUUID();
   const secrets = mergeSecrets(
     existing ? storedSecrets(toStored(existing), keyring) : {},
