@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import {
   authorizeProject,
   authorizeProjectMember,
@@ -15,6 +16,7 @@ import {
 } from "@/server/connectors/store";
 import {
   browseSupabaseBucket,
+  signSupabaseObject,
   clearSupabaseSchema,
   fetchSupabaseSchema,
   getSupabaseSchema,
@@ -99,11 +101,12 @@ export async function fetchSupabaseSchemaAction(
 
 export async function clearSupabaseSchemaAction(
   projectId: string,
-  connectorId: string
+  connectorId: string,
+  schema: string
 ): Promise<ActionResult<null>> {
   try {
     await authorizeProject(projectId);
-    await clearSupabaseSchema(projectId, connectorId);
+    await clearSupabaseSchema(projectId, connectorId, z.string().min(1).max(63).parse(schema));
     return { data: null, error: null };
   } catch (error) {
     return failResult(error, "Could not clear the schema.");
@@ -129,6 +132,24 @@ export async function browseSupabaseBucketAction(
     };
   } catch (error) {
     return failResult(error, "Could not list the bucket.");
+  }
+}
+
+/** A short-lived signed URL to preview one file of a private bucket. */
+export async function signSupabaseObjectAction(
+  projectId: string,
+  connectorId: string,
+  bucket: string,
+  path: string
+): Promise<ActionResult<string>> {
+  try {
+    const { userId, workspaceId } = await authorizeProjectMember(projectId);
+    return {
+      data: await signSupabaseObject({ userId, workspaceId, projectId }, connectorId, bucket, path),
+      error: null
+    };
+  } catch (error) {
+    return failResult(error, "Could not sign the file URL.");
   }
 }
 

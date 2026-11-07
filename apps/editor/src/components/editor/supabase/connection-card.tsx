@@ -20,16 +20,24 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
   const { connector, data } = model;
   const savedUrl =
     typeof connector?.config.projectUrl === "string" ? connector.config.projectUrl : "";
+  const savedSchema =
+    typeof connector?.config.schema === "string" ? connector.config.schema : "public";
   const keyMask = connector?.secrets.anonKey;
   const [url, setUrl] = useState(savedUrl);
+  const [schema, setSchema] = useState(savedSchema);
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState<"fetch" | "active" | "clear" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const rowTyped = useRowTypedNames();
-  const dirty = url.trim() !== savedUrl || key.trim() !== "";
-  const canFetch = url.trim() !== "" && (key.trim() !== "" || Boolean(keyMask?.hasSecret));
+  const dirty = url.trim() !== savedUrl || key.trim() !== "" || schema.trim() !== savedSchema;
+  const schemaValid = /^[A-Za-z_][A-Za-z0-9_]*$/.test(schema.trim());
+  const canFetch =
+    url.trim() !== "" && schemaValid && (key.trim() !== "" || Boolean(keyMask?.hasSecret));
+  /** The schema in the field is already saved: Fetch refreshes it and Clear can remove it. */
+  const schemaSaved =
+    data?.schema?.structure.schemas.some((s) => s.schema === schema.trim()) ?? false;
 
   const done = (message: string | null, ok: string) => {
     setBusy(null);
@@ -43,7 +51,9 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
     setNotice(null);
     let id = connector?.id;
     if (!id || dirty) {
-      const saved = await model.save({ draft: { projectUrl: url.trim(), anonKey: key.trim() } });
+      const saved = await model.save({
+        draft: { projectUrl: url.trim(), anonKey: key.trim(), schema: schema.trim() }
+      });
       if (saved.data === null) return done(saved.error, "");
       id = saved.data;
       setKey("");
@@ -64,8 +74,8 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
     setConfirmClear(false);
     setBusy("clear");
     setError(null);
-    const result = await model.clearSchema();
-    done(result.error, "Schema cleared.");
+    const result = await model.clearSchema(schema.trim());
+    done(result.error, `Schema ${schema.trim()} cleared.`);
   }
 
   const fetchedAt = data?.schema?.fetchedAt;
@@ -88,7 +98,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
       }
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-        <div className="grid flex-1 gap-4 sm:grid-cols-2">
+        <div className="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-[2fr_2fr_1fr]">
           <FormInput
             label="Supabase URL"
             placeholder="https://xyz.supabase.co"
@@ -113,6 +123,19 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             }}
             autoComplete="off"
           />
+          <FormInput
+            label="Schema"
+            placeholder="public"
+            value={schema}
+            isInvalid={schema.trim() !== "" && !schemaValid}
+            errorMessage="Use letters, digits and _, starting with a letter or _."
+            description="An exposed database schema. Fetch each schema you need."
+            onValueChange={(v) => {
+              setSchema(v);
+              setError(null);
+            }}
+            autoComplete="off"
+          />
         </div>
         <div className="flex shrink-0 justify-end gap-2">
           <ActionButton
@@ -121,13 +144,13 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             onPress={() => void fetchSchema()}
           >
             <Icon name="ph:download-simple" width={16} height={16} />
-            {data?.schema ? "Refetch Schema" : "Fetch Schema"}
+            {schemaSaved ? "Refetch Schema" : "Fetch Schema"}
           </ActionButton>
           <ActionButton
             tone="danger-ghost"
             className="border border-danger"
             isLoading={busy === "clear"}
-            isDisabled={!data?.schema || busy !== null}
+            isDisabled={!schemaSaved || busy !== null}
             onPress={() => setConfirmClear(true)}
           >
             <Icon name="ph:trash" width={16} height={16} />
@@ -148,6 +171,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             onClick={() => {
               setUrl(savedUrl);
               setKey("");
+              setSchema(savedSchema);
             }}
           >
             Discard changes
@@ -167,11 +191,11 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
 
       <Modal isOpen={confirmClear} onOpenChange={setConfirmClear} size="md">
         <ModalContent>
-          <ModalHeader>Clear the schema?</ModalHeader>
+          <ModalHeader>Clear the {schema.trim()} schema?</ModalHeader>
           <ModalBody className="text-small text-default-600">
             <p>
-              The saved tables, views, functions, buckets and stars are removed. Fetch again to
-              bring them back.
+              The saved tables, views and functions of this schema are removed. Other schemas stay;
+              the buckets go when no schema is left. Fetch again to bring them back.
             </p>
             {rowTyped.length > 0 ? (
               <p className="text-warning">

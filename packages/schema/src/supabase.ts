@@ -46,17 +46,43 @@ export const supabaseBucketSchema = z.object({
   countCapped: z.boolean()
 });
 
-export const supabaseStructureSchema = z.object({
+/** The tables, views and functions of one exposed database schema. */
+export const supabaseSchemaEntrySchema = z.object({
   schema: z.string().max(63),
   tables: z.array(supabaseTableSchema).max(2000),
-  functions: z.array(supabaseFunctionSchema).max(2000),
-  buckets: z.array(supabaseBucketSchema).max(500)
+  functions: z.array(supabaseFunctionSchema).max(2000)
 });
+
+/**
+ * Every fetched schema (public first, then A to Z) plus the storage buckets, which belong to the
+ * project, not to a schema. A structure saved before schemas were separate (one `schema` with its
+ * tables at the top level) reads as one entry.
+ */
+export const supabaseStructureSchema = z.preprocess(
+  (raw) =>
+    raw && typeof raw === "object" && !("schemas" in raw) && "tables" in raw
+      ? {
+          schemas: [
+            {
+              schema: (raw as { schema?: unknown }).schema ?? "public",
+              tables: (raw as { tables?: unknown }).tables,
+              functions: (raw as { functions?: unknown }).functions ?? []
+            }
+          ],
+          buckets: (raw as { buckets?: unknown }).buckets ?? []
+        }
+      : raw,
+  z.object({
+    schemas: z.array(supabaseSchemaEntrySchema).max(50),
+    buckets: z.array(supabaseBucketSchema).max(500)
+  })
+);
 
 export type SupabaseColumn = z.infer<typeof supabaseColumnSchema>;
 export type SupabaseTable = z.infer<typeof supabaseTableSchema>;
 export type SupabaseFunction = z.infer<typeof supabaseFunctionSchema>;
 export type SupabaseBucket = z.infer<typeof supabaseBucketSchema>;
+export type SupabaseSchemaEntry = z.infer<typeof supabaseSchemaEntrySchema>;
 export type SupabaseStructure = z.infer<typeof supabaseStructureSchema>;
 
 const INT_TYPES = new Set(["smallint", "integer", "bigint", "int2", "int4", "int8"]);
@@ -148,9 +174,32 @@ export function splitArrayType(pgType: string): { base: string; isList: boolean 
     : { base: trimmed, isList: false };
 }
 
-/** Table and view names a Supabase Row type can point at. */
+/** Schemas in display order: public first, then A to Z. */
+export function sortSchemas(entries: readonly SupabaseSchemaEntry[]): SupabaseSchemaEntry[] {
+  return [...entries].sort((a, b) =>
+    a.schema === "public" ? -1 : b.schema === "public" ? 1 : a.schema.localeCompare(b.schema)
+  );
+}
+
+/** The saved structure with one schema added or replaced (buckets come from the newest fetch). */
+export function mergeSchemaEntry(
+  previous: SupabaseStructure | null,
+  entry: SupabaseSchemaEntry,
+  buckets: SupabaseStructure["buckets"]
+): SupabaseStructure {
+  const others = (previous?.schemas ?? []).filter((s) => s.schema !== entry.schema);
+  return { schemas: sortSchemas([...others, entry]), buckets };
+}
+
+/** A table's reference: its name in public, `schema.name` elsewhere. */
+export const tableRef = (schema: string, table: string) =>
+  schema === "public" ? table : `${schema}.${table}`;
+
+/** Table and view names a Supabase Row type can point at (`schema.name` outside public). */
 export function supabaseRowTargets(structure: SupabaseStructure | null): string[] {
-  return structure ? structure.tables.map((t) => t.name) : [];
+  return structure
+    ? structure.schemas.flatMap((s) => s.tables.map((t) => tableRef(s.schema, t.name)))
+    : [];
 }
 
 /** A Postgres enum used by a column: its type name (without `[]`) and values in order. */

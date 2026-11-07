@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { browseSupabaseBucketAction } from "@/app/(builder)/editor/[id]/connector-actions";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
+import { ObjectPreview } from "./object-preview";
 import { SupabaseCard } from "./supabase-page";
 import type { SupabasePageModel } from "./use-supabase-page";
 
@@ -59,7 +60,9 @@ function BucketBrowser({
 }) {
   const [path, setPath] = useState<string[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [preview, setPreview] = useState<StorageEntry | null>(null);
   const prefix = path.join("/");
+  const fullPath = (name: string) => (prefix ? `${prefix}/${name}` : name);
   const { entries, error } = useFolder(projectId, connectorId, bucket.name, prefix, active);
 
   async function copy(url: string) {
@@ -67,95 +70,127 @@ function BucketBrowser({
     setCopied(url);
   }
 
+  const openFolder = (next: string[]) => {
+    setPath(next);
+    setPreview(null);
+  };
+
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="font-mono text-medium font-semibold text-foreground">{bucket.name}</h3>
-        <Chip size="sm" variant="flat" color={bucket.public ? "success" : "default"}>
-          {bucket.public ? "Public" : "Private"}
-        </Chip>
-      </div>
-      <nav aria-label="Folder path" className="flex flex-wrap items-center gap-1">
-        <button
-          type="button"
-          onClick={() => setPath([])}
-          className="rounded-small bg-default-100 px-3 py-1 text-tiny text-default-600 hover:bg-default-200"
-        >
-          objects
-        </button>
-        {path.map((part, i) => (
+    <div className="flex min-h-0 min-w-0 flex-1 gap-4">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-mono text-medium font-semibold text-foreground">{bucket.name}</h3>
+          <Chip size="sm" variant="flat" color={bucket.public ? "success" : "default"}>
+            {bucket.public ? "Public" : "Private"}
+          </Chip>
+        </div>
+        <nav aria-label="Folder path" className="flex flex-wrap items-center gap-1">
           <button
-            key={`${i}-${part}`}
             type="button"
-            onClick={() => setPath(path.slice(0, i + 1))}
+            onClick={() => openFolder([])}
             className="rounded-small bg-default-100 px-3 py-1 text-tiny text-default-600 hover:bg-default-200"
           >
-            {part}
+            objects
           </button>
-        ))}
-      </nav>
-      {!active ? (
-        <p className="text-small text-default-500">Turn the connection on to browse files.</p>
-      ) : error ? (
-        <p role="alert" className="text-small text-danger">
-          {error}
-        </p>
-      ) : !entries ? (
-        <Spinner size="sm" label="Loading files" className="self-start" />
-      ) : entries.length === 0 ? (
-        <p className="text-small text-default-500">
-          This folder is empty, or the anon key may not list it.
-        </p>
-      ) : (
-        <ul className="flex min-h-0 flex-col overflow-y-auto">
-          {entries.map((entry) => {
-            const full = prefix ? `${prefix}/${entry.name}` : entry.name;
-            const url = publicUrl(baseUrl, bucket.name, full);
-            return (
-              <li
-                key={entry.name}
-                className="flex items-center justify-between gap-3 border-b border-divider py-1.5 last:border-b-0"
-              >
-                {entry.folder ? (
-                  <button
-                    type="button"
-                    onClick={() => setPath([...path, entry.name])}
-                    className="flex items-center gap-2 text-small text-foreground hover:underline"
-                  >
-                    <Icon name="ph:folder" width={16} height={16} className="text-default-500" />
-                    {entry.name}
-                  </button>
-                ) : (
-                  <span className="flex min-w-0 items-center gap-2 text-small text-default-600">
-                    <Icon
-                      name="ph:file"
-                      width={16}
-                      height={16}
-                      className="shrink-0 text-default-500"
-                    />
-                    <span className="truncate">{bucket.public ? url : entry.name}</span>
-                  </span>
-                )}
-                {!entry.folder && bucket.public ? (
-                  <ActionButton
-                    size="sm"
-                    tone="ghost"
-                    className="shrink-0 text-success"
-                    onPress={() => void copy(url)}
-                  >
-                    <Icon name="ph:clipboard-text" width={14} height={14} />
-                    {copied === url ? "Copied" : "Copy URL"}
-                  </ActionButton>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {!bucket.public ? (
-        <p className="text-tiny text-default-500">
-          Files of a private bucket are reached with signed URLs at run time.
-        </p>
+          {path.map((part, i) => (
+            <button
+              key={`${i}-${part}`}
+              type="button"
+              onClick={() => openFolder(path.slice(0, i + 1))}
+              className="rounded-small bg-default-100 px-3 py-1 text-tiny text-default-600 hover:bg-default-200"
+            >
+              {part}
+            </button>
+          ))}
+        </nav>
+        {!active ? (
+          <p className="text-small text-default-500">Turn the connection on to browse files.</p>
+        ) : error ? (
+          <p role="alert" className="text-small text-danger">
+            {error}
+          </p>
+        ) : !entries ? (
+          <Spinner size="sm" label="Loading files" className="self-start" />
+        ) : entries.length === 0 ? (
+          <p className="text-small text-default-500">
+            This folder is empty, or the anon key may not list it.
+          </p>
+        ) : (
+          <ul className="flex min-h-0 flex-col overflow-y-auto">
+            {entries.map((entry) => {
+              const full = fullPath(entry.name);
+              const url = publicUrl(baseUrl, bucket.name, full);
+              return (
+                <li
+                  key={entry.name}
+                  className="flex items-center justify-between gap-3 border-b border-divider py-1.5 last:border-b-0"
+                >
+                  {entry.folder ? (
+                    <button
+                      type="button"
+                      onClick={() => openFolder([...path, entry.name])}
+                      className="flex items-center gap-2 text-small text-foreground hover:underline"
+                    >
+                      <Icon name="ph:folder" width={16} height={16} className="text-default-500" />
+                      {entry.name}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      data-tip="Double-click to preview"
+                      aria-label={`${entry.name}: press Enter to preview`}
+                      aria-pressed={preview?.name === entry.name}
+                      onDoubleClick={() => setPreview(entry)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setPreview(entry);
+                        }
+                      }}
+                      className={`flex min-w-0 flex-1 items-center gap-2 rounded-small px-1 text-left text-small ${preview?.name === entry.name ? "bg-default-100 text-foreground" : "text-default-600 hover:text-foreground"}`}
+                    >
+                      <Icon
+                        name="ph:file"
+                        width={16}
+                        height={16}
+                        className="shrink-0 text-default-500"
+                      />
+                      <span className="truncate">{bucket.public ? url : entry.name}</span>
+                    </button>
+                  )}
+                  {!entry.folder && bucket.public ? (
+                    <ActionButton
+                      size="sm"
+                      tone="ghost"
+                      className="shrink-0 text-success"
+                      onPress={() => void copy(url)}
+                    >
+                      <Icon name="ph:clipboard-text" width={14} height={14} />
+                      {copied === url ? "Copied" : "Copy URL"}
+                    </ActionButton>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {!bucket.public ? (
+          <p className="text-tiny text-default-500">
+            Files of a private bucket are reached with signed URLs at run time.
+          </p>
+        ) : null}
+      </div>
+      {preview ? (
+        <ObjectPreview
+          key={fullPath(preview.name)}
+          projectId={projectId}
+          connectorId={connectorId}
+          bucket={bucket.name}
+          path={fullPath(preview.name)}
+          entry={preview}
+          publicUrl={bucket.public ? publicUrl(baseUrl, bucket.name, fullPath(preview.name)) : null}
+          onClose={() => setPreview(null)}
+        />
       ) : null}
     </div>
   );

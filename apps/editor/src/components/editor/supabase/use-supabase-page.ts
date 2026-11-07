@@ -1,5 +1,6 @@
 "use client";
 
+import { supabaseRowTargets } from "@nextomic/schema";
 import { useCallback, useEffect, useState } from "react";
 import {
   clearSupabaseSchemaAction,
@@ -18,6 +19,8 @@ export interface SupabaseAuthConfig {
 
 export interface ConnectionDraft {
   projectUrl: string;
+  /** Exposed database schema to fetch, e.g. public. */
+  schema: string;
   /** Blank keeps the saved key. */
   anonKey: string;
 }
@@ -70,7 +73,7 @@ export function useSupabasePage(projectId: string) {
     if (result.data === null) return setLoadError(result.error);
     setLoadError(null);
     setData(result.data);
-    setTables(result.data.schema?.structure.tables.map((t) => t.name) ?? []);
+    setTables(supabaseRowTargets(result.data.schema?.structure ?? null));
     void check(result.data);
   }, [projectId, setTables, check]);
 
@@ -94,7 +97,8 @@ export function useSupabasePage(projectId: string) {
       active: input.active ?? connector?.active ?? true,
       config: {
         projectUrl: input.draft?.projectUrl ?? config.projectUrl ?? "",
-        schema: typeof config.schema === "string" ? config.schema : "public",
+        schema:
+          input.draft?.schema ?? (typeof config.schema === "string" ? config.schema : "public"),
         auth: input.auth ?? authOf(config)
       },
       secrets: input.draft?.anonKey ? { anonKey: input.draft.anonKey } : {}
@@ -111,9 +115,9 @@ export function useSupabasePage(projectId: string) {
     return { data: null, error: null };
   }
 
-  async function clearSchema(): Promise<Result<null>> {
+  async function clearSchema(schema: string): Promise<Result<null>> {
     if (!connector) return { data: null, error: null };
-    const result = await clearSupabaseSchemaAction(projectId, connector.id);
+    const result = await clearSupabaseSchemaAction(projectId, connector.id, schema);
     if (result.data === null && result.error) return result;
     await reload();
     return { data: null, error: null };

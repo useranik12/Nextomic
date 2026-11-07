@@ -37,6 +37,7 @@ test("connect Supabase with the anon key, fetch, inspect and clear the schema", 
   await expect(page.getByText("Fetch the schema to see the tables and views.")).toBeVisible();
 
   await page.getByLabel("Supabase URL").fill(url ?? "");
+  await expect(page.getByLabel("Schema", { exact: true })).toHaveValue("public");
   await page.getByLabel("Anon Key/Publishable Key").fill(anonKey ?? "");
   await page.getByRole("button", { name: "Fetch Schema" }).click();
   await expect(page.getByText("Schema fetched.")).toBeVisible({ timeout: 60_000 });
@@ -47,6 +48,8 @@ test("connect Supabase with the anon key, fetch, inspect and clear the schema", 
 
   await expect(page.getByText("Connected", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("button", { name: "Refetch Schema" })).toBeVisible();
+  // One schema saved: no schema tabs.
+  await expect(page.getByRole("tablist", { name: "Database schemas" })).toHaveCount(0);
   const tables = page.getByRole("list", { name: "Tables" });
   await expect(tables.getByRole("button").first()).toBeVisible();
   // Primary keys show a key; PostgreSQL types use their short names.
@@ -75,6 +78,6 @@ test("connect Supabase with the anon key, fetch, inspect and clear the schema", 
 
   await page.getByRole("button", { name: "Clear Schema" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Clear Schema" }).click();
-  await expect(page.getByText("Schema cleared.")).toBeVisible();
+  await expect(page.getByText("Schema public cleared.")).toBeVisible();
   await expect(page.getByText("Fetch the schema to see the tables and views.")).toBeVisible();
 });

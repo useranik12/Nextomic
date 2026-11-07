@@ -39,11 +39,10 @@ describe("structureFromResources", () => {
   ];
 
   it("keeps valid resources and drops malformed ones", () => {
-    const structure = structureFromResources(resources, "public");
-    expect(structure.tables.map((t) => t.name)).toEqual(["users"]);
-    expect(structure.functions.map((f) => f.name)).toEqual(["f"]);
-    expect(structure.buckets).toEqual([
-      { name: "b", public: true, objectCount: 3, countCapped: false }
-    ]);
+    const { entry, buckets } = structureFromResources(resources, "public");
+    expect(entry.schema).toBe("public");
+    expect(entry.tables.map((t) => t.name)).toEqual(["users"]);
+    expect(entry.functions.map((f) => f.name)).toEqual(["f"]);
+    expect(buckets).toEqual([{ name: "b", public: true, objectCount: 3, countCapped: false }]);
   });
 });

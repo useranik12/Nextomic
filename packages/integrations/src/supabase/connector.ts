@@ -200,6 +200,30 @@ async function listObjects(
     }));
 }
 
+/** A signed URL for one object, valid for `expiresIn` seconds. */
+async function signObject(
+  cfg: SupabaseConfig,
+  secrets: SupabaseSecrets,
+  ctx: ConnectorContext,
+  bucket: string,
+  path: string,
+  expiresIn: number
+): Promise<{ url: string }> {
+  const objectPath = path.split("/").map(encodeURIComponent).join("/");
+  const response = await call(
+    cfg,
+    secrets,
+    ctx,
+    `/storage/v1/object/sign/${encodeURIComponent(bucket)}/${objectPath}`,
+    { method: "POST", body: { expiresIn } }
+  );
+  if (response.status !== 200) throw upstreamError(response, "Could not sign the file URL.");
+  const parsed = z.object({ signedURL: z.string().startsWith("/") }).safeParse(parseJson(response));
+  if (!parsed.success)
+    throw new ConnectorError("upstream", "Supabase sent an unexpected signed URL.");
+  return { url: `${cfg.projectUrl}/storage/v1${parsed.data.signedURL}` };
+}
+
 async function test(
   cfg: SupabaseConfig,
   secrets: SupabaseSecrets,
@@ -265,10 +289,17 @@ async function execute(
       parsed.error.issues[0]?.message ?? "The request is not valid."
     );
   const request = parsed.data;
+  // A request may name another exposed schema; storage has no schema.
+  const scoped = "schema" in request && request.schema ? { ...cfg, schema: request.schema } : cfg;
 
-  if (request.op === "storage.list") {
+  if (request.op === "storage.list" || request.op === "storage.sign") {
     if (resource.kind !== "bucket")
-      throw new ConnectorError("invalid_request", "Listing needs a bucket.");
+      throw new ConnectorError("invalid_request", "Storage requests need a bucket.");
+    if (request.op === "storage.sign")
+      return {
+        status: 200,
+        data: await signObject(cfg, secrets, ctx, resource.name, request.path, request.expiresIn)
+      };
     const entries = await listObjects(cfg, secrets, ctx, resource.name, request.prefix, 1000);
     return { status: 200, data: entries };
   }
@@ -276,7 +307,7 @@ async function execute(
     if (resource.kind !== "rpc")
       throw new ConnectorError("invalid_request", "This resource is not a function.");
     const response = await call(
-      cfg,
+      scoped,
       secrets,
       ctx,
       `/rest/v1/rpc/${encodeURIComponent(resource.name)}`,
@@ -292,7 +323,7 @@ async function execute(
     throw new ConnectorError("invalid_request", "This resource is not a table or view.");
   const query = tableQuery(request).toString();
   const path = `/rest/v1/${encodeURIComponent(resource.name)}${query ? `?${query}` : ""}`;
-  const response = await call(cfg, secrets, ctx, path, {
+  const response = await call(scoped, secrets, ctx, path, {
     method: TABLE_METHODS[request.op],
     ...(request.op === "insert" || request.op === "update" ? { body: request.values } : {}),
     ...(request.op === "select" ? {} : { prefer: "return=representation" })

@@ -3,8 +3,12 @@ import { ConnectorError, type Resource, type StorageEntry } from "@nextomic/inte
 import {
   supabaseBucketSchema,
   supabaseFunctionSchema,
+  mergeSchemaEntry,
+  supabaseRowTargets,
+  supabaseSchemaEntrySchema,
   supabaseStructureSchema,
   supabaseTableSchema,
+  type SupabaseSchemaEntry,
   type SupabaseStructure
 } from "@nextomic/schema";
 import { createHash } from "node:crypto";
@@ -45,20 +49,27 @@ export async function getSupabaseSchema(
     : null;
 }
 
-/** Builds the structure from the connector's resources; anything malformed is dropped. */
-export function structureFromResources(resources: Resource[], schema: string): SupabaseStructure {
+/**
+ * One schema's tables and functions plus the buckets, from the connector's resources; anything
+ * malformed is dropped.
+ */
+export function structureFromResources(
+  resources: Resource[],
+  schema: string
+): { entry: SupabaseSchemaEntry; buckets: SupabaseStructure["buckets"] } {
   const pick = <T>(kind: string[], parser: z.ZodType<T>) =>
     resources
       .filter((r) => kind.includes(r.kind))
       .map((r) => parser.safeParse(r.structure))
       .flatMap((r) => (r.success ? [r.data] : []));
-  const tables = pick(["table", "view"], supabaseTableSchema);
-  return supabaseStructureSchema.parse({
-    schema,
-    tables,
-    functions: pick(["rpc"], supabaseFunctionSchema),
+  return {
+    entry: supabaseSchemaEntrySchema.parse({
+      schema,
+      tables: pick(["table", "view"], supabaseTableSchema),
+      functions: pick(["rpc"], supabaseFunctionSchema)
+    }),
     buckets: pick(["bucket"], supabaseBucketSchema)
-  });
+  };
 }
 
 async function writeStructure(connectorId: string, structure: SupabaseStructure) {
@@ -82,14 +93,28 @@ export async function fetchSupabaseSchema(
   const result = await proxyConnectorCall(caller, row.id, { op: "resources" });
   if (!result.ok) throw new ConnectorError(result.error.code, result.error.message);
   const schema = typeof row.config.schema === "string" ? row.config.schema : "public";
-  const structure = structureFromResources(result.data as Resource[], schema);
+  const { entry, buckets } = structureFromResources(result.data as Resource[], schema);
+  // Fetching a schema adds it to (or refreshes it in) the saved set; other schemas stay.
+  const previous = await getSupabaseSchema(caller.projectId, row.id);
+  const structure = mergeSchemaEntry(previous?.structure ?? null, entry, buckets);
   const fetchedAt = await writeStructure(row.id, structure);
   return { structure, fetchedAt: fetchedAt.toISOString() };
 }
 
-export async function clearSupabaseSchema(projectId: string, connectorId: string): Promise<void> {
+/** Removes one saved schema; removing the last one removes the saved structure. */
+export async function clearSupabaseSchema(
+  projectId: string,
+  connectorId: string,
+  schema: string
+): Promise<void> {
   const row = await supabaseConnectorRow(projectId, connectorId);
-  await getDb().delete(connectorSchemas).where(eq(connectorSchemas.connectorId, row.id));
+  const saved = await getSupabaseSchema(projectId, row.id);
+  const rest = saved?.structure.schemas.filter((s) => s.schema !== schema) ?? [];
+  if (!saved || rest.length === 0) {
+    await getDb().delete(connectorSchemas).where(eq(connectorSchemas.connectorId, row.id));
+    return;
+  }
+  await writeStructure(row.id, { ...saved.structure, schemas: rest });
 }
 
 /** Live listing of one folder of a bucket. Never saved. */
@@ -108,6 +133,22 @@ export async function browseSupabaseBucket(
   return (result.data as { data: StorageEntry[] }).data;
 }
 
+/** A short-lived signed URL for one file of a bucket (private buckets need it for previews). */
+export async function signSupabaseObject(
+  caller: ProxyCaller,
+  connectorId: string,
+  bucket: string,
+  path: string
+): Promise<string> {
+  const row = await supabaseConnectorRow(caller.projectId, connectorId);
+  const result = await proxyConnectorCall(caller, row.id, {
+    op: "execute",
+    request: { resourceId: `bucket:${bucket}`, params: { op: "storage.sign", path } }
+  });
+  if (!result.ok) throw new ConnectorError(result.error.code, result.error.message);
+  return (result.data as { data: { url: string } }).data.url;
+}
+
 /** Table and view names of the project's saved Supabase schema (empty when none is saved). */
 export async function supabaseTableNames(projectId: string): Promise<string[]> {
   const [rows] = await getDb()
@@ -117,5 +158,5 @@ export async function supabaseTableNames(projectId: string): Promise<string[]> {
     .where(and(eq(connectors.projectId, projectId), eq(connectors.type, "supabase")))
     .limit(1);
   const structure = supabaseStructureSchema.safeParse(rows?.structure);
-  return structure.success ? structure.data.tables.map((t) => t.name) : [];
+  return supabaseRowTargets(structure.success ? structure.data : null);
 }

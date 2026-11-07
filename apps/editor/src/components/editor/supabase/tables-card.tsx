@@ -11,6 +11,7 @@ import {
   type AppEnum,
   type SupabaseColumn,
   type SupabaseEnum,
+  type SupabaseSchemaEntry,
   type SupabaseTable
 } from "@nextomic/schema";
 import { useMemo, useState } from "react";
@@ -210,12 +211,52 @@ function TableList({
 
 const byName = (a: SupabaseTable, b: SupabaseTable) => a.name.localeCompare(b.name);
 
+/** Pill tabs to switch between fetched schemas (shown only when there is more than one). */
+function SchemaTabs({
+  schemas,
+  current,
+  onPick
+}: {
+  schemas: SupabaseSchemaEntry[];
+  current: string;
+  onPick: (schema: string) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Database schemas"
+      className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-default-100 p-1"
+    >
+      {schemas.map((s) => (
+        <button
+          key={s.schema}
+          type="button"
+          role="tab"
+          aria-selected={s.schema === current}
+          onClick={() => onPick(s.schema)}
+          className={
+            "whitespace-nowrap rounded-full px-3 py-1 font-mono text-tiny transition-colors duration-300 " +
+            (s.schema === current
+              ? "bg-default-300 font-medium text-foreground"
+              : "text-default-600 hover:text-foreground")
+          }
+        >
+          {s.schema} ({s.tables.length})
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Tables and views (A to Z, grouped), with the columns of the chosen one. */
 export function TablesCard({ model }: { model: SupabasePageModel }) {
   const structure = model.data?.schema?.structure ?? null;
   const [query, setQuery] = useState("");
   const [chosen, setChosen] = useState<string | null>(null);
-  const all = useMemo(() => structure?.tables ?? [], [structure]);
+  const [schemaName, setSchemaName] = useState<string | null>(null);
+  const schemas = structure?.schemas ?? [];
+  const entry = schemas.find((s) => s.schema === schemaName) ?? schemas[0] ?? null;
+  const all = useMemo(() => entry?.tables ?? [], [entry]);
   const { tables, views } = useMemo(() => {
     const q = query.trim().toLowerCase();
     const shown = (q ? all.filter((t) => t.name.toLowerCase().includes(q)) : all)
@@ -236,41 +277,56 @@ export function TablesCard({ model }: { model: SupabasePageModel }) {
     >
       {!structure ? (
         <p className="text-small text-default-500">Fetch the schema to see the tables and views.</p>
-      ) : all.length === 0 ? (
-        <p className="text-small text-default-500">
-          The anon key sees no tables or views. Grant the anon role access in Supabase, then fetch
-          again.
-        </p>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
-          <div className="flex min-h-0 w-full shrink-0 flex-col gap-2 md:w-72">
-            <FormInput
-              aria-label="Search table or view"
-              placeholder="Search table or view"
-              value={query}
-              onValueChange={setQuery}
-              startContent={<Icon name="ph:magnifying-glass" width={16} height={16} />}
+        <>
+          {schemas.length > 1 && entry ? (
+            <SchemaTabs
+              schemas={schemas}
+              current={entry.schema}
+              onPick={(name) => {
+                setSchemaName(name);
+                setChosen(null);
+                setQuery("");
+              }}
             />
-            <div className="min-h-0 overflow-y-auto">
-              <TableList
-                label="Tables"
-                tables={tables}
-                current={table?.name ?? null}
-                onPick={setChosen}
-              />
-              <TableList
-                label="Views"
-                tables={views}
-                current={table?.name ?? null}
-                onPick={setChosen}
-              />
-              {tables.length + views.length === 0 ? (
-                <p className="px-4 py-2 text-small text-default-500">Nothing matches.</p>
-              ) : null}
+          ) : null}
+          {all.length === 0 ? (
+            <p className="text-small text-default-500">
+              The anon key sees no tables or views in this schema. Expose the schema in the Supabase
+              API settings and grant the anon role access, then fetch again.
+            </p>
+          ) : (
+            <div className="mt-2 flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
+              <div className="flex min-h-0 w-full shrink-0 flex-col gap-2 md:w-72">
+                <FormInput
+                  aria-label="Search table or view"
+                  placeholder="Search table or view"
+                  value={query}
+                  onValueChange={setQuery}
+                  startContent={<Icon name="ph:magnifying-glass" width={16} height={16} />}
+                />
+                <div className="min-h-0 overflow-y-auto">
+                  <TableList
+                    label="Tables"
+                    tables={tables}
+                    current={table?.name ?? null}
+                    onPick={setChosen}
+                  />
+                  <TableList
+                    label="Views"
+                    tables={views}
+                    current={table?.name ?? null}
+                    onPick={setChosen}
+                  />
+                  {tables.length + views.length === 0 ? (
+                    <p className="px-4 py-2 text-small text-default-500">Nothing matches.</p>
+                  ) : null}
+                </div>
+              </div>
+              {table ? <TableDetail key={`${entry?.schema}.${table.name}`} table={table} /> : null}
             </div>
-          </div>
-          {table ? <TableDetail key={table.name} table={table} /> : null}
-        </div>
+          )}
+        </>
       )}
     </SupabaseCard>
   );
