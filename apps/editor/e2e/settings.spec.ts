@@ -96,3 +96,16 @@ test("sign-in button recovers after an error; remember me and magic link exist",
   await expect(submit).toBeEnabled();
   await expect(page.getByText(/invalid/i)).toHaveCount(0);
 });
+
+test("signed-in users are sent away from auth pages; error pages link to the dashboard", async ({
+  page
+}) => {
+  await signUp(page, "Robin Ash");
+  for (const path of ["/sign-in", "/sign-up", "/forgot-password", "/two-factor"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/dashboard/);
+  }
+  await page.goto("/editor/does-not-exist");
+  await page.getByText("Go to dashboard").click();
+  await expect(page).toHaveURL(/\/dashboard/);
+});
