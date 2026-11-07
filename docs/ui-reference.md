@@ -122,7 +122,7 @@ Never use raw HeroUI `Input` or `Button` for form fields and actions. Use `compo
 - Before publishing, show a check dialog listing errors (block publish), warnings, and the changed items. A page can be marked Draft to exclude it from publishing.
 - Autosave runs continuously. "Save" additionally creates a named snapshot in Version History.
 - Publishing is wired in Phase 11. Before that, the menu offers Save and Preview only.
-- **Schedule publish** (publish menu, below Save): a dialog with the builder date and time picker (`components/ui/date-time-field.tsx`: pill field, neutral calendar, the white-shade accent for the chosen day, future times only). At that moment the saved draft is published as if Publish was pressed then; edits saved before it are included. While a schedule is set, a chip "Publishes <date>" sits left of Publish and opens the dialog to change or remove it. Unpublish removes the schedule. The server runs a due schedule on the first read after its time (site request or editor publish state), claimed with a conditional update so it runs once, and dates the publish at the scheduled time.
+- **Schedule publish** (publish menu, below Save): a dialog with the builder date and time picker (`components/ui/date-time-field.tsx`: pill field, neutral calendar, the white-shade accent for the chosen day, future times only). At that moment the saved draft is published as if Publish was pressed then; edits saved before it are included. While a schedule is set, a chip "Publishes <date>" sits left of Publish and opens the dialog to change or remove it. Unpublish removes the schedule. A project has one publish state at a time (published, draft, scheduled or unpublished): pressing Publish while a schedule is set opens "A publish is scheduled" with Keep schedule or Publish now and remove schedule, and any publish clears the schedule on the server. The server runs a due schedule on the first read after its time (site request or editor publish state), claimed with a conditional update so it runs once, and dates the publish at the scheduled time.
 
 **Left rail** (Navigator is open by default). Items in order, as in the Supabase and API Data screens:
 
@@ -287,7 +287,7 @@ Built (Phase 4a fixes): `components/editor/data-types/*`; stored in project sett
 
 ### 4.15 Expression suggestions
 
-Every field that has the dynamic bolt accepts n8n-style expressions inside `{{ }}`; text outside the braces stays text. While the caret is inside `{{ }}`, a panel opens below the field (above when there is no room; it follows the floating position rule):
+Every field that has the dynamic bolt accepts n8n-style expressions inside `{{ }}`; text outside the braces stays text. While the caret is inside `{{ }}`, a panel opens beside the field, on the left or right, whichever side has more room; it is clamped to the screen and falls back to below the field only when neither side fits (`placeBeside` in `lib/place-floating.ts`):
 
 - Left: the names, fields and methods that fit at the caret. After `.` it lists the fields of the value and the methods for its type (text, number, list, object, timestamp), using the declared type when the preview value is empty.
 - Right: the active item's signature, what it does, and an example.
@@ -297,8 +297,8 @@ Every field that has the dynamic bolt accepts n8n-style expressions inside `{{ }
 - The list is grouped under headings: Fields, Page state, App state, Constants, Page parameters, Page and visitor, Date and time, then the methods for the value (Text, Number, List, Object, Date methods) and Functions. Variables are listed by name (`app.cart`), so typing part of a name finds it.
 - A small search box sits at the top of the panel and narrows the list by name or description.
 - The panel opens whenever the caret is inside `{{ }}` (typing, clicking or moving the caret), and shows nothing inside a quoted string.
-- Typing `{{` adds ` }}` and puts the caret between the braces; typing `}` before the closing braces steps over them. Inserting a suggestion keeps the field's own undo (Ctrl+Z, Ctrl+Y).
-- In every field with the bolt, text is a step softer than headings (`default-700`); `{{ }}` tags are drawn white and heavier, and tags with a problem (syntax error, unknown name, undeclared variable, runtime error) are red with a wavy underline. Resting the pointer on a tag for 500 ms shows its value with the current preview data, or the problem.
+- Typing `{{` adds ` }}` and puts the caret between the braces; typing `}` before the closing braces steps over them; deleting a brace of an opening `{{` also removes its closing `}}`. Inserting a suggestion keeps the field's own undo (Ctrl+Z, Ctrl+Y).
+- In every field with the bolt, text is a step softer than headings (`default-600`, so tags stand apart); `{{ }}` tags are drawn white and heavier, and tags with a problem (syntax error, unknown name, undeclared variable, runtime error) are red with a wavy underline. Resting the pointer on a tag for 500 ms shows its value with the current preview data, or the problem.
 - An element with such a problem shows a small red dot in the Navigator; its tooltip says what is wrong.
 
 Built (Phase 4a fixes): `components/editor/expression/*`. The syntax and the method list are in `dynamic-data-and-actions.md`.

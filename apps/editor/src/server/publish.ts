@@ -156,7 +156,8 @@ export async function publishProject(
     }
     await tx
       .update(projects)
-      .set({ publishedAt, publishedSettings: settings })
+      // A project has one publish state: publishing now also ends any schedule.
+      .set({ publishedAt, publishedSettings: settings, scheduledPublishAt: null })
       .where(eq(projects.id, projectId));
   });
   return getPublishState(projectId);

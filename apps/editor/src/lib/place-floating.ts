@@ -46,3 +46,33 @@ export function placeFloating(
     top: clamp(top, gutter, viewport.height - gutter - size.height)
   };
 }
+
+export interface SidePlacement {
+  left: number;
+  top: number;
+  side: "left" | "right" | "top" | "bottom";
+}
+
+/**
+ * Where to put a larger panel beside a field: on the left or right, whichever has more room,
+ * top-aligned with the field and kept inside the viewport. When neither side fits the panel, it
+ * goes above or below like `placeFloating`.
+ */
+export function placeBeside(
+  anchor: Box,
+  size: { width: number; height: number },
+  viewport: { width: number; height: number },
+  options: { gap?: number; gutter?: number } = {}
+): SidePlacement {
+  const gap = options.gap ?? 8;
+  const gutter = options.gutter ?? 8;
+  const roomLeft = anchor.left - gap - gutter;
+  const roomRight = viewport.width - (anchor.left + anchor.width) - gap - gutter;
+  const top = clamp(anchor.top, gutter, viewport.height - size.height - gutter);
+  if (Math.max(roomLeft, roomRight) >= size.width) {
+    return roomRight >= roomLeft
+      ? { side: "right", left: anchor.left + anchor.width + gap, top }
+      : { side: "left", left: anchor.left - gap - size.width, top };
+  }
+  return placeFloating(anchor, size, viewport, { gap, gutter, prefer: "bottom" });
+}

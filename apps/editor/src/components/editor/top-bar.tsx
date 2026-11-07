@@ -17,7 +17,7 @@ import { EditorClock } from "./editor-clock";
 import { BreakpointManager } from "./breakpoint-manager";
 import { BreakpointGlyph } from "./icons";
 import { PageMenu } from "./page-menu";
-import { ScheduleDialog } from "./schedule-dialog";
+import { ReplaceScheduleDialog, ScheduleDialog } from "./schedule-dialog";
 import { PageSettingsModal } from "./page-settings-modal";
 import { TemplateSettingsModal } from "./template-settings-modal";
 import {
@@ -297,6 +297,7 @@ function PublishControl({
   const [hasChanges, setHasChanges] = useState(true);
   const [scheduledAt, setScheduledAt] = useState<number | null>(null);
   const [scheduling, setScheduling] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const savedTick = useEditorStore((s) => s.savedTick);
   const breakpoints = useEditorStore((s) => s.project.breakpoints);
@@ -333,7 +334,12 @@ function PublishControl({
           : { color: "bg-orange-500", label: "Draft saved, not published" };
 
   // Publishing waits until every edited group is saved with its check icon (or discarded).
-  function requestPublish() {
+  function requestPublish(confirmedNow = false) {
+    // A scheduled publish and a publish now cannot both stand: ask before replacing the schedule.
+    if (scheduledAt !== null && !confirmedNow) {
+      setReplacing(true);
+      return;
+    }
     const { pageDrafts, doc } = useEditorStore.getState();
     const labels = unsavedDraftLabels(pageDrafts, doc?.settings);
     if (labels.length > 0) setUnsaved(labels);
@@ -368,6 +374,16 @@ function PublishControl({
             useEditorStore.getState().clearPageDrafts();
             setUnsaved(null);
             void run("publish");
+          }}
+        />
+      ) : null}
+      {replacing && scheduledAt !== null ? (
+        <ReplaceScheduleDialog
+          scheduledAt={scheduledAt}
+          onCancel={() => setReplacing(false)}
+          onConfirm={() => {
+            setReplacing(false);
+            requestPublish(true);
           }}
         />
       ) : null}
@@ -430,7 +446,7 @@ function PublishControl({
           className="rounded-r-none"
           isLoading={busy === "publish"}
           isDisabled={busy !== null || upToDate}
-          onPress={requestPublish}
+          onPress={() => requestPublish()}
         >
           {upToDate ? "Published" : "Publish"}
         </ActionButton>
