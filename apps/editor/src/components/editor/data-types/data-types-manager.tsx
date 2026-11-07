@@ -10,16 +10,12 @@ import {
   type DataType
 } from "@nextomic/schema";
 import { useMemo, useState } from "react";
-import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { compactFieldClass } from "../right-panel/setting-row";
 import { useEditorStore } from "../store/editor-store";
-import { DataTypeEditor } from "./data-type-editor";
-import { EnumEditor } from "./enum-editor";
-import { IdentifierInput } from "./identifier-input";
+import { ItemEditor, type Item } from "./item-editor";
 
 type Tab = "types" | "enums";
-type Item = DataType | AppEnum;
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "types", label: "Custom Data Types" },
@@ -77,7 +73,7 @@ export function DataTypesManager() {
 
   return (
     <div className="flex h-full min-h-0">
-      <aside className="flex w-72 shrink-0 flex-col border-r border-divider">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-divider bg-content1/30">
         <div className="flex flex-col gap-3 border-b border-divider p-3">
           <div className="flex items-center justify-between">
             <h1 className="text-medium font-semibold">Data Types</h1>
@@ -125,6 +121,11 @@ export function DataTypesManager() {
             onChange={(e) => setQuery(e.target.value)}
             className={compactFieldClass}
           />
+          {error ? (
+            <p role="alert" className="text-tiny text-danger">
+              {error}
+            </p>
+          ) : null}
         </div>
         <ul className="min-h-0 flex-1 overflow-y-auto p-2">
           {shown.map((item) => (
@@ -158,45 +159,13 @@ export function DataTypesManager() {
       </aside>
       <main className="min-w-0 flex-1 overflow-y-auto">
         {selected ? (
-          <div className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex min-w-0 flex-1 flex-col gap-3">
-                <label className="flex max-w-sm flex-col gap-1">
-                  <span className="text-tiny font-medium text-default-600">Name</span>
-                  <IdentifierInput
-                    label={tab === "types" ? "Data type name" : "Enum name"}
-                    value={selected.name}
-                    taken={list.filter((i) => i.id !== selected.id).map((i) => i.name)}
-                    onCommit={(name) => replace({ ...selected, name })}
-                  />
-                </label>
-                <label className="flex flex-col gap-1">
-                  <span className="text-tiny font-medium text-default-600">Description</span>
-                  <input
-                    value={selected.description}
-                    maxLength={300}
-                    placeholder="What it is for"
-                    onChange={(e) => replace({ ...selected, description: e.target.value })}
-                    className={compactFieldClass}
-                  />
-                </label>
-              </div>
-              <ActionButton size="sm" tone="danger-ghost" onPress={() => remove(selected)}>
-                <Icon name="ph:trash" width={14} height={14} />
-                Delete
-              </ActionButton>
-            </div>
-            {error ? (
-              <p role="alert" className="text-tiny text-danger">
-                {error}
-              </p>
-            ) : null}
-            {"fields" in selected ? (
-              <DataTypeEditor value={selected} onChange={replace} />
-            ) : (
-              <EnumEditor value={selected} onChange={replace} />
-            )}
-          </div>
+          <ItemEditor
+            key={`${tab}-${selected.id}`}
+            saved={selected}
+            taken={list.filter((i) => i.id !== selected.id).map((i) => i.name)}
+            onSave={replace}
+            onDelete={() => remove(selected)}
+          />
         ) : (
           <div className="flex h-full items-center justify-center p-6 text-center text-small text-default-500">
             {tab === "types"

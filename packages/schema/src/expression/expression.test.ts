@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { completeExpression } from "./completions";
+import { expressionProblem } from "./check";
+import { completeExpression, insideString } from "./completions";
 import { runExpression, toText } from "./evaluate";
 import { expressionAtCaret, splitTemplate } from "./template";
 
@@ -107,11 +108,33 @@ describe("templates", () => {
 describe("completions", () => {
   const labels = (source: string) => completeExpression(source, scope).items.map((i) => i.label);
 
-  it("lists root names and functions", () => {
-    expect(labels(" ")).toEqual(
-      expect.arrayContaining(["user", "app", "$now", "Math", "$ifEmpty"])
+  it("lists variables by group, then names and functions", () => {
+    const items = completeExpression(" ", { ...scope, now: { year: "2026" } }).items;
+    expect(items.map((i) => i.label)).toEqual(
+      expect.arrayContaining(["user", "app.count", "$now", "Math", "$ifEmpty"])
     );
-    expect(labels(" us")[0]).toBe("user");
+    expect(items.map((i) => i.label)).not.toContain("now");
+    expect(items.find((i) => i.label === "app.count")?.group).toBe("App state");
+    expect(items.find((i) => i.label === "$ifEmpty")?.group).toBe("Functions");
+    const groups = [...new Set(items.map((i) => i.group))];
+    expect(groups.indexOf("App state")).toBeLessThan(groups.indexOf("Functions"));
+    expect(labels(" us")).toEqual(expect.arrayContaining(["app.users", "user"]));
+  });
+
+  it("suggests nothing inside a quoted string", () => {
+    expect(labels(' $now.toFormat("dd MM y')).toEqual([]);
+    expect(labels(" `a ${app.co")).toContain("count");
+    expect(insideString("'a' + 'b")).toBe(true);
+    expect(insideString("'a' + b")).toBe(false);
+  });
+
+  it("finds unknown names, undeclared variables and errors", () => {
+    expect(expressionProblem("app.count + 1", scope)).toBeNull();
+    expect(expressionProblem("app.users.map(u => u.name)", scope)).toBeNull();
+    expect(expressionProblem("app.nope", scope)).toMatch(/Unknown app state variable "nope"/);
+    expect(expressionProblem("foo.bar", scope)).toMatch(/Unknown name "foo"/);
+    expect(expressionProblem("app.count +", scope)).toBeTruthy();
+    expect(expressionProblem("app.tags.push(1)", scope)).toBeTruthy();
   });
 
   it("lists fields and methods after a dot, matching the value", () => {

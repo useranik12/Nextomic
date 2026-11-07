@@ -1,12 +1,14 @@
-// Where app state variables and constants are used: any {{app.name}} / {{const.name}} tag in a
-// page or template (tree, settings, SEO), written either inside text or as a token part of a
-// mixed value. Works on plain JSON so it covers every place a tag can be written.
+import { splitTemplate } from "./expression/template";
+
+// Where app state variables and constants are used: any app.name / const.name inside a {{ }}
+// expression in a page or template (tree, settings, SEO), written either inside text or as a token
+// part of a mixed value. Works on plain JSON so it covers every place a tag can be written.
 
 export type StateGroup = "app" | "const";
 
 const NAME = "[A-Za-z_][A-Za-z0-9_]*";
-const IN_TEXT = new RegExp(`\\{\\{\\s*(app|const)\\.(${NAME})`, "g");
-const TOKEN = new RegExp(`^\\s*(app|const)\\.(${NAME})`);
+// A variable reference inside an expression, not the end of a longer name or path (`x.app.a`).
+const IN_EXPR = new RegExp(`(?<![\\w$.])(app|const)\\.(${NAME})`, "g");
 
 export type StateUsageCounts = Record<StateGroup, Record<string, number>>;
 
@@ -21,26 +23,28 @@ function isTokenPart(value: object): value is { token: string } {
   return "token" in value && typeof (value as { token: unknown }).token === "string";
 }
 
-/** Adds every app and const tag found in `value` (any JSON) to `counts`. */
+function countIn(expr: string, counts: StateUsageCounts) {
+  for (const match of expr.matchAll(IN_EXPR)) add(counts, match[1] as string, match[2] as string);
+}
+
+/** Adds every app and const reference found in `value` (any JSON) to `counts`. */
 export function countStateUsage(value: unknown, counts: StateUsageCounts): StateUsageCounts {
   if (typeof value === "string") {
-    for (const match of value.matchAll(IN_TEXT))
-      add(counts, match[1] as string, match[2] as string);
+    for (const part of splitTemplate(value))
+      if (typeof part !== "string") countIn(part.expr, counts);
   } else if (Array.isArray(value)) {
     for (const item of value) countStateUsage(item, counts);
   } else if (value !== null && typeof value === "object") {
-    if (isTokenPart(value)) {
-      const match = TOKEN.exec(value.token);
-      if (match) add(counts, match[1] as string, match[2] as string);
-    }
-    for (const item of Object.values(value)) countStateUsage(item, counts);
+    if (isTokenPart(value)) countIn(value.token, counts);
+    for (const [key, item] of Object.entries(value))
+      if (key !== "token") countStateUsage(item, counts);
   }
   return counts;
 }
 
 /**
- * A copy of `value` with every `group.from` tag pointed at `group.to` (dotted paths after the
- * name are kept), and whether anything changed.
+ * A copy of `value` with every `group.from` reference pointed at `group.to` (dotted paths after
+ * the name are kept), and whether anything changed. Only text inside {{ }} is changed.
  */
 export function renameStateTag<T>(
   value: T,
@@ -49,12 +53,21 @@ export function renameStateTag<T>(
   to: string
 ): { value: T; changed: boolean } {
   let changed = false;
-  const inText = new RegExp(`(\\{\\{\\s*${group}\\.)${from}(?![A-Za-z0-9_])`, "g");
-  const inToken = new RegExp(`^(\\s*${group}\\.)${from}(?![A-Za-z0-9_])`);
+  const inExpr = new RegExp(`(?<![\\w$.])(${group}\\.)${from}(?![A-Za-z0-9_])`, "g");
+  const renameIn = (expr: string) => expr.replace(inExpr, `$1${to}`);
+  const renameText = (text: string) => {
+    let out = "";
+    let at = 0;
+    for (const part of splitTemplate(text)) {
+      if (typeof part === "string") continue;
+      out += text.slice(at, part.start) + renameIn(text.slice(part.start, part.end));
+      at = part.end;
+    }
+    return out + text.slice(at);
+  };
   const walk = (node: unknown, key?: string): unknown => {
     if (typeof node === "string") {
-      const next =
-        key === "token" ? node.replace(inToken, `$1${to}`) : node.replace(inText, `$1${to}`);
+      const next = key === "token" ? renameIn(node) : renameText(node);
       if (next !== node) changed = true;
       return next;
     }

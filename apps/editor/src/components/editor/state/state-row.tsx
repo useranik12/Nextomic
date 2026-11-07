@@ -22,8 +22,9 @@ export type StateRowVariable =
   | { kind: "const"; variable: Constant };
 
 export const ROW_GRID = {
-  app: "grid-cols-[minmax(10rem,1.4fr)_11rem_7rem_minmax(10rem,1.6fr)_4.5rem_2rem_2rem]",
-  const: "grid-cols-[minmax(10rem,1.4fr)_11rem_7rem_minmax(10rem,1.6fr)_minmax(8rem,1fr)_2rem_2rem]"
+  app: "grid-cols-[minmax(10rem,1.2fr)_minmax(13rem,1.4fr)_6.5rem_minmax(10rem,1.6fr)_4.5rem_2rem_2rem]",
+  const:
+    "grid-cols-[minmax(10rem,1.2fr)_minmax(13rem,1.4fr)_6.5rem_minmax(10rem,1.6fr)_minmax(8rem,1fr)_2rem_2rem]"
 } as const;
 
 /** Name input: commits a valid, free name on blur or Enter; shows why a name is refused. */

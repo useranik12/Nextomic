@@ -216,7 +216,7 @@ test("dynamic tags show real values on the canvas", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
-  await page.getByLabel("Text", { exact: true }).fill("On {{page.name}} in {{now.year}}");
+  await page.getByLabel("Text", { exact: true }).fill("On {{page.name}} in {{$now.year}}");
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   const year = String(new Date().getFullYear());
   await expect(
@@ -758,7 +758,7 @@ test("page settings: no header and footer choice, status can be scheduled", asyn
   await expect(dialog.getByLabel("Go live at").first()).toBeVisible();
 });
 
-test("state management: app state and constants feed dynamic data", async ({ page }) => {
+test("state management: drafts, guard, and values feed dynamic data", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "State Management" }).click();
   await expect(page.getByRole("heading", { name: "State Management" })).toBeVisible();
@@ -769,6 +769,10 @@ test("state management: app state and constants feed dynamic data", async ({ pag
   await name.fill("cart_count");
   await name.press("Enter");
   await page.locator("[aria-label='Type of cart_count']").click();
+  await expect(page.locator("[role=option]", { hasText: "ENUM" })).toHaveAttribute(
+    "data-disabled",
+    "true"
+  );
   await page.locator("[role=option]", { hasText: "Number" }).click();
   await page.getByLabel("Default value of cart_count").fill("abc");
   await expect(page.getByText("Expected a number.")).toBeVisible();
@@ -784,13 +788,29 @@ test("state management: app state and constants feed dynamic data", async ({ pag
   await expect(page.getByText('"user" is a reserved word.')).toBeVisible();
   await second.press("Escape");
 
-  // Constants.
+  // Leaving with unsaved changes asks first; Keep editing stays.
   await page.getByRole("tab", { name: /Constants/ }).click();
+  const guard = page.getByRole("dialog", { name: "Unsaved changes" });
+  await expect(guard).toBeVisible();
+  await guard.getByRole("button", { name: "Keep editing" }).click();
+  await expect(page.getByRole("tab", { name: /App State/ })).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
+  await page.getByRole("button", { name: "Save App State" }).click();
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+
+  // Constants, discarded once, then saved.
+  await page.getByRole("tab", { name: /Constants/ }).click();
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  await page.getByRole("button", { name: "Discard changes to Constants" }).click();
+  await expect(page.getByText("No constants yet.", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Add Variable" }).click();
   const constName = page.getByLabel("Variable name");
   await constName.fill("support_email");
   await constName.press("Enter");
   await page.getByLabel("Value of support_email").fill("help@example.com");
+  await page.getByRole("button", { name: "Save Constants" }).click();
 
   // Both groups show in the bolt picker and resolve on the canvas.
   await page.getByRole("button", { name: "Navigator" }).click();
@@ -810,7 +830,7 @@ test("data types: enums and custom data types become state types", async ({ page
   await page.getByRole("button", { name: "Data Types" }).click();
   await expect(page.getByRole("heading", { name: "Data Types" })).toBeVisible();
 
-  // An enum with two values.
+  // An enum with two values, saved.
   await page.getByRole("tab", { name: "ENUM" }).click();
   await page.getByRole("button", { name: "Add enum" }).click();
   const value = page.getByLabel("New enum value");
@@ -821,12 +841,20 @@ test("data types: enums and custom data types become state types", async ({ page
   await value.fill("small");
   await expect(page.getByText("That value is already in the list.")).toBeVisible();
   await value.fill("");
+  await page.getByRole("button", { name: "Save enum Enum_1" }).click();
 
-  // A data type with one field.
+  // A data type cannot use itself as a field type; ENUM picks which enum beside the type.
   await page.getByRole("tab", { name: "Custom Data Types" }).click();
   await page.getByRole("button", { name: "Add data type" }).click();
   await page.getByRole("button", { name: "Add Field" }).click();
-  await expect(page.getByLabel("Type of field_1")).toBeVisible();
+  await page.locator("[aria-label='Type of field_1']").click();
+  await expect(page.locator("[role=option]", { hasText: "Data Type" })).toHaveAttribute(
+    "data-disabled",
+    "true"
+  );
+  await page.locator("[role=option]", { hasText: "ENUM" }).click();
+  await expect(page.locator("[aria-label='Enum for Type of field_1']")).toBeVisible();
+  await page.getByRole("button", { name: "Save data type DataType_1" }).click();
 
   // The enum is a type for app state, and its values are the only choices.
   await page.getByRole("button", { name: "State Management" }).click();
@@ -840,20 +868,29 @@ test("data types: enums and custom data types become state types", async ({ page
   await expect(page.locator("[role=option]", { hasText: "large" })).toBeVisible();
   await page.locator("[role=option]", { hasText: "large" }).click();
 
+  // A data type variable chooses which data type beside the type.
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const address = page.getByLabel("Variable name").last();
+  await address.fill("address");
+  await address.press("Enter");
+  await page.locator("[aria-label='Type of address']").click();
+  await page.locator("[role=option]", { hasText: "Data Type" }).click();
+  await expect(page.locator("[aria-label='Data Type for Type of address']")).toBeVisible();
+
   // A JSON value can be formatted.
   await page.getByRole("button", { name: "Add Variable" }).click();
-  const second = page.getByLabel("Variable name").last();
-  await second.fill("settings");
-  await second.press("Enter");
+  const third = page.getByLabel("Variable name").last();
+  await third.fill("settings");
+  await third.press("Enter");
   await page.locator("[aria-label='Type of settings']").click();
-  await page.locator("[role=option]", { hasText: "JSON" }).click();
+  await page.getByRole("option", { name: "JSON", exact: true }).last().click();
   const json = page.getByLabel("Default value of settings", { exact: true });
   await json.fill('{"a":1}');
   await page.getByRole("button", { name: "Format Default value of settings" }).click();
   await expect(json).toHaveValue('{\n  "a": 1\n}');
 });
 
-test("expressions: suggestions after a dot and the result on the canvas", async ({ page }) => {
+test("expressions: auto close, grouped suggestions, result, invalid tags", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "State Management" }).click();
   await page.getByRole("tab", { name: /Constants/ }).click();
@@ -862,19 +899,45 @@ test("expressions: suggestions after a dot and the result on the canvas", async 
   await constName.fill("brand");
   await constName.press("Enter");
   await page.getByLabel("Value of brand").fill("nextomic");
+  await page.getByRole("button", { name: "Save Constants" }).click();
 
   await page.getByRole("button", { name: "Navigator" }).click();
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   const text = page.getByLabel("Text", { exact: true });
   await text.fill("");
-  await text.pressSequentially("Hi {{ const.brand.toUp");
+  await text.pressSequentially("Hi {{");
+  await expect(text).toHaveValue("Hi {{  }}");
   const panel = page.getByRole("dialog", { name: "Expression suggestions" });
+  await expect(panel.getByRole("option", { name: /const.brand/ })).toBeVisible();
+  await expect(panel.getByText("Functions", { exact: true }).first()).toBeVisible();
+  await text.pressSequentially("const.brand.toUp");
   await expect(panel.getByRole("option", { name: /toUpperCase/ })).toBeVisible();
   await expect(panel.getByText("All letters in capitals.")).toBeVisible();
   await text.press("Enter");
-  await text.pressSequentially(" }}");
-  await expect(text).toHaveValue("Hi {{const.brand.toUpperCase()}}");
+  await expect(text).toHaveValue("Hi {{ const.brand.toUpperCase() }}");
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.getByRole("heading", { name: "Hi NEXTOMIC" })).toBeVisible();
+
+  // Nothing is suggested inside a string; an unknown variable marks the element in the Navigator.
+  await text.fill("{{ const.brand.replace('n");
+  await expect(panel).toHaveCount(0);
+  await text.fill("{{ const.nope }}");
+  await expect(page.getByRole("img", { name: /Invalid dynamic data/ })).toBeVisible();
+});
+
+test("publish menu: schedule a publish and remove it", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "More publish options" }).click();
+  await page.getByText("Schedule publish", { exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Schedule publish" });
+  await dialog.getByRole("button", { name: "Schedule", exact: true }).click();
+  const chip = page.getByRole("button", { name: /^Publishes / });
+  await expect(chip).toBeVisible();
+  await chip.click();
+  await page
+    .getByRole("dialog", { name: "Schedule publish" })
+    .getByRole("button", { name: "Remove schedule" })
+    .click();
+  await expect(chip).toHaveCount(0);
 });

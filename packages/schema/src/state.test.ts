@@ -187,14 +187,15 @@ describe("where state is used", () => {
   const tree = {
     props: {
       text: { kind: "mixed", parts: ["Hi ", { token: "app.name" }, { token: "const.site.url" }] },
-      title: "{{ app.name }} and {{app.named}}"
+      title: "{{ app.name }} and {{app.named}}",
+      label: "{{ $if(app.name, const.site, 'x') }} app.name outside"
     }
   };
 
   it("counts tags in text and in token parts", () => {
     expect(countStateUsage(tree, emptyStateUsage())).toEqual({
-      app: { name: 2, named: 1 },
-      const: { site: 1 }
+      app: { name: 3, named: 1 },
+      const: { site: 2 }
     });
   });
 
@@ -203,6 +204,7 @@ describe("where state is used", () => {
     expect(changed).toBe(true);
     expect(value.props.title).toBe("{{ app.first }} and {{app.named}}");
     expect(value.props.text.parts[1]).toEqual({ token: "app.first" });
+    expect(value.props.label).toBe("{{ $if(app.first, const.site, 'x') }} app.name outside");
     expect(renameStateTag(tree, "const", "nope", "x").changed).toBe(false);
   });
 });

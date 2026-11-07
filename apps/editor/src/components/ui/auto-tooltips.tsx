@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { placeFloating, type Placement } from "@/lib/place-floating";
 
 const DELAY_MS = 300;
-const TARGET = "button,a,[role=button],[role=tab],[role=menuitem],[role=switch]";
+const TARGET = "[data-tip],button,a,[role=button],[role=tab],[role=menuitem],[role=switch]";
 
 interface Shown {
   text: string;
@@ -14,6 +14,8 @@ interface Shown {
 /** The words for an element: its title, or its accessible name when it has no visible text. */
 function labelOf(el: HTMLElement): string | null {
   if (el.hasAttribute("data-own-tip")) return null;
+  const tip = el.getAttribute("data-tip")?.trim();
+  if (tip) return tip;
   const title = el.getAttribute("title")?.trim();
   if (title) return title;
   const aria = el.getAttribute("aria-label")?.trim();

@@ -29,6 +29,7 @@ import { VersionHistory } from "./version-history";
 import { StateManager } from "./state/state-manager";
 import { DataTypesManager } from "./data-types/data-types-manager";
 import { ExpressionAssist } from "./expression/expression-assist";
+import { ExpressionHighlights } from "./expression/expression-highlights";
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -172,8 +173,9 @@ export function EditorShell({
 
   return (
     <EditorDndProvider>
-      <div className="flex h-screen flex-col bg-background text-foreground">
+      <div data-editor-root className="flex h-screen flex-col bg-background text-foreground">
         <ExpressionAssist />
+        <ExpressionHighlights />
         <TopBar
           projectId={projectId}
           pages={pages}

@@ -70,7 +70,7 @@ export function StateManager() {
           role="tabpanel"
           id={`state-panel-${tab}`}
           aria-labelledby={`state-tab-${tab}`}
-          className="rounded-large border border-divider bg-content1/30 p-5"
+          className="rounded-large border border-divider bg-content1/30 p-4"
         >
           <StateTable key={tab} group={tab} usage={usage} />
         </section>
