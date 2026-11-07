@@ -175,7 +175,7 @@ Docs: `platform.md`
 - [ ] Social sign-in (Google first) and passkeys for builder users
 - [ ] Rate limiting settings, optional 2FA, domain/IP allowlists
 - [ ] Project members and role matrix; invitations; audit log
-- [x] Multiple SMTP accounts, test send, default and per-project selection, email templates _Built early (2026-11-08, owner request): accounts, env account, test connection and test email, default, platform templates, queue with retries and log. Per-project selection and templates follow the Phase 5 send-email action._
+- [x] SMTP from environment variables only (owner decision 2026-11-08: no SMTP settings in the builder), queued sending with retries, built-in auth email templates _Built: `server/mail/*`. Built apps read their own `SMTP_\*` variables (Phase 5 send-email action).\_
 - [ ] Automatic backups (local zip, S3), retention, restore with dry run
 - [ ] Admin dashboard: backup status, failures, health
 

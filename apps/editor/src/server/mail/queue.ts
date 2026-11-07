@@ -1,12 +1,12 @@
 import { emailQueue, getDb, type EmailKind } from "@nextomic/db";
-import { and, asc, count, desc, eq, gt, inArray, lt, lte, sql } from "drizzle-orm";
-import { resolveSmtpAccount } from "./accounts";
+import { and, asc, eq, inArray, lt, lte, sql } from "drizzle-orm";
+import { smtpFromEnv } from "./accounts";
 import { smtpErrorMessage, smtpTransport } from "./transport";
-import { getEmailTemplate, renderTemplate } from "./templates";
+import { DEFAULT_TEMPLATES, renderTemplate } from "./templates";
 
 // The outgoing mail queue. Enqueueing renders the template and stores the message; a worker
-// sends due messages, retries failures with growing delays and respects each account's rate
-// limit. Bodies are cleared once a message is sent or gives up, so the log keeps no content.
+// sends due messages with the SMTP_* account and retries failures with growing delays. Bodies are
+// cleared once a message is sent or gives up, so the table keeps no content.
 
 export const MAX_ATTEMPTS = 5;
 /** Wait before attempt 2, 3, 4 and 5. */
@@ -18,25 +18,22 @@ export interface EnqueueEmail {
   kind: EmailKind;
   to: string;
   vars: Record<string, string>;
-  /** An account id, "env", or null for the default account. */
-  accountId?: string | null;
 }
 
 export function retryDelay(attempts: number): number {
-  return (
-    RETRY_DELAYS_MS[Math.min(attempts, RETRY_DELAYS_MS.length) - 1] ?? RETRY_DELAYS_MS[0] ?? 30_000
-  );
+  return RETRY_DELAYS_MS[Math.min(Math.max(attempts, 1), RETRY_DELAYS_MS.length) - 1] ?? 30_000;
 }
 
 /** Stores a message and starts sending it. Returns the queue id. */
 export async function enqueueEmail(message: EnqueueEmail): Promise<string> {
-  const template = await getEmailTemplate(message.kind);
-  const rendered = renderTemplate(template, { appName: "Nextomic", ...message.vars });
+  const rendered = renderTemplate(DEFAULT_TEMPLATES[message.kind], {
+    appName: "Nextomic",
+    ...message.vars
+  });
   const [row] = await getDb()
     .insert(emailQueue)
     .values({
       kind: message.kind,
-      accountId: message.accountId ?? null,
       toAddress: message.to,
       subject: rendered.subject,
       html: rendered.html,
@@ -78,16 +75,6 @@ async function claimDue(): Promise<Claimed[]> {
     .returning();
 }
 
-async function sentInLastMinute(accountId: string): Promise<number> {
-  const [row] = await getDb()
-    .select({ n: count() })
-    .from(emailQueue)
-    .where(
-      and(eq(emailQueue.sentWith, accountId), gt(emailQueue.sentAt, new Date(Date.now() - 60_000)))
-    );
-  return row?.n ?? 0;
-}
-
 async function finish(id: string, values: Partial<typeof emailQueue.$inferInsert>) {
   await getDb()
     .update(emailQueue)
@@ -96,25 +83,13 @@ async function finish(id: string, values: Partial<typeof emailQueue.$inferInsert
 }
 
 async function deliver(message: Claimed): Promise<void> {
-  const account = await resolveSmtpAccount(message.accountId);
+  const account = smtpFromEnv();
   if (!account) {
     await finish(message.id, {
       status: "failed",
-      lastError: "No SMTP account is set up.",
+      lastError: "SMTP is not configured (SMTP_HOST is empty).",
       html: null,
       text: null
-    });
-    return;
-  }
-  if (
-    account.rateLimitPerMinute !== null &&
-    (await sentInLastMinute(account.id)) >= account.rateLimitPerMinute
-  ) {
-    // Over the account's limit: wait, without spending an attempt.
-    await finish(message.id, {
-      status: "queued",
-      attempts: Math.max(message.attempts - 1, 0),
-      nextAttemptAt: new Date(Date.now() + 15_000)
     });
     return;
   }
@@ -122,14 +97,12 @@ async function deliver(message: Claimed): Promise<void> {
     await smtpTransport(account).sendMail({
       from: account.from,
       to: message.toAddress,
-      replyTo: account.replyTo ?? undefined,
       subject: message.subject,
       text: message.text ?? "",
       html: message.html ?? undefined
     });
     await finish(message.id, {
       status: "sent",
-      sentWith: account.id,
       sentAt: new Date(),
       lastError: null,
       html: null,
@@ -138,17 +111,10 @@ async function deliver(message: Claimed): Promise<void> {
   } catch (error) {
     const lastError = smtpErrorMessage(error);
     if (message.attempts >= MAX_ATTEMPTS)
-      await finish(message.id, {
-        status: "failed",
-        sentWith: account.id,
-        lastError,
-        html: null,
-        text: null
-      });
+      await finish(message.id, { status: "failed", lastError, html: null, text: null });
     else
       await finish(message.id, {
         status: "queued",
-        sentWith: account.id,
         lastError,
         nextAttemptAt: new Date(Date.now() + retryDelay(message.attempts))
       });
@@ -175,42 +141,4 @@ export function kickQueue() {
   processQueue().catch(() => {
     // The rows keep their state; the worker tries again on its next tick.
   });
-}
-
-export interface EmailLogEntry {
-  id: string;
-  kind: EmailKind;
-  to: string;
-  subject: string;
-  status: "queued" | "sending" | "sent" | "failed";
-  attempts: number;
-  sentWith: string | null;
-  lastError: string | null;
-  createdAt: string;
-  sentAt: string | null;
-}
-
-/** The latest messages, newest first, without bodies. */
-export async function recentEmails(limit = 50): Promise<EmailLogEntry[]> {
-  const rows = await getDb()
-    .select({
-      id: emailQueue.id,
-      kind: emailQueue.kind,
-      to: emailQueue.toAddress,
-      subject: emailQueue.subject,
-      status: emailQueue.status,
-      attempts: emailQueue.attempts,
-      sentWith: emailQueue.sentWith,
-      lastError: emailQueue.lastError,
-      createdAt: emailQueue.createdAt,
-      sentAt: emailQueue.sentAt
-    })
-    .from(emailQueue)
-    .orderBy(desc(emailQueue.createdAt))
-    .limit(limit);
-  return rows.map((r) => ({
-    ...r,
-    createdAt: r.createdAt.toISOString(),
-    sentAt: r.sentAt?.toISOString() ?? null
-  }));
 }

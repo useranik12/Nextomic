@@ -1,15 +1,14 @@
 import { createTransport } from "nodemailer";
-import type { ResolvedSmtpAccount } from "./accounts";
+import type { SmtpAccount } from "./accounts";
 
-// Builds a nodemailer transport for one account. `tls` connects with TLS from the start (usually
-// port 465); `starttls` must upgrade with STARTTLS (usually 587); `none` upgrades when offered.
+// Builds the nodemailer transport. `tls` connects with TLS from the start (SMTP_SECURE=true or
+// port 465); `starttls` upgrades with STARTTLS whenever the server offers it (usually 587).
 
-export function smtpTransport(account: ResolvedSmtpAccount) {
+export function smtpTransport(account: SmtpAccount) {
   return createTransport({
     host: account.host,
     port: account.port,
     secure: account.security === "tls",
-    requireTLS: account.security === "starttls",
     auth: account.username ? { user: account.username, pass: account.password ?? "" } : undefined,
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,

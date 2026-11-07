@@ -211,47 +211,7 @@ export const connectorAuditLog = pgTable(
   (table) => [index("connector_audit_connector_idx").on(table.connectorId, table.createdAt)]
 );
 
-// Builder SMTP accounts (docs/platform.md section 4). Platform-wide, managed by workspace owners
-// and admins. The password is AES-256-GCM sealed like connector secrets; the row id is bound in.
-export const smtpAccounts = pgTable(
-  "smtp_accounts",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    name: text("name").notNull(),
-    host: text("host").notNull(),
-    port: integer("port").notNull(),
-    security: text("security").$type<"tls" | "starttls" | "none">().notNull(),
-    username: text("username"),
-    passwordCiphertext: text("password_ciphertext"),
-    passwordIv: text("password_iv"),
-    passwordTag: text("password_tag"),
-    keyVersion: integer("key_version"),
-    fromName: text("from_name").notNull(),
-    fromAddress: text("from_address").notNull(),
-    replyTo: text("reply_to"),
-    // Messages per minute this account may send; null = no limit.
-    rateLimitPerMinute: integer("rate_limit_per_minute"),
-    isDefault: boolean("is_default").notNull().default(false),
-    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
-  },
-  (table) => [uniqueIndex("smtp_accounts_name_idx").on(table.name)]
-);
-
-export type EmailKind = "verify-email" | "reset-password" | "test";
-
-// Edited platform email templates. A kind without a row uses the built-in default.
-export const emailTemplates = pgTable("email_templates", {
-  kind: text("kind").$type<EmailKind>().primaryKey(),
-  subject: text("subject").notNull(),
-  html: text("html").notNull(),
-  text: text("text").notNull(),
-  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
-});
+export type EmailKind = "verify-email" | "reset-password";
 
 // The outgoing mail queue and its log. Bodies are kept only until the message is sent or gives
 // up, then cleared, so the log holds who, what kind, when and how it went, never the content.
@@ -262,10 +222,6 @@ export const emailQueue = pgTable(
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
     kind: text("kind").$type<EmailKind>().notNull(),
-    // An smtp_accounts id, "env" for the environment account, or null for the default.
-    accountId: text("account_id"),
-    // The account that actually sent (or last tried) it, for the log.
-    sentWith: text("sent_with"),
     toAddress: text("to_address").notNull(),
     subject: text("subject").notNull(),
     html: text("html"),
@@ -278,8 +234,5 @@ export const emailQueue = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     sentAt: timestamp("sent_at", { withTimezone: true })
   },
-  (table) => [
-    index("email_queue_due_idx").on(table.status, table.nextAttemptAt),
-    index("email_queue_sent_idx").on(table.sentWith, table.sentAt)
-  ]
+  (table) => [index("email_queue_due_idx").on(table.status, table.nextAttemptAt)]
 );

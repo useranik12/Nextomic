@@ -29,25 +29,16 @@ Builder authentication (this doc) is for people who use the builder. Authenticat
 - Secrets encrypted at rest (see `integrations.md`). Security headers, CSRF protection, CSP for the editor.
 - Custom HTML/JS elements and custom code run in the sandboxed canvas iframe in the editor.
 
-## 4. SMTP (multiple)
+## 4. SMTP (environment only)
 
-- Add any number of SMTP accounts: name, host, port, security (TLS/STARTTLS), username, password (encrypted), from name/address, reply-to, rate limit.
-- "Test connection" and "Send test email".
-- Set a default SMTP for platform emails (invites, verification, resets). Each project selects which SMTP to use for its "send email" action.
-- Email templates (HTML + text) with variables; per-project templates.
-- Exported apps read SMTP details from their own env vars at deploy time; the export includes a `.env.example` and never embeds credentials.
-- Send via a queue with retries and logging (no message bodies in logs by default).
+Owner decision (2026-11-08): there are no SMTP settings in the builder. SMTP lives only in Docker Compose / Dokploy variables.
 
-Built (2026-11-08):
-
-- Accounts are platform-wide (they send the platform's own email) and only workspace owners and admins can manage them, in Settings > Email. Fields: name, host, port, security (TLS from the start, STARTTLS required, or none = upgrade when offered), username, password (AES-256-GCM with `ENCRYPTION_KEY`, bound to the row; never sent back to the browser; blank keeps it), from name and address, reply-to, rate limit per minute.
-- The `SMTP_*` variables (set in Dokploy) appear as a read-only "Environment" account. With no saved default it is the default, so a deploy with only env variables sends email with no setup. "Make default" on a saved account takes over; "Make default" on the environment account gives it back.
-- Test connection (connects and signs in, sends nothing) and Send test email (through the queue; shows the first attempt's result).
-- Templates for Verify email, Reset password and Test email: subject, HTML and plain text with `{{name}}`, `{{email}}`, `{{url}}`, `{{appName}}` (`{{accountName}}` for the test). Values are HTML-escaped in the HTML part; line breaks are removed from the subject. Reset to default deletes the edited copy.
-- Queue (`email_queue` table): messages are rendered and stored, then sent right away and by a worker every 15 seconds (`instrumentation.ts`). Up to 5 attempts, waiting 30 s, 2 min, 10 min, 30 min. A message over its account's rate limit waits without spending an attempt. Rows stuck in "sending" for 5 minutes return to the queue. Bodies are cleared once a message is sent or gives up; the Recent emails log shows time, kind, recipient, account, status, attempts and the last error.
-- Better Auth verification and reset emails go through this queue with the default account.
-- Limits: email verification is required only when `SMTP_*` is set at server start (Better Auth reads it once); sending through a saved account works immediately, but turning verification on by adding the first saved account takes a restart. Per-project SMTP selection and per-project templates come with the Phase 5 "send email" action.
-- Files: `server/mail/{accounts,transport,templates,queue,checks,worker}.ts`, `lib/mail.ts`, `components/settings/smtp/*`, `app/(builder)/(dashboard)/settings/smtp-actions.ts`, migration `0006_smtp.sql`.
+- The builder sends its own email (sign-up verification, password reset, later invites) with `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`. `SMTP_SECURE=true` (or port 465) connects with TLS; otherwise STARTTLS is used when the server offers it.
+- Built and exported apps also read SMTP from their own environment variables at deploy time (the "send email" action in Phase 5). Exports include `.env.example` with the `SMTP_*` names and never embed credentials. No per-project SMTP selection exists.
+- Sending goes through a queue (`email_queue` table): messages are sent right away and by a worker every 15 seconds (`instrumentation.ts`). Up to 5 attempts, waiting 30 s, 2 min, 10 min, 30 min. Rows stuck in "sending" for 5 minutes return to the queue. Bodies are cleared once a message is sent or gives up; no message content is kept.
+- Templates (verify email, reset password) are built in (`server/mail/templates.ts`), with `{{name}}`, `{{email}}`, `{{url}}`, `{{appName}}`; values are HTML-escaped in the HTML part.
+- Email verification is required only when `SMTP_HOST` is set at server start, so a fresh deploy can register its first user.
+- Files: `server/mail/{accounts,transport,templates,queue,worker}.ts`, `lib/mail.ts`.
 
 ## 5. Backups
 

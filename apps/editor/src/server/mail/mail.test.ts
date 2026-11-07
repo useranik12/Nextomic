@@ -1,7 +1,7 @@
 import { createServer, type Server, type Socket } from "node:net";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { parseMailbox, smtpAccountInputSchema, type ResolvedSmtpAccount } from "./accounts";
+import { parseMailbox, smtpFromEnv, type SmtpAccount } from "./accounts";
 import { retryDelay } from "./queue";
 import { DEFAULT_TEMPLATES, renderTemplate } from "./templates";
 import { smtpErrorMessage, smtpTransport } from "./transport";
@@ -68,22 +68,18 @@ afterAll(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
 });
 
-const account = (over: Partial<ResolvedSmtpAccount> = {}): ResolvedSmtpAccount => ({
-  id: "a",
-  name: "Local",
+const account = (over: Partial<SmtpAccount> = {}): SmtpAccount => ({
   host: "127.0.0.1",
   port,
-  security: "none",
+  security: "starttls",
   username: "user",
   password: "pass",
   from: { name: "Nextomic", address: "no-reply@example.com" },
-  replyTo: "help@example.com",
-  rateLimitPerMinute: null,
   ...over
 });
 
 describe("smtp transport", () => {
-  it("delivers a message with auth, sender name and reply-to", async () => {
+  it("delivers a message with auth and the sender name", async () => {
     const rendered = renderTemplate(DEFAULT_TEMPLATES["reset-password"], {
       appName: "Nextomic",
       name: "Ana <b>",
@@ -92,7 +88,6 @@ describe("smtp transport", () => {
     await smtpTransport(account()).sendMail({
       from: account().from,
       to: "ana@example.com",
-      replyTo: "help@example.com",
       subject: rendered.subject,
       text: rendered.text,
       html: rendered.html
@@ -101,7 +96,6 @@ describe("smtp transport", () => {
     expect(last?.auth).toBe("user:pass");
     expect(last?.to.join()).toContain("ana@example.com");
     expect(last?.data).toContain("From: Nextomic <no-reply@example.com>");
-    expect(last?.data).toContain("Reply-To: help@example.com");
     expect(last?.data).toContain("Subject: Reset your Nextomic password");
   });
 
@@ -145,22 +139,20 @@ describe("account input and helpers", () => {
     expect(parseMailbox("a@x.com")).toEqual({ name: "", address: "a@x.com" });
   });
 
-  it("validates accounts and refuses header injection", () => {
-    const base = {
-      name: "Main",
-      host: "smtp.example.com",
-      port: 587,
-      security: "starttls",
-      fromName: "N",
-      fromAddress: "n@x.com"
-    };
-    expect(smtpAccountInputSchema.safeParse(base).success).toBe(true);
-    expect(smtpAccountInputSchema.safeParse({ ...base, fromName: "N\r\nBcc: x@y.z" }).success).toBe(
-      false
-    );
-    expect(smtpAccountInputSchema.safeParse({ ...base, host: "smtp example" }).success).toBe(false);
-    expect(smtpAccountInputSchema.safeParse({ ...base, port: 70000 }).success).toBe(false);
-    expect(smtpAccountInputSchema.safeParse({ ...base, replyTo: "nope" }).success).toBe(false);
+  it("reads SMTP from the environment", () => {
+    expect(smtpFromEnv({})).toBeNull();
+    expect(
+      smtpFromEnv({ SMTP_HOST: "smtp.x.com", SMTP_PORT: "465", SMTP_FROM: "Nextomic <n@x.com>" })
+    ).toMatchObject({ port: 465, security: "tls", from: { name: "Nextomic", address: "n@x.com" } });
+    expect(
+      smtpFromEnv({
+        SMTP_HOST: "smtp.x.com",
+        SMTP_PORT: "587",
+        SMTP_SECURE: "",
+        SMTP_FROM: "n@x.com"
+      })
+    ).toMatchObject({ security: "starttls", username: null });
+    expect(() => smtpFromEnv({ SMTP_HOST: "smtp.x.com", SMTP_FROM: "" })).toThrow(/SMTP_FROM/);
   });
 
   it("waits longer after each failed attempt", () => {
