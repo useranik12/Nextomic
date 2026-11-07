@@ -5,7 +5,7 @@ async function signUpAndCreateProject(page: Page): Promise<string> {
   await page.goto("/sign-up");
   await page.getByLabel("Name").fill("Editor Tester");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple");
+  await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple-9");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 

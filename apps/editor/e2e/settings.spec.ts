@@ -9,7 +9,7 @@ async function signUp(page: Page, name: string): Promise<string> {
   await page.goto("/sign-up");
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple");
+  await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple-9");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
   return email;
@@ -34,18 +34,24 @@ test("profile image, first letter fallback and the account menu", async ({ page 
   await expect(page).toHaveURL(/\/settings/);
 
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
-  await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByText(email, { exact: true })).toBeVisible();
   // A member does not see the email settings.
   await expect(page.getByRole("heading", { name: "Email", exact: true })).toHaveCount(0);
 
   await page
     .getByLabel("Profile image file")
     .setInputFiles({ name: "a.svg", mimeType: "image/png", buffer: Buffer.from("<svg/>") });
+  await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Use a PNG, JPG, WebP or GIF image.")).toBeVisible();
 
   await page
     .getByLabel("Profile image file")
     .setInputFiles({ name: "me.png", mimeType: "image/png", buffer: PNG_1PX });
+  // Nothing is stored until Save.
+  await expect(page.locator('header img[src^="/avatars/"]')).toHaveCount(0);
+  await page.getByLabel("Name", { exact: true }).fill("Zara Quinn");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Profile saved.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Change image" })).toBeVisible();
   const src = await page.locator('header img[src^="/avatars/"]').getAttribute("src");
   expect(src).toMatch(/^\/avatars\/[^/]+\/[a-f0-9]{24}\.png$/);
@@ -55,5 +61,38 @@ test("profile image, first letter fallback and the account menu", async ({ page 
 
   await page.getByRole("button", { name: "Remove" }).click();
   await expect(page.getByRole("button", { name: "Upload image" })).toBeVisible();
+  await page.getByRole("button", { name: "Discard" }).click();
+  await expect(page.getByRole("button", { name: "Change image" })).toBeVisible();
+  await page.getByRole("button", { name: "Remove" }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByText("Profile saved.")).toBeVisible();
   await expect(page.locator('header img[src^="/avatars/"]')).toHaveCount(0);
+});
+
+test("security settings show password, two-factor and passkeys", async ({ page }) => {
+  await signUp(page, "Sam Lee");
+  await page.goto("/settings");
+  await expect(page.getByRole("heading", { name: "Security" })).toBeVisible();
+  await expect(page.getByText("Two-factor authentication")).toBeVisible();
+  await expect(page.getByText("No passkeys yet.")).toBeVisible();
+  await page.getByRole("button", { name: "Turn on" }).click();
+  await page.getByLabel("Confirm your password").fill("correct-horse-battery-staple-9");
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByAltText("QR code for your authenticator app")).toBeVisible();
+});
+
+test("sign-in button recovers after an error; remember me and magic link exist", async ({
+  page
+}) => {
+  await page.goto("/sign-in");
+  await expect(page.getByRole("checkbox", { name: "Remember me" })).toBeChecked();
+  await expect(page.getByRole("button", { name: "Email me a link" })).toBeVisible();
+  await page.getByLabel("Email").fill("nobody@example.com");
+  await page.getByLabel("Password", { exact: true }).fill("wrong-password-1");
+  const submit = page.getByRole("button", { name: "Sign in", exact: true });
+  await submit.click();
+  await expect(page.getByText(/invalid/i)).toBeVisible();
+  await page.getByLabel("Password", { exact: true }).fill("wrong-password-2");
+  await expect(submit).toBeEnabled();
+  await expect(page.getByText(/invalid/i)).toHaveCount(0);
 });

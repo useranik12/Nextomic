@@ -2,7 +2,11 @@ import { getDb, userPreferences } from "@nextomic/db";
 import { eq } from "drizzle-orm";
 import { AppearanceSettings } from "@/components/settings/appearance-settings";
 import { DependenciesTable } from "@/components/settings/dependencies-table";
+import { PasskeySettings } from "@/components/settings/passkey-settings";
+import { PasswordChange } from "@/components/settings/password-change";
 import { ProfileSettings } from "@/components/settings/profile-settings";
+import { TwoFactorSettings } from "@/components/settings/two-factor-settings";
+import { passwordPolicy } from "@/lib/auth";
 import { getBuilderDependencies } from "@/lib/deps-manifest";
 import { getServerSession } from "@/lib/session";
 
@@ -28,6 +32,19 @@ export default async function SettingsPage() {
           email={sessionData.user.email}
           image={sessionData.user.image ?? null}
         />
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-semibold text-foreground">Security</h2>
+        <div className="flex flex-col gap-5 rounded-large border border-default-100 bg-content1/40 p-5">
+          <PasswordChange email={sessionData.user.email} policy={passwordPolicy} />
+          <div className="border-t border-divider pt-5">
+            <TwoFactorSettings enabled={Boolean(sessionData.user.twoFactorEnabled)} />
+          </div>
+          <div className="border-t border-divider pt-5">
+            <PasskeySettings />
+          </div>
+        </div>
       </section>
 
       <section className="flex flex-col gap-4">

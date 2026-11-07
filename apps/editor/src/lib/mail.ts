@@ -1,3 +1,4 @@
+import type { EmailKind } from "@nextomic/db";
 import { smtpFromEnv } from "@/server/mail/accounts";
 import { enqueueEmail } from "@/server/mail/queue";
 
@@ -10,20 +11,20 @@ export function isSmtpConfigured(): boolean {
 }
 
 export interface AuthEmail {
-  kind: "verify-email" | "reset-password";
+  kind: EmailKind;
   to: string;
-  name: string;
-  url: string;
+  /** Template values: name, url, code, purpose, newEmail as the kind needs. */
+  vars: Record<string, string>;
 }
 
-export async function sendAuthEmail({ kind, to, name, url }: AuthEmail): Promise<void> {
+export async function sendAuthEmail({ kind, to, vars }: AuthEmail): Promise<void> {
   if (!smtpFromEnv()) {
     if (process.env.DEV_EMAIL_TO_CONSOLE === "true") {
       // eslint-disable-next-line no-console
-      console.log(`[auth email:${kind}] to=${to} url=${url}`);
+      console.log(`[auth email:${kind}] to=${to} ${JSON.stringify(vars)}`);
       return;
     }
     throw new Error("SMTP is not configured. Set the SMTP_* variables.");
   }
-  await enqueueEmail({ kind, to, vars: { name, email: to, url } });
+  await enqueueEmail({ kind, to, vars: { email: to, ...vars } });
 }
