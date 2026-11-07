@@ -5,8 +5,13 @@ import {
   constantListSchema,
   newAppStateVariable,
   newConstant,
+  describeType,
   stateNameProblem,
-  valueAfterTypeChange
+  stateTypeSchema,
+  typeReferences,
+  valueAfterTypeChange,
+  type TypeRegistry,
+  type TypeSpec
 } from "./state";
 import { countStateUsage, emptyStateUsage, renameStateTag } from "./state-usage";
 import { buildDynamicContext, createTokenResolver } from "./dynamic-context";
@@ -28,56 +33,110 @@ describe("state variable names", () => {
   });
 });
 
+const spec = (type: TypeSpec["type"], isList = false, ref = ""): TypeSpec => ({
+  type,
+  isList,
+  ref
+});
+
+const registry: TypeRegistry = {
+  enums: [{ id: "e1", name: "Size", description: "", values: ["s", "m"] }],
+  dataTypes: [
+    {
+      id: "d1",
+      name: "Address",
+      description: "",
+      fields: [
+        { id: "f1", name: "city", type: "string", isList: false, ref: "", description: "" },
+        { id: "f2", name: "size", type: "enum", isList: false, ref: "e1", description: "" },
+        { id: "f3", name: "tags", type: "string", isList: true, ref: "", description: "" }
+      ]
+    }
+  ]
+};
+
 describe("typed values", () => {
   it.each([
-    ["integer", "42", true],
-    ["integer", "4.2", false],
-    ["float", "4.2", true],
+    ["number", "42", true],
+    ["number", "4.2", true],
+    ["number", "abc", false],
     ["boolean", "true", true],
     ["boolean", "yes", false],
-    ["date", "2026-01-31", true],
-    ["date", "31/01/2026", false],
-    ["time", "09:30", true],
-    ["datetime", "2026-01-31T09:30", true],
+    ["timestamptz", "2026-01-31T09:30:00Z", true],
+    ["timestamptz", "2026-01-31 09:30:00+05:30", true],
+    ["timestamptz", "2026-01-31T09:30", true],
+    ["timestamptz", "31/01/2026", false],
     ["color", "#1a73e8", true],
     ["color", "blue-ish", false],
     ["url", "https://example.com/a.png", true],
     ["url", "javascript:alert(1)", false],
     ["json", '{"a":1}', true],
-    ["json", "{a:1}", false]
+    ["json", "{a:1}", false],
+    ["supabaseRow", '{"id":1}', true],
+    ["supabaseRow", "[1]", false]
   ] as const)("%s %s fits: %s", (type, text, ok) => {
-    expect(checkStateValue(type, false, text) === null).toBe(ok);
+    expect(checkStateValue(spec(type), text) === null).toBe(ok);
   });
 
-  it("checks enum values against the options", () => {
-    expect(checkStateValue("enum", false, "m", ["s", "m"])).toBeNull();
-    expect(checkStateValue("enum", false, "xl", ["s", "m"])).not.toBeNull();
+  it("reads old type names as their replacements", () => {
+    expect(stateTypeSchema.parse("integer")).toBe("number");
+    expect(stateTypeSchema.parse("date")).toBe("timestamptz");
+  });
+
+  it("checks enum values against the app enum", () => {
+    expect(checkStateValue(spec("enum", false, "e1"), "m", registry)).toBeNull();
+    expect(checkStateValue(spec("enum", false, "e1"), "xl", registry)).not.toBeNull();
+    expect(checkStateValue(spec("enum", false, "missing"), "m", registry)).toMatch(/Choose/);
+  });
+
+  it("checks data type values field by field", () => {
+    const address = spec("dataType", false, "d1");
+    expect(
+      checkStateValue(address, '{"city":"Pune","size":"s","tags":["a"]}', registry)
+    ).toBeNull();
+    expect(checkStateValue(address, '{"city":3}', registry)).toMatch(/city/);
+    expect(checkStateValue(address, '{"size":"xl"}', registry)).toMatch(/size/);
+    expect(checkStateValue(address, '{"zip":"1"}', registry)).toMatch(/no field "zip"/);
   });
 
   it("reads lists as JSON arrays of the type", () => {
-    expect(checkStateValue("integer", true, "[1, 2]")).toBeNull();
-    expect(checkStateValue("integer", true, '[1, "a"]')).toMatch(/Item 2/);
-    expect(checkStateValue("string", true, "a, b")).not.toBeNull();
+    expect(checkStateValue(spec("number", true), "[1, 2.5]")).toBeNull();
+    expect(checkStateValue(spec("number", true), '[1, "a"]')).toMatch(/Item 2/);
+    expect(checkStateValue(spec("string", true), "a, b")).not.toBeNull();
   });
 
   it("treats empty text as no value", () => {
-    expect(checkStateValue("integer", false, "")).toBeNull();
+    expect(checkStateValue(spec("number"), "")).toBeNull();
   });
 
   it("refuses a saved value that does not fit", () => {
-    const c = { ...newConstant("1", []), type: "integer" as const, value: "abc" };
+    const c = { ...newConstant("1", []), type: "number" as const, value: "abc" };
     expect(constantListSchema.safeParse([c]).success).toBe(false);
   });
 
   it("keeps a value across a type change only when it still fits", () => {
-    expect(valueAfterTypeChange("3", "float", false, [])).toBe("3");
-    expect(valueAfterTypeChange("abc", "integer", false, [])).toBe("");
+    expect(valueAfterTypeChange("3", spec("string"))).toBe("3");
+    expect(valueAfterTypeChange("abc", spec("number"))).toBe("");
+  });
+
+  it("finds where an enum or data type is referenced", () => {
+    const uses = typeReferences("e1", {
+      appState: [{ ...newAppStateVariable("1", []), type: "enum", ref: "e1" }],
+      constants: [],
+      dataTypes: registry.dataTypes
+    });
+    expect(uses).toEqual(["App state variable_1", "Field Address.size"]);
+  });
+
+  it("describes types with their reference", () => {
+    expect(describeType(spec("enum", true, "e1"), registry)).toBe("Enum Size list");
   });
 
   it("projects without state read as empty lists", () => {
     const parsed = projectSettingsSchema.parse({});
     expect(parsed.appState).toEqual([]);
-    expect(parsed.constants).toEqual([]);
+    expect(parsed.enums).toEqual([]);
+    expect(parsed.dataTypes).toEqual([]);
   });
 });
 
@@ -86,8 +145,26 @@ describe("app and const tags", () => {
     page: { name: "Home", route: "/", settings: { params: [], state: [] } },
     mode: "preview",
     globals: {
-      appState: [{ name: "cart", defaultValue: '{"items":[{"name":"Tea"}]}' }],
-      constants: [{ name: "support", value: "help@example.com" }]
+      appState: [
+        {
+          name: "cart",
+          type: "json",
+          isList: false,
+          ref: "",
+          defaultValue: '{"items":[{"name":"Tea"}]}'
+        },
+        { name: "count", type: "number", isList: false, ref: "", defaultValue: "3" },
+        {
+          name: "since",
+          type: "timestamptz",
+          isList: false,
+          ref: "",
+          defaultValue: "2026-01-31T09:30:00Z"
+        }
+      ],
+      constants: [
+        { name: "support", type: "string", isList: false, ref: "", value: "help@example.com" }
+      ]
     }
   });
   const resolve = createTokenResolver(ctx);
@@ -96,6 +173,13 @@ describe("app and const tags", () => {
     expect(resolve("const.support")).toBe("help@example.com");
     expect(resolve("app.cart.items.0.name")).toBe("Tea");
     expect(resolve("app.missing")).toBe("");
+  });
+
+  it("are typed in expressions", () => {
+    expect(resolve("app.count + 2")).toBe("5");
+    expect(resolve('app.since.toFormat("dd LLL yyyy")')).toBe("31 Jan 2026");
+    expect(resolve("const.support.toUpperCase()")).toBe("HELP@EXAMPLE.COM");
+    expect(resolve('app.cart.items.pluck("name").join()')).toBe("Tea");
   });
 });
 

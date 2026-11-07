@@ -302,7 +302,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
       cssFiles: [],
       animations: { folders: [], timelines: [] },
       appState: [],
-      constants: []
+      constants: [],
+      enums: [],
+      dataTypes: []
     },
     page: null,
     doc: null,

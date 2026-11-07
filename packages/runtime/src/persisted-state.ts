@@ -8,14 +8,7 @@ import { COOKIE_VALUE_LIMIT, checkStateValue, type AppStateVariable } from "@nex
 
 export type PersistedDef = Pick<
   AppStateVariable,
-  | "name"
-  | "type"
-  | "isList"
-  | "enumOptions"
-  | "defaultValue"
-  | "persist"
-  | "storage"
-  | "keepAfterLogout"
+  "name" | "type" | "isList" | "ref" | "defaultValue" | "persist" | "storage" | "keepAfterLogout"
 >;
 
 /** Key/value storage (local storage in the browser). */
@@ -96,7 +89,7 @@ export function restorePersisted(
     if (!def.persist) continue;
     const stored = parseStored(readRaw(env, def));
     if (!stored) continue;
-    if (checkStateValue(def.type, def.isList, stored.v, def.enumOptions) === null) {
+    if (checkStateValue(def, stored.v) === null) {
       values[def.name] = stored.v;
       if (stored.s !== signature(def)) writePersisted(def, stored.v, env);
     } else {
@@ -120,7 +113,7 @@ function localUsage(env: PersistEnv, except: string): number {
 /** Saves a persisted variable's new value. Refuses values that do not fit or are too large. */
 export function writePersisted(def: PersistedDef, value: string, env: PersistEnv): PersistResult {
   if (!def.persist) return { ok: false, reason: `"${def.name}" is not persisted.` };
-  const problem = checkStateValue(def.type, def.isList, value, def.enumOptions);
+  const problem = checkStateValue(def, value);
   if (problem) return { ok: false, reason: problem };
   const raw = JSON.stringify({ s: signature(def), v: value } satisfies Stored);
   try {

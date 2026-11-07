@@ -9,7 +9,12 @@ import { styleMapSchema } from "./style";
 import { mainFramework } from "./main-framework";
 import { newTheme, themeListSchema } from "./theme";
 import { variableListSchema } from "./variables";
-import { appStateListSchema, constantListSchema } from "./state";
+import {
+  appEnumListSchema,
+  appStateListSchema,
+  constantListSchema,
+  dataTypeListSchema
+} from "./state";
 
 export const VERSION_LIMIT_MIN = 5;
 export const VERSION_LIMIT_MAX = 200;
@@ -65,7 +70,10 @@ export const projectSettingsSchema = z.object({
   animations: animationSettingsSchema.default(emptyAnimationSettings()),
   // App state (global, changed by actions) and constants (fixed), see State Management.
   appState: appStateListSchema.default([]),
-  constants: constantListSchema.default([])
+  constants: constantListSchema.default([]),
+  // Enums and custom data types made in the app (Data Types page); variables refer to them by id.
+  enums: appEnumListSchema.default([]),
+  dataTypes: dataTypeListSchema.default([])
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -94,5 +102,7 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   cssFiles: [],
   animations: emptyAnimationSettings(),
   appState: [],
-  constants: []
+  constants: [],
+  enums: [],
+  dataTypes: []
 });

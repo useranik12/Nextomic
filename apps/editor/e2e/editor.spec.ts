@@ -769,9 +769,9 @@ test("state management: app state and constants feed dynamic data", async ({ pag
   await name.fill("cart_count");
   await name.press("Enter");
   await page.locator("[aria-label='Type of cart_count']").click();
-  await page.locator("[role=option]", { hasText: "Integer" }).click();
-  await page.getByLabel("Default value of cart_count").fill("4.5");
-  await expect(page.getByText("Expected a whole number.")).toBeVisible();
+  await page.locator("[role=option]", { hasText: "Number" }).click();
+  await page.getByLabel("Default value of cart_count").fill("abc");
+  await expect(page.getByText("Expected a number.")).toBeVisible();
   await page.getByLabel("Default value of cart_count").fill("3");
   await page.getByRole("switch", { name: "Persist cart_count" }).click({ force: true });
   await page.getByRole("button", { name: "Show details of cart_count" }).click();
@@ -803,4 +803,78 @@ test("state management: app state and constants feed dynamic data", async ({ pag
   await picker.getByText("support_email").first().click();
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.getByRole("heading", { name: /help@example\.com/ })).toBeVisible();
+});
+
+test("data types: enums and custom data types become state types", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Data Types" }).click();
+  await expect(page.getByRole("heading", { name: "Data Types" })).toBeVisible();
+
+  // An enum with two values.
+  await page.getByRole("tab", { name: "ENUM" }).click();
+  await page.getByRole("button", { name: "Add enum" }).click();
+  const value = page.getByLabel("New enum value");
+  await value.fill("small");
+  await value.press("Enter");
+  await value.fill("large");
+  await value.press("Enter");
+  await value.fill("small");
+  await expect(page.getByText("That value is already in the list.")).toBeVisible();
+  await value.fill("");
+
+  // A data type with one field.
+  await page.getByRole("tab", { name: "Custom Data Types" }).click();
+  await page.getByRole("button", { name: "Add data type" }).click();
+  await page.getByRole("button", { name: "Add Field" }).click();
+  await expect(page.getByLabel("Type of field_1")).toBeVisible();
+
+  // The enum is a type for app state, and its values are the only choices.
+  await page.getByRole("button", { name: "State Management" }).click();
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const name = page.getByLabel("Variable name");
+  await name.fill("size");
+  await name.press("Enter");
+  await page.locator("[aria-label='Type of size']").click();
+  await page.locator("[role=option]", { hasText: "ENUM" }).click();
+  await page.locator("[aria-label='Default value of size']").click();
+  await expect(page.locator("[role=option]", { hasText: "large" })).toBeVisible();
+  await page.locator("[role=option]", { hasText: "large" }).click();
+
+  // A JSON value can be formatted.
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const second = page.getByLabel("Variable name").last();
+  await second.fill("settings");
+  await second.press("Enter");
+  await page.locator("[aria-label='Type of settings']").click();
+  await page.locator("[role=option]", { hasText: "JSON" }).click();
+  const json = page.getByLabel("Default value of settings", { exact: true });
+  await json.fill('{"a":1}');
+  await page.getByRole("button", { name: "Format Default value of settings" }).click();
+  await expect(json).toHaveValue('{\n  "a": 1\n}');
+});
+
+test("expressions: suggestions after a dot and the result on the canvas", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "State Management" }).click();
+  await page.getByRole("tab", { name: /Constants/ }).click();
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const constName = page.getByLabel("Variable name");
+  await constName.fill("brand");
+  await constName.press("Enter");
+  await page.getByLabel("Value of brand").fill("nextomic");
+
+  await page.getByRole("button", { name: "Navigator" }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const text = page.getByLabel("Text", { exact: true });
+  await text.fill("");
+  await text.pressSequentially("Hi {{ const.brand.toUp");
+  const panel = page.getByRole("dialog", { name: "Expression suggestions" });
+  await expect(panel.getByRole("option", { name: /toUpperCase/ })).toBeVisible();
+  await expect(panel.getByText("All letters in capitals.")).toBeVisible();
+  await text.press("Enter");
+  await text.pressSequentially(" }}");
+  await expect(text).toHaveValue("Hi {{const.brand.toUpperCase()}}");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading", { name: "Hi NEXTOMIC" })).toBeVisible();
 });

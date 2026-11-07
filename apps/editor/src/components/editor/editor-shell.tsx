@@ -27,6 +27,8 @@ import { TopBar } from "./top-bar";
 import { useAutosave } from "./use-autosave";
 import { VersionHistory } from "./version-history";
 import { StateManager } from "./state/state-manager";
+import { DataTypesManager } from "./data-types/data-types-manager";
+import { ExpressionAssist } from "./expression/expression-assist";
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -165,12 +167,13 @@ export function EditorShell({
   }
 
   // Sections that take the whole width; the canvas and side panels are hidden meanwhile.
-  const fullPage = rail === "pages-templates" || rail === "state";
+  const fullPage = rail === "pages-templates" || rail === "state" || rail === "data-types";
   const railLabel = RAIL_ITEMS.find((i) => i.id === rail)?.label ?? "App Settings";
 
   return (
     <EditorDndProvider>
       <div className="flex h-screen flex-col bg-background text-foreground">
+        <ExpressionAssist />
         <TopBar
           projectId={projectId}
           pages={pages}
@@ -234,6 +237,10 @@ export function EditorShell({
           ) : rail === "state" ? (
             <main className="min-w-0 flex-1">
               <StateManager />
+            </main>
+          ) : rail === "data-types" ? (
+            <main className="min-w-0 flex-1">
+              <DataTypesManager />
             </main>
           ) : null}
           <div

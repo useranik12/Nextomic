@@ -1,4 +1,4 @@
-// Formats code typed or shown in the builder (CSS, JavaScript, JSON) with Prettier. Prettier and
+// Formats code typed or shown in the builder: CSS and JavaScript with Prettier, JSON natively. Prettier and
 // its parsers load only when a Format button is pressed, so they never weigh on the first load.
 
 import type { Plugin } from "prettier";
@@ -15,6 +15,15 @@ export interface FormatResult {
 
 export async function formatCode(code: string, language: CodeLanguage): Promise<FormatResult> {
   if (code.trim() === "") return { ok: true, code };
+  // JSON always opens up one key per line, even when it is short, so a value is easy to read.
+  if (language === "json") {
+    try {
+      return { ok: true, code: JSON.stringify(JSON.parse(code), null, 2) };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      return { ok: false, code, error: message || "The JSON could not be read." };
+    }
+  }
   try {
     const prettier = await import("prettier/standalone");
     const plugins: Plugin[] =
@@ -25,7 +34,7 @@ export async function formatCode(code: string, language: CodeLanguage): Promise<
             (await import("prettier/plugins/estree")).default as Plugin
           ];
     const formatted = await prettier.format(code, {
-      parser: language === "css" ? "css" : language === "json" ? "json" : "babel",
+      parser: language === "css" ? "css" : "babel",
       plugins,
       printWidth: 80,
       tabWidth: 2

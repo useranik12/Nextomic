@@ -39,6 +39,7 @@ export function DynamicBolt({
     return (
       <button
         type="button"
+        data-dynamic-bolt
         aria-label={`Dynamic value for ${label} (unavailable)`}
         title={disabledReason}
         aria-disabled="true"
@@ -53,6 +54,7 @@ export function DynamicBolt({
     <>
       <button
         type="button"
+        data-dynamic-bolt
         aria-label={`Dynamic value for ${label}`}
         onClick={() => setOpen(true)}
         className={button}

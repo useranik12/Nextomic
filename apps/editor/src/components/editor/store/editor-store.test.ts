@@ -27,7 +27,9 @@ const project: ProjectSettings = {
   animations: { folders: [], timelines: [] },
   themes: [],
   appState: [],
-  constants: []
+  constants: [],
+  enums: [],
+  dataTypes: []
 };
 
 function reset() {

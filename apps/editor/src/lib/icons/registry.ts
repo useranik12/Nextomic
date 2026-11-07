@@ -25,6 +25,8 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:squares-four" },
   { id: "ph:gear-six" },
   { id: "ph:plus" },
+  { id: "ph:plus-circle" },
+  { id: "ph:caret-up" },
   { id: "ph:upload-simple" },
   { id: "ph:folder-open" },
   { id: "ph:info" },

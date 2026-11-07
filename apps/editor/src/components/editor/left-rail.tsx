@@ -5,6 +5,7 @@ import { Icon } from "@/lib/icons/Icon";
 export type RailItemId =
   | "navigator"
   | "pages-templates"
+  | "data-types"
   | "state"
   | "media"
   | "supabase"
@@ -23,6 +24,8 @@ function RailIcon({ id }: { id: RailItemId }) {
       return <Icon name="ph:tree-structure" {...props} />;
     case "pages-templates":
       return <Icon name="ph:files" {...props} />;
+    case "data-types":
+      return <Icon name="ph:brackets-curly" {...props} />;
     case "state":
       return <Icon name="ph:cube" {...props} />;
     case "media":
@@ -49,6 +52,7 @@ function RailIcon({ id }: { id: RailItemId }) {
 export const RAIL_ITEMS: { id: RailItemId; label: string; ready: boolean }[] = [
   { id: "navigator", label: "Navigator", ready: true },
   { id: "pages-templates", label: "Pages & Templates", ready: true },
+  { id: "data-types", label: "Data Types", ready: true },
   { id: "state", label: "State Management", ready: true },
   { id: "media", label: "Media", ready: false },
   { id: "supabase", label: "Supabase", ready: false },

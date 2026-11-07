@@ -2,6 +2,10 @@ import { z } from "zod";
 import { walkElements, type ElementNode } from "./element";
 import type { PageSettings } from "./page";
 import type { PropValue } from "./value";
+import { stateTypeSchema, type StateType } from "./state";
+import { runExpression, toText } from "./expression/evaluate";
+import { nowValues, typedGroup } from "./expression/scope";
+import { splitTemplate } from "./expression/template";
 
 // The values dynamic tokens ({{page.name}}, {{param.id}}, {{now.date}} ...) resolve to. The editor
 // canvas, the preview and the published site each build one and hand it to the renderer. It is
@@ -49,6 +53,16 @@ export const dynamicContextSchema = z.object({
   app: z.record(z.string(), z.string().max(100_000)).default({}),
   /** Constants by name: their fixed value as text. */
   constants: z.record(z.string(), z.string().max(100_000)).default({}),
+  /**
+   * Declared types of variables, keyed "app.name", "const.name", "state.name", "param.name", so
+   * expressions see numbers, booleans, JSON and dates instead of text.
+   */
+  types: z
+    .record(
+      z.string(),
+      z.object({ type: stateTypeSchema, isList: z.boolean(), ref: z.string().default("") })
+    )
+    .default({}),
   /** The moment `now.*` tokens show, as an ISO string. */
   nowIso: z.string().max(40),
   /** IANA time zone `now.date` and `now.time` are shown in. */
@@ -90,6 +104,8 @@ function flatten(value: PropValue | undefined): string {
   return value.parts.map((part) => (typeof part === "string" ? part : "")).join("");
 }
 
+type Typed<T> = T & { name: string; type: StateType; isList: boolean; ref: string };
+
 export interface DynamicContextInput {
   page: {
     name: string;
@@ -104,8 +120,8 @@ export interface DynamicContextInput {
   query?: string;
   /** Project app state and constants; their values are readable as {{app.x}} and {{const.x}}. */
   globals?: {
-    appState: readonly { name: string; defaultValue: string }[];
-    constants: readonly { name: string; value: string }[];
+    appState: readonly Typed<{ defaultValue: string }>[];
+    constants: readonly Typed<{ value: string }>[];
   };
   origin?: string;
   nowIso?: string;
@@ -140,10 +156,24 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
   const state: Record<string, string> = {};
   for (const v of page.settings.state) state[v.name] = flatten(v.defaultValue);
   const query = input.query ?? "";
+  const types: DynamicContext["types"] = {};
+  const typeOf = (v: { type: StateType; isList: boolean; ref?: string }) => ({
+    type: v.type,
+    isList: v.isList,
+    ref: v.ref ?? ""
+  });
+  for (const p of page.settings.params) types[`param.${p.name}`] = typeOf({ ...p, isList: false });
+  for (const v of page.settings.state) types[`state.${v.name}`] = typeOf(v);
   const app: Record<string, string> = {};
-  for (const v of input.globals?.appState ?? []) app[v.name] = v.defaultValue;
+  for (const v of input.globals?.appState ?? []) {
+    app[v.name] = v.defaultValue;
+    types[`app.${v.name}`] = typeOf(v);
+  }
   const constants: Record<string, string> = {};
-  for (const c of input.globals?.constants ?? []) constants[c.name] = c.value;
+  for (const c of input.globals?.constants ?? []) {
+    constants[c.name] = c.value;
+    types[`const.${c.name}`] = typeOf(c);
+  }
   return {
     page: {
       id: "",
@@ -163,6 +193,7 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
     state,
     app,
     constants,
+    types,
     nowIso: input.nowIso ?? new Date().toISOString(),
     timeZone: input.timeZone ?? "UTC",
     mode: input.mode,
@@ -203,29 +234,6 @@ function nowParts(iso: string, timeZone: string): { date: string; time: string; 
   return { date, time, year: date.slice(0, 4) };
 }
 
-/** Follows `a.b.0.c` through JSON text; anything that is not there gives "". */
-function jsonPath(text: string, path: readonly string[]): string {
-  let node: unknown;
-  try {
-    node = JSON.parse(text);
-  } catch {
-    return "";
-  }
-  for (const key of path) {
-    if (node === null || typeof node !== "object") return "";
-    node = (node as Record<string, unknown>)[key];
-  }
-  if (node === undefined || node === null) return "";
-  return typeof node === "object" ? JSON.stringify(node) : String(node);
-}
-
-/** A variable's value; JSON values (objects and lists) can be followed with dots. */
-function valueAt(values: Record<string, string>, name: string, rest: readonly string[]): string {
-  const value = values[name];
-  if (value === undefined) return "";
-  return rest.length > 0 ? jsonPath(value, rest) : value;
-}
-
 /** The target-attribute tag: `attr @ ELEMENT_ID:attribute-name`. Anything missing gives "". */
 const ELEMENT_ATTRIBUTE = /^attr\s*@\s*([^\s:]+)\s*:\s*([^\s]+)$/;
 
@@ -234,74 +242,47 @@ function fromElement(context: DynamicContext, match: RegExpExecArray): string {
   return element?.attrs[match[2] as string] ?? "";
 }
 
+/** The names an expression can use for this context. */
+export function expressionScope(context: DynamicContext): Record<string, unknown> {
+  const when = nowParts(context.nowIso, context.timeZone);
+  return {
+    page: context.page,
+    template: context.template ?? {},
+    request: context.request,
+    user: context.user ?? { id: "", email: "", name: "", role: "" },
+    env: { mode: context.mode },
+    now: { iso: context.nowIso, date: when.date, time: when.time, year: when.year },
+    param: typedGroup(context.params, context.types, "param"),
+    state: typedGroup(context.state, context.types, "state"),
+    app: typedGroup(context.app, context.types, "app"),
+    const: typedGroup(context.constants, context.types, "const"),
+    ...nowValues(context.nowIso, context.timeZone)
+  };
+}
+
 /**
- * Turns a token such as `param.id` or `now.date` into text. Unknown tokens give "" so a typo never
- * prints raw braces on a live page.
+ * Turns what is written between {{ and }} into text. It is an expression (n8n style): names such
+ * as `page.name`, methods such as `.toUpperCase()` or `$now.toFormat("yyyy")`, operators and
+ * conditions. `attr @ ID:name` reads another element's attribute. Anything that fails or is
+ * unknown gives "" so a typo never prints raw braces on a live page.
  */
 export function createTokenResolver(context: DynamicContext): (token: string) => string {
-  const when = nowParts(context.nowIso, context.timeZone);
+  let scope: Record<string, unknown> | null = null;
   return (raw) => {
     const target = ELEMENT_ATTRIBUTE.exec(raw.trim());
     if (target) return fromElement(context, target);
-    const [group, name, ...rest] = raw.trim().split(".");
-    if (!group || !name) return "";
-    switch (group) {
-      case "page": {
-        const p = context.page as Record<string, string>;
-        return typeof p[name] === "string" ? (p[name] as string) : "";
-      }
-      case "template": {
-        const t = context.template as Record<string, string> | null;
-        return t && typeof t[name] === "string" ? (t[name] as string) : "";
-      }
-      case "request":
-        return name === "url"
-          ? context.request.url
-          : name === "path"
-            ? context.request.path
-            : name === "query"
-              ? context.request.query
-              : "";
-      case "now":
-        return name === "iso"
-          ? context.nowIso
-          : name === "date"
-            ? when.date
-            : name === "time"
-              ? when.time
-              : name === "year"
-                ? when.year
-                : "";
-      case "user": {
-        const user = context.user;
-        if (!user) return "";
-        return name === "id"
-          ? user.id
-          : name === "email"
-            ? user.email
-            : name === "name"
-              ? user.name
-              : name === "role"
-                ? user.role
-                : "";
-      }
-      case "env":
-        return name === "mode" ? context.mode : "";
-      case "param":
-        return context.params[name] ?? "";
-      case "state":
-        return valueAt(context.state, name, rest);
-      case "app":
-        return valueAt(context.app, name, rest);
-      case "const":
-        return valueAt(context.constants, name, rest);
-      default:
-        return "";
+    scope ??= expressionScope(context);
+    try {
+      return toText(runExpression(raw, scope));
+    } catch {
+      return "";
     }
   };
 }
 
 /** Replaces every {{tag}} in a text with what the resolver gives for it. */
 export function fillTokens(text: string, resolve: (token: string) => string): string {
-  return text.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (_match, token: string) => resolve(token));
+  return splitTemplate(text)
+    .map((part) => (typeof part === "string" ? part : resolve(part.expr)))
+    .join("");
 }

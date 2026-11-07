@@ -1,48 +1,12 @@
 "use client";
 
 import { COOKIE_VALUE_LIMIT, type AppStateVariable } from "@nextomic/schema";
-import { useEffect, useState } from "react";
 import { SelectField } from "@/components/ui/controls";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { Icon } from "@/lib/icons/Icon";
 import { compactFieldClass } from "../right-panel/setting-row";
 import type { StateRowVariable } from "./state-row";
 import type { UsagePlace } from "./use-state-usage";
-
-/** Enum options as one comma separated line; empty and repeated options are dropped. */
-function OptionsField({
-  value,
-  onChange
-}: {
-  value: string[];
-  onChange: (next: string[]) => void;
-}) {
-  const [draft, setDraft] = useState(value.join(", "));
-  useEffect(() => setDraft(value.join(", ")), [value]);
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-tiny font-medium text-default-600">Options (comma separated)</span>
-      <input
-        value={draft}
-        placeholder="small, medium, large"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() =>
-          onChange(
-            [
-              ...new Set(
-                draft
-                  .split(",")
-                  .map((o) => o.trim())
-                  .filter(Boolean)
-              )
-            ].slice(0, 100)
-          )
-        }
-        className={compactFieldClass}
-      />
-    </label>
-  );
-}
 
 function PersistOptions({
   variable,
@@ -85,7 +49,7 @@ function PersistOptions({
   );
 }
 
-/** The expanded part of a row: description, enum options, persistence and where it is used. */
+/** The expanded part of a row: description, persistence and where it is used. */
 export function RowDetails({
   row,
   places,
@@ -110,12 +74,6 @@ export function RowDetails({
               className={compactFieldClass}
             />
           </label>
-        ) : null}
-        {v.type === "enum" ? (
-          <OptionsField
-            value={v.enumOptions}
-            onChange={(enumOptions) => onChange({ ...v, enumOptions })}
-          />
         ) : null}
         {row.kind === "app" && row.variable.persist ? (
           <PersistOptions variable={row.variable} onChange={onChange} />
