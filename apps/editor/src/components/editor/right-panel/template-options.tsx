@@ -12,6 +12,7 @@ import { SelectField } from "@/components/ui/controls";
 import type { TemplateSummary } from "@/server/templates";
 import { RuleBuilder } from "../rules/rule-builder";
 import { useEditorStore } from "../store/editor-store";
+import { BoltInput } from "./bolt-input";
 import { MarkingGroup } from "./marking-group";
 import { StatusField } from "./status-field";
 import { StickyHeaderGroup } from "./sticky-header-group";
@@ -75,22 +76,27 @@ export function useTemplateList(): TemplateSummary[] {
   return list;
 }
 
-/** Right panel with nothing selected, while a template is open. */
-export function TemplateOptions() {
+/** Template settings: status, priority, theme, where it applies and (headers) sticky behavior. */
+export function TemplateSettingsFields() {
   const type = useEditorStore((s) => s.page?.templateType);
   const settings = useEditorStore((s) => s.doc?.template);
   const themes = useEditorStore((s) => s.project.themes);
   const update = useEditorStore((s) => s.updateTemplateSettings);
   const templates = useTemplateList();
-  const id = useEditorStore((s) => s.page?.id);
   if (!settings || !type) return null;
   const set = (patch: Partial<TemplateSettings>) => update(patch);
 
   return (
-    <div key={id} className="flex flex-col gap-6 overflow-y-auto p-4">
+    <div className="flex flex-col gap-6">
       <section aria-label="Template" className="flex flex-col gap-3">
-        <h3 className="text-small text-default-600">Template</h3>
-        <p className="text-small text-foreground">{TEMPLATE_TYPE_LABELS[type]}</p>
+        <p className="text-small text-default-600">
+          Type: <span className="text-foreground">{TEMPLATE_TYPE_LABELS[type]}</span>
+        </p>
+        <BoltInput
+          label="Internal description"
+          value={settings.description}
+          onValueChange={(description) => set({ description })}
+        />
         <StatusField
           status={settings.status}
           scheduledAt={settings.scheduledAt}
@@ -144,12 +150,27 @@ export function TemplateOptions() {
       {type === "header" ? (
         <StickyHeaderGroup value={settings.sticky} onChange={(sticky) => set({ sticky })} />
       ) : null}
+    </div>
+  );
+}
+
+/** Right panel with nothing selected, while a template is open: its categories and tags. */
+export function TemplateOptions() {
+  const settings = useEditorStore((s) => s.doc?.template);
+  const update = useEditorStore((s) => s.updateTemplateSettings);
+  const id = useEditorStore((s) => s.page?.id);
+  if (!settings) return null;
+  return (
+    <div key={id} className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4">
       <MarkingGroup
         scope="template"
         categoryIds={settings.categoryIds}
         tagIds={settings.tagIds}
-        onChange={set}
+        onChange={(change) => update(change)}
       />
+      <p className="text-tiny text-default-500">
+        Status, conditions and other template settings are under the settings icon in the top bar.
+      </p>
     </div>
   );
 }

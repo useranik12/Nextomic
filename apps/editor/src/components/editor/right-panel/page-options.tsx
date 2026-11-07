@@ -490,7 +490,7 @@ export function PageOptions() {
   const pageId = useEditorStore((s) => s.page?.id);
   // Remount per page so local drafts (route, names) reset when the page changes.
   return (
-    <div key={pageId} className="flex flex-col gap-6 overflow-y-auto p-4">
+    <div key={pageId} className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4">
       <PageParameters />
       <RouteSettings />
       <PageMarking />

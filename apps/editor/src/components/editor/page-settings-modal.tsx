@@ -211,8 +211,7 @@ export function PageSettingsModal({
         <ModalHeader>Page settings</ModalHeader>
         <ModalBody className="gap-3">
           <SectionTitle>General</SectionTitle>
-          <FormInput
-            compact
+          <BoltInput
             label="Name"
             value={doc.name}
             onValueChange={(name) => updateMeta({ name })}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { tokenizeCss, type CssTokenType } from "@/lib/css-highlight";
+import { FormatButton } from "./format-button";
 
 // Colors follow VS Code Dark+ on dark backgrounds and VS Code Light+ on light ones.
 const TOKEN_COLOR: Record<CssTokenType, string> = {
@@ -88,7 +89,8 @@ export function CssCodeEditor({
   placeholder,
   invalid,
   onFocus,
-  onBlur
+  onBlur,
+  readOnly
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -97,6 +99,8 @@ export function CssCodeEditor({
   invalid?: boolean;
   onFocus?: () => void;
   onBlur?: () => void;
+  /** Shown for reading only: no typing, the Format button still tidies the view. */
+  readOnly?: boolean;
 }) {
   const colored = useRef<HTMLPreElement>(null);
   const lines = Math.min(MAX_LINES, Math.max(5, value.split("\n").length + 1));
@@ -133,7 +137,8 @@ export function CssCodeEditor({
         onChange={(e) => onChange(e.target.value)}
         onFocus={onFocus}
         onBlur={onBlur}
-        onKeyDown={(e) => indentOnTab(e, onChange)}
+        readOnly={readOnly}
+        onKeyDown={(e) => (readOnly ? undefined : indentOnTab(e, onChange))}
         onScroll={(e) => {
           if (!colored.current) return;
           colored.current.scrollTop = e.currentTarget.scrollTop;
@@ -141,6 +146,21 @@ export function CssCodeEditor({
         }}
         className={`absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none placeholder:text-default-400 ${BOX}`}
       />
+      <div className="absolute right-2 top-2 z-10">
+        <FormatButton
+          code={value}
+          language="css"
+          onFormatted={onChange}
+          label={`Format ${label}`}
+        />
+      </div>
     </div>
   );
+}
+
+/** Read-only CSS with colors and the Format button (formatting changes only what is shown). */
+export function CssCodeView({ value, label }: { value: string; label: string }) {
+  const [shown, setShown] = useState(value);
+  useEffect(() => setShown(value), [value]);
+  return <CssCodeEditor readOnly label={label} value={shown} onChange={setShown} />;
 }

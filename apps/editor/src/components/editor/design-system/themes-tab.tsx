@@ -1,20 +1,24 @@
 "use client";
 
-import { newTheme, themeListSchema, uniqueThemeSlug, type Theme } from "@nextomic/schema";
+import {
+  countRules,
+  newTheme,
+  themeListSchema,
+  uniqueThemeSlug,
+  type Theme
+} from "@nextomic/schema";
 import { useState } from "react";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
-import type { PageSummary } from "@/server/pages";
 import { useEditorStore } from "../store/editor-store";
 import { InfoTip, LabelWithTip } from "@/components/ui/info-tip";
 import { SwitchRow } from "@/components/ui/switch-row";
-import { ThemeModes } from "./theme-modes";
-import { ThemeConditions } from "./theme-conditions";
+import { RuleBuilder } from "../rules/rule-builder";
 import { ThemeVariables } from "./theme-variables";
 
 function conditionSummary(theme: Theme): string {
   if (theme.isDefault) return "Applies everywhere by default";
-  const n = theme.conditions.items.length;
+  const n = countRules(theme.conditions);
   return n === 0 ? "Only pages that choose it" : `${n} rule${n === 1 ? "" : "s"}`;
 }
 
@@ -42,7 +46,7 @@ function Section({
  * Themes: named style sets. The first theme created is the default and applies everywhere until a
  * page forces another or another theme's conditions match.
  */
-export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
+export function ThemesTab() {
   const themes = useEditorStore((s) => s.project.themes);
   const variables = useEditorStore((s) => s.project.variables);
   const setThemes = useEditorStore((s) => s.setThemes);
@@ -198,15 +202,13 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
               />
               {selected.darkMode ? (
                 <div className="flex flex-col gap-3 rounded-large border border-divider p-3">
-                  <ThemeModes
-                    theme={selected}
-                    onChange={(next) => commit(themes.map((t) => (t.id === next.id ? next : t)))}
-                  />
                   <SelectField
                     compact
                     label="Color mode a visitor sees first"
                     value={selected.defaultMode}
-                    onValueChange={(v) => patch(selected.id, { defaultMode: v })}
+                    onValueChange={(v) =>
+                      patch(selected.id, { defaultMode: v === "dark" ? "dark" : "light" })
+                    }
                     options={selected.modes.map((m) => ({ value: m.id, label: m.name }))}
                   />
                   <SwitchRow
@@ -259,6 +261,22 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
               )}
             </Section>
             <Section
+              title="Where it applies"
+              tip="Rules choose which pages use this theme, the same rules templates use. A page can also pick a theme by hand in its settings, which always wins."
+            >
+              {selected.isDefault ? (
+                <p className="text-small text-default-500">
+                  The default theme applies to every page that matches no other theme. Give another
+                  theme conditions, or make another theme the default, to change that.
+                </p>
+              ) : (
+                <RuleBuilder
+                  value={selected.conditions}
+                  onChange={(conditions) => patch(selected.id, { conditions })}
+                />
+              )}
+            </Section>
+            <Section
               title="Variables"
               tip="Change the value of a project variable for this theme only, for example a different brand color. Pages on this theme use the new value."
             >
@@ -266,16 +284,6 @@ export function ThemesTab({ pages }: { pages: readonly PageSummary[] }) {
                 theme={selected}
                 variables={variables}
                 onChange={(next) => patch(selected.id, { variables: next })}
-              />
-            </Section>
-            <Section
-              title="Conditions"
-              tip="Choose which pages use this theme. A page can also pick a theme by hand in its settings, which always wins."
-            >
-              <ThemeConditions
-                theme={selected}
-                pages={pages}
-                onChange={(conditions) => patch(selected.id, { conditions })}
               />
             </Section>
           </div>

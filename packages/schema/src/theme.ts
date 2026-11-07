@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { pruneUnusedClasses } from "./css-prune";
+import {
+  blankRuleContext,
+  evaluateRules,
+  ruleSetSchema,
+  ruleSpecificity,
+  type RuleContext,
+  type RuleGroup
+} from "./rules";
 import { frameworkSchema, frameworkVariablesCss, scopeFrameworkCss } from "./framework";
 import { frameworkStylesheet } from "./main-framework";
 import { SAFE_VALUE, VARIABLE_NAME_PATTERN, variableCssName } from "./variables";
@@ -15,23 +23,62 @@ export const themeModeSchema = z.object({
 });
 export type ThemeMode = z.infer<typeof themeModeSchema>;
 
-// Static conditions only for now: a page, or a route pattern like /blog/* (`*` matches anything).
-export const themeConditionSchema = z.discriminatedUnion("type", [
+// Older themes stored static conditions: a list of pages, or a route pattern like /blog/* (`*`
+// matches anything). They read as rules now, the same rules templates use (rules.ts).
+const legacyConditionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("page"), pageIds: z.array(z.string().max(64)).max(200) }),
   z.object({ type: z.literal("route"), pattern: z.string().trim().min(1).max(200) })
 ]);
-export type ThemeCondition = z.infer<typeof themeConditionSchema>;
 
-export const themeConditionsSchema = z.object({
-  match: z.enum(["all", "any"]).default("any"),
-  items: z.array(themeConditionSchema).max(50).default([])
-});
-export type ThemeConditions = z.infer<typeof themeConditionsSchema>;
+/** An old route pattern as a rule: `/blog/*` starts with `/blog/`, a plain path equals itself. */
+function legacyRoute(pattern: string, id: string): RuleGroup["items"][number] {
+  const star = pattern.indexOf("*");
+  const exact = star < 0;
+  return {
+    id,
+    field: "page.route",
+    key: "",
+    op: exact ? "equals" : star === pattern.length - 1 ? "startsWith" : "contains",
+    exclude: false,
+    value: exact ? pattern : pattern.slice(0, star)
+  };
+}
 
+/** Old `{ match, items: [{ type: "page" | "route" }] }` conditions become a rule set. */
+export function migrateThemeConditions(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const old = raw as { id?: unknown; match?: unknown; items?: unknown };
+  if (typeof old.id === "string" || !Array.isArray(old.items)) return raw;
+  const items: RuleGroup["items"] = [];
+  for (const [index, entry] of old.items.entries()) {
+    const parsed = legacyConditionSchema.safeParse(entry);
+    if (!parsed.success) continue;
+    if (parsed.data.type === "route")
+      items.push(legacyRoute(parsed.data.pattern, `legacy-${index}`));
+    else if (parsed.data.pageIds.length > 0)
+      items.push({
+        id: `legacy-${index}`,
+        field: "page.id",
+        key: "",
+        op: "isIn",
+        exclude: false,
+        value: parsed.data.pageIds.join(", ")
+      });
+  }
+  return { id: "root", match: old.match === "all" ? "all" : "any", items };
+}
+
+export const themeConditionsSchema = z.preprocess(migrateThemeConditions, ruleSetSchema);
+export type ThemeConditions = RuleGroup;
+
+/** Themes have two color modes: light and dark (dark only when the theme turns on dark mode). */
 export const DEFAULT_THEME_MODES: ThemeMode[] = [
   { id: "light", name: "Light" },
   { id: "dark", name: "Dark" }
 ];
+
+/** The mode ids a theme can have. */
+export const BUILTIN_MODE_IDS: readonly string[] = DEFAULT_THEME_MODES.map((m) => m.id);
 
 export const themeSchema = z.object({
   id: z.string().min(1).max(64),
@@ -44,9 +91,17 @@ export const themeSchema = z.object({
   // color-mode options are hidden and colors have no dark values. Older themes keep their dark mode.
   darkMode: z.boolean().default(true),
   priority: z.number().int().min(0).max(1000).default(0),
-  conditions: themeConditionsSchema.default({ match: "any", items: [] }),
-  modes: z.array(themeModeSchema).min(1).max(6).default(DEFAULT_THEME_MODES),
-  defaultMode: z.string().default("light"),
+  conditions: themeConditionsSchema.default({ id: "root", match: "any", items: [] }),
+  // Always light and dark; older custom modes are dropped when read.
+  modes: z
+    .array(themeModeSchema)
+    .max(6)
+    .default(DEFAULT_THEME_MODES)
+    .transform(() => DEFAULT_THEME_MODES.map((m) => ({ ...m }))),
+  defaultMode: z
+    .string()
+    .default("light")
+    .transform((v) => (v === "dark" ? "dark" : "light")),
   respectSystemPreference: z.boolean().default(false),
   // Off: visitors cannot change the color mode; a saved choice and the system preference are ignored
   // and the page always uses the default mode.
@@ -60,6 +115,16 @@ export const themeSchema = z.object({
       z.record(z.string().max(32), z.string().trim().min(1).max(500).regex(SAFE_VALUE))
     )
     .default({})
+    .transform((byName) =>
+      Object.fromEntries(
+        Object.entries(byName).map(([name, byMode]) => [
+          name,
+          Object.fromEntries(
+            Object.entries(byMode).filter(([mode]) => BUILTIN_MODE_IDS.includes(mode))
+          )
+        ])
+      )
+    )
 });
 export type Theme = z.infer<typeof themeSchema>;
 
@@ -106,38 +171,6 @@ export function newTheme(id: string, name: string, themes: readonly Theme[]): Th
   });
 }
 
-/** The built-in mode ids: always present, never removed. */
-export const BUILTIN_MODE_IDS: readonly string[] = DEFAULT_THEME_MODES.map((m) => m.id);
-
-/** Adds a color mode named by the user; its id is a unique slug. Null when the theme is full or the name is empty. */
-export function addThemeMode(theme: Theme, name: string): Theme | null {
-  const clean = name.trim();
-  if (clean === "" || theme.modes.length >= 6) return null;
-  const taken = new Set(theme.modes.map((m) => m.id));
-  const base = slugifyTheme(clean).slice(0, 28);
-  let id = base;
-  for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
-  return { ...theme, modes: [...theme.modes, { id, name: clean.slice(0, 32) }] };
-}
-
-/** Removes a custom mode with its variable overrides; light and dark cannot be removed. */
-export function removeThemeMode(theme: Theme, modeId: string): Theme {
-  if (BUILTIN_MODE_IDS.includes(modeId) || !theme.modes.some((m) => m.id === modeId)) return theme;
-  const variables = Object.fromEntries(
-    Object.entries(theme.variables).map(([name, byMode]) => {
-      const rest = { ...byMode };
-      delete rest[modeId];
-      return [name, rest];
-    })
-  );
-  return {
-    ...theme,
-    modes: theme.modes.filter((m) => m.id !== modeId),
-    defaultMode: theme.defaultMode === modeId ? "light" : theme.defaultMode,
-    variables
-  };
-}
-
 export function matchRoute(pattern: string, route: string): boolean {
   const re = pattern
     .split("*")
@@ -151,20 +184,23 @@ export interface ThemeContext {
   route: string;
   /** A theme chosen in page settings; wins over conditions. */
   forcedThemeId?: string | null;
+  /** All facts about the request (server); without it only the page id and route are known. */
+  rules?: RuleContext;
 }
 
-// Specificity (docs section 2): page beats route.
-const SPECIFICITY = { page: 2, route: 1 } as const;
-
-function matchedSpecificity(theme: Theme, ctx: ThemeContext): number | null {
-  const { match, items } = theme.conditions;
-  if (items.length === 0) return null;
-  const hits = items.map((c) => {
-    if (c.type === "page") return c.pageIds.includes(ctx.pageId) ? SPECIFICITY.page : 0;
-    return matchRoute(c.pattern, ctx.route) ? SPECIFICITY.route : 0;
+function ruleContextOf(ctx: ThemeContext): RuleContext {
+  if (ctx.rules) return ctx.rules;
+  const base = blankRuleContext();
+  return blankRuleContext({
+    page: { ...base.page, id: ctx.pageId, route: ctx.route },
+    url: { ...base.url, path: ctx.route, full: ctx.route }
   });
-  const ok = match === "all" ? hits.every((h) => h > 0) : hits.some((h) => h > 0);
-  return ok ? Math.max(...hits) : null;
+}
+
+/** How narrowly a theme matched, or null when its rules do not match (or it has none). */
+function matchedSpecificity(theme: Theme, ctx: RuleContext): number | null {
+  if (theme.conditions.items.length === 0) return null;
+  return evaluateRules(theme.conditions, ctx) ? ruleSpecificity(theme.conditions) : null;
 }
 
 export interface ThemeResolution {
@@ -177,9 +213,10 @@ export function resolveTheme(themes: readonly Theme[], ctx: ThemeContext): Theme
   const usable = themes.filter((t) => t.active);
   const forced = ctx.forcedThemeId ? usable.find((t) => t.id === ctx.forcedThemeId) : undefined;
   if (forced) return { theme: forced, reason: "forced" };
+  const rules = ruleContextOf(ctx);
   const matches = usable
     .filter((t) => !t.isDefault)
-    .map((t) => ({ t, s: matchedSpecificity(t, ctx) }))
+    .map((t) => ({ t, s: matchedSpecificity(t, rules) }))
     .filter((m): m is { t: Theme; s: number } => m.s !== null)
     .sort((a, b) => b.t.priority - a.t.priority || b.s - a.s || a.t.name.localeCompare(b.t.name));
   const best = matches[0]?.t;

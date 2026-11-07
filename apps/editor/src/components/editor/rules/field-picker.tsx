@@ -46,6 +46,8 @@ export function FieldPicker({
       }}
       placement="bottom-start"
       offset={6}
+      // Focusing the search box can scroll a modal or panel; that must not close the list.
+      shouldCloseOnScroll={false}
     >
       <PopoverTrigger>
         <button

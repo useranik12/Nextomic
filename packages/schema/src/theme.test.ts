@@ -6,13 +6,21 @@ import {
   themeCss,
   themeListSchema,
   matchRoute,
+  themeConditionsSchema,
   type Theme
 } from "./theme";
 
-const make = (patch: Partial<Theme>, id: string, name: string, existing: Theme[] = []): Theme => ({
+// Conditions are written in the old static form here: they must still read as rules.
+const make = (
+  patch: Partial<Omit<Theme, "conditions">> & { conditions?: unknown },
+  id: string,
+  name: string,
+  existing: Theme[] = []
+): Theme => ({
   ...newTheme(id, name, existing),
   darkMode: true,
-  ...patch
+  ...patch,
+  conditions: themeConditionsSchema.parse(patch.conditions ?? { match: "any", items: [] })
 });
 
 describe("themes", () => {
@@ -71,6 +79,38 @@ describe("themes", () => {
     expect(resolveTheme([a, route, page], ctx).theme?.id).toBe("pg");
     const hi = { ...route, priority: 5 };
     expect(resolveTheme([a, hi, page], ctx).theme?.id).toBe("r");
+  });
+
+  it("reads old page and route conditions as rules, and new rules as they are", () => {
+    const rules = themeConditionsSchema.parse({
+      match: "any",
+      items: [
+        { type: "route", pattern: "/blog/*" },
+        { type: "route", pattern: "/about" },
+        { type: "page", pageIds: ["p1", "p2"] }
+      ]
+    });
+    expect(rules.items).toMatchObject([
+      { field: "page.route", op: "startsWith", value: "/blog/" },
+      { field: "page.route", op: "equals", value: "/about" },
+      { field: "page.id", op: "isIn", value: "p1, p2" }
+    ]);
+    expect(themeConditionsSchema.parse(rules)).toEqual(rules);
+    const whole = make(
+      {
+        conditions: {
+          id: "root",
+          match: "all",
+          items: [{ id: "w", field: "site.whole", op: "isTrue", key: "", value: "" }]
+        }
+      },
+      "w",
+      "Whole",
+      [newTheme("a", "A", [])]
+    );
+    expect(
+      resolveTheme([newTheme("a", "A", []), whole], { pageId: "x", route: "/" }).theme?.id
+    ).toBe("w");
   });
 
   it("matches route globs literally apart from *", () => {

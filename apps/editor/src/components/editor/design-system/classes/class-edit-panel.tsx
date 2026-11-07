@@ -3,7 +3,7 @@
 import { CLASS_NAME_PATTERN, parseStyleCss, styleMapToCss, type StyleMap } from "@nextomic/schema";
 import { useState } from "react";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
-import { CssCodeEditor } from "@/components/ui/code-editor";
+import { CssCodeEditor, CssCodeView } from "@/components/ui/code-editor";
 import { useEditorStore } from "../../store/editor-store";
 import { UNCATEGORIZED, type ClassRow } from "./class-model";
 
@@ -73,13 +73,12 @@ export function ClassEditPanel({
           {framework ? "Framework CSS" : "Custom CSS"}
         </h4>
         {framework ? (
-          <pre className="max-h-64 overflow-auto rounded-medium bg-default-100 p-3 text-tiny">
-            {frameworkRules || "No rules found."}
-          </pre>
+          <CssCodeView
+            label={`Framework CSS of .${row.name}`}
+            value={frameworkRules || "/* No rules found. */"}
+          />
         ) : row.locked ? (
-          <pre className="max-h-64 overflow-auto rounded-medium bg-default-100 p-3 text-tiny opacity-80">
-            {css || "No styles yet."}
-          </pre>
+          <CssCodeView label={`CSS of .${row.name}`} value={css || "/* No styles yet. */"} />
         ) : (
           <CssCodeEditor
             label={`CSS of .${row.name}`}

@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scopeFrameworkCss } from "./framework";
 import {
-  addThemeMode,
   newTheme,
-  removeThemeMode,
   themeBootScript,
   themeCss,
   themeListSchema,
@@ -47,79 +45,35 @@ describe("framework CSS scoping", () => {
   });
 });
 
-describe("custom color modes", () => {
-  const modes = [
-    { id: "light", name: "Light" },
-    { id: "dark", name: "Dark" },
-    { id: "sepia", name: "Sepia" }
-  ];
-
-  it("writes one rule per mode and only the default mode also applies without a mode set", () => {
-    const t = theme({
-      modes,
-      variables: { bg: { light: "#fff", dark: "#000", sepia: "#f4ecd8" } }
+describe("color modes", () => {
+  it("keeps only light and dark, dropping old custom modes and their overrides", () => {
+    const t = themeSchema.parse({
+      id: "t",
+      name: "T",
+      slug: "t",
+      modes: [
+        { id: "light", name: "Light" },
+        { id: "dark", name: "Dark" },
+        { id: "sepia", name: "Sepia" }
+      ],
+      defaultMode: "sepia",
+      variables: { bg: { light: "#fff", sepia: "#f4ecd8" } }
     });
-    const css = themeCss(t);
-    expect(css).toContain('[data-nxt-mode="sepia"]{--nxt-bg:#f4ecd8}');
-    expect(css.match(/:root:not\(\[data-nxt-mode\]\)/g)).toHaveLength(1);
+    expect(t.modes.map((m) => m.id)).toEqual(["light", "dark"]);
+    expect(t.defaultMode).toBe("light");
+    expect(t.variables.bg).toEqual({ light: "#fff" });
+    expect(themeCss(t)).not.toContain("sepia");
   });
 
-  it("skips a mode that has no overrides", () => {
-    const t = theme({ modes, variables: { bg: { sepia: "#f4ecd8" } } });
-    const css = themeCss(t);
-    expect(css).not.toContain('data-nxt-mode="light"');
-    expect(css).not.toContain('data-nxt-mode="dark"');
+  it("the boot script offers light and dark and falls back to the default", () => {
+    const script = themeBootScript(theme({ defaultMode: "dark" }));
+    expect(script).toContain('["light","dark"]');
+    expect(script).toContain('v="dark"');
   });
 
-  it("the boot script accepts the custom mode and falls back to the default", () => {
-    const script = themeBootScript(theme({ modes, defaultMode: "sepia" }));
-    expect(script).toContain('["light","dark","sepia"]');
-    expect(script).toContain('v="sepia"');
-  });
-
-  it("refuses a default mode that is not one of the modes and duplicate slugs", () => {
-    expect(
-      themeListSchema.safeParse([theme({ modes, defaultMode: "night", isDefault: true })]).success
-    ).toBe(false);
+  it("refuses duplicate slugs", () => {
     const one = theme({ isDefault: true }, "a", "A");
     const two = { ...theme({}, "b", "B"), slug: one.slug };
     expect(themeListSchema.safeParse([one, two]).success).toBe(false);
-  });
-});
-
-describe("theme mode helpers", () => {
-  const base = themeSchema.parse({ id: "t", name: "T", slug: "t", darkMode: true });
-
-  it("adds a custom mode with a unique id and caps at 6", () => {
-    const one = addThemeMode(base, "Sepia");
-    expect(one?.modes.map((m) => m.id)).toEqual(["light", "dark", "sepia"]);
-    const two = addThemeMode(one!, "Sepia");
-    expect(two?.modes.at(-1)?.id).toBe("sepia-2");
-    expect(addThemeMode(base, "  ")).toBeNull();
-    let full: typeof base | null = base;
-    for (const n of ["a", "b", "c", "d"]) full = addThemeMode(full!, n);
-    expect(full?.modes).toHaveLength(6);
-    expect(addThemeMode(full!, "e")).toBeNull();
-  });
-
-  it("removes a custom mode with its overrides, never a built-in one", () => {
-    const withMode = addThemeMode(base, "Sepia")!;
-    const set = {
-      ...withMode,
-      defaultMode: "sepia",
-      variables: { bg: { light: "#fff", sepia: "#f4ecd8" } }
-    };
-    const out = removeThemeMode(set, "sepia");
-    expect(out.modes.map((m) => m.id)).toEqual(["light", "dark"]);
-    expect(out.defaultMode).toBe("light");
-    expect(out.variables.bg).toEqual({ light: "#fff" });
-    expect(removeThemeMode(set, "dark")).toBe(set);
-  });
-
-  it("emits css for a custom mode", () => {
-    const withMode = addThemeMode(base, "Sepia")!;
-    const css = themeCss({ ...withMode, variables: { bg: { sepia: "#f4ecd8" } } }, new Set());
-    expect(css).toContain('data-nxt-mode="sepia"');
-    expect(css).toContain("#f4ecd8");
   });
 });

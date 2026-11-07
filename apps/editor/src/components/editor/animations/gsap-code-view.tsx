@@ -1,8 +1,9 @@
 "use client";
 
 import { timelineToGsapCode, type Timeline } from "@nextomic/schema";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
+import { FormatButton } from "@/components/ui/format-button";
 import { InfoTip } from "@/components/ui/info-tip";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
@@ -10,7 +11,10 @@ import { useEditorStore } from "../store/editor-store";
 /** The GSAP code the timeline stands for. Read-only: change the settings and the code follows. */
 export function GsapCodeView({ timeline }: { timeline: Timeline }) {
   const showToast = useEditorStore((s) => s.showToast);
-  const code = useMemo(() => timelineToGsapCode(timeline), [timeline]);
+  const generated = useMemo(() => timelineToGsapCode(timeline), [timeline]);
+  // Formatting changes only what is shown; new settings bring the generated code back.
+  const [code, setCode] = useState(generated);
+  useEffect(() => setCode(generated), [generated]);
 
   async function copy() {
     try {
@@ -31,7 +35,10 @@ export function GsapCodeView({ timeline }: { timeline: Timeline }) {
             label="GSAP Code"
           />
         </span>
-        <ActionButton size="sm" tone="ghost" className="ml-auto" onPress={() => void copy()}>
+        <span className="ml-auto">
+          <FormatButton code={code} language="js" label="Format GSAP code" onFormatted={setCode} />
+        </span>
+        <ActionButton size="sm" tone="ghost" onPress={() => void copy()}>
           <Icon name="ph:copy" width={14} height={14} />
           Copy
         </ActionButton>

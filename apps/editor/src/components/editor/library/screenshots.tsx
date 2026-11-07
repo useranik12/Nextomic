@@ -68,9 +68,27 @@ function loadFrame(address: string): Promise<{ frame: HTMLIFrameElement; doc: Do
  * Renders the preview of one item off screen, shrinks it to a small WebP and uploads it. The
  * upload replaces the item's single stored screenshot.
  */
+/**
+ * Images with no address, or ones that failed to load, make the drawing fail as a whole. The frame
+ * is thrown away afterwards, so they are swapped for a blank pixel in place.
+ */
+async function neutralizeBrokenImages(doc: Document): Promise<void> {
+  const swapped: Promise<void>[] = [];
+  for (const img of Array.from(doc.images)) {
+    const src = img.getAttribute("src")?.trim() ?? "";
+    if (src === "" || (img.complete && img.naturalWidth === 0)) {
+      img.removeAttribute("srcset");
+      img.src = PLACEHOLDER;
+      swapped.push(img.decode().catch(() => undefined));
+    }
+  }
+  await Promise.all(swapped);
+}
+
 export async function generateScreenshot(projectId: string, item: LibraryItem): Promise<void> {
   const { frame, doc } = await loadFrame(previewAddress(projectId, item));
   try {
+    await neutralizeBrokenImages(doc);
     const base = { width: FRAME_WIDTH, height: FRAME_HEIGHT, pixelRatio: 1, cacheBust: true };
     let source: HTMLCanvasElement;
     try {

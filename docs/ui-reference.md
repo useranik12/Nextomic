@@ -140,7 +140,7 @@ Never use raw HeroUI `Input` or `Button` for form fields and actions. Use `compo
   1. Page Parameters (pencil to edit): typed parameters from route segments or query string.
   2. Route Settings (collapsible): `Route/` prefix plus an input with a bolt (the route can contain dynamic segments such as `blog/[slug]`), and the "Requires Authentication" checkbox (see `app-auth.md`).
   3. Page State Variables: variables local to this page. Same row pattern as the State Management table (name, type, is list, default value, delete, "Add Variable"). They reset when the page is left; no persistence option.
-     For templates, the panel shows template options instead (conditions, priority, query and route for archive/single; no route for header and footer).
+     For templates, the panel shows only the Categories and tags group. Template settings (name, description, status, priority, theme, conditions, sticky header, 404 header/footer) open in a Template settings modal from the same top-bar settings icon as Page settings. For pages the panel keeps Page Parameters, Route Settings, Categories and tags and Page State Variables.
 - **Element selected:** three tabs, Element, Design, Action (see 4.7).
 
 ### 4.4 Supabase page (`pages/editor-supabase.png`)
