@@ -95,6 +95,37 @@ export function AppAuthSettingsGroup({
         >
           <span className="text-small">New pages require authentication</span>
         </Checkbox>
+        <div className="flex items-center gap-1.5">
+          <Checkbox
+            size="sm"
+            isSelected={auth.tokenClaims}
+            isDisabled={off}
+            onValueChange={(on) => set({ tokenClaims: on })}
+          >
+            <span className="text-small">Keep token data as dynamic data</span>
+          </Checkbox>
+          <InfoTip
+            label="Keep token data as dynamic data"
+            text="Adds one JSON tag, User > Token data (JWT): the decoded claims of the signed-in user's token. Read any claim with dot notation, for example {{user.jwt.role}} or {{user.jwt.exp}}. It follows the session and refreshes with it."
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <Checkbox
+            size="sm"
+            isSelected={auth.exposeAccessToken}
+            isDisabled={off}
+            onValueChange={(on) => set({ exposeAccessToken: on })}
+          >
+            <span className="text-small">Expose the raw access token to the page</span>
+          </Checkbox>
+          {auth.exposeAccessToken ? (
+            <p role="note" className="pl-7 text-tiny text-warning">
+              Any script on the page can read {"{{user.accessToken}}"} and act as the user until it
+              expires. Prefer [jwt] in API calls: the server fills it and the browser never sees the
+              token. Custom code elements never get it.
+            </p>
+          ) : null}
+        </div>
         <SelectField
           label="Login page"
           value={auth.entryPageId || NONE}

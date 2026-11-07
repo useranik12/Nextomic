@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { appAuthSettingsSchema, newPageRequiresAuth, pageRequiresAuth } from "./app-auth";
-import { buildDynamicContext, expressionScope } from "./dynamic-context";
+import {
+  appAuthSettingsSchema,
+  defaultAppAuthSettings,
+  newPageRequiresAuth,
+  pageRequiresAuth,
+  tokenTags
+} from "./app-auth";
+import { buildDynamicContext, dynamicContextSchema, expressionScope } from "./dynamic-context";
 import { runExpression } from "./expression/evaluate";
 import { defaultPageSettings } from "./page";
 
@@ -59,5 +65,28 @@ describe("user tags", () => {
 
   it("gives empty builder fields on live sites", () => {
     expect(runExpression("nextomic.user.email", context(null))).toBe("");
+  });
+});
+
+describe("token tags", () => {
+  it("are off by default and need authentication on", () => {
+    expect(tokenTags(defaultAppAuthSettings())).toEqual({ claims: false, raw: false });
+    const on = { ...defaultAppAuthSettings(), tokenClaims: true, exposeAccessToken: true };
+    expect(tokenTags(on)).toEqual({ claims: false, raw: false });
+    expect(tokenTags({ ...on, enabled: true })).toEqual({ claims: true, raw: true });
+  });
+
+  it("reads claims with dot notation and stays empty when signed out", () => {
+    const base = { page: { name: "Home", route: "/", settings: defaultPageSettings() } };
+    const user = dynamicContextSchema.shape.user.parse({
+      id: "u1",
+      jwt: { role: "editor", app_metadata: { plan: "pro" }, exp: 99 }
+    });
+    const scope = expressionScope(buildDynamicContext({ ...base, mode: "live", user }));
+    expect(runExpression("user.jwt.app_metadata.plan", scope)).toBe("pro");
+    expect(runExpression("user.jwt.exp", scope)).toBe(99);
+    const empty = expressionScope(buildDynamicContext({ ...base, mode: "live" }));
+    expect(runExpression("user.jwt.role", empty)).toBeUndefined();
+    expect(runExpression("user.accessToken", empty)).toBe("");
   });
 });

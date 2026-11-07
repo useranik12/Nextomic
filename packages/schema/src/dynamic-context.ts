@@ -110,7 +110,11 @@ export const dynamicContextSchema = z.object({
       phone: z.string().max(40).default(""),
       emailVerified: z.boolean().default(false),
       name: z.string().max(200).default(""),
-      role: z.string().max(64).default("")
+      role: z.string().max(64).default(""),
+      /** Decoded access token claims; filled only when App Settings keeps token data. */
+      jwt: z.record(z.string(), z.unknown()).default({}),
+      /** Raw access token; filled only when the project opts in (never for custom code). */
+      accessToken: z.string().max(16_384).default("")
     })
     .nullable(),
   /** The builder user (Nextomic account) viewing the editor or preview; null on live sites. */
@@ -118,7 +122,16 @@ export const dynamicContextSchema = z.object({
 });
 export type DynamicContext = z.infer<typeof dynamicContextSchema>;
 
-const EMPTY_APP_USER = { id: "", email: "", phone: "", emailVerified: false, name: "", role: "" };
+const EMPTY_APP_USER = {
+  id: "",
+  email: "",
+  phone: "",
+  emailVerified: false,
+  name: "",
+  role: "",
+  jwt: {},
+  accessToken: ""
+};
 const EMPTY_NEXTOMIC_USER: NextomicUser = {
   id: "",
   name: "",
