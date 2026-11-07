@@ -32,6 +32,24 @@ function readView(): LibraryView {
  * Pages & Templates: every page and template of the project in one place, as cards with a
  * screenshot or as rows. The canvas is hidden while this is open.
  */
+/**
+ * Clears the selection on a press outside every item and its action icons. Presses inside dialogs,
+ * menus and lists that an item opened (delete confirm, status menu) keep it.
+ */
+function useDeselectOutside(active: boolean, clear: () => void) {
+  useEffect(() => {
+    if (!active) return;
+    function onPointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest("[data-library-item],[role=dialog],[role=menu],[role=listbox]")) return;
+      clear();
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [active, clear]);
+}
+
 export function LibraryManager({
   projectId,
   onOpen,
@@ -48,6 +66,8 @@ export function LibraryManager({
   const [query, setQuery] = useState<LibraryQuery>(DEFAULT_QUERY);
   const [view, setView] = useState<LibraryView>("grid");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const clearSelection = useCallback(() => setSelectedId(null), []);
+  useDeselectOutside(selectedId !== null, clearSelection);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
@@ -201,7 +221,13 @@ export function LibraryManager({
           {message ? <span className="ml-2 text-danger">{message}</span> : null}
         </span>
         {selected && view === "list" ? (
-          <ActionIcons item={selected} disabled={working} onAction={(a) => void act(selected, a)} />
+          <span data-library-item className="contents">
+            <ActionIcons
+              item={selected}
+              disabled={working}
+              onAction={(a) => void act(selected, a)}
+            />
+          </span>
         ) : null}
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{body}</div>

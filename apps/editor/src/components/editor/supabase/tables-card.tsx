@@ -3,6 +3,8 @@
 import {
   appEnumListSchema,
   enumInSync,
+  enumNameOf,
+  shortPgType,
   saveSupabaseEnums,
   STATE_TYPE_LABELS,
   tableEnums,
@@ -20,7 +22,7 @@ import type { SupabasePageModel } from "./use-supabase-page";
 
 const typeLabel = (c: SupabaseColumn) => `${STATE_TYPE_LABELS[c.type]}${c.isList ? "[]" : ""}`;
 const enumOf = (c: SupabaseColumn): SupabaseEnum | null =>
-  c.enumValues ? { name: c.pgType.replace(/\[\]$/, ""), values: c.enumValues } : null;
+  c.enumValues ? { name: enumNameOf(c.pgType), values: c.enumValues } : null;
 
 /** Saves Supabase enums into the app's enums (Data Types page); the project autosaves. */
 function useEnumSaver() {
@@ -143,7 +145,7 @@ function TableDetail({ table }: { table: SupabaseTable }) {
                     ) : null}
                   </td>
                   <td className="py-2 pr-3 font-mono text-small text-default-500">
-                    {column.pgType}
+                    {shortPgType(column.pgType)}
                   </td>
                   {used.length > 0 ? (
                     <td className="py-1.5 text-right">
@@ -227,7 +229,11 @@ export function TablesCard({ model }: { model: SupabasePageModel }) {
   const table = all.find((t) => t.name === chosen) ?? tables[0] ?? views[0] ?? null;
 
   return (
-    <SupabaseCard title="Tables & Views" description="Fetched table schema from the connection.">
+    <SupabaseCard
+      title="Tables & Views"
+      description="Fetched table schema from the connection."
+      className="max-h-[700px]"
+    >
       {!structure ? (
         <p className="text-small text-default-500">Fetch the schema to see the tables and views.</p>
       ) : all.length === 0 ? (
@@ -236,7 +242,7 @@ export function TablesCard({ model }: { model: SupabasePageModel }) {
           again.
         </p>
       ) : (
-        <div className="flex max-h-[700px] min-h-0 flex-col gap-4 md:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
           <div className="flex min-h-0 w-full shrink-0 flex-col gap-2 md:w-72">
             <FormInput
               aria-label="Search table or view"

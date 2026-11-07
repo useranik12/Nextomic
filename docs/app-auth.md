@@ -14,7 +14,7 @@ App Settings > Authentication selects the provider for the project:
 | Supabase   | Uses the project's Supabase connector. Provider toggles (Google, more later) live on the Supabase page. |
 | Custom API | Maps each auth action to a call in API Data (REST).                                                     |
 
-The Supabase page's Authentication card works only when the provider is Supabase. When it is not, show the card disabled with a link to App Settings.
+The Supabase page's Authentication card works only when the provider is Supabase. When it is not (or authentication is off), its toggles show off and disabled with a note pointing to App Settings; the saved values are kept.
 
 ```ts
 interface AuthProvider {

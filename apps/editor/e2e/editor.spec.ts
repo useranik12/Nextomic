@@ -617,6 +617,11 @@ test("Pages & Templates: manager, marking, header template on the site, default 
   await page.getByRole("button", { name: "Pages & Templates" }).click();
   await expect(page.getByRole("tab", { name: /Pages/ })).toHaveAttribute("aria-selected", "true");
   await expect(page.getByLabel("Select Home")).toBeVisible();
+  // A press outside the cards clears the selection.
+  await page.getByLabel("Select Home").click();
+  await expect(page.getByLabel("Select Home")).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("tab", { name: /Pages/ }).click();
+  await expect(page.getByLabel("Select Home")).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "Column layout" }).click();
   await expect(page.getByRole("columnheader", { name: "Created by" })).toBeVisible();
   await expect(page.getByRole("row", { name: /Home/ })).toBeVisible();

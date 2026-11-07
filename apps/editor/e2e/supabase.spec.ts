@@ -53,6 +53,26 @@ test("connect Supabase with the anon key, fetch, inspect and clear the schema", 
   await expect(page.getByRole("img", { name: "Primary key" }).first()).toBeVisible();
   await expect(page.getByText("timestamp with time zone")).toHaveCount(0);
 
+  // Panels stay within 700px; app auth is off, so the Google toggle is off and disabled.
+  for (const name of ["Tables & Views", "Storage"]) {
+    const box = await page.getByRole("region", { name }).boundingBox();
+    expect(box?.height ?? 0).toBeLessThanOrEqual(700);
+  }
+  await expect(page.getByRole("switch", { name: "Google Authentication" })).toBeDisabled();
+
+  // A Postgres enum (schema-qualified like public.role) saves into the app's enums.
+  // The owner's test project has user_meta.role (public.role); other projects may have none.
+  const withEnum = page
+    .getByRole("list", { name: "Tables" })
+    .getByRole("button", { name: "user_meta", exact: true });
+  if (await withEnum.count()) {
+    await withEnum.click();
+    const enumButton = page.getByRole("button", { name: "Save enum role" });
+    await enumButton.click();
+    await expect(page.getByText("Use letters, digits and _")).toHaveCount(0);
+    await expect(enumButton).toBeDisabled();
+  }
+
   await page.getByRole("button", { name: "Clear Schema" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Clear Schema" }).click();
   await expect(page.getByText("Schema cleared.")).toBeVisible();

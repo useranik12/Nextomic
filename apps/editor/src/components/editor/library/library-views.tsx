@@ -34,6 +34,7 @@ export function LibraryGrid({
         return (
           <li key={item.id}>
             <div
+              data-library-item
               className={
                 "flex flex-col overflow-hidden rounded-large border bg-content1 transition-colors duration-300 " +
                 (selected ? "border-default-800" : "border-divider hover:border-default-400")
@@ -116,6 +117,7 @@ export function LibraryTable({
           return (
             <div
               role="row"
+              data-library-item
               aria-selected={selected}
               onClick={() => onSelect(item.id)}
               onDoubleClick={() => onOpen(item)}

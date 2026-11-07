@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { appEnumListSchema } from "./state";
 import {
   enumInSync,
+  enumNameOf,
   nextomicTypeOf,
   saveSupabaseEnums,
   shortPgType,
@@ -29,8 +30,8 @@ const table: SupabaseTable = {
   operations: ["select"],
   columns: [
     column("id", "int8"),
-    column("status", "order_status", ["new", "paid"]),
-    column("history", "order_status[]", ["new", "paid"]),
+    column("status", "public.order_status", ["new", "paid"]),
+    column("history", "public.order_status[]", ["new", "paid"]),
     column("size", "size", ["s", "m"])
   ]
 };
@@ -41,6 +42,9 @@ describe("supabase types", () => {
     expect(shortPgType("timestamp without time zone")).toBe("timestamp");
     expect(shortPgType("character varying(20)")).toBe("varchar(20)");
     expect(shortPgType("text")).toBe("text");
+    expect(shortPgType("timestamp with time zone[]")).toBe("timestamptz[]");
+    expect(shortPgType("public.task_category[]")).toBe("task_category[]");
+    expect(shortPgType("billing.plan")).toBe("billing.plan");
   });
 
   it("maps whole numbers to Int and the rest to Float", () => {
@@ -53,6 +57,13 @@ describe("supabase types", () => {
 });
 
 describe("supabase enums", () => {
+  it("names app enums after the Postgres type, as a valid app name", () => {
+    expect(enumNameOf("public.order_status")).toBe("order_status");
+    expect(enumNameOf("public.task_category[]")).toBe("task_category");
+    expect(enumNameOf("billing.plan")).toBe("billing_plan");
+    expect(enumNameOf("public.user")).toBe("user_enum");
+  });
+
   it("lists each enum a table uses once", () => {
     expect(tableEnums(table)).toEqual([
       { name: "order_status", values: ["new", "paid"] },

@@ -15,9 +15,12 @@ export function SupabaseCard({
   description,
   aside,
   badge,
+  className,
   children
 }: {
   title: string;
+  /** Extra classes for the card, e.g. a height limit. */
+  className?: string;
   /** Shown beside the title, e.g. the connection status. */
   badge?: ReactNode;
   description?: string;
@@ -26,7 +29,7 @@ export function SupabaseCard({
 }) {
   return (
     <section
-      className="flex flex-col gap-4 rounded-large border border-default-200 p-6"
+      className={`flex min-h-0 flex-col gap-4 rounded-large border border-default-200 p-6 ${className ?? ""}`}
       aria-label={title}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
