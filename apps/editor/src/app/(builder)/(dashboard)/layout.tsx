@@ -21,7 +21,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader userName={sessionData.user.name} userImage={sessionData.user.image} />
+      <DashboardHeader
+        userName={sessionData.user.name}
+        userEmail={sessionData.user.email}
+        userImage={sessionData.user.image}
+      />
       <div className="mx-auto flex max-w-[1400px] gap-10 px-8 py-6">
         <DashboardNav />
         <main className="min-w-0 flex-1">{children}</main>

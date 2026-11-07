@@ -46,12 +46,22 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification,
     sendResetPassword: async ({ user: resetUser, url }) => {
-      await sendAuthEmail({ kind: "reset-password", to: resetUser.email, url });
+      await sendAuthEmail({
+        kind: "reset-password",
+        to: resetUser.email,
+        name: resetUser.name,
+        url
+      });
     }
   },
   emailVerification: {
     sendVerificationEmail: async ({ user: verifyUser, url }) => {
-      await sendAuthEmail({ kind: "verify-email", to: verifyUser.email, url });
+      await sendAuthEmail({
+        kind: "verify-email",
+        to: verifyUser.email,
+        name: verifyUser.name,
+        url
+      });
     },
     sendOnSignUp: requireEmailVerification
   },

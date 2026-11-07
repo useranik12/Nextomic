@@ -1,7 +1,8 @@
 import { connectorAuditLog, getDb } from "@nextomic/db";
 import { ConnectorError, normalizeError, type NormalizedError } from "@nextomic/integrations";
 import { createRateLimiter } from "../rate-limit";
-import { allowPrivateConnectorHosts, connectorKeyring } from "./env";
+import { platformKeyring } from "../keyring";
+import { allowPrivateConnectorHosts } from "./env";
 import { operationSchema, runOperation, type OperationData } from "./operation";
 import { findConnector, toStored } from "./store";
 
@@ -59,7 +60,7 @@ export async function proxyConnectorCall(
       projectId: caller.projectId,
       workspaceId: caller.workspaceId,
       allowPrivateHosts: allowPrivateConnectorHosts(),
-      keyring: connectorKeyring
+      keyring: platformKeyring
     });
     const status = operation === "execute" ? String((data as { status: number }).status) : "ok";
     await audit({
