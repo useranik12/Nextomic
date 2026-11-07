@@ -49,7 +49,7 @@ function RailIcon({ id }: { id: RailItemId }) {
 export const RAIL_ITEMS: { id: RailItemId; label: string; ready: boolean }[] = [
   { id: "navigator", label: "Navigator", ready: true },
   { id: "pages-templates", label: "Pages & Templates", ready: true },
-  { id: "state", label: "State Management", ready: false },
+  { id: "state", label: "State Management", ready: true },
   { id: "media", label: "Media", ready: false },
   { id: "supabase", label: "Supabase", ready: false },
   { id: "api", label: "API Data", ready: false },

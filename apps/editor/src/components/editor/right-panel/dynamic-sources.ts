@@ -1,4 +1,4 @@
-import type { PageSettings } from "@nextomic/schema";
+import type { AppStateVariable, Constant, PageSettings } from "@nextomic/schema";
 
 export interface DynamicTag {
   token: string;
@@ -130,9 +130,33 @@ const BUILT_IN: DynamicGroup[] = [
  */
 export function dynamicGroups(
   settings: Pick<PageSettings, "params" | "state"> | undefined,
-  exclude: ("params" | "state")[] = []
+  exclude: ("params" | "state")[] = [],
+  globals?: { appState: readonly AppStateVariable[]; constants: readonly Constant[] }
 ): DynamicGroup[] {
   const groups: DynamicGroup[] = [];
+  const typeHint = (v: { type: string; isList: boolean }) => (v.isList ? `${v.type} list` : v.type);
+  if (globals && globals.appState.length > 0)
+    groups.push({
+      id: "app",
+      label: "App state",
+      tags: globals.appState.map((v) => ({
+        token: `app.${v.name}`,
+        label: v.name,
+        hint: typeHint(v),
+        help: v.description || undefined
+      }))
+    });
+  if (globals && globals.constants.length > 0)
+    groups.push({
+      id: "const",
+      label: "Constants",
+      tags: globals.constants.map((c) => ({
+        token: `const.${c.name}`,
+        label: c.name,
+        hint: typeHint(c),
+        help: c.description || undefined
+      }))
+    });
   if (settings && !exclude.includes("params") && settings.params.length > 0)
     groups.push({
       id: "params",

@@ -231,6 +231,8 @@ Opens from the left rail as a full page (like the Supabase page) with two tabs: 
 
 - Columns: Name, Type, Is List, Value, Description, delete. Same types as App State. No Persist, and actions cannot change them.
 
+Built (Phase 4a): `components/editor/state/*`. Rows commit on change; values that do not fit the type show the reason and are not saved. The page header explains the `{{app.name}}` and `{{const.name}}` tags, each tab has a warning about secrets, and renaming a used variable asks and then updates its tags everywhere.
+
 Rules for both tabs: names are unique and valid identifiers (`[A-Za-z_][A-Za-z0-9_]*`) and reserved words are blocked. Changing a type or deleting a variable shows the affected bindings and requires confirmation. The page must not allow storing secrets (show a warning that persisted values live in the visitor's browser).
 
 ### 4.11 Page Settings dialog (top bar, sliders icon)

@@ -82,6 +82,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const variables = useEditorStore((s) => s.project.variables);
   const fonts = useEditorStore((s) => s.project.fonts);
   const cssFiles = useEditorStore((s) => s.project.cssFiles);
+  const appState = useEditorStore((s) => s.project.appState);
+  const constants = useEditorStore((s) => s.project.constants);
   const pageId = useEditorStore((s) => s.page?.id ?? null);
   const projectId = useEditorStore((s) => s.projectId);
   const theme = useResolvedTheme();
@@ -321,11 +323,14 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
         page: { name: doc.name, route: doc.route, settings: doc.settings },
         tree: doc.tree,
         mode: "editor",
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        globals: { appState, constants }
       })
     });
   }, [
     ready,
+    appState,
+    constants,
     doc,
     withLayout,
     breakpoints,

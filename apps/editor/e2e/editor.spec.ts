@@ -757,3 +757,50 @@ test("page settings: no header and footer choice, status can be scheduled", asyn
   await page.locator("[role=option]", { hasText: "Scheduled" }).click();
   await expect(dialog.getByLabel("Go live at").first()).toBeVisible();
 });
+
+test("state management: app state and constants feed dynamic data", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "State Management" }).click();
+  await expect(page.getByRole("heading", { name: "State Management" })).toBeVisible();
+
+  // App State: add, rename, type, default, persist with storage details.
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const name = page.getByLabel("Variable name");
+  await name.fill("cart_count");
+  await name.press("Enter");
+  await page.locator("[aria-label='Type of cart_count']").click();
+  await page.locator("[role=option]", { hasText: "Integer" }).click();
+  await page.getByLabel("Default value of cart_count").fill("4.5");
+  await expect(page.getByText("Expected a whole number.")).toBeVisible();
+  await page.getByLabel("Default value of cart_count").fill("3");
+  await page.getByRole("switch", { name: "Persist cart_count" }).click({ force: true });
+  await page.getByRole("button", { name: "Show details of cart_count" }).click();
+  await expect(page.getByText("Keep after logout")).toBeVisible();
+
+  // Reserved names are refused.
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const second = page.getByLabel("Variable name").nth(1);
+  await second.fill("user");
+  await expect(page.getByText('"user" is a reserved word.')).toBeVisible();
+  await second.press("Escape");
+
+  // Constants.
+  await page.getByRole("tab", { name: /Constants/ }).click();
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const constName = page.getByLabel("Variable name");
+  await constName.fill("support_email");
+  await constName.press("Enter");
+  await page.getByLabel("Value of support_email").fill("help@example.com");
+
+  // Both groups show in the bolt picker and resolve on the canvas.
+  await page.getByRole("button", { name: "Navigator" }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByRole("button", { name: "Dynamic value for Text" }).click();
+  const picker = page.getByRole("dialog");
+  await expect(picker.getByText("App state", { exact: true }).first()).toBeVisible();
+  await expect(picker.getByText("cart_count").first()).toBeVisible();
+  await picker.getByText("support_email").first().click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading", { name: /help@example\.com/ })).toBeVisible();
+});

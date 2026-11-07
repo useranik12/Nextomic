@@ -146,7 +146,8 @@ async function previewTemplate(
   const sample = sampleContent();
   const dynamic = buildDynamicContext({
     page: { name: page.name, route: page.route, settings: page.settings },
-    mode: "preview"
+    mode: "preview",
+    globals: settings
   });
   return {
     tree:

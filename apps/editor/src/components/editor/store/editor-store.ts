@@ -24,6 +24,8 @@ import {
   renameCssVarsInStyles,
   renameCssVarsInTree,
   renameVariableInTree,
+  renameStateTag,
+  type StateGroup,
   replaceClassInTree,
   setProp,
   setStyle,
@@ -179,6 +181,8 @@ interface EditorState {
   clearOps: () => void;
   /** Renames and rewrites references on the open page and in class styles; other pages are server side. */
   renameVariable: (from: string, to: string) => boolean;
+  /** Points {{app.from}} / {{const.from}} tags in the open page or template at the new name. */
+  renameStateTagInDoc: (group: StateGroup, from: string, to: string) => void;
   /** Points `var(--from)` at `var(--to)` in the open page, classes and variables, and queues the other pages. */
   renameCssVars: (pairs: [string, string][]) => void;
   /** Class manager operations. They return false when the name is taken or the source is missing. */
@@ -296,7 +300,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
       themes: [],
       fonts: [],
       cssFiles: [],
-      animations: { folders: [], timelines: [] }
+      animations: { folders: [], timelines: [] },
+      appState: [],
+      constants: []
     },
     page: null,
     doc: null,
@@ -712,6 +718,19 @@ export const useEditorStore = create<EditorState>((set, get) => {
         project: { ...project, variables: project.variables.filter((v) => v.name !== name) },
         classesTick: get().classesTick + 1,
         saveStatus: dirtyStatus(get().saveStatus)
+      });
+    },
+
+    renameStateTagInDoc: (group, from, to) => {
+      const doc = get().doc;
+      if (!doc) return;
+      const parts = { tree: doc.tree, settings: doc.settings, template: doc.template };
+      const renamed = renameStateTag(parts, group, from, to);
+      if (!renamed.changed) return;
+      edit(null, (draft) => {
+        draft.tree = renamed.value.tree;
+        draft.settings = renamed.value.settings;
+        draft.template = renamed.value.template;
       });
     },
 

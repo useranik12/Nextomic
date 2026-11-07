@@ -7,6 +7,7 @@ import {
   createPageInputSchema,
   projectSettingsSchema,
   savePageInputSchema,
+  stateNameSchema,
   type ProjectSettings
 } from "@nextomic/schema";
 import { z } from "zod";
@@ -35,6 +36,11 @@ import {
   variableUsageInOtherPages,
   type VersionSummary
 } from "@/server/pages";
+import {
+  renameStateTagEverywhere,
+  stateUsageByItem,
+  type StateUsageItem
+} from "@/server/state-usage";
 import {
   getPublishState,
   publishProject,
@@ -309,5 +315,38 @@ export async function renameVariableAction(
     return { data: updated, error: null };
   } catch (error) {
     return fail(error, "Could not update the other pages.");
+  }
+}
+
+/** Pages and templates that use app state or constants (saved versions; the open item counts live). */
+export async function stateUsageAction(projectId: string): Promise<ActionResult<StateUsageItem[]>> {
+  try {
+    await authorize(projectId);
+    return { data: await stateUsageByItem(projectId), error: null };
+  } catch (error) {
+    return fail(error, "Could not find where the variables are used.");
+  }
+}
+
+/** Points {{app.from}} or {{const.from}} tags at the new name; the open item changes in the editor. */
+export async function renameStateTagAction(
+  projectId: string,
+  exceptId: string,
+  group: "app" | "const",
+  from: string,
+  to: string
+): Promise<ActionResult<number>> {
+  try {
+    await authorize(projectId);
+    const updated = await renameStateTagEverywhere(
+      projectId,
+      idSchema.parse(exceptId),
+      z.enum(["app", "const"]).parse(group),
+      stateNameSchema.parse(from),
+      stateNameSchema.parse(to)
+    );
+    return { data: updated, error: null };
+  } catch (error) {
+    return fail(error, "Could not update the other pages and templates.");
   }
 }

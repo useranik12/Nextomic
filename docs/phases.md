@@ -76,7 +76,7 @@ Docs: `templates-and-themes.md` (sections 2, 4.1 to 4.7)
 
 Docs: `dynamic-data-and-actions.md`, `integrations.md`, `ui-reference.md` (Supabase, API Data), `elements.md` (universal dynamic data)
 
-- [ ] State Management page with App State and Constants tabs (table pattern of API Data Variables; owner approves the first build), all data types, app state persistence (local storage or cookie, cleared on logout unless "Keep after logout"), page state variables in the right panel
+- [x] State Management page with App State and Constants tabs (table pattern of API Data Variables; owner approves the first build), all data types, app state persistence (local storage or cookie, cleared on logout unless "Keep after logout"), page state variables in the right panel _Built: `schema/state.ts`, `state-usage.ts`, `components/editor/state/*`, `runtime/persisted-state.ts`, `{{app.x}}`/`{{const.x}}` tags. Persistence is wired into the site with Phase 5 actions; awaiting owner approval of the screen._
 - [ ] Supabase page and API Data page from the designs; schema fetch saves structure only
 - [ ] Connector secrets encryption and server proxy with SSRF protection
 - [ ] Queries (page, element/loop, action-triggered), parameters, loading/empty/error states
