@@ -47,7 +47,8 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
         <>
           <Switch
             size="sm"
-            isSelected={enabled}
+            isSelected={enabled && supabaseAuthOn}
+            isDisabled={!supabaseAuthOn}
             onValueChange={(on) => {
               setEnabled(on);
               setNotice(null);
@@ -55,7 +56,7 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
           >
             <span className="text-small">Google Authentication</span>
           </Switch>
-          {enabled ? (
+          {enabled && supabaseAuthOn ? (
             <PasswordInput
               label="Web Client ID"
               value={clientId}
@@ -70,7 +71,7 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
               validationBehavior="aria"
             />
           ) : null}
-          {dirty ? (
+          {dirty && supabaseAuthOn ? (
             <div className="flex gap-2">
               <ActionButton
                 size="sm"

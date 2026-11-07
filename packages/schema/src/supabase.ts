@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AppEnum, StateType } from "./state";
+import { RESERVED_STATE_NAMES, type AppEnum, type StateType } from "./state";
 
 // The saved STRUCTURE of a Supabase project: tables, views, functions and buckets with their
 // columns and types. Never row data. Fetched with the anon key from PostgREST's OpenAPI document
@@ -112,12 +112,32 @@ const SHORT_PG_TYPES: Record<string, string> = {
   "bit varying": "varbit"
 };
 
-/** `timestamp with time zone` as `timestamptz`, `integer` as `int4`; other names unchanged. */
+/**
+ * PostgreSQL's short type name: `timestamp with time zone` as `timestamptz`, `integer` as `int4`,
+ * `public.role` as `role` (types of other schemas keep their schema). Lists keep their `[]`.
+ */
 export function shortPgType(pgType: string): string {
   const trimmed = pgType.trim();
-  const match = /^([^(]+?)\s*(\(.*\))?$/.exec(trimmed);
-  const base = (match?.[1] ?? trimmed).toLowerCase();
-  return `${SHORT_PG_TYPES[base] ?? base}${match?.[2] ?? ""}`;
+  const list = trimmed.endsWith("[]");
+  const core = list ? trimmed.slice(0, -2).trim() : trimmed;
+  const match = /^([^(]+?)\s*(\(.*\))?$/.exec(core);
+  const base = (match?.[1] ?? core)
+    .toLowerCase()
+    .replace(/^public\./, "")
+    .replace(/"/g, "");
+  return `${SHORT_PG_TYPES[base] ?? base}${match?.[2] ?? ""}${list ? "[]" : ""}`;
+}
+
+/**
+ * The app enum name for a Postgres enum type: `public.order_status` as `order_status`,
+ * `billing.plan` as `billing_plan`; a name the app reserves gets `_enum` added.
+ */
+export function enumNameOf(pgType: string): string {
+  let name = shortPgType(pgType)
+    .replace(/\[\]$/, "")
+    .replace(/[^A-Za-z0-9_]/g, "_");
+  if (!/^[A-Za-z_]/.test(name)) name = `_${name}`;
+  return RESERVED_STATE_NAMES.has(name) ? `${name}_enum` : name;
 }
 
 /** Splits `text[]` / `character varying[]` into the element type and a list flag. */
@@ -144,7 +164,7 @@ export function tableEnums(table: SupabaseTable): SupabaseEnum[] {
   const found = new Map<string, string[]>();
   for (const column of table.columns) {
     if (!column.enumValues) continue;
-    const name = column.pgType.replace(/\[\]$/, "");
+    const name = enumNameOf(column.pgType);
     if (!found.has(name)) found.set(name, column.enumValues);
   }
   return [...found].map(([name, values]) => ({ name, values }));
