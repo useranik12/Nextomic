@@ -35,7 +35,9 @@ export function parseDynamicText(text: string): PropValue {
   const split = splitTemplate(text);
   if (!split.some((part) => typeof part !== "string")) return text;
   const parts: MixedText["parts"] = split.map((part) =>
-    typeof part === "string" ? part : { token: part.expr.slice(0, 5000) || " " }
+    typeof part === "string"
+      ? part
+      : { token: text.slice(part.start + 2, part.end - 2).slice(0, 5000) || " " }
   );
   return { kind: "mixed", parts };
 }

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
   getPublishStateAction,
+  schedulePublishAction,
   publishAction,
   unpublishAction
 } from "@/app/(builder)/editor/[id]/actions";
@@ -16,6 +17,7 @@ import { EditorClock } from "./editor-clock";
 import { BreakpointManager } from "./breakpoint-manager";
 import { BreakpointGlyph } from "./icons";
 import { PageMenu } from "./page-menu";
+import { ScheduleDialog } from "./schedule-dialog";
 import { PageSettingsModal } from "./page-settings-modal";
 import { TemplateSettingsModal } from "./template-settings-modal";
 import {
@@ -264,6 +266,16 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
   );
 }
 
+/** A scheduled moment in the visitor's words: "Nov 8, 10:30". */
+function formatWhen(ms: number): string {
+  return new Date(ms).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 // Publish and the arrow are one joined control. Publish puts the saved pages live for everyone;
 // the arrow holds Save, Unpublish and the draft tools. Drafts are only visible to signed-in members.
 function PublishControl({
@@ -283,6 +295,8 @@ function PublishControl({
   const [message, setMessage] = useState<{ text: string; tone: "ok" | "error" } | null>(null);
   const [unsaved, setUnsaved] = useState<string[] | null>(null);
   const [hasChanges, setHasChanges] = useState(true);
+  const [scheduledAt, setScheduledAt] = useState<number | null>(null);
+  const [scheduling, setScheduling] = useState(false);
   const saveStatus = useEditorStore((s) => s.saveStatus);
   const savedTick = useEditorStore((s) => s.savedTick);
   const breakpoints = useEditorStore((s) => s.project.breakpoints);
@@ -293,8 +307,19 @@ function PublishControl({
       if (result.error !== null) return;
       setPublishedAt(result.data.publishedAt);
       setHasChanges(result.data.hasUnpublishedChanges);
+      setScheduledAt(result.data.scheduledPublishAt);
     });
   }, [projectId, setPublishedAt, savedTick, breakpoints]);
+
+  async function schedule(iso: string | null): Promise<string | null> {
+    if (iso !== null) await saveNow();
+    const result = await schedulePublishAction(projectId, iso);
+    if (result.error !== null) return result.error;
+    setScheduledAt(result.data.scheduledPublishAt);
+    setMessage({ text: iso ? "Publish scheduled" : "Schedule removed", tone: "ok" });
+    window.setTimeout(() => setMessage(null), 3000);
+    return null;
+  }
 
   const upToDate = publishedAt !== null && !hasChanges && saveStatus === "saved";
   // Red: edits since the last save. Orange: saved as a draft, not live. Green: live and current.
@@ -328,6 +353,7 @@ function PublishControl({
     }
     setPublishedAt(result.data.publishedAt);
     setHasChanges(result.data.hasUnpublishedChanges);
+    setScheduledAt(result.data.scheduledPublishAt);
     setMessage({ text: kind === "publish" ? "Published" : "Unpublished", tone: "ok" });
     window.setTimeout(() => setMessage(null), 3000);
   }
@@ -344,6 +370,24 @@ function PublishControl({
             void run("publish");
           }}
         />
+      ) : null}
+      {scheduling ? (
+        <ScheduleDialog
+          scheduledAt={scheduledAt}
+          onSchedule={schedule}
+          onClose={() => setScheduling(false)}
+        />
+      ) : null}
+      {scheduledAt !== null && !message ? (
+        <button
+          type="button"
+          onClick={() => setScheduling(true)}
+          title="Change or remove the scheduled publish"
+          className="flex items-center gap-1.5 rounded-full border border-default-200 px-2.5 py-1 text-tiny text-default-600 hover:border-default-400 hover:text-foreground"
+        >
+          <Icon name="ph:calendar-blank" width={12} height={12} />
+          Publishes {formatWhen(scheduledAt)}
+        </button>
       ) : null}
       {message ? (
         <span
@@ -406,6 +450,7 @@ function PublishControl({
             disabledKeys={publishedAt ? [] : ["unpublish"]}
             onAction={(key) => {
               if (key === "save") void saveNow();
+              if (key === "schedule") setScheduling(true);
               if (key === "unpublish") void run("unpublish");
               if (key === "preview")
                 window.open(
@@ -421,6 +466,16 @@ function PublishControl({
               description="Saves the draft (Ctrl+S). Only signed-in members see it"
             >
               Save
+            </DropdownItem>
+            <DropdownItem
+              key="schedule"
+              description={
+                scheduledAt !== null
+                  ? `Publishes ${formatWhen(scheduledAt)}. Change or remove it`
+                  : "Publishes the saved draft at a date and time you pick"
+              }
+            >
+              {scheduledAt !== null ? "Edit schedule" : "Schedule publish"}
             </DropdownItem>
             <DropdownItem key="preview" description="Opens the saved draft in a new tab">
               Preview draft

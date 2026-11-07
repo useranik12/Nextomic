@@ -63,6 +63,9 @@ export function FormInput({ compact, ...props }: InputProps & { compact?: boolea
 export interface SelectOption {
   value: string;
   label: string;
+  /** Shown but not selectable; `hint` says why when the pointer rests on it. */
+  disabled?: boolean;
+  hint?: string;
 }
 
 // Modern dropdown (HeroUI Select): pill trigger with the same 2px outline as the inputs, and a
@@ -88,7 +91,9 @@ const ITEM_CLASSES = {
     "rounded-medium px-3 py-1.5 text-small text-default-700 transition-colors " +
     "data-[hover=true]:bg-default-100 data-[hover=true]:text-foreground " +
     "data-[selected=true]:bg-default-200 data-[selected=true]:font-medium data-[selected=true]:text-foreground " +
-    "data-[focus-visible=true]:ring-1 data-[focus-visible=true]:ring-default-800/20"
+    "data-[focus-visible=true]:ring-1 data-[focus-visible=true]:ring-default-800/20 " +
+    // Disabled choices stay hoverable so their hint can explain how to enable them.
+    "data-[disabled=true]:pointer-events-auto data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-45"
 };
 
 export interface SelectFieldProps {
@@ -137,6 +142,7 @@ export function SelectField({
         if (open) openedAt.current = Date.now();
       }}
       selectedKeys={[value]}
+      disabledKeys={items.filter((option) => option.disabled).map((option) => option.value)}
       onSelectionChange={(keys) => {
         const next = Array.from(keys)[0];
         if (next !== undefined) onValueChange(String(next));
@@ -148,7 +154,15 @@ export function SelectField({
       selectorIcon={<Icon name="ph:caret-down" width={14} height={14} />}
     >
       {items.map((option) => (
-        <SelectItem key={option.value}>{option.label}</SelectItem>
+        <SelectItem key={option.value} textValue={option.label}>
+          {option.hint ? (
+            <span data-tip={option.hint} className="block w-full">
+              {option.label}
+            </span>
+          ) : (
+            option.label
+          )}
+        </SelectItem>
       ))}
     </Select>
   );

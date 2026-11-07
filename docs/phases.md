@@ -78,6 +78,7 @@ Docs: `dynamic-data-and-actions.md`, `integrations.md`, `ui-reference.md` (Supab
 
 - [x] State Management page with App State and Constants tabs (table pattern of API Data Variables; owner approves the first build), all data types, app state persistence (local storage or cookie, cleared on logout unless "Keep after logout"), page state variables in the right panel _Built: `schema/state.ts`, `state-usage.ts`, `components/editor/state/*`, `runtime/persisted-state.ts`, `{{app.x}}`/`{{const.x}}` tags. Persistence is wired into the site with Phase 5 actions; awaiting owner approval of the screen._
 - [x] Data Types page (Custom Data Types and ENUM), the unified type list, n8n-style `{{ }}` expressions with a suggestion panel _Built: `schema/expression/*`, `components/editor/data-types/*`, `components/editor/expression/*`; awaiting owner approval of the screens. Supabase Row becomes selectable in 4d._
+- [x] Drafts with Save/Discard and an unsaved-changes guard on data forms, grouped expression suggestions with search, `{{` auto-close, tag highlighting with hover values and Navigator problem dots, scheduled publish _Built: `draft-scope.tsx`, `expression/*`, `schedule-dialog.tsx`, `ui/date-time-field.tsx`, `server/publish.ts` (`runDuePublish`)._
 - [ ] Supabase page and API Data page from the designs; schema fetch saves structure only
 - [ ] Connector secrets encryption and server proxy with SSRF protection
 - [ ] Queries (page, element/loop, action-triggered), parameters, loading/empty/error states

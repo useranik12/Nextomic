@@ -89,10 +89,10 @@ const BUILT_IN: DynamicGroup[] = [
     id: "datetime",
     label: "Date and time",
     tags: [
-      { token: "now.iso", label: "Now (ISO)", hint: "date" },
-      { token: "now.date", label: "Today", hint: "date" },
-      { token: "now.time", label: "Current time", hint: "text" },
-      { token: "now.year", label: "Current year", hint: "number" }
+      { token: "$now", label: "Now (date and time)", hint: "date" },
+      { token: "$today.toISODate()", label: "Today", hint: "date" },
+      { token: "$now.toFormat('HH:mm')", label: "Current time", hint: "text" },
+      { token: "$now.year", label: "Current year", hint: "number" }
     ]
   },
   {

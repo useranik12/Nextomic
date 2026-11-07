@@ -2,13 +2,16 @@
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { getElementDefinition } from "@nextomic/renderer";
-import type { ElementNode } from "@nextomic/schema";
+import { expressionScope, firstExpressionProblem, type ElementNode } from "@nextomic/schema";
 import { memo, useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { ROOT_END_ID, useDropTarget } from "./dnd";
 import { ElementIcon } from "./icons";
 import { RenameField } from "./rename-field";
 import { useEditorStore } from "./store/editor-store";
+import { useEditorDynamicContext } from "./use-editor-context";
+
+const NOT_OWN = new Set(["children"]);
 
 interface Row {
   node: ElementNode;
@@ -33,11 +36,14 @@ const NavigatorRow = memo(function NavigatorRow({
   row,
   selected,
   collapsed,
+  problem,
   onToggle
 }: {
   row: Row;
   selected: boolean;
   collapsed: boolean;
+  /** Why a dynamic tag of this element does not work, if one does not. */
+  problem: string | null;
   onToggle: (id: string) => void;
 }) {
   const { node, depth, hasChildren } = row;
@@ -114,6 +120,14 @@ const NavigatorRow = memo(function NavigatorRow({
         >
           <ElementIcon type={node.type} size={16} />
           <span className="truncate">{label}</span>
+          {problem ? (
+            <span
+              role="img"
+              aria-label={`Invalid dynamic data: ${problem}`}
+              title={`Invalid dynamic data: ${problem}`}
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-danger"
+            />
+          ) : null}
           {node.hidden ? (
             <Icon name="ph:eye-slash" width={12} height={12} className="shrink-0" />
           ) : null}
@@ -178,6 +192,21 @@ export function Navigator({
 
   const rows = useMemo(() => (tree ? flatten(tree, collapsed, 0, []) : []), [tree, collapsed]);
 
+  // Elements whose {{tags}} would give nothing on the page: a red dot says so.
+  const dynamic = useEditorDynamicContext();
+  const problems = useMemo(() => {
+    const found = new Map<string, string>();
+    if (!tree || !dynamic) return found;
+    const scope = expressionScope(dynamic);
+    const visit = (node: ElementNode) => {
+      const problem = firstExpressionProblem(node, scope, NOT_OWN);
+      if (problem) found.set(node.id, problem);
+      node.children.forEach(visit);
+    };
+    visit(tree);
+    return found;
+  }, [tree, dynamic]);
+
   function toggle(id: string) {
     setCollapsed((current) => {
       const next = new Set(current);
@@ -240,6 +269,7 @@ export function Navigator({
             row={row}
             selected={row.node.id === selectedId}
             collapsed={collapsed.has(row.node.id)}
+            problem={problems.get(row.node.id) ?? null}
             onToggle={toggle}
           />
         ))}

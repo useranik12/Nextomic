@@ -38,6 +38,12 @@ Source images live in `blueprint/`. Use this doc as the index and the images as 
 
 ## 3. Design system (builder UI)
 
+**Forms with drafts:** State Management tabs, each enum and data type, Page Parameters and Page State Variables are edited as drafts with small Discard and Save buttons. While a draft has changes, a click elsewhere in the editor is held back and an "Unsaved changes" dialog offers Keep editing, Discard or Save (`components/editor/draft-scope.tsx`); the canvas does not take clicks meanwhile, and leaving the page asks the browser to confirm.
+
+**Type pickers** show every type; a type with nothing to choose yet (ENUM without enums, Data Type without data types, Supabase Row until Supabase is connected) is disabled, and resting on it says what to add first. ENUM and Data Type show the second select beside the type.
+
+**Field text color:** typed text in inputs and text areas is `default-700`, a step below the full white of headings. Only dynamic tags are full white.
+
 - The Figma kit is the HeroUI kit (the sheet links to heroui.org). Token names follow it: layout (`background`, `foreground`, `divider`, `focus`), content (`content1` to `content4`), colors (`default`, `primary`, `secondary`, `success`, `warning`, `danger`, each 50 to 900), radius (small 8px, medium 12px, large 14px, full), typography (tiny, small, medium, large), Inter font.
 - Colors: primary blue `#006FEE`, secondary purple `#7828C8` (`#9353D3` in dark), success `#17C964`, warning `#F5A524`, danger `#F31260`.
 - Use HeroUI components for the builder UI (see `spec.md` decisions). Components designed so far: Accordion, Alert, Button Group, Buttons, Calendar, Carousel, Chips, PIN (OTP input), Progress, Range Slider, Switch, Table, Toast, Tooltip. Each shows the six semantic colors and multiple variants and sizes. Match the designed variants.
@@ -116,6 +122,7 @@ Never use raw HeroUI `Input` or `Button` for form fields and actions. Use `compo
 - Before publishing, show a check dialog listing errors (block publish), warnings, and the changed items. A page can be marked Draft to exclude it from publishing.
 - Autosave runs continuously. "Save" additionally creates a named snapshot in Version History.
 - Publishing is wired in Phase 11. Before that, the menu offers Save and Preview only.
+- **Schedule publish** (publish menu, below Save): a dialog with the builder date and time picker (`components/ui/date-time-field.tsx`: pill field, neutral calendar, the white-shade accent for the chosen day, future times only). At that moment the saved draft is published as if Publish was pressed then; edits saved before it are included. While a schedule is set, a chip "Publishes <date>" sits left of Publish and opens the dialog to change or remove it. Unpublish removes the schedule. The server runs a due schedule on the first read after its time (site request or editor publish state), claimed with a conditional update so it runs once, and dates the publish at the scheduled time.
 
 **Left rail** (Navigator is open by default). Items in order, as in the Supabase and API Data screens:
 
@@ -234,7 +241,7 @@ Opens from the left rail as a full page (like the Supabase page) with two tabs: 
 
 - Columns: Name, Type, Is List, Value, Description, delete. Same types as App State. No Persist, and actions cannot change them.
 
-Built (Phase 4a): `components/editor/state/*`. Rows commit on change; values that do not fit the type show the reason and are not saved. The page header explains the `{{app.name}}` and `{{const.name}}` tags, each tab has a warning about secrets, and renaming a used variable asks and then updates its tags everywhere.
+Built (Phase 4a): `components/editor/state/*`. Edits are a draft until **Save** (small Discard and Save buttons with an "Unsaved changes" dot at the top right of each tab); values that do not fit the type show the reason and are not saved. Renames of used variables are confirmed on Save and then update their references everywhere. The page header explains the `{{app.name}}` and `{{const.name}}` tags, each tab has a warning about secrets, and renaming a used variable asks and then updates its tags everywhere.
 
 Rules for both tabs: names are unique and valid identifiers (`[A-Za-z_][A-Za-z0-9_]*`) and reserved words are blocked. Changing a type or deleting a variable shows the affected bindings and requires confirmation. The page must not allow storing secrets (show a warning that persisted values live in the visitor's browser).
 
@@ -274,6 +281,8 @@ Opens from the left rail ("Data Types", just before State Management) as a full 
 - **Custom Data Types:** a table of fields (Name, Type, Is List, Description, delete) and "Add Field". A field takes every type except Supabase Row. A value of a data type is a JSON object whose keys are the field names; unknown keys are refused.
 - Names are valid identifiers and unique within their tab. Deleting an enum or a data type that a variable or another data type uses lists those users and asks first.
 
+- Each enum or data type is edited as a draft with Discard and Save in its header. A field cannot use its own data type, or a data type that already contains it.
+
 Built (Phase 4a fixes): `components/editor/data-types/*`; stored in project settings (`enums`, `dataTypes`).
 
 ### 4.15 Expression suggestions
@@ -284,6 +293,13 @@ Every field that has the dynamic bolt accepts n8n-style expressions inside `{{ }
 - Right: the active item's signature, what it does, and an example.
 - Footer: the result of the expression with the current preview values, or the error.
 - Arrow Up and Down move, Enter or Tab inserts (methods with arguments place the caret inside the parentheses), Escape closes, hovering an item shows its details. The panel never takes focus from the field.
+
+- The list is grouped under headings: Fields, Page state, App state, Constants, Page parameters, Page and visitor, Date and time, then the methods for the value (Text, Number, List, Object, Date methods) and Functions. Variables are listed by name (`app.cart`), so typing part of a name finds it.
+- A small search box sits at the top of the panel and narrows the list by name or description.
+- The panel opens whenever the caret is inside `{{ }}` (typing, clicking or moving the caret), and shows nothing inside a quoted string.
+- Typing `{{` adds ` }}` and puts the caret between the braces; typing `}` before the closing braces steps over them. Inserting a suggestion keeps the field's own undo (Ctrl+Z, Ctrl+Y).
+- In every field with the bolt, text is a step softer than headings (`default-700`); `{{ }}` tags are drawn white and heavier, and tags with a problem (syntax error, unknown name, undeclared variable, runtime error) are red with a wavy underline. Resting the pointer on a tag for 500 ms shows its value with the current preview data, or the problem.
+- An element with such a problem shows a small red dot in the Navigator; its tooltip says what is wrong.
 
 Built (Phase 4a fixes): `components/editor/expression/*`. The syntax and the method list are in `dynamic-data-and-actions.md`.
 

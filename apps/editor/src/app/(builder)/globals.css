@@ -30,3 +30,39 @@ button:not(:disabled),
 summary {
   cursor: pointer;
 }
+
+/* Typed text in fields is a step softer than headings; only dynamic {{tags}} are full white. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+textarea {
+  color: hsl(var(--heroui-default-700));
+}
+
+/* A field whose {{tags}} are drawn by the expression overlay hides its own glyphs, keeps the caret. */
+[data-expr-mirrored] {
+  color: transparent !important;
+  caret-color: hsl(var(--heroui-foreground));
+}
+[data-expr-mirrored]::selection {
+  color: transparent;
+  background: hsl(var(--heroui-primary) / 0.35);
+}
+.nx-expr-mirror {
+  color: hsl(var(--heroui-default-700));
+}
+/* Tags are white and heavier. The stroke thickens glyphs without changing their width, so the
+   overlay stays aligned with the caret of the field underneath. */
+.nx-expr-tag {
+  color: hsl(var(--heroui-foreground));
+  -webkit-text-stroke: 0.25px currentColor;
+}
+.nx-expr-bad {
+  color: hsl(var(--heroui-danger));
+  -webkit-text-stroke: 0.25px currentColor;
+  text-decoration: underline wavy hsl(var(--heroui-danger) / 0.7);
+  text-underline-offset: 3px;
+}
+
+/* While a form has unsaved changes, the canvas does not take clicks that would skip the guard. */
+html[data-draft-guard] iframe {
+  pointer-events: none;
+}

@@ -14,6 +14,8 @@ export interface Completion {
   /** Where the caret goes inside `insert` (after "(" for methods with arguments). */
   caret: number;
   kind: "field" | "method" | "property" | "function" | "namespace" | "variable";
+  /** Heading the item is listed under (App state, Text methods, Functions...). */
+  group: string;
   /** Short type or signature shown beside the label. */
   detail: string;
   description: string;
@@ -27,6 +29,69 @@ export interface CompletionResult {
 }
 
 const WORD = /[\w$]*$/;
+
+/** Root names that still work but are not suggested (`now` was replaced by `$now`). */
+const HIDDEN_ROOTS = new Set(["now"]);
+
+/** Variable groups are listed by their variables, under these headings, in this order. */
+const VARIABLE_GROUPS: [string, string][] = [
+  ["state", "Page state"],
+  ["app", "App state"],
+  ["const", "Constants"],
+  ["param", "Page parameters"]
+];
+const VALUE_ROOTS = new Set(["page", "template", "request", "user", "env"]);
+const DATE_ROOTS = new Set(["$now", "$today", "DateTime"]);
+
+/** Headings in display order; anything else comes after them. */
+export const COMPLETION_GROUP_ORDER = [
+  "Fields",
+  "Page state",
+  "App state",
+  "Constants",
+  "Page parameters",
+  "Page and visitor",
+  "Date and time",
+  "Properties",
+  "Text methods",
+  "Number methods",
+  "List methods",
+  "Object methods",
+  "Date methods",
+  "Boolean methods",
+  "Functions"
+];
+
+const KIND_GROUP: Record<ValueKind, string> = {
+  string: "Text methods",
+  number: "Number methods",
+  array: "List methods",
+  object: "Object methods",
+  date: "Date methods",
+  boolean: "Boolean methods",
+  null: "Object methods"
+};
+
+/** True when the end of `source` is inside a quoted string (not inside a `${}` of a template). */
+export function insideString(source: string): boolean {
+  const stack: string[] = [];
+  for (let i = 0; i < source.length; i++) {
+    const c = source[i] as string;
+    const top = stack[stack.length - 1];
+    if (top === '"' || top === "'" || top === "`") {
+      if (c === "\\") i++;
+      else if (c === top) stack.pop();
+      else if (top === "`" && c === "$" && source[i + 1] === "{") {
+        stack.push("${");
+        i++;
+      }
+    } else if (c === '"' || c === "'" || c === "`") stack.push(c);
+    else if (c === "{") stack.push("{");
+    else if (c === "}" && (top === "{" || top === "${")) stack.pop();
+  }
+  const top = stack[stack.length - 1];
+  return top === '"' || top === "'" || top === "`";
+}
 
 /** Start of the object expression before the dot at `dot` (balancing brackets and quotes). */
 function chainStart(source: string, dot: number): number {
@@ -56,6 +121,7 @@ function methodItems(kind: ValueKind): Completion[] {
       insert,
       caret: takesArgs ? doc.name.length + 1 : insert.length,
       kind: doc.kind,
+      group: doc.kind === "method" ? KIND_GROUP[kind] : "Properties",
       detail: doc.kind === "method" ? `${doc.signature} → ${doc.returns}` : doc.returns,
       description: doc.description,
       example: doc.example
@@ -69,6 +135,7 @@ function fieldItems(value: Record<string, unknown>): Completion[] {
     insert: /^[A-Za-z_$][\w$]*$/.test(key) ? key : `["${key}"]`,
     caret: key.length,
     kind: "field" as const,
+    group: "Fields",
     detail: kindOf(value[key]),
     description: `Field of this object. Current value: ${preview(value[key]) || "(empty)"}`,
     example: ""
@@ -87,6 +154,7 @@ function declaredFields(
     insert: f.name,
     caret: f.name.length,
     kind: "field" as const,
+    group: "Fields",
     detail: f.isList ? `${f.type} list` : f.type,
     description: f.description || `Field of ${type?.name ?? "the data type"}.`,
     example: ""
@@ -106,21 +174,52 @@ const KIND_OF_TYPE: Partial<Record<TypeSpec["type"], ValueKind>> = {
   supabaseRow: "object"
 };
 
-function rootItems(scope: Readonly<Record<string, unknown>>): Completion[] {
-  const names: Completion[] = Object.keys(scope).map((name) => ({
-    label: name,
-    insert: name,
-    caret: name.length,
-    kind: "variable",
-    detail: kindOf(scope[name]),
-    description: ROOT_DOCS[name] ?? "",
-    example: ""
-  }));
+function rootItems(
+  scope: Readonly<Record<string, unknown>>,
+  hints: Readonly<Record<string, TypeSpec>> | undefined
+): Completion[] {
+  const variables: Completion[] = VARIABLE_GROUPS.flatMap(([root, group]) => {
+    const values = scope[root];
+    if (!values || typeof values !== "object") return [];
+    const record = values as Record<string, unknown>;
+    return Object.keys(record).map((name) => {
+      const path = `${root}.${name}`;
+      const spec = hints?.[path];
+      const current = preview(record[name]);
+      return {
+        label: path,
+        insert: path,
+        caret: path.length,
+        kind: "variable" as const,
+        group,
+        detail: spec ? (spec.isList ? `${spec.type} list` : spec.type) : kindOf(record[name]),
+        description: `${group === "Constants" ? "Constant" : `${group} variable`}. Current value: ${current || "(empty)"}`,
+        example: `{{ ${path} }}`
+      };
+    });
+  });
+  const names: Completion[] = Object.keys(scope)
+    .filter((name) => !HIDDEN_ROOTS.has(name) && !VARIABLE_GROUPS.some(([root]) => root === name))
+    .map((name) => ({
+      label: name,
+      insert: name,
+      caret: name.length,
+      kind: "variable" as const,
+      group: DATE_ROOTS.has(name)
+        ? "Date and time"
+        : VALUE_ROOTS.has(name)
+          ? "Page and visitor"
+          : "Functions",
+      detail: kindOf(scope[name]),
+      description: ROOT_DOCS[name] ?? "",
+      example: ""
+    }));
   const fns: Completion[] = GLOBAL_FUNCTIONS.map((f) => ({
     label: f.name,
     insert: `${f.name}()`,
     caret: f.name.length + 1,
     kind: "function",
+    group: "Functions",
     detail: `${f.signature} → ${f.returns}`,
     description: f.description,
     example: f.example
@@ -130,11 +229,32 @@ function rootItems(scope: Readonly<Record<string, unknown>>): Completion[] {
     insert: name,
     caret: name.length,
     kind: "namespace",
+    group: DATE_ROOTS.has(name) ? "Date and time" : "Functions",
     detail: "namespace",
     description: space.description,
     example: ""
   }));
-  return [...names, ...spaces, ...fns];
+  return [...variables, ...names, ...spaces, ...fns];
+}
+
+/** Items sorted by heading, then those whose name starts with the typed word, in catalog order. */
+function arrange(items: Completion[], word: string): Completion[] {
+  const q = word.toLowerCase();
+  const rank = (group: string) => {
+    const i = COMPLETION_GROUP_ORDER.indexOf(group);
+    return i === -1 ? COMPLETION_GROUP_ORDER.length : i;
+  };
+  const name = (i: Completion) => i.label.toLowerCase().split(".").pop() ?? "";
+  const matching = q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items;
+  return matching
+    .map((item, index) => ({ item, index }))
+    .sort(
+      (a, b) =>
+        rank(a.item.group) - rank(b.item.group) ||
+        Number(!name(a.item).startsWith(q)) - Number(!name(b.item).startsWith(q)) ||
+        a.index - b.index
+    )
+    .map((x) => x.item);
 }
 
 /**
@@ -148,19 +268,13 @@ export function completeExpression(
 ): CompletionResult {
   const word = WORD.exec(source)?.[0] ?? "";
   const from = source.length - word.length;
-  const filter = (items: Completion[]) => {
-    const q = word.toLowerCase();
-    const matching = q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items;
-    return matching.sort(
-      (a, b) =>
-        Number(!a.label.toLowerCase().startsWith(q)) - Number(!b.label.toLowerCase().startsWith(q))
-    );
-  };
+  if (insideString(source)) return { from, items: [] };
+  const filter = (items: Completion[]) => arrange(items, word);
   const dotAt = source[from - 1] === "." ? from - 1 : -1;
   if (dotAt === -1) {
     // A word right after a closing bracket or quote continues nothing.
     if (/[)\]"'`]$/.test(source.slice(0, from))) return { from, items: [] };
-    return { from, items: filter(rootItems(scope)) };
+    return { from, items: filter(rootItems(scope, options.hints)) };
   }
   const objectEnd = source[dotAt - 1] === "?" ? dotAt - 1 : dotAt;
   const objectSource = source.slice(chainStart(source, objectEnd), objectEnd).trim();
@@ -175,6 +289,7 @@ export function completeExpression(
           insert: `${f.name}()`,
           caret: f.name.length + 1,
           kind: "function" as const,
+          group: "Functions",
           detail: `${f.signature} → ${f.returns}`,
           description: f.description,
           example: f.example

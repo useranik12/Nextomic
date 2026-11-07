@@ -47,4 +47,10 @@ describe("dynamic text", () => {
     });
     expect(dynamicTextOf(value)).toBe("Hi {{param.name}}, you have {{state.count}} items");
   });
+
+  it("keeps the spaces written inside the braces", () => {
+    expect(dynamicTextOf(parseDynamicText("A {{ app.x.toUpperCase() }}"))).toBe(
+      "A {{ app.x.toUpperCase() }}"
+    );
+  });
 });

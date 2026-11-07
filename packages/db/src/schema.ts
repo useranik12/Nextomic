@@ -67,7 +67,9 @@ export const projects = pgTable("projects", {
   settings: jsonb("settings").$type<ProjectSettings>(),
   // Set by Publish, cleared by Unpublish. Visitors only ever see the published snapshots, never the draft.
   publishedAt: timestamp("published_at", { withTimezone: true }),
-  publishedSettings: jsonb("published_settings").$type<ProjectSettings>()
+  publishedSettings: jsonb("published_settings").$type<ProjectSettings>(),
+  // A publish set to run later. The first read after this moment publishes the saved draft.
+  scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true })
 });
 
 export const pages = pgTable(

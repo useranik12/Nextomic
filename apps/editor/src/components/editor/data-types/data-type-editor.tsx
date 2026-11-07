@@ -1,13 +1,30 @@
 "use client";
 
 import { FIELD_TYPES, newDataTypeField, type DataType, type DataTypeField } from "@nextomic/schema";
+import { useMemo } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { compactFieldClass } from "../right-panel/setting-row";
 import { IdentifierInput } from "./identifier-input";
+import { useEditorStore } from "../store/editor-store";
 import { TypePicker } from "./type-picker";
 
-const GRID = "grid-cols-[minmax(9rem,1fr)_minmax(11rem,1fr)_7rem_minmax(9rem,1.2fr)_2rem]";
+const GRID = "grid-cols-[minmax(9rem,1fr)_minmax(14rem,1.5fr)_6.5rem_minmax(9rem,1.2fr)_2rem]";
+
+/** A data type and every data type that contains it (directly or through others). */
+function containing(id: string, types: readonly DataType[]): string[] {
+  const found = new Set([id]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const t of types)
+      if (!found.has(t.id) && t.fields.some((f) => f.type === "dataType" && found.has(f.ref))) {
+        found.add(t.id);
+        grew = true;
+      }
+  }
+  return [...found];
+}
 
 /** The fields of a custom data type: name, type (anything but a Supabase row), list, description. */
 export function DataTypeEditor({
@@ -17,6 +34,9 @@ export function DataTypeEditor({
   value: DataType;
   onChange: (next: DataType) => void;
 }) {
+  // A field cannot use its own data type, or a type that contains it: that would never end.
+  const dataTypes = useEditorStore((s) => s.project.dataTypes);
+  const excluded = useMemo(() => containing(value.id, dataTypes), [value.id, dataTypes]);
   const setField = (id: string, next: DataTypeField) =>
     onChange({ ...value, fields: value.fields.map((f) => (f.id === id ? next : f)) });
   return (
@@ -25,7 +45,7 @@ export function DataTypeEditor({
       <div className="overflow-x-auto">
         <div className="min-w-[40rem]">
           <div
-            className={`grid ${GRID} gap-2 border-b border-divider pb-2 text-small font-medium text-default-600`}
+            className={`grid ${GRID} gap-2 border-b border-divider pb-2 text-tiny font-semibold uppercase tracking-wide text-default-500`}
           >
             <span className="px-1">Name</span>
             <span className="px-1">Type</span>
@@ -54,6 +74,7 @@ export function DataTypeEditor({
                     label={`Type of ${field.name}`}
                     spec={field}
                     types={FIELD_TYPES}
+                    excludeDataTypes={excluded}
                     onChange={(next) =>
                       setField(field.id, {
                         ...field,

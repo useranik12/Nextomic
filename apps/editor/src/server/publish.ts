@@ -11,7 +11,7 @@ import {
   type PublishedTemplate
 } from "@nextomic/schema";
 import { getDb, pages, projects, templates, user } from "@nextomic/db";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, lte } from "drizzle-orm";
 import { getProjectSettings } from "./pages";
 
 // Publishing copies the saved draft of every included page into a snapshot that visitors read.
@@ -24,6 +24,36 @@ export interface PublishState {
   publishedPages: number;
   /** True when the saved draft differs from what is live (or nothing is live yet). */
   hasUnpublishedChanges: boolean;
+  /** When a scheduled publish will run, or null. */
+  scheduledPublishAt: Date | null;
+}
+
+/**
+ * Runs the scheduled publish of a project once its time has come. The schedule is claimed with a
+ * conditional update first, so two requests at the same moment publish only once. The publish is
+ * dated at the scheduled time. Called by every reader of published or publish state.
+ */
+export async function runDuePublish(projectId: string): Promise<void> {
+  const db = getDb();
+  const [project] = await db
+    .select({ at: projects.scheduledPublishAt })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  const at = project?.at ?? null;
+  if (!at || at.getTime() > Date.now()) return;
+  const claimed = await db
+    .update(projects)
+    .set({ scheduledPublishAt: null })
+    .where(and(eq(projects.id, projectId), lte(projects.scheduledPublishAt, at)))
+    .returning({ id: projects.id });
+  if (claimed.length > 0) await publishProject(projectId, at);
+}
+
+/** Sets (or with null, cancels) the moment the saved draft is published. */
+export async function schedulePublish(projectId: string, at: Date | null): Promise<PublishState> {
+  await getDb().update(projects).set({ scheduledPublishAt: at }).where(eq(projects.id, projectId));
+  return getPublishState(projectId);
 }
 
 function stable(value: unknown): string {
@@ -66,11 +96,13 @@ export function templateSnapshotOf(row: {
 }
 
 export async function getPublishState(projectId: string): Promise<PublishState> {
+  await runDuePublish(projectId);
   const db = getDb();
   const [project] = await db
     .select({
       publishedAt: projects.publishedAt,
-      publishedSettings: projects.publishedSettings
+      publishedSettings: projects.publishedSettings,
+      scheduledPublishAt: projects.scheduledPublishAt
     })
     .from(projects)
     .where(eq(projects.id, projectId))
@@ -91,13 +123,17 @@ export async function getPublishState(projectId: string): Promise<PublishState> 
   return {
     publishedAt,
     publishedPages: rows.filter((row) => row.publishedSnapshot !== null).length,
-    hasUnpublishedChanges
+    hasUnpublishedChanges,
+    scheduledPublishAt: project?.scheduledPublishAt ?? null
   };
 }
 
-export async function publishProject(projectId: string): Promise<PublishState> {
+export async function publishProject(
+  projectId: string,
+  at: Date = new Date()
+): Promise<PublishState> {
   const settings = await getProjectSettings(projectId);
-  const publishedAt = new Date();
+  const publishedAt = at;
   await getDb().transaction(async (tx) => {
     const rows = await tx.select().from(pages).where(eq(pages.projectId, projectId));
     for (const row of rows) {
@@ -138,7 +174,7 @@ export async function unpublishProject(projectId: string): Promise<PublishState>
       .where(eq(templates.projectId, projectId));
     await tx
       .update(projects)
-      .set({ publishedAt: null, publishedSettings: null })
+      .set({ publishedAt: null, publishedSettings: null, scheduledPublishAt: null })
       .where(eq(projects.id, projectId));
   });
   return getPublishState(projectId);
@@ -163,6 +199,7 @@ export async function getPublishedView(
   projectId: string,
   route: string | null
 ): Promise<PublishedView | null> {
+  await runDuePublish(projectId);
   const db = getDb();
   const [project] = await db
     .select({ publishedAt: projects.publishedAt, settings: projects.publishedSettings })

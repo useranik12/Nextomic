@@ -6,6 +6,7 @@ import { TypePicker } from "../data-types/type-picker";
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
+import { DraftScope } from "../draft-scope";
 import { useEditorStore } from "../store/editor-store";
 import { DynamicBolt } from "./dynamic-bolt";
 import { MarkingGroup } from "./marking-group";
@@ -204,94 +205,107 @@ function PageParameters() {
   const editing = draft !== null;
   const params = draft ?? saved;
   const set = (next: Params) => setDraft("params", next);
+  const dirty = editing && JSON.stringify(draft) !== JSON.stringify(saved);
+  const save = () => {
+    if (draft) update({ params: draft });
+    setDraft("params", null);
+    return true;
+  };
   return (
-    <section aria-label="Page parameters" className="flex flex-col gap-2">
-      <DraftHeader
-        title="Page Parameters"
-        editing={editing}
-        dirty={editing && JSON.stringify(draft) !== JSON.stringify(saved)}
-        onEdit={() => setDraft("params", structuredClone(saved))}
-        onCancel={() => setDraft("params", null)}
-        onSave={() => {
-          if (!draft) return;
-          update({ params: draft });
-          setDraft("params", null);
-        }}
-      />
-      {params.length === 0 && !editing ? (
-        <p className="text-tiny text-default-500">No parameters.</p>
-      ) : null}
-      {params.map((param, index) => (
-        <div
-          key={index}
-          className="flex min-w-0 flex-col gap-1.5 rounded-large border border-default-200 p-2"
-        >
-          {editing ? (
-            <>
-              <div className="flex items-start gap-1">
-                <NameField
-                  label="Parameter name"
-                  value={param.name}
-                  taken={params.filter((_, i) => i !== index).map((p) => p.name)}
-                  onCommit={(name) => set(params.map((p, i) => (i === index ? { ...p, name } : p)))}
-                />
-                <RemoveButton
-                  name={param.name}
-                  onRemove={() => set(params.filter((_, i) => i !== index))}
-                />
-              </div>
-              <div className="flex min-w-0 items-center gap-1.5">
-                <TypeSelect
-                  label="Parameter type"
-                  value={param.type}
-                  onChange={(type) => set(params.map((p, i) => (i === index ? { ...p, type } : p)))}
-                />
-                <BoltInput
-                  label={`Value for ${param.name}`}
-                  placeholder="Value"
-                  value={param.defaultValue}
-                  exclude={["params", "state"]}
-                  className="flex-1"
-                  onChange={(defaultValue) =>
-                    set(params.map((p, i) => (i === index ? { ...p, defaultValue } : p)))
-                  }
-                />
-              </div>
-            </>
-          ) : (
-            <p className="min-w-0 truncate text-small text-foreground">
-              {param.name}
-              <span className="text-tiny text-default-500"> {param.type}</span>
-              {param.defaultValue ? (
-                <span className="text-tiny text-default-500"> = {param.defaultValue}</span>
-              ) : null}
-            </p>
-          )}
-        </div>
-      ))}
-      {editing ? (
-        <ActionButton
-          size="sm"
-          tone="ghost"
-          onPress={() =>
-            set([
-              ...params,
-              {
-                name: uniqueName(
-                  "param",
-                  params.map((p) => p.name)
-                ),
-                type: "string",
-                required: false,
-                defaultValue: ""
-              }
-            ])
-          }
-        >
-          Add parameter
-        </ActionButton>
-      ) : null}
-    </section>
+    <DraftScope
+      label="Page Parameters"
+      dirty={dirty}
+      onSave={save}
+      onDiscard={() => setDraft("params", null)}
+    >
+      <section aria-label="Page parameters" className="flex flex-col gap-2">
+        <DraftHeader
+          title="Page Parameters"
+          editing={editing}
+          dirty={dirty}
+          onEdit={() => setDraft("params", structuredClone(saved))}
+          onCancel={() => setDraft("params", null)}
+          onSave={save}
+        />
+        {params.length === 0 && !editing ? (
+          <p className="text-tiny text-default-500">No parameters.</p>
+        ) : null}
+        {params.map((param, index) => (
+          <div
+            key={index}
+            className="flex min-w-0 flex-col gap-1.5 rounded-large border border-default-200 p-2"
+          >
+            {editing ? (
+              <>
+                <div className="flex items-start gap-1">
+                  <NameField
+                    label="Parameter name"
+                    value={param.name}
+                    taken={params.filter((_, i) => i !== index).map((p) => p.name)}
+                    onCommit={(name) =>
+                      set(params.map((p, i) => (i === index ? { ...p, name } : p)))
+                    }
+                  />
+                  <RemoveButton
+                    name={param.name}
+                    onRemove={() => set(params.filter((_, i) => i !== index))}
+                  />
+                </div>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <TypeSelect
+                    label="Parameter type"
+                    value={param.type}
+                    onChange={(type) =>
+                      set(params.map((p, i) => (i === index ? { ...p, type } : p)))
+                    }
+                  />
+                  <BoltInput
+                    label={`Value for ${param.name}`}
+                    placeholder="Value"
+                    value={param.defaultValue}
+                    exclude={["params", "state"]}
+                    className="flex-1"
+                    onChange={(defaultValue) =>
+                      set(params.map((p, i) => (i === index ? { ...p, defaultValue } : p)))
+                    }
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="min-w-0 truncate text-small text-foreground">
+                {param.name}
+                <span className="text-tiny text-default-500"> {param.type}</span>
+                {param.defaultValue ? (
+                  <span className="text-tiny text-default-500"> = {param.defaultValue}</span>
+                ) : null}
+              </p>
+            )}
+          </div>
+        ))}
+        {editing ? (
+          <ActionButton
+            size="sm"
+            tone="ghost"
+            onPress={() =>
+              set([
+                ...params,
+                {
+                  name: uniqueName(
+                    "param",
+                    params.map((p) => p.name)
+                  ),
+                  type: "string",
+                  required: false,
+                  defaultValue: ""
+                }
+              ])
+            }
+          >
+            Add parameter
+          </ActionButton>
+        ) : null}
+      </section>
+    </DraftScope>
   );
 }
 
@@ -366,113 +380,122 @@ function StateVariables() {
   const editing = draft !== null;
   const vars = draft ?? saved;
   const set = (next: StateVars) => setDraft("state", next);
+  const dirty = editing && JSON.stringify(draft) !== JSON.stringify(saved);
+  const save = () => {
+    if (draft) update({ state: draft });
+    setDraft("state", null);
+    return true;
+  };
   return (
-    <section aria-label="Page state variables" className="flex flex-col gap-2">
-      <DraftHeader
-        title="Page State Variables"
-        editing={editing}
-        dirty={editing && JSON.stringify(draft) !== JSON.stringify(saved)}
-        onEdit={() => setDraft("state", structuredClone(saved))}
-        onCancel={() => setDraft("state", null)}
-        onSave={() => {
-          if (!draft) return;
-          update({ state: draft });
-          setDraft("state", null);
-        }}
-      />
-      {vars.length === 0 && !editing ? (
-        <p className="text-tiny text-default-500">
-          No variables yet. They reset when the page is left.
-        </p>
-      ) : null}
-      {vars.map((v, index) => (
-        <div
-          key={index}
-          className="flex flex-col gap-1.5 rounded-large border border-default-200 p-2"
-        >
-          {editing ? (
-            <>
-              <div className="flex items-start gap-1">
-                <NameField
-                  label="Variable name"
-                  value={v.name}
-                  taken={vars.filter((_, i) => i !== index).map((x) => x.name)}
-                  onCommit={(name) => set(vars.map((x, i) => (i === index ? { ...x, name } : x)))}
-                />
-                <RemoveButton
-                  name={v.name}
-                  onRemove={() => set(vars.filter((_, i) => i !== index))}
-                />
-              </div>
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                <div className="w-full">
-                  <TypePicker
-                    label="Variable type"
-                    spec={v}
-                    onChange={(next) =>
-                      set(vars.map((x, i) => (i === index ? { ...x, ...next } : x)))
+    <DraftScope
+      label="Page State Variables"
+      dirty={dirty}
+      onSave={save}
+      onDiscard={() => setDraft("state", null)}
+    >
+      <section aria-label="Page state variables" className="flex flex-col gap-2">
+        <DraftHeader
+          title="Page State Variables"
+          editing={editing}
+          dirty={dirty}
+          onEdit={() => setDraft("state", structuredClone(saved))}
+          onCancel={() => setDraft("state", null)}
+          onSave={save}
+        />
+        {vars.length === 0 && !editing ? (
+          <p className="text-tiny text-default-500">
+            No variables yet. They reset when the page is left.
+          </p>
+        ) : null}
+        {vars.map((v, index) => (
+          <div
+            key={index}
+            className="flex flex-col gap-1.5 rounded-large border border-default-200 p-2"
+          >
+            {editing ? (
+              <>
+                <div className="flex items-start gap-1">
+                  <NameField
+                    label="Variable name"
+                    value={v.name}
+                    taken={vars.filter((_, i) => i !== index).map((x) => x.name)}
+                    onCommit={(name) => set(vars.map((x, i) => (i === index ? { ...x, name } : x)))}
+                  />
+                  <RemoveButton
+                    name={v.name}
+                    onRemove={() => set(vars.filter((_, i) => i !== index))}
+                  />
+                </div>
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <div className="w-full">
+                    <TypePicker
+                      label="Variable type"
+                      spec={v}
+                      onChange={(next) =>
+                        set(vars.map((x, i) => (i === index ? { ...x, ...next } : x)))
+                      }
+                    />
+                  </div>
+                  <Checkbox
+                    size="sm"
+                    isSelected={v.isList}
+                    onValueChange={(isList) =>
+                      set(vars.map((x, i) => (i === index ? { ...x, isList } : x)))
+                    }
+                  >
+                    <span className="text-tiny">List</span>
+                  </Checkbox>
+                  <BoltInput
+                    label={`Default value for ${v.name}`}
+                    placeholder="Default value"
+                    value={typeof v.defaultValue === "string" ? v.defaultValue : ""}
+                    exclude={["state"]}
+                    className="w-full"
+                    onChange={(defaultValue) =>
+                      set(vars.map((x, i) => (i === index ? { ...x, defaultValue } : x)))
                     }
                   />
                 </div>
-                <Checkbox
-                  size="sm"
-                  isSelected={v.isList}
-                  onValueChange={(isList) =>
-                    set(vars.map((x, i) => (i === index ? { ...x, isList } : x)))
-                  }
-                >
-                  <span className="text-tiny">List</span>
-                </Checkbox>
-                <BoltInput
-                  label={`Default value for ${v.name}`}
-                  placeholder="Default value"
-                  value={typeof v.defaultValue === "string" ? v.defaultValue : ""}
-                  exclude={["state"]}
-                  className="w-full"
-                  onChange={(defaultValue) =>
-                    set(vars.map((x, i) => (i === index ? { ...x, defaultValue } : x)))
-                  }
-                />
-              </div>
-            </>
-          ) : (
-            <p className="min-w-0 truncate text-small text-foreground">
-              {v.name}
-              <span className="text-tiny text-default-500">
-                {" "}
-                {v.type}
-                {v.isList ? " list" : ""}
-              </span>
-              {typeof v.defaultValue === "string" && v.defaultValue ? (
-                <span className="text-tiny text-default-500"> = {v.defaultValue}</span>
-              ) : null}
-            </p>
-          )}
-        </div>
-      ))}
-      {editing ? (
-        <ActionButton
-          size="sm"
-          tone="ghost"
-          onPress={() =>
-            set([
-              ...vars,
-              {
-                name: uniqueName(
-                  "variable",
-                  vars.map((x) => x.name)
-                ),
-                type: "string",
-                isList: false,
-                ref: ""
-              }
-            ])
-          }
-        >
-          Add Variable
-        </ActionButton>
-      ) : null}
-    </section>
+              </>
+            ) : (
+              <p className="min-w-0 truncate text-small text-foreground">
+                {v.name}
+                <span className="text-tiny text-default-500">
+                  {" "}
+                  {v.type}
+                  {v.isList ? " list" : ""}
+                </span>
+                {typeof v.defaultValue === "string" && v.defaultValue ? (
+                  <span className="text-tiny text-default-500"> = {v.defaultValue}</span>
+                ) : null}
+              </p>
+            )}
+          </div>
+        ))}
+        {editing ? (
+          <ActionButton
+            size="sm"
+            tone="ghost"
+            onPress={() =>
+              set([
+                ...vars,
+                {
+                  name: uniqueName(
+                    "variable",
+                    vars.map((x) => x.name)
+                  ),
+                  type: "string",
+                  isList: false,
+                  ref: ""
+                }
+              ])
+            }
+          >
+            Add Variable
+          </ActionButton>
+        ) : null}
+      </section>
+    </DraftScope>
   );
 }
 

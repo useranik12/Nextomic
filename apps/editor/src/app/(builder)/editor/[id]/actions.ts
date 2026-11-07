@@ -44,6 +44,7 @@ import {
 import {
   getPublishState,
   publishProject,
+  schedulePublish,
   unpublishProject,
   type PublishState
 } from "@/server/publish";
@@ -182,13 +183,16 @@ export interface PublishInfo {
   publishedAt: number | null;
   publishedPages: number;
   hasUnpublishedChanges: boolean;
+  /** Epoch milliseconds of the scheduled publish, null when none is set. */
+  scheduledPublishAt: number | null;
 }
 
 function toInfo(state: PublishState): PublishInfo {
   return {
     publishedAt: state.publishedAt?.getTime() ?? null,
     publishedPages: state.publishedPages,
-    hasUnpublishedChanges: state.hasUnpublishedChanges
+    hasUnpublishedChanges: state.hasUnpublishedChanges,
+    scheduledPublishAt: state.scheduledPublishAt?.getTime() ?? null
   };
 }
 
@@ -207,6 +211,33 @@ export async function publishAction(projectId: string): Promise<ActionResult<Pub
     return { data: toInfo(await publishProject(projectId)), error: null };
   } catch (error) {
     return fail(error, "Could not publish the project.");
+  }
+}
+
+// A scheduled publish must be in the future and within five years.
+const scheduleSchema = z
+  .string()
+  .datetime({ offset: true })
+  .transform((iso) => new Date(iso))
+  .refine((at) => at.getTime() > Date.now(), "Pick a time in the future.")
+  .refine(
+    (at) => at.getTime() < Date.now() + 5 * 365 * 24 * 3600 * 1000,
+    "Pick a time within five years."
+  )
+  .nullable();
+
+export async function schedulePublishAction(
+  projectId: string,
+  at: string | null
+): Promise<ActionResult<PublishInfo>> {
+  try {
+    await authorize(projectId);
+    const parsed = scheduleSchema.safeParse(at);
+    if (!parsed.success)
+      return { data: null, error: parsed.error.issues[0]?.message ?? "Invalid time." };
+    return { data: toInfo(await schedulePublish(projectId, parsed.data)), error: null };
+  } catch (error) {
+    return fail(error, "Could not schedule the publish.");
   }
 }
 
