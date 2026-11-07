@@ -27,7 +27,7 @@ async function openEditor(page: Page) {
   await expect(page).toHaveURL(/\/editor\/[^/]+$/);
 }
 
-test("connect Supabase with the anon key, fetch, star, browse and clear the schema", async ({
+test("connect Supabase with the anon key, fetch, inspect and clear the schema", async ({
   page
 }) => {
   test.setTimeout(120_000);
@@ -45,15 +45,13 @@ test("connect Supabase with the anon key, fetch, star, browse and clear the sche
   await expect(page.getByLabel("Anon Key/Publishable Key")).toHaveValue("");
   expect(await page.content()).not.toContain(anonKey ?? "");
 
-  const tables = page.getByRole("list", { name: "Tables and views" });
+  await expect(page.getByText("Connected", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "Refetch Schema" })).toBeVisible();
+  const tables = page.getByRole("list", { name: "Tables" });
   await expect(tables.getByRole("button").first()).toBeVisible();
-  const star = page.getByRole("button", { name: /^Star / }).first();
-  const starName = (await star.getAttribute("aria-label"))?.replace(/^Star /, "") ?? "";
-  await star.click();
-  await expect(page.getByRole("button", { name: `Unstar ${starName}` })).toBeVisible();
-  await page.reload();
-  await page.getByRole("button", { name: "Supabase", exact: true }).click();
-  await expect(page.getByRole("button", { name: `Unstar ${starName}` })).toBeVisible();
+  // Primary keys show a key; PostgreSQL types use their short names.
+  await expect(page.getByRole("img", { name: "Primary key" }).first()).toBeVisible();
+  await expect(page.getByText("timestamp with time zone")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Clear Schema" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Clear Schema" }).click();

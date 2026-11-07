@@ -7,7 +7,8 @@ import { z } from "zod";
 
 export const STATE_TYPES = [
   "string",
-  "number",
+  "int",
+  "float",
   "boolean",
   "json",
   "timestamptz",
@@ -22,7 +23,8 @@ export type StateType = (typeof STATE_TYPES)[number];
 /** Types a custom data type's fields can have (everything except a Supabase row). */
 export const FIELD_TYPES = [
   "string",
-  "number",
+  "int",
+  "float",
   "boolean",
   "json",
   "timestamptz",
@@ -33,11 +35,12 @@ export const FIELD_TYPES = [
 ] as const satisfies readonly StateType[];
 
 /** Types a page parameter (a value from the address) can have. */
-export const PARAM_TYPES = ["string", "number", "boolean", "timestamptz"] as const;
+export const PARAM_TYPES = ["string", "int", "float", "boolean", "timestamptz"] as const;
 
 export const STATE_TYPE_LABELS: Record<StateType, string> = {
   string: "String",
-  number: "Number",
+  int: "Int",
+  float: "Float",
   boolean: "Boolean",
   json: "JSON",
   timestamptz: "Timestamptz",
@@ -52,9 +55,10 @@ export const STATE_TYPE_LABELS: Record<StateType, string> = {
 export const REF_TYPES: ReadonlySet<StateType> = new Set(["enum", "dataType", "supabaseRow"]);
 
 // Types of the first State build read as their replacements.
+// Number became Int and Float; an old Number reads as Float, which accepts every number it held.
 const LEGACY_TYPES: Record<string, StateType> = {
-  integer: "number",
-  float: "number",
+  number: "float",
+  integer: "int",
   datetime: "timestamptz",
   date: "timestamptz",
   time: "timestamptz"
@@ -74,6 +78,7 @@ export const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 /** Names that clash with JavaScript or with the dynamic data groups. */
 export const RESERVED_STATE_NAMES: ReadonlySet<string> = new Set([
   "app",
+  "nextomic",
   "const",
   "constants",
   "state",
@@ -183,7 +188,7 @@ export interface TypeSpec {
   ref: string;
 }
 
-/** "String", "Number list", "Enum Size", "Data Type Address list" for display. */
+/** "String", "Int[]", "Enum Size", "Data Type Address[]" for display. */
 export function describeType(spec: TypeSpec, registry?: TypeRegistry): string {
   const refName =
     spec.type === "enum"
@@ -196,7 +201,7 @@ export function describeType(spec: TypeSpec, registry?: TypeRegistry): string {
   const base = refName
     ? `${STATE_TYPE_LABELS[spec.type]} ${refName}`
     : STATE_TYPE_LABELS[spec.type];
-  return spec.isList ? `${base} list` : base;
+  return spec.isList ? `${base}[]` : base;
 }
 
 // ---------------------------------------------------------------- value checks
@@ -230,7 +235,11 @@ function valueProblem(
   switch (spec.type) {
     case "string":
       return typeof value === "string" ? null : "Expected text.";
-    case "number":
+    case "int":
+      return typeof value === "number" && Number.isInteger(value)
+        ? null
+        : "Expected a whole number.";
+    case "float":
       return typeof value === "number" && Number.isFinite(value) ? null : "Expected a number.";
     case "boolean":
       return typeof value === "boolean" ? null : "Expected true or false.";
@@ -286,8 +295,9 @@ export function parseStateValue(spec: Pick<TypeSpec, "type" | "isList">, text: s
   };
   if (spec.isList) return json();
   switch (spec.type) {
-    case "number":
-      return trimmed === "" ? undefined : Number(trimmed);
+    case "int":
+    case "float":
+      return trimmed === "" || Number.isNaN(Number(trimmed)) ? undefined : Number(trimmed);
     case "boolean":
       return trimmed === "true" ? true : trimmed === "false" ? false : text;
     case "json":
@@ -313,9 +323,11 @@ export function checkStateValue(
   if (value === undefined)
     return spec.isList
       ? 'A list is written as a JSON array, for example ["a", "b"].'
-      : spec.type === "number"
-        ? "Expected a number."
-        : "That is not valid JSON.";
+      : spec.type === "int"
+        ? "Expected a whole number."
+        : spec.type === "float"
+          ? "Expected a number."
+          : "That is not valid JSON.";
   return valueProblem(spec, value, registry, 0);
 }
 

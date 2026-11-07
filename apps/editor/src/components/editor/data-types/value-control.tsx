@@ -202,10 +202,16 @@ export function ValueControl({
       <input
         aria-label={label}
         aria-invalid={Boolean(problem)}
-        inputMode={spec.type === "number" ? "decimal" : undefined}
+        inputMode={spec.type === "int" ? "numeric" : spec.type === "float" ? "decimal" : undefined}
         type={spec.type === "url" ? "url" : "text"}
         placeholder={
-          spec.type === "number" ? "0" : spec.type === "url" ? "https://… or /path" : "Text"
+          spec.type === "int"
+            ? "0"
+            : spec.type === "float"
+              ? "0.0"
+              : spec.type === "url"
+                ? "https://… or /path"
+                : "Text"
         }
         value={draft}
         onChange={(e) => commit(e.target.value)}

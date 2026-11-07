@@ -1,5 +1,6 @@
 import {
   nextomicTypeOf,
+  shortPgType,
   splitArrayType,
   type SupabaseColumn,
   type SupabaseFunction,
@@ -77,7 +78,7 @@ function toColumn(name: string, prop: z.infer<typeof propertySchema>, required: 
   const enumValues = prop.enum?.filter((v): v is string => typeof v === "string") ?? null;
   const column: SupabaseColumn = {
     name,
-    pgType: isList ? `${base}[]` : base,
+    pgType: isList ? `${shortPgType(base)}[]` : shortPgType(base),
     type: nextomicTypeOf(base),
     isList,
     nullable: !required.has(name),

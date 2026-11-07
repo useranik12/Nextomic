@@ -37,6 +37,22 @@ export const templateMetaSchema = z.object({
 });
 export type TemplateMeta = z.infer<typeof templateMetaSchema>;
 
+/** Builder account data offered as {{nextomic.user.*}}. No tokens or secrets, ever. */
+export const nextomicUserSchema = z.object({
+  id: z.string().max(200),
+  name: z.string().max(200),
+  email: z.string().max(320),
+  image: z.string().max(2000),
+  /** Workspace role: owner, admin or member. */
+  role: z.string().max(32),
+  emailVerified: z.boolean(),
+  twoFactorEnabled: z.boolean(),
+  /** Number of passkeys on the account. */
+  passkeys: z.number().int().min(0),
+  createdAt: z.string().max(40)
+});
+export type NextomicUser = z.infer<typeof nextomicUserSchema>;
+
 export const dynamicContextSchema = z.object({
   page: z.object({
     name: z.string().max(200),
@@ -86,17 +102,34 @@ export const dynamicContextSchema = z.object({
       })
     )
     .default({}),
-  /** The signed-in visitor, if any. Empty fields while nobody is signed in. */
+  /** The signed-in user of the built app, if any. Empty fields while nobody is signed in. */
   user: z
     .object({
       id: z.string().max(200).default(""),
       email: z.string().max(320).default(""),
+      phone: z.string().max(40).default(""),
+      emailVerified: z.boolean().default(false),
       name: z.string().max(200).default(""),
       role: z.string().max(64).default("")
     })
-    .nullable()
+    .nullable(),
+  /** The builder user (Nextomic account) viewing the editor or preview; null on live sites. */
+  nextomicUser: nextomicUserSchema.nullable().default(null)
 });
 export type DynamicContext = z.infer<typeof dynamicContextSchema>;
+
+const EMPTY_APP_USER = { id: "", email: "", phone: "", emailVerified: false, name: "", role: "" };
+const EMPTY_NEXTOMIC_USER: NextomicUser = {
+  id: "",
+  name: "",
+  email: "",
+  image: "",
+  role: "",
+  emailVerified: false,
+  twoFactorEnabled: false,
+  passkeys: 0,
+  createdAt: ""
+};
 
 function flatten(value: PropValue | undefined): string {
   if (value === undefined || value === null) return "";
@@ -127,6 +160,7 @@ export interface DynamicContextInput {
   nowIso?: string;
   timeZone?: string;
   user?: DynamicContext["user"];
+  nextomicUser?: NextomicUser | null;
   /** The page tree, so element attributes and props can be read by ID. */
   tree?: ElementNode;
 }
@@ -203,7 +237,8 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
       query
     },
     elements: input.tree ? elementValues(input.tree) : {},
-    user: input.user ?? null
+    user: input.user ?? null,
+    nextomicUser: input.nextomicUser ?? null
   };
 }
 
@@ -249,7 +284,8 @@ export function expressionScope(context: DynamicContext): Record<string, unknown
     page: context.page,
     template: context.template ?? {},
     request: context.request,
-    user: context.user ?? { id: "", email: "", name: "", role: "" },
+    user: { ...EMPTY_APP_USER, ...context.user, loggedIn: context.user !== null },
+    nextomic: { user: context.nextomicUser ?? EMPTY_NEXTOMIC_USER },
     env: { mode: context.mode },
     now: { iso: context.nowIso, date: when.date, time: when.time, year: when.year },
     param: typedGroup(context.params, context.types, "param"),

@@ -2,6 +2,7 @@
 
 import { buildDynamicContext, type DynamicContext } from "@nextomic/schema";
 import { useMemo } from "react";
+import { useNextomicUser } from "./nextomic-user-store";
 import { useEditorStore } from "./store/editor-store";
 
 /**
@@ -12,6 +13,7 @@ export function useEditorDynamicContext(): DynamicContext | null {
   const doc = useEditorStore((s) => s.doc);
   const appState = useEditorStore((s) => s.project.appState);
   const constants = useEditorStore((s) => s.project.constants);
+  const nextomicUser = useNextomicUser((s) => s.user);
   return useMemo(
     () =>
       doc
@@ -20,9 +22,10 @@ export function useEditorDynamicContext(): DynamicContext | null {
             tree: doc.tree,
             mode: "editor",
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            globals: { appState, constants }
+            globals: { appState, constants },
+            nextomicUser
           })
         : null,
-    [doc, appState, constants]
+    [doc, appState, constants, nextomicUser]
   );
 }

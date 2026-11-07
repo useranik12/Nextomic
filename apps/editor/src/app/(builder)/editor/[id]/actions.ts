@@ -19,6 +19,7 @@ import {
 import {
   classUsageInOtherPages,
   createPage,
+  setHomePage,
   deletePage,
   duplicatePage,
   getPage,
@@ -379,5 +380,19 @@ export async function renameStateTagAction(
     return { data: updated, error: null };
   } catch (error) {
     return fail(error, "Could not update the other pages and templates.");
+  }
+}
+
+export async function setHomePageAction(
+  projectId: string,
+  pageId: string
+): Promise<ActionResult<null>> {
+  try {
+    await authorize(projectId);
+    const ok = await setHomePage(projectId, z.string().min(1).max(64).parse(pageId));
+    if (!ok) return { data: null, error: "That page was not found." };
+    return { data: null, error: null };
+  } catch (error) {
+    return fail(error, "Could not set the home page.");
   }
 }

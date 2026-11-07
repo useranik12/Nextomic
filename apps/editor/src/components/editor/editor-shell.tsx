@@ -1,6 +1,6 @@
 "use client";
 
-import type { ProjectSettings } from "@nextomic/schema";
+import type { NextomicUser, ProjectSettings } from "@nextomic/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import { listTemplatesAction } from "@/app/(builder)/editor/[id]/library-actions";
@@ -28,6 +28,7 @@ import { useAutosave } from "./use-autosave";
 import { VersionHistory } from "./version-history";
 import { StateManager } from "./state/state-manager";
 import { DataTypesManager } from "./data-types/data-types-manager";
+import { useNextomicUser } from "./nextomic-user-store";
 import { SupabasePage } from "./supabase/supabase-page";
 import { useSupabaseTables } from "./supabase/supabase-store";
 import { ExpressionAssist } from "./expression/expression-assist";
@@ -83,7 +84,8 @@ export function EditorShell({
   project,
   initialPages,
   initialPage,
-  supabaseTables
+  supabaseTables,
+  nextomicUser
 }: {
   projectId: string;
   project: ProjectSettings;
@@ -91,6 +93,8 @@ export function EditorShell({
   initialPage: StoredPage;
   /** Tables and views of the saved Supabase schema, for the Supabase Row type. */
   supabaseTables: string[];
+  /** The signed-in builder account, for {{nextomic.user.*}}. */
+  nextomicUser: NextomicUser | null;
 }) {
   const [ready, setReady] = useState(false);
   const navigatorWidth = usePanelWidth("nxt:navigator-width", NAVIGATOR_MIN, NAVIGATOR_MIN);
@@ -127,6 +131,7 @@ export function EditorShell({
     const store = useEditorStore.getState();
     store.init(projectId, project);
     useSupabaseTables.getState().setTables(supabaseTables);
+    useNextomicUser.setState({ user: nextomicUser });
     store.loadPage(
       { id: initialPage.id, version: initialPage.version },
       {
@@ -137,7 +142,7 @@ export function EditorShell({
       }
     );
     setReady(true);
-  }, [projectId, project, initialPage, supabaseTables]);
+  }, [projectId, project, initialPage, supabaseTables, nextomicUser]);
 
   // One left panel at a time: with the Navigator open the section rail is folded to its icons, and
   // selecting an element closes the Elements popup (an insert selects the new element). Other
@@ -284,7 +289,7 @@ export function EditorShell({
             ) : rail === "history" ? (
               <VersionHistory saveNow={saveNow} />
             ) : rail === "app-settings" ? (
-              <AppSettings />
+              <AppSettings pages={pages} onPagesChange={setPages} />
             ) : (
               <div className="p-4">
                 <h2 className="text-small font-medium">{railLabel}</h2>

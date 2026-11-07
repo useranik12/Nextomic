@@ -1,5 +1,6 @@
 import {
   defaultPageSettings,
+  newPageRequiresAuth,
   defaultProjectSettings,
   countClassUsage,
   countFamilyInTree,
@@ -133,7 +134,13 @@ export async function createPage(
   userId: string,
   input: { name: string; route: string; isHome?: boolean }
 ): Promise<StoredPage | "route-taken"> {
-  const settings = { ...defaultPageSettings(), isHome: input.isHome ?? false };
+  const project = await getProjectSettings(projectId);
+  const settings = {
+    ...defaultPageSettings(),
+    isHome: input.isHome ?? false,
+    // App Settings > Authentication can make new pages require sign-in.
+    requiresAuth: newPageRequiresAuth(project.appAuth)
+  };
   try {
     return await getDb().transaction(async (tx) => {
       const [row] = await tx
@@ -480,4 +487,25 @@ export async function fontUsageInOtherPages(
     }
   }
   return counts;
+}
+
+/** Makes one page the project's home page; every other page stops being home. */
+export async function setHomePage(projectId: string, pageId: string): Promise<boolean> {
+  return getDb().transaction(async (tx) => {
+    const [target] = await tx
+      .select({ id: pages.id })
+      .from(pages)
+      .where(and(eq(pages.id, pageId), eq(pages.projectId, projectId)))
+      .limit(1);
+    if (!target) return false;
+    await tx
+      .update(pages)
+      .set({ settings: sql`jsonb_set(${pages.settings}, '{isHome}', 'false'::jsonb)` })
+      .where(and(eq(pages.projectId, projectId), ne(pages.id, pageId)));
+    await tx
+      .update(pages)
+      .set({ settings: sql`jsonb_set(${pages.settings}, '{isHome}', 'true'::jsonb)` })
+      .where(eq(pages.id, pageId));
+    return true;
+  });
 }

@@ -14,9 +14,12 @@ export function SupabaseCard({
   title,
   description,
   aside,
+  badge,
   children
 }: {
   title: string;
+  /** Shown beside the title, e.g. the connection status. */
+  badge?: ReactNode;
   description?: string;
   aside?: ReactNode;
   children: ReactNode;
@@ -28,7 +31,10 @@ export function SupabaseCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h2 className="text-medium font-medium text-foreground">{title}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-medium font-medium text-foreground">{title}</h2>
+            {badge}
+          </div>
           {description ? <p className="text-small text-default-500">{description}</p> : null}
         </div>
         {aside}

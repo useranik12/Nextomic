@@ -19,6 +19,7 @@ import { headers } from "next/headers";
 import { cache } from "react";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
+import { currentNextomicUser } from "@/server/nextomic-user";
 import { getPageByRoute, getProjectSettings, listPages, type StoredPage } from "@/server/pages";
 import { requestFacts } from "@/server/request-facts";
 import {
@@ -207,6 +208,7 @@ export default async function PreviewPage({
     layoutForPage({
       tree: page.tree,
       templates: draftTemplates,
+      nextomicUser: await currentNextomicUser(),
       settings,
       page: {
         id: page.id,

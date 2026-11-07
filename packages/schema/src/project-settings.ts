@@ -1,3 +1,4 @@
+import { appAuthSettingsSchema, defaultAppAuthSettings } from "./app-auth";
 import { emptyTaxonomy, taxonomySchema } from "./taxonomy";
 import { z } from "zod";
 import { DEFAULT_BREAKPOINTS, breakpointListSchema } from "./breakpoint";
@@ -73,7 +74,9 @@ export const projectSettingsSchema = z.object({
   constants: constantListSchema.default([]),
   // Enums and custom data types made in the app (Data Types page); variables refer to them by id.
   enums: appEnumListSchema.default([]),
-  dataTypes: dataTypeListSchema.default([])
+  dataTypes: dataTypeListSchema.default([]),
+  // Authentication of the built app (App Settings > Authentication).
+  appAuth: appAuthSettingsSchema.default({})
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -104,5 +107,6 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   appState: [],
   constants: [],
   enums: [],
-  dataTypes: []
+  dataTypes: [],
+  appAuth: defaultAppAuthSettings()
 });

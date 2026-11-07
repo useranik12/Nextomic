@@ -68,7 +68,7 @@ function BucketBrowser({
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col gap-3">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-mono text-medium font-semibold text-foreground">{bucket.name}</h3>
         <Chip size="sm" variant="flat" color={bucket.public ? "success" : "default"}>
@@ -107,7 +107,7 @@ function BucketBrowser({
           This folder is empty, or the anon key may not list it.
         </p>
       ) : (
-        <ul className="flex max-h-80 flex-col overflow-y-auto">
+        <ul className="flex min-h-0 flex-col overflow-y-auto">
           {entries.map((entry) => {
             const full = prefix ? `${prefix}/${entry.name}` : entry.name;
             const url = publicUrl(baseUrl, bucket.name, full);
@@ -187,8 +187,11 @@ export function StorageCard({ projectId, model }: { projectId: string; model: Su
           </pre>
         </div>
       ) : (
-        <div className="flex flex-col gap-4 md:flex-row">
-          <ul className="flex w-full shrink-0 flex-col gap-0.5 md:w-64" aria-label="Buckets">
+        <div className="flex max-h-[700px] min-h-0 flex-col gap-4 md:flex-row">
+          <ul
+            className="flex min-h-0 w-full shrink-0 flex-col gap-0.5 overflow-y-auto md:w-64"
+            aria-label="Buckets"
+          >
             {buckets.map((b) => (
               <li key={b.name}>
                 <button

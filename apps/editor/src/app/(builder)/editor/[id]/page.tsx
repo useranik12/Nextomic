@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { supabaseTableNames } from "@/server/connectors/supabase-schema";
+import { currentNextomicUser } from "@/server/nextomic-user";
 import { EditorShell } from "@/components/editor/editor-shell";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
@@ -20,10 +21,11 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
   }
 
   await ensureHomePage(id, sessionData.user.id);
-  const [project, pages, supabaseTables] = await Promise.all([
+  const [project, pages, supabaseTables, nextomicUser] = await Promise.all([
     getProjectSettings(id),
     listPages(id),
-    supabaseTableNames(id)
+    supabaseTableNames(id),
+    currentNextomicUser()
   ]);
   const first = pages.find((page) => page.isHome) ?? pages[0];
   const page = first ? await getPage(id, first.id) : null;
@@ -36,6 +38,7 @@ export default async function EditorPage({ params }: { params: Promise<{ id: str
       initialPages={pages}
       initialPage={page}
       supabaseTables={supabaseTables}
+      nextomicUser={nextomicUser}
     />
   );
 }

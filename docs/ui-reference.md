@@ -166,7 +166,7 @@ Cards, top to bottom:
 3. Tables & Views: left list with search, right detail with columns: Field Name (with key icon for primary key and star icon for fields flagged as favorites/used), Data Type (Integer, DateTime, String, Boolean), PostgreSQL Type (int, timestamptz, text, bool).
 4. Storage: bucket list with object count badge, selected bucket shows name, Public/Private badge, folder chips, object URL with "Copy URL".
    Behavior is in `integrations.md`.
-   Built (4d) notes: Fetch Schema saves changed URL/key first (a "Discard changes" link resets them); the key field never shows the saved key, only "Saved (…tail)". The Authentication card saves with Save/Discard. Data Type uses the Nextomic type list (Number, String, Boolean, Timestamptz, JSON) instead of the mock's Integer/DateTime. Views carry a "View (read only)" label. With no buckets visible to the anon key, the Storage card shows the RLS policy to add.
+   Built (4d) notes: Fetch Schema saves changed URL/key first (a "Discard changes" link resets them); the key field never shows the saved key, only "Saved (…tail)". The Authentication card saves with Save/Discard. Data Type uses the Nextomic type list (Int, Float, String, Boolean, Timestamptz, JSON, `[]` for lists) instead of the mock's Integer/DateTime. The mock's star means a required (NOT NULL) column and is shown as a red `*`; key = primary key, link = foreign key (target under the name). Views carry a "View (read only)" label. With no buckets visible to the anon key, the Storage card shows the RLS policy to add.
 
 ### 4.5 API Data page (`pages/editor-api-data-*.png`)
 
@@ -230,7 +230,7 @@ Large modal with three columns:
 
 ### 4.9 App Settings (replicate `inspiration/flutterflow-app-settings.png`)
 
-Full-screen view opened from the bottom of the left rail. Left: title, search field, grouped nav. Right: sections with a header, description, and form fields. Items and their mapping are in `platform.md`.
+Built so far (a panel, not yet the full-screen FlutterFlow structure): Home page select at the top, the app-wide switches, and the Authentication group (Use authentication, method Supabase or Custom with a user data type, New pages require authentication, Login page, After sign-in page). Target: full-screen view opened from the bottom of the left rail. Left: title, search field, grouped nav. Right: sections with a header, description, and form fields. Items and their mapping are in `platform.md`.
 
 ### 4.10 State Management page
 
@@ -239,7 +239,7 @@ Opens from the left rail as a full page (like the Supabase page) with two tabs: 
 **App State tab** (global variables that actions can change):
 
 - Columns: Name, Type, Is List, Default Value, Persist (switch), delete. "Add Variable" button and a search field. Expanding a row shows Description, "Keep after logout" (only when Persist is on), Storage (Local storage or Cookie), and a "Where used" list with the usage count.
-- Types (any of these, each also as a list): String, Number (whole and decimal), Boolean, JSON, Timestamptz (an ISO timestamp with or without a zone), Color, URL, ENUM (one of the enums made on the Data Types page), Data Type (one of the data types made on the Data Types page), Supabase Row (a row of a fetched Supabase table or view; selectable once Supabase is connected in step 4d). ENUM, Data Type and Supabase Row show a second select for which one. Older Integer and Float become Number; DateTime, Date and Time become Timestamptz. The Default Value control changes with the type: a select for Boolean and ENUM, a color field for Color, a text field with a calendar button for Timestamptz, and a vertically resizable box with the Format icon for JSON, Data Type values and lists.
+- Types (any of these, each also as a list, shown as `Type[]`): String, Int (whole numbers only), Float (any number), Boolean, JSON, Timestamptz (an ISO timestamp with or without a zone), Color, URL, ENUM (one of the enums made on the Data Types page), Data Type (one of the data types made on the Data Types page), Supabase Row (a row of a fetched Supabase table or view; selectable once Supabase is connected in step 4d). ENUM, Data Type and Supabase Row show a second select for which one. Older Number becomes Float and Integer becomes Int; DateTime, Date and Time become Timestamptz. The Default Value control changes with the type: a select for Boolean and ENUM, a color field for Color, a text field with a calendar button for Timestamptz, and a vertically resizable box with the Format icon for JSON, Data Type values and lists.
 - **Persist:** when on, the value is saved in the visitor's browser and restored the next time the site opens, even after the browser or tab is closed. It stays until the visitor logs out (default) or clears site data. Details and limits are in `dynamic-data-and-actions.md` section 5.
 
 **Constants tab** (fixed values; read-only at runtime):

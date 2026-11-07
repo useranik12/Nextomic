@@ -38,16 +38,12 @@ describe("structureFromResources", () => {
     }
   ];
 
-  it("keeps valid resources, drops malformed ones and keeps only live stars", () => {
-    const structure = structureFromResources(resources, "public", {
-      users: ["email", "gone"],
-      dropped_table: ["x"]
-    });
+  it("keeps valid resources and drops malformed ones", () => {
+    const structure = structureFromResources(resources, "public");
     expect(structure.tables.map((t) => t.name)).toEqual(["users"]);
     expect(structure.functions.map((f) => f.name)).toEqual(["f"]);
     expect(structure.buckets).toEqual([
       { name: "b", public: true, objectCount: 3, countCapped: false }
     ]);
-    expect(structure.favorites).toEqual({ users: ["email"] });
   });
 });

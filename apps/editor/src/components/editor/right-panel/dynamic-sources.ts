@@ -97,12 +97,38 @@ const BUILT_IN: DynamicGroup[] = [
   },
   {
     id: "user",
-    label: "Signed-in user",
+    label: "User",
     tags: [
-      { token: "user.id", label: "User ID", hint: "text" },
+      { token: "user.id", label: "User ID (uid)", hint: "text" },
       { token: "user.email", label: "Email", hint: "text" },
-      { token: "user.name", label: "Name", hint: "text" },
-      { token: "user.role", label: "Role", hint: "text" }
+      { token: "user.phone", label: "Phone", hint: "text" },
+      { token: "user.emailVerified", label: "Email verified", hint: "true or false" },
+      {
+        token: "user.loggedIn",
+        label: "Logged in",
+        hint: "true or false",
+        help: "The signed-in user of the built app (App Settings > Authentication). Empty while nobody is signed in. Session tokens are never available here; queries send them for you."
+      }
+    ]
+  },
+  {
+    id: "nextomic-user",
+    label: "Nextomic User",
+    tags: [
+      { token: "nextomic.user.id", label: "User ID", hint: "text" },
+      { token: "nextomic.user.name", label: "Name", hint: "text" },
+      { token: "nextomic.user.email", label: "Email", hint: "text" },
+      { token: "nextomic.user.image", label: "Profile image", hint: "URL" },
+      { token: "nextomic.user.role", label: "Workspace role", hint: "owner, admin or member" },
+      { token: "nextomic.user.emailVerified", label: "Email verified", hint: "true or false" },
+      { token: "nextomic.user.twoFactorEnabled", label: "Two-factor on", hint: "true or false" },
+      { token: "nextomic.user.passkeys", label: "Passkeys", hint: "number" },
+      {
+        token: "nextomic.user.createdAt",
+        label: "Joined on",
+        hint: "date and time",
+        help: "Your builder (Nextomic) account. Filled in the editor and preview; empty on the live site."
+      }
     ]
   },
   {
@@ -134,7 +160,7 @@ export function dynamicGroups(
   globals?: { appState: readonly AppStateVariable[]; constants: readonly Constant[] }
 ): DynamicGroup[] {
   const groups: DynamicGroup[] = [];
-  const typeHint = (v: { type: string; isList: boolean }) => (v.isList ? `${v.type} list` : v.type);
+  const typeHint = (v: { type: string; isList: boolean }) => (v.isList ? `${v.type}[]` : v.type);
   if (globals && globals.appState.length > 0)
     groups.push({
       id: "app",
@@ -174,7 +200,7 @@ export function dynamicGroups(
       tags: settings.state.map((v) => ({
         token: `state.${v.name}`,
         label: v.name,
-        hint: v.isList ? `${v.type} list` : v.type
+        hint: v.isList ? `${v.type}[]` : v.type
       }))
     });
   return [...groups, ...BUILT_IN];

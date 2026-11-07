@@ -18,10 +18,10 @@ import {
   clearSupabaseSchema,
   fetchSupabaseSchema,
   getSupabaseSchema,
-  setSupabaseFavorite,
   type SavedSupabaseSchema
 } from "@/server/connectors/supabase-schema";
-import type { StorageEntry } from "@nextomic/integrations";
+import type { StorageEntry, TestResult } from "@nextomic/integrations";
+import { proxyConnectorCall } from "@/server/connectors/proxy";
 
 // Server actions for the Supabase (4d) and API Data (4c) pages. Secrets come back only as masks.
 
@@ -110,19 +110,6 @@ export async function clearSupabaseSchemaAction(
   }
 }
 
-export async function setSupabaseFavoriteAction(
-  projectId: string,
-  connectorId: string,
-  input: { table: string; column: string; starred: boolean }
-): Promise<ActionResult<Record<string, string[]>>> {
-  try {
-    await authorizeProject(projectId);
-    return { data: await setSupabaseFavorite(projectId, connectorId, input), error: null };
-  } catch (error) {
-    return failResult(error, "Could not save the star.");
-  }
-}
-
 export async function browseSupabaseBucketAction(
   projectId: string,
   connectorId: string,
@@ -142,5 +129,23 @@ export async function browseSupabaseBucketAction(
     };
   } catch (error) {
     return failResult(error, "Could not list the bucket.");
+  }
+}
+
+/** Runs the connection test (rate limited and audited like every connector call). */
+export async function testSupabaseAction(
+  projectId: string,
+  connectorId: string
+): Promise<ActionResult<TestResult>> {
+  try {
+    const { userId, workspaceId } = await authorizeProjectMember(projectId);
+    const result = await proxyConnectorCall({ userId, workspaceId, projectId }, connectorId, {
+      op: "test"
+    });
+    if (!result.ok)
+      return { data: { ok: false, message: result.error.message, latencyMs: 0 }, error: null };
+    return { data: result.data as TestResult, error: null };
+  } catch (error) {
+    return failResult(error, "Could not test the connection.");
   }
 }
