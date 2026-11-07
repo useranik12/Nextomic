@@ -28,6 +28,27 @@ export const DEFAULT_TEMPLATES: Record<EmailKind, EmailTemplate> = {
       `<p>Hi {{name}},</p><p>Use the button below to choose a new password. If you did not ask for this, ignore this email.</p>${button("Reset password")}<p style="color:#71717a;font-size:13px">Or open this link: {{url}}</p>`
     ),
     text: "Hi {{name}},\n\nUse this link to choose a new password. If you did not ask for this, ignore this email.\n\n{{url}}\n"
+  },
+  "magic-link": {
+    subject: "Your {{appName}} sign-in link",
+    html: shell(
+      `<p>Use the button below to sign in to {{appName}}. The link works once and expires in 5 minutes. If you did not ask for it, ignore this email.</p>${button("Sign in")}<p style="color:#71717a;font-size:13px">Or open this link: {{url}}</p>`
+    ),
+    text: "Use this link to sign in to {{appName}}. It works once and expires in 5 minutes. If you did not ask for it, ignore this email.\n\n{{url}}\n"
+  },
+  "otp-code": {
+    subject: "Your {{appName}} code: {{code}}",
+    html: shell(
+      `<p>Your code to {{purpose}}:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:12px 0">{{code}}</p><p style="color:#71717a;font-size:13px">It expires in 10 minutes. If you did not ask for it, ignore this email.</p>`
+    ),
+    text: "Your code to {{purpose}}: {{code}}\n\nIt expires in 10 minutes. If you did not ask for it, ignore this email.\n"
+  },
+  "email-change": {
+    subject: "Confirm your new {{appName}} email",
+    html: shell(
+      `<p>Hi {{name}},</p><p>Enter this code in {{appName}} to make {{newEmail}} your account email:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:12px 0">{{code}}</p><p style="color:#71717a;font-size:13px">It expires in 10 minutes. If you did not ask for this, ignore this email.</p>`
+    ),
+    text: "Hi {{name}},\n\nEnter this code in {{appName}} to make {{newEmail}} your account email: {{code}}\n\nIt expires in 10 minutes. If you did not ask for this, ignore this email.\n"
   }
 };
 

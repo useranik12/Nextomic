@@ -13,7 +13,7 @@ test("sign up, create a project, open its placeholder editor", async ({ page }) 
   await page.goto("/sign-up");
   await page.getByLabel("Name").fill("Test User");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple");
+  await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple-9");
   await page.getByRole("button", { name: "Sign up" }).click();
 
   // Without SMTP_HOST, verification is not required (see lib/auth.ts), so sign-up signs the user

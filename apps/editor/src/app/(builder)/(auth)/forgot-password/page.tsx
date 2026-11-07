@@ -51,7 +51,11 @@ export default function ForgotPasswordPage() {
           isRequired
           autoComplete="email"
           value={email}
-          onValueChange={setEmail}
+          validationBehavior="aria"
+          onValueChange={(value) => {
+            setEmail(value);
+            setError(null);
+          }}
           isInvalid={Boolean(error)}
         />
         <AuthError message={error} />

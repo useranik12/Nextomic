@@ -124,7 +124,16 @@ describe("templates", () => {
         ...`${template.subject}${template.html}${template.text}`.matchAll(/\{\{(\w+)\}\}/g)
       ].map((m) => m[1]);
       for (const name of used)
-        expect(["name", "email", "url", "appName", "accountName"]).toContain(name);
+        expect([
+          "name",
+          "email",
+          "url",
+          "appName",
+          "accountName",
+          "code",
+          "purpose",
+          "newEmail"
+        ]).toContain(name);
     }
   });
 });

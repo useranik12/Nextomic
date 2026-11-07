@@ -13,6 +13,26 @@ Builder authentication (this doc) is for people who use the builder. Authenticat
 - Sessions: secure, httpOnly cookies, configurable expiry, list/revoke sessions.
 - Use Better Auth's own plugins for passkey, organization/roles, and rate limiting. Verify plugin names and options against the current Better Auth docs before coding.
 
+### 1.1 What is built (account security)
+
+- **Sign in:** email + password with a "Remember me" checkbox (checked by default). Unchecked, the session cookie lasts only for the browser session. Errors clear as soon as a field changes, and the Sign in button is never left disabled by an error.
+- **Magic link:** "Email me a link" (secondary, ghost button) emails a one-time sign-in link to an existing account (`magicLink` plugin, sign-up through links is off).
+- **Passkeys:** "Use a passkey" on the sign-in page; add, list and remove passkeys in Settings > Security (`passkey` plugin). The relying party ID is the host of `BETTER_AUTH_URL`, so passkeys only work on that domain.
+- **Two-factor (TOTP):** Settings > Security > Turn on asks for the password, shows a QR code, the key and backup codes, then turns on only after a valid 6-digit code. Sign-in then continues on `/two-factor` (authenticator code or backup code, optional "Trust this device"). Turning off and new backup codes need the password.
+- **Change email:** Settings > Profile > Change email sends a 6-digit code (10 minutes, 5 tries, 5 requests per 10 minutes) to the NEW address; the email changes only after the code is confirmed. The code is stored hashed.
+- **Change password:** Settings > Security > Password sends a 6-digit code to the account email (`emailOTP` plugin, type `forget-password`); code + new password save it.
+- **Profile:** name and image change only when Save is pressed; Discard drops the pending change.
+- **Password policy:** `AUTH_PASSWORD_POLICY` env variable, checked on the server for sign up, reset and change (a `hooks.before` check) and shown live as a strength meter:
+
+| Value              | Rule                                                                       |
+| ------------------ | -------------------------------------------------------------------------- |
+| `basic`            | at least 8 characters                                                      |
+| `medium` (default) | at least 10 characters, a lowercase letter and a number                    |
+| `strong`           | at least 12 characters, upper and lowercase letters, a number and a symbol |
+| `very-strong`      | at least 16 characters, upper and lowercase letters, a number and a symbol |
+
+Maximum length is 128. Existing passwords keep working; the rule applies whenever a password is set.
+
 ## 2. Roles and project members
 
 - Workspace roles: owner, admin, member. Project roles: owner, editor, designer, content editor, viewer.

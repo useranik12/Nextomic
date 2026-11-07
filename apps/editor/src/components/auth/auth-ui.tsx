@@ -62,3 +62,16 @@ export function AuthCard({ title, description, children }: AuthCardProps) {
     </div>
   );
 }
+
+export function AuthNotice({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <p
+      role="status"
+      className="flex items-start gap-2 rounded-2xl border-2 border-success/40 bg-success/10 px-4 py-3 text-small text-success-600"
+    >
+      <Icon name="ph:check-circle" width={18} height={18} className="mt-0.5 shrink-0" />
+      {message}
+    </p>
+  );
+}

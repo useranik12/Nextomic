@@ -211,7 +211,12 @@ export const connectorAuditLog = pgTable(
   (table) => [index("connector_audit_connector_idx").on(table.connectorId, table.createdAt)]
 );
 
-export type EmailKind = "verify-email" | "reset-password";
+export type EmailKind =
+  | "verify-email"
+  | "reset-password"
+  | "magic-link"
+  | "otp-code"
+  | "email-change";
 
 // The outgoing mail queue and its log. Bodies are kept only until the message is sent or gives
 // up, then cleared, so the log holds who, what kind, when and how it went, never the content.
