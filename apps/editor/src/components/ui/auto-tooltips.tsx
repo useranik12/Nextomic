@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { placeFloating, type Placement } from "@/lib/place-floating";
 
 const DELAY_MS = 300;
 const TARGET = "button,a,[role=button],[role=tab],[role=menuitem],[role=switch]";
@@ -75,20 +76,36 @@ export function AutoTooltips() {
     };
   }, []);
 
-  if (!shown) return null;
-  const below = shown.rect.top < 48;
-  const left = Math.min(Math.max(8, shown.rect.left + shown.rect.width / 2), window.innerWidth - 8);
+  return shown ? <TooltipBox text={shown.text} anchor={shown.rect} /> : null;
+}
+
+/** The tooltip, measured first and then placed where it fits on screen. */
+function TooltipBox({ text, anchor }: { text: string; anchor: DOMRect }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState<Placement | null>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    setPlace(
+      placeFloating(
+        anchor,
+        { width: el.offsetWidth, height: el.offsetHeight },
+        { width: window.innerWidth, height: window.innerHeight }
+      )
+    );
+  }, [anchor, text]);
   return (
     <div
+      ref={ref}
       role="tooltip"
       style={{
-        left,
-        top: below ? shown.rect.bottom + 6 : shown.rect.top - 6,
-        transform: `translate(-50%, ${below ? "0" : "-100%"})`
+        left: place?.left ?? 0,
+        top: place?.top ?? 0,
+        visibility: place ? "visible" : "hidden"
       }}
       className="pointer-events-none fixed z-[2000] max-w-64 rounded-medium border border-divider bg-content1 px-2 py-1 text-center text-tiny text-foreground shadow-medium"
     >
-      {shown.text}
+      {text}
     </div>
   );
 }
