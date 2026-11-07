@@ -83,6 +83,7 @@
       "name": "@nextomic/integrations",
       "version": "0.0.0",
       "dependencies": {
+        "@nextomic/schema": "workspace:*",
         "zod": "3.24.1",
       },
       "devDependencies": {

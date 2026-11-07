@@ -10,13 +10,19 @@ import {
 import { useMemo } from "react";
 import { SelectField, type SelectOption } from "@/components/ui/controls";
 import { useEditorStore } from "../store/editor-store";
+import { useSupabaseTables } from "../supabase/supabase-store";
 
 /** Why a type cannot be chosen yet, or null when it can. */
-function unavailable(type: StateType, enums: number, dataTypes: number): string | null {
+function unavailable(
+  type: StateType,
+  enums: number,
+  dataTypes: number,
+  tables: number
+): string | null {
   if (type === "enum" && enums === 0) return "Add an enum on the Data Types page first.";
   if (type === "dataType" && dataTypes === 0)
     return "Add a custom data type on the Data Types page first.";
-  if (type === "supabaseRow") return "Connect Supabase and fetch its schema first.";
+  if (type === "supabaseRow" && tables === 0) return "Connect Supabase and fetch its schema first.";
   return null;
 }
 
@@ -47,14 +53,17 @@ export function TypePicker({
     () => allDataTypes.filter((d) => !excludeDataTypes.includes(d.id)),
     [allDataTypes, excludeDataTypes]
   );
+  const tables = useSupabaseTables((s) => s.tables);
   const refs =
-    spec.type === "enum"
-      ? enums.map((e) => ({ value: e.id, label: e.name }))
-      : spec.type === "dataType"
-        ? dataTypes.map((d) => ({ value: d.id, label: d.name }))
-        : [];
+    spec.type === "supabaseRow"
+      ? tables.map((t) => ({ value: t, label: t }))
+      : spec.type === "enum"
+        ? enums.map((e) => ({ value: e.id, label: e.name }))
+        : spec.type === "dataType"
+          ? dataTypes.map((d) => ({ value: d.id, label: d.name }))
+          : [];
   const typeOptions: SelectOption[] = types.map((t) => {
-    const hint = unavailable(t, enums.length, dataTypes.length);
+    const hint = unavailable(t, enums.length, dataTypes.length, tables.length);
     return {
       value: t,
       label: STATE_TYPE_LABELS[t],
@@ -75,7 +84,13 @@ export function TypePicker({
         onValueChange={(t) => {
           const type = t as StateType;
           const first =
-            type === "enum" ? enums[0]?.id : type === "dataType" ? dataTypes[0]?.id : undefined;
+            type === "enum"
+              ? enums[0]?.id
+              : type === "dataType"
+                ? dataTypes[0]?.id
+                : type === "supabaseRow"
+                  ? tables[0]
+                  : undefined;
           onChange({ type, ref: REF_TYPES.has(type) ? (first ?? "") : "" });
         }}
       />
