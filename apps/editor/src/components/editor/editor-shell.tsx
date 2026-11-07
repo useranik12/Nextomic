@@ -26,6 +26,7 @@ import { useEditorStore } from "./store/editor-store";
 import { TopBar } from "./top-bar";
 import { useAutosave } from "./use-autosave";
 import { VersionHistory } from "./version-history";
+import { StateManager } from "./state/state-manager";
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -163,6 +164,8 @@ export function EditorShell({
     );
   }
 
+  // Sections that take the whole width; the canvas and side panels are hidden meanwhile.
+  const fullPage = rail === "pages-templates" || rail === "state";
   const railLabel = RAIL_ITEMS.find((i) => i.id === rail)?.label ?? "App Settings";
 
   return (
@@ -228,9 +231,13 @@ export function EditorShell({
                 }}
               />
             </main>
+          ) : rail === "state" ? (
+            <main className="min-w-0 flex-1">
+              <StateManager />
+            </main>
           ) : null}
           <div
-            hidden={rail === "pages-templates"}
+            hidden={fullPage}
             className="relative shrink-0 border-r border-divider"
             style={{ width: rail === "navigator" ? navigatorWidth.width : LEFT_PANEL_WIDTH }}
           >
@@ -267,14 +274,14 @@ export function EditorShell({
               </div>
             )}
           </div>
-          <main hidden={rail === "pages-templates"} className="min-w-0 flex-1 bg-content1/20">
+          <main hidden={fullPage} className="min-w-0 flex-1 bg-content1/20">
             <CanvasFrame mode={mode} />
           </main>
           {animationsOpen ? (
             <AnimationsEditor pages={pages} onClose={() => setAnimationsOpen(false)} />
           ) : null}
           <div
-            hidden={rail === "pages-templates"}
+            hidden={fullPage}
             className="relative shrink-0 border-l border-divider"
             style={{ width: rightWidth.width }}
           >

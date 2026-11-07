@@ -157,7 +157,8 @@ export function layoutForPage(input: PageLayoutInput): {
     tree: input.tree,
     mode: input.mode,
     paramValues: input.params,
-    query: input.request.query
+    query: input.request.query,
+    globals: input.settings
   });
   const ctx = serverRuleContext({
     kind: "page",
@@ -208,7 +209,8 @@ export function resolveSeo(
     tree: input.tree,
     mode: input.mode,
     paramValues: input.params,
-    query: input.request.query
+    query: input.request.query,
+    globals: input.settings
   });
   const fill = (text: string) => fillTokens(text, createTokenResolver(dynamic)).trim();
   const url = (text: string) => {
@@ -239,7 +241,8 @@ export function layoutForNotFound(input: {
   const dynamic = buildDynamicContext({
     page: { name: "Not found", route: input.request.path, settings: { params: [], state: [] } },
     mode: input.mode,
-    query: input.request.query
+    query: input.request.query,
+    globals: input.settings
   });
   const ctx = serverRuleContext({
     kind: "template",

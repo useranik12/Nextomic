@@ -9,6 +9,7 @@ import { styleMapSchema } from "./style";
 import { mainFramework } from "./main-framework";
 import { newTheme, themeListSchema } from "./theme";
 import { variableListSchema } from "./variables";
+import { appStateListSchema, constantListSchema } from "./state";
 
 export const VERSION_LIMIT_MIN = 5;
 export const VERSION_LIMIT_MAX = 200;
@@ -61,7 +62,10 @@ export const projectSettingsSchema = z.object({
   // Generate a screenshot of each page and template for the grid view in Pages & Templates.
   generateScreenshots: z.boolean().default(false),
   // Animations: GSAP timelines in folders (docs/design-system.md section 9).
-  animations: animationSettingsSchema.default(emptyAnimationSettings())
+  animations: animationSettingsSchema.default(emptyAnimationSettings()),
+  // App state (global, changed by actions) and constants (fixed), see State Management.
+  appState: appStateListSchema.default([]),
+  constants: constantListSchema.default([])
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 
@@ -88,5 +92,7 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   themes: [mainTheme()],
   fonts: [],
   cssFiles: [],
-  animations: emptyAnimationSettings()
+  animations: emptyAnimationSettings(),
+  appState: [],
+  constants: []
 });

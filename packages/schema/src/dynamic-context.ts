@@ -45,6 +45,10 @@ export const dynamicContextSchema = z.object({
   params: z.record(z.string(), z.string().max(2000)),
   /** Page state variables by name: their starting value as text (json stays JSON text). */
   state: z.record(z.string(), z.string().max(100_000)),
+  /** App state variables by name: their default value as text (persisted values join in the runtime). */
+  app: z.record(z.string(), z.string().max(100_000)).default({}),
+  /** Constants by name: their fixed value as text. */
+  constants: z.record(z.string(), z.string().max(100_000)).default({}),
   /** The moment `now.*` tokens show, as an ISO string. */
   nowIso: z.string().max(40),
   /** IANA time zone `now.date` and `now.time` are shown in. */
@@ -98,6 +102,11 @@ export interface DynamicContextInput {
   /** Parameter values from the address (route segments and query string), by name. */
   paramValues?: Readonly<Record<string, string>>;
   query?: string;
+  /** Project app state and constants; their values are readable as {{app.x}} and {{const.x}}. */
+  globals?: {
+    appState: readonly { name: string; defaultValue: string }[];
+    constants: readonly { name: string; value: string }[];
+  };
   origin?: string;
   nowIso?: string;
   timeZone?: string;
@@ -131,6 +140,10 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
   const state: Record<string, string> = {};
   for (const v of page.settings.state) state[v.name] = flatten(v.defaultValue);
   const query = input.query ?? "";
+  const app: Record<string, string> = {};
+  for (const v of input.globals?.appState ?? []) app[v.name] = v.defaultValue;
+  const constants: Record<string, string> = {};
+  for (const c of input.globals?.constants ?? []) constants[c.name] = c.value;
   return {
     page: {
       id: "",
@@ -148,6 +161,8 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
     template: input.template ?? null,
     params,
     state,
+    app,
+    constants,
     nowIso: input.nowIso ?? new Date().toISOString(),
     timeZone: input.timeZone ?? "UTC",
     mode: input.mode,
@@ -202,6 +217,13 @@ function jsonPath(text: string, path: readonly string[]): string {
   }
   if (node === undefined || node === null) return "";
   return typeof node === "object" ? JSON.stringify(node) : String(node);
+}
+
+/** A variable's value; JSON values (objects and lists) can be followed with dots. */
+function valueAt(values: Record<string, string>, name: string, rest: readonly string[]): string {
+  const value = values[name];
+  if (value === undefined) return "";
+  return rest.length > 0 ? jsonPath(value, rest) : value;
 }
 
 /** The target-attribute tag: `attr @ ELEMENT_ID:attribute-name`. Anything missing gives "". */
@@ -267,11 +289,12 @@ export function createTokenResolver(context: DynamicContext): (token: string) =>
         return name === "mode" ? context.mode : "";
       case "param":
         return context.params[name] ?? "";
-      case "state": {
-        const value = context.state[name];
-        if (value === undefined) return "";
-        return rest.length > 0 ? jsonPath(value, rest) : value;
-      }
+      case "state":
+        return valueAt(context.state, name, rest);
+      case "app":
+        return valueAt(context.app, name, rest);
+      case "const":
+        return valueAt(context.constants, name, rest);
       default:
         return "";
     }

@@ -3,20 +3,10 @@ import { layoutChoiceSchema } from "./template";
 import { z } from "zod";
 import { elementNodeSchema, type ElementNode } from "./element";
 import { propValueSchema } from "./value";
+import { stateTypeSchema } from "./state";
 
-export const pageVariableTypeSchema = z.enum([
-  "string",
-  "integer",
-  "float",
-  "boolean",
-  "datetime",
-  "date",
-  "time",
-  "color",
-  "url",
-  "json",
-  "enum"
-]);
+/** Page parameters and page state use the same types as app state. */
+export const pageVariableTypeSchema = stateTypeSchema;
 
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
