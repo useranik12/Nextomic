@@ -31,6 +31,7 @@
         "@iconify/react": "5.2.0",
         "@internationalized/date": "3.8.2",
         "@nextomic/db": "workspace:*",
+        "@nextomic/integrations": "workspace:*",
         "@nextomic/renderer": "workspace:*",
         "@nextomic/runtime": "workspace:*",
         "@nextomic/schema": "workspace:*",
@@ -80,6 +81,12 @@
     "packages/integrations": {
       "name": "@nextomic/integrations",
       "version": "0.0.0",
+      "dependencies": {
+        "zod": "3.24.1",
+      },
+      "devDependencies": {
+        "@types/node": "22.10.5",
+      },
     },
     "packages/renderer": {
       "name": "@nextomic/renderer",

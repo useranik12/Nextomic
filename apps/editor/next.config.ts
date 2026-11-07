@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   experimental: { serverActions: { bodySizeLimit: "30mb" } },
   transpilePackages: [
     "@nextomic/db",
+    "@nextomic/integrations",
     "@nextomic/renderer",
     "@nextomic/runtime",
     "@nextomic/schema",

@@ -982,3 +982,45 @@ test("publish menu: schedule a publish and remove it", async ({ page }) => {
   await expect(chip).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Published", exact: true })).toBeVisible();
 });
+
+test("connector proxy guards: sign-in, same origin, JSON, project scope", async ({
+  page,
+  playwright
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  const path = `/api/projects/${projectId}/connectors/missing`;
+  const json = { "content-type": "application/json" };
+
+  const anonymous = await playwright.request.newContext({ baseURL: page.url() });
+  const signedOut = await anonymous.post(path, { headers: json, data: { op: "test" } });
+  expect(signedOut.status()).toBe(401);
+  await anonymous.dispose();
+
+  const crossSite = await page.request.post(path, {
+    headers: { ...json, origin: "https://evil.example" },
+    data: { op: "test" }
+  });
+  expect(crossSite.status()).toBe(403);
+
+  const notJson = await page.request.post(path, {
+    headers: { "content-type": "text/plain" },
+    data: "{}"
+  });
+  expect(notJson.status()).toBe(415);
+
+  const otherProject = await page.request.post(`/api/projects/not-mine/connectors/missing`, {
+    headers: json,
+    data: { op: "test" }
+  });
+  expect(otherProject.status()).toBe(403);
+
+  const badOp = await page.request.post(path, { headers: json, data: { op: "drop" } });
+  expect(badOp.status()).toBe(400);
+
+  const missing = await page.request.post(path, { headers: json, data: { op: "test" } });
+  expect(missing.status()).toBe(404);
+  expect(await missing.json()).toEqual({
+    ok: false,
+    error: { code: "not_found", message: "Connector not found." }
+  });
+});

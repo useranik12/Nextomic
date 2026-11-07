@@ -19,6 +19,7 @@
     "@iconify/react": "5.2.0",
     "@internationalized/date": "3.8.2",
     "@nextomic/db": "workspace:*",
+    "@nextomic/integrations": "workspace:*",
     "@nextomic/renderer": "workspace:*",
     "@nextomic/runtime": "workspace:*",
     "@nextomic/schema": "workspace:*",
