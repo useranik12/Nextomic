@@ -37,3 +37,4 @@ export * from "./fonts";
 export * from "./font-support";
 export * from "./class-import";
 export * from "./state-usage";
+export * from "./expression";

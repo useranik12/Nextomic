@@ -19,6 +19,17 @@
 
 Dynamic tokens in text are written `{{group.name}}` and resolved by `createTokenResolver` (`packages/schema/src/dynamic-context.ts`) from a `DynamicContext` the editor canvas, the owner preview and the published site each build with `buildDynamicContext`. Groups: `page.name|route`, `request.url|path|query`, `now.iso|date|time|year` (shown in the context's time zone), `user.id|email|name|role` (empty while signed out), `env.mode` (editor, preview, live), `param.<name>` (the address value, else the default) `state.<name>[.path]` (page state, the starting value; JSON values can be followed with dots), `app.<name>[.path]` (app state, its default value until actions change it) and `const.<name>[.path]` (constants). `attr @ <cssID>:<attribute-name>` (for example `{{attr @ nxtomc-ab12cd34:aria-label}}`) reads an attribute of another element on the page by its CSS ID (plain text; tokens inside it are not expanded again). It is the only element tag; the dynamic data picker lists it once as "Target element's attribute" and shows how to write it on hover. Style values take tokens too: they are filled in when the CSS is built, and a value that still has an unresolved token is dropped. Unknown tokens give empty text, never raw braces. The renderer takes the context as `dynamic` on `PageRenderer`. Style values, queries, loops and conditions arrive with the Data layer phase.
 
+### Expressions (built)
+
+Everything between `{{` and `}}` is an expression in a JavaScript-like syntax, n8n style; text outside the braces is plain text. Examples: `{{ user.name.toTitleCase() }}`, `{{ app.since.toFormat('yyyy-MM-dd') }}`, `{{ app.cart.map(i => i.price).sum().format('en-US') }}`, `{{ app.count > 1 ? 'items' : 'item' }}`, `{{ $ifEmpty(user.name, 'Guest') }}`.
+
+- **Engine:** `packages/schema/src/expression/` parses and interprets expressions itself; it never uses `eval`, `Function` or the host's objects, so the same code runs safely in the builder, the preview and the published site.
+- **Syntax:** names, `.field`, `?.field`, `[index]` and `.0`, calls, arrow functions (`x => …`, `(a, b) => …`), `! - +`, `* / % + -`, comparisons, `== != === !==`, `&& || ??`, `a ? b : c`, arrays, objects and template literals with `${}`. No assignment, `new`, statements or loops.
+- **Roots:** `page`, `template`, `request`, `user`, `env`, `now`, `param`, `state`, `app`, `const`, `$now` and `$today` (timestamps), the namespaces `Math`, `JSON` and `DateTime`, and the functions `$if`, `$ifEmpty`, `$min`, `$max`, `Number`, `String`, `Boolean`, `parseInt`, `parseFloat`.
+- **Typed values:** state, constants and params arrive with their declared type: Number as a number, Boolean as true or false, JSON and data types as objects, lists as arrays, and Timestamptz as a Luxon `DateTime` (so `.toFormat()`, `.plus()`, `.toRelative()` and the other date methods work). A text value can become a date with `.toDateTime()`.
+- **Methods:** only the methods in the catalog (`methods.ts`) can be called: JavaScript's own string, number, array and object methods plus n8n-style helpers (for example `toTitleCase`, `extractEmail`, `round(2)`, `format(locale)`, `pluck`, `unique`, `sum`, `isEmpty`, `toFormat`). The same catalog feeds the evaluator and the suggestion panel (`ui-reference.md` 4.15), with a description and an example for each.
+- **Safety:** `__proto__`, `prototype` and `constructor` are never read; only own properties are visible; a run is capped at 50,000 steps, 100,000 characters of text and 10,000 list items. Any error makes the expression give empty text on the page; the editor's suggestion panel shows the error.
+
 ## 2. Scoping rules
 
 - Query data is available only to the element that owns the query and its descendants. Parents and siblings cannot see it.
@@ -46,9 +57,11 @@ Dynamic tokens in text are written `{{group.name}}` and resolved by `createToken
 
 UI: State Management page (tabs App State and Constants, `ui-reference.md` 4.10) and the Page State Variables list in the right panel when nothing is selected (4.3).
 
-- **App state variables** (global): typed, optionally a list. Types: String, Integer, Float, Boolean, DateTime, Date, Time, Color, URL (image, video, audio), JSON (object), Enum. Each has a name, default value, description, and a **Persist** switch.
+- **App state variables** (global): typed, optionally a list. Types: String, Number (whole and decimal), Boolean, JSON, Timestamptz, Color, URL, ENUM (an enum from the Data Types page), Data Type (a custom data type from the Data Types page), Supabase Row (a row of a fetched Supabase table or view, from step 4d). Each has a name, default value, description, and a **Persist** switch.
 - **Constants** (global, read-only at runtime): same types, a fixed value and description. Actions cannot change them.
 - **Page state variables** (per page): same types, local to the page, reset when the page is left, never persisted.
+- **Page parameters**: String, Number, Boolean or Timestamptz (they come from the address).
+- **Enums and custom data types** (Data Types page, `ui-reference.md` 4.14): an enum is an ordered list of unique text values; a data type is a set of named, typed fields (every type except Supabase Row, each optionally a list). Values are checked against them when saved (`checkStateValue` with the project's enums and data types).
 - Actions can set, update (increment, toggle, append to list, remove from list, merge object), and reset state variables.
 - Switch element value and form field values are bindable to state.
 

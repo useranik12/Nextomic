@@ -1,39 +1,73 @@
 import { z } from "zod";
 
-// App state, constants and page state (docs/dynamic-data-and-actions.md section 5,
-// docs/ui-reference.md 4.10). Values are stored as TEXT in the form the user typed them:
-// numbers as digits, booleans as true/false, JSON and lists as JSON text. `checkStateValue`
-// says whether a text fits the type.
+// Data types, app state, constants and page state (docs/dynamic-data-and-actions.md section 5,
+// docs/ui-reference.md 4.10 and 4.14). Values are stored as TEXT in the form the user typed them:
+// numbers as digits, booleans as true/false, JSON, data type values, rows and lists as JSON text.
+// `checkStateValue` says whether a text fits a type.
 
 export const STATE_TYPES = [
   "string",
-  "integer",
-  "float",
+  "number",
   "boolean",
-  "datetime",
-  "date",
-  "time",
+  "json",
+  "timestamptz",
   "color",
   "url",
-  "json",
-  "enum"
+  "enum",
+  "dataType",
+  "supabaseRow"
 ] as const;
-export const stateTypeSchema = z.enum(STATE_TYPES);
-export type StateType = z.infer<typeof stateTypeSchema>;
+export type StateType = (typeof STATE_TYPES)[number];
+
+/** Types a custom data type's fields can have (everything except a Supabase row). */
+export const FIELD_TYPES = [
+  "string",
+  "number",
+  "boolean",
+  "json",
+  "timestamptz",
+  "color",
+  "url",
+  "enum",
+  "dataType"
+] as const satisfies readonly StateType[];
+
+/** Types a page parameter (a value from the address) can have. */
+export const PARAM_TYPES = ["string", "number", "boolean", "timestamptz"] as const;
 
 export const STATE_TYPE_LABELS: Record<StateType, string> = {
   string: "String",
-  integer: "Integer",
-  float: "Float",
+  number: "Number",
   boolean: "Boolean",
-  datetime: "DateTime",
-  date: "Date",
-  time: "Time",
+  json: "JSON",
+  timestamptz: "Timestamptz",
   color: "Color",
   url: "URL",
-  json: "JSON",
-  enum: "Enum"
+  enum: "Enum",
+  dataType: "Data Type",
+  supabaseRow: "Supabase Row"
 };
+
+/** Types that need a reference: the enum, the data type or the Supabase table they use. */
+export const REF_TYPES: ReadonlySet<StateType> = new Set(["enum", "dataType", "supabaseRow"]);
+
+// Types of the first State build read as their replacements.
+const LEGACY_TYPES: Record<string, StateType> = {
+  integer: "number",
+  float: "number",
+  datetime: "timestamptz",
+  date: "timestamptz",
+  time: "timestamptz"
+};
+
+export const stateTypeSchema = z.preprocess(
+  (raw) => (typeof raw === "string" ? (LEGACY_TYPES[raw] ?? raw) : raw),
+  z.enum(STATE_TYPES)
+);
+export const fieldTypeSchema = z.preprocess(
+  (raw) => (typeof raw === "string" ? (LEGACY_TYPES[raw] ?? raw) : raw),
+  z.enum(FIELD_TYPES)
+);
 
 export const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -50,6 +84,7 @@ export const RESERVED_STATE_NAMES: ReadonlySet<string> = new Set([
   "user",
   "request",
   "now",
+  "today",
   "env",
   "item",
   "index",
@@ -76,7 +111,7 @@ export const RESERVED_STATE_NAMES: ReadonlySet<string> = new Set([
 
 /** Why a name cannot be used, or null when it can. */
 export function stateNameProblem(name: string, taken: readonly string[] = []): string | null {
-  if (name.length === 0) return "Give the variable a name.";
+  if (name.length === 0) return "Give it a name.";
   if (name.length > 64) return "Use at most 64 characters.";
   if (!IDENTIFIER_PATTERN.test(name))
     return "Use letters, digits and _, not starting with a digit.";
@@ -90,36 +125,121 @@ export const stateNameSchema = z.string().superRefine((name, ctx) => {
   if (problem) ctx.addIssue({ code: "custom", message: problem });
 });
 
-const DATE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-const TIME = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+function uniqueNames<T extends { name: string }>(list: T[], ctx: z.RefinementCtx) {
+  const seen = new Set<string>();
+  list.forEach((v, i) => {
+    if (seen.has(v.name))
+      ctx.addIssue({ code: "custom", path: [i, "name"], message: `"${v.name}" is used twice.` });
+    seen.add(v.name);
+  });
+}
+
+// ---------------------------------------------------------------- enums and custom data types
+
+export const appEnumSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: stateNameSchema,
+  description: z.string().max(300).default(""),
+  values: z
+    .array(z.string().trim().min(1).max(100))
+    .max(200)
+    .default([])
+    .refine((values) => new Set(values).size === values.length, "Each value can appear once.")
+});
+export type AppEnum = z.infer<typeof appEnumSchema>;
+
+export const dataTypeFieldSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: stateNameSchema,
+  type: fieldTypeSchema.default("string"),
+  isList: z.boolean().default(false),
+  /** The enum or data type id, for those field types. */
+  ref: z.string().max(200).default(""),
+  description: z.string().max(300).default("")
+});
+export type DataTypeField = z.infer<typeof dataTypeFieldSchema>;
+
+export const dataTypeSchema = z.object({
+  id: z.string().min(1).max(64),
+  name: stateNameSchema,
+  description: z.string().max(300).default(""),
+  fields: z.array(dataTypeFieldSchema).max(200).default([]).superRefine(uniqueNames)
+});
+export type DataType = z.infer<typeof dataTypeSchema>;
+
+export const appEnumListSchema = z.array(appEnumSchema).max(500).superRefine(uniqueNames);
+export const dataTypeListSchema = z.array(dataTypeSchema).max(500).superRefine(uniqueNames);
+
+/** What `enum` and `dataType` references point at. Without it, references are not checked. */
+export interface TypeRegistry {
+  enums: readonly AppEnum[];
+  dataTypes: readonly DataType[];
+}
+
+/** A type with its list flag and reference: enough to check or describe a value. */
+export interface TypeSpec {
+  type: StateType;
+  isList: boolean;
+  ref: string;
+}
+
+/** "String", "Number list", "Enum Size", "Data Type Address list" for display. */
+export function describeType(spec: TypeSpec, registry?: TypeRegistry): string {
+  const refName =
+    spec.type === "enum"
+      ? registry?.enums.find((e) => e.id === spec.ref)?.name
+      : spec.type === "dataType"
+        ? registry?.dataTypes.find((d) => d.id === spec.ref)?.name
+        : spec.type === "supabaseRow"
+          ? spec.ref
+          : undefined;
+  const base = refName
+    ? `${STATE_TYPE_LABELS[spec.type]} ${refName}`
+    : STATE_TYPE_LABELS[spec.type];
+  return spec.isList ? `${base} list` : base;
+}
+
+// ---------------------------------------------------------------- value checks
+
+/** Postgres timestamptz or timestamp text, or ISO 8601: a date, a time, maybe seconds and a zone. */
+export const TIMESTAMP_PATTERN =
+  /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[T ]([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d{1,6})?)?(Z|[+-]([01]\d)(:?[0-5]\d)?)?$/i;
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const COLOR_FN = /^(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch)\([^()]*\)$/i;
+const MAX_DEPTH = 6;
 
-/** Why one value does not fit the type, or null when it does. */
-function scalarProblem(type: StateType, value: unknown, options: readonly string[]): string | null {
-  switch (type) {
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+/** Why one (already parsed) value does not fit the type, or null when it does. */
+function valueProblem(
+  spec: TypeSpec,
+  value: unknown,
+  registry: TypeRegistry | undefined,
+  depth: number
+): string | null {
+  if (spec.isList) {
+    if (!Array.isArray(value)) return "Expected a list (a JSON array).";
+    for (const [i, item] of value.entries()) {
+      const problem = valueProblem({ ...spec, isList: false }, item, registry, depth);
+      if (problem) return `Item ${i + 1}: ${problem}`;
+    }
+    return null;
+  }
+  if (value === null) return null;
+  switch (spec.type) {
     case "string":
       return typeof value === "string" ? null : "Expected text.";
-    case "integer":
-      return typeof value === "number" && Number.isInteger(value)
-        ? null
-        : "Expected a whole number.";
-    case "float":
+    case "number":
       return typeof value === "number" && Number.isFinite(value) ? null : "Expected a number.";
     case "boolean":
       return typeof value === "boolean" ? null : "Expected true or false.";
-    case "datetime":
-      return typeof value === "string" &&
-        !Number.isNaN(Date.parse(value)) &&
-        /\d{4}-\d{2}-\d{2}T/.test(value)
+    case "json":
+      return typeof value === "object" ? null : "Expected a JSON object or array.";
+    case "timestamptz":
+      return typeof value === "string" && TIMESTAMP_PATTERN.test(value)
         ? null
-        : "Expected a date and time like 2026-01-31T09:30.";
-    case "date":
-      return typeof value === "string" && DATE.test(value)
-        ? null
-        : "Expected a date like 2026-01-31.";
-    case "time":
-      return typeof value === "string" && TIME.test(value) ? null : "Expected a time like 09:30.";
+        : "Expected a timestamp like 2026-01-31T09:30:00Z.";
     case "color":
       return typeof value === "string" && (HEX.test(value) || COLOR_FN.test(value))
         ? null
@@ -128,33 +248,52 @@ function scalarProblem(type: StateType, value: unknown, options: readonly string
       return typeof value === "string" && (value.startsWith("/") || /^https?:\/\/\S+$/i.test(value))
         ? null
         : "Expected an http(s) URL or a path starting with /.";
-    case "json":
-      return value !== null && typeof value === "object"
-        ? null
-        : "Expected a JSON object or array.";
-    case "enum":
-      return typeof value === "string" && options.includes(value)
-        ? null
-        : options.length === 0
-          ? "Add options first."
-          : `Expected one of: ${options.join(", ")}.`;
+    case "enum": {
+      if (typeof value !== "string") return "Expected one of the enum values.";
+      if (!registry) return null;
+      const found = registry.enums.find((e) => e.id === spec.ref);
+      if (!found) return "Choose an enum.";
+      return found.values.includes(value) ? null : `Expected one of: ${found.values.join(", ")}.`;
+    }
+    case "dataType": {
+      if (!isObject(value)) return "Expected an object with the data type's fields.";
+      if (!registry) return null;
+      const found = registry.dataTypes.find((d) => d.id === spec.ref);
+      if (!found) return "Choose a data type.";
+      if (depth >= MAX_DEPTH) return null;
+      for (const [key, fieldValue] of Object.entries(value)) {
+        const field = found.fields.find((f) => f.name === key);
+        if (!field) return `${found.name} has no field "${key}".`;
+        const problem = valueProblem(field, fieldValue, registry, depth + 1);
+        if (problem) return `${key}: ${problem}`;
+      }
+      return null;
+    }
+    case "supabaseRow":
+      return isObject(value) ? null : "Expected a row (a JSON object).";
   }
 }
 
-/** Reads one typed value from the text the user wrote. */
-function parseScalar(type: StateType, text: string): unknown {
-  switch (type) {
-    case "integer":
-    case "float":
-      return text.trim() === "" ? Number.NaN : Number(text);
+/** Reads the typed value from the text the user wrote; undefined when it cannot be read. */
+export function parseStateValue(spec: Pick<TypeSpec, "type" | "isList">, text: string): unknown {
+  const trimmed = text.trim();
+  const json = () => {
+    try {
+      return JSON.parse(trimmed) as unknown;
+    } catch {
+      return undefined;
+    }
+  };
+  if (spec.isList) return json();
+  switch (spec.type) {
+    case "number":
+      return trimmed === "" ? undefined : Number(trimmed);
     case "boolean":
-      return text === "true" ? true : text === "false" ? false : text;
+      return trimmed === "true" ? true : trimmed === "false" ? false : text;
     case "json":
-      try {
-        return JSON.parse(text);
-      } catch {
-        return undefined;
-      }
+    case "dataType":
+    case "supabaseRow":
+      return json();
     default:
       return text;
   }
@@ -162,34 +301,36 @@ function parseScalar(type: StateType, text: string): unknown {
 
 /**
  * Why a value text does not fit the type, or null when it does. Empty text always fits: it means
- * "no value" (an empty list for lists). A list is a JSON array whose items each fit the type.
+ * "no value". Lists, JSON, data type values and rows are JSON text.
  */
 export function checkStateValue(
-  type: StateType,
-  isList: boolean,
+  spec: TypeSpec,
   text: string,
-  options: readonly string[] = []
+  registry?: TypeRegistry
 ): string | null {
   if (text.trim() === "") return null;
-  if (isList) {
-    let items: unknown;
-    try {
-      items = JSON.parse(text);
-    } catch {
-      return 'A list is written as a JSON array, for example ["a", "b"].';
-    }
-    if (!Array.isArray(items)) return 'A list is written as a JSON array, for example ["a", "b"].';
-    for (const [i, item] of items.entries()) {
-      const problem = scalarProblem(type, item, options);
-      if (problem) return `Item ${i + 1}: ${problem}`;
-    }
-    return null;
-  }
-  return scalarProblem(type, parseScalar(type, text), options);
+  const value = parseStateValue(spec, text);
+  if (value === undefined)
+    return spec.isList
+      ? 'A list is written as a JSON array, for example ["a", "b"].'
+      : spec.type === "number"
+        ? "Expected a number."
+        : "That is not valid JSON.";
+  return valueProblem(spec, value, registry, 0);
 }
 
+/** The value text a variable keeps after a type change: kept when it still fits. */
+export function valueAfterTypeChange(
+  text: string,
+  spec: TypeSpec,
+  registry?: TypeRegistry
+): string {
+  return checkStateValue(spec, text, registry) === null ? text : "";
+}
+
+// ---------------------------------------------------------------- variables
+
 const valueText = z.string().max(100_000).default("");
-const enumOptions = z.array(z.string().trim().min(1).max(100)).max(100).default([]);
 
 /** Fields every kind of state variable has. */
 const variableShape = {
@@ -197,7 +338,8 @@ const variableShape = {
   name: stateNameSchema,
   type: stateTypeSchema.default("string"),
   isList: z.boolean().default(false),
-  enumOptions,
+  /** The enum id, data type id or Supabase table, for those types. */
+  ref: z.string().max(200).default(""),
   description: z.string().max(300).default("")
 };
 
@@ -214,7 +356,7 @@ export const appStateVariableSchema = z
     keepAfterLogout: z.boolean().default(false)
   })
   .superRefine((v, ctx) => {
-    const problem = checkStateValue(v.type, v.isList, v.defaultValue, v.enumOptions);
+    const problem = checkStateValue(v, v.defaultValue);
     if (problem) ctx.addIssue({ code: "custom", path: ["defaultValue"], message: problem });
   });
 export type AppStateVariable = z.infer<typeof appStateVariableSchema>;
@@ -222,25 +364,20 @@ export type AppStateVariable = z.infer<typeof appStateVariableSchema>;
 export const constantSchema = z
   .object({ ...variableShape, value: valueText })
   .superRefine((v, ctx) => {
-    const problem = checkStateValue(v.type, v.isList, v.value, v.enumOptions);
+    const problem = checkStateValue(v, v.value);
     if (problem) ctx.addIssue({ code: "custom", path: ["value"], message: problem });
   });
 export type Constant = z.infer<typeof constantSchema>;
-
-function uniqueNames<T extends { name: string }>(list: T[], ctx: z.RefinementCtx) {
-  const seen = new Set<string>();
-  list.forEach((v, i) => {
-    if (seen.has(v.name))
-      ctx.addIssue({ code: "custom", path: [i, "name"], message: `"${v.name}" is used twice.` });
-    seen.add(v.name);
-  });
-}
 
 export const appStateListSchema = z.array(appStateVariableSchema).max(500).superRefine(uniqueNames);
 export const constantListSchema = z.array(constantSchema).max(500).superRefine(uniqueNames);
 
 /** Cookie values travel with every request and are limited to about 4 KB each. */
 export const COOKIE_VALUE_LIMIT = 4000;
+
+function freeName(prefix: string, taken: readonly string[]): string {
+  for (let n = 1; ; n++) if (!taken.includes(`${prefix}_${n}`)) return `${prefix}_${n}`;
+}
 
 /** A new app state variable with a free name. */
 export function newAppStateVariable(id: string, taken: readonly string[]): AppStateVariable {
@@ -249,7 +386,7 @@ export function newAppStateVariable(id: string, taken: readonly string[]): AppSt
     name: freeName("variable", taken),
     type: "string",
     isList: false,
-    enumOptions: [],
+    ref: "",
     description: "",
     defaultValue: "",
     persist: false,
@@ -265,22 +402,49 @@ export function newConstant(id: string, taken: readonly string[]): Constant {
     name: freeName("constant", taken),
     type: "string",
     isList: false,
-    enumOptions: [],
+    ref: "",
     description: "",
     value: ""
   };
 }
 
-function freeName(prefix: string, taken: readonly string[]): string {
-  for (let n = 1; ; n++) if (!taken.includes(`${prefix}_${n}`)) return `${prefix}_${n}`;
+/** A new enum with a free name. */
+export function newAppEnum(id: string, taken: readonly string[]): AppEnum {
+  return { id, name: freeName("Enum", taken), description: "", values: [] };
 }
 
-/** The value text a variable starts with after a type change: kept when it still fits. */
-export function valueAfterTypeChange(
-  text: string,
-  type: StateType,
-  isList: boolean,
-  options: readonly string[]
-): string {
-  return checkStateValue(type, isList, text, options) === null ? text : "";
+/** A new data type with a free name. */
+export function newDataType(id: string, taken: readonly string[]): DataType {
+  return { id, name: freeName("DataType", taken), description: "", fields: [] };
+}
+
+/** A new data type field with a free name. */
+export function newDataTypeField(id: string, taken: readonly string[]): DataTypeField {
+  return {
+    id,
+    name: freeName("field", taken),
+    type: "string",
+    isList: false,
+    ref: "",
+    description: ""
+  };
+}
+
+/** Where an enum or data type is referenced: variables, constants, page state and fields. */
+export function typeReferences(
+  id: string,
+  places: {
+    appState: readonly { name: string; ref: string; type: StateType }[];
+    constants: readonly { name: string; ref: string; type: StateType }[];
+    dataTypes: readonly DataType[];
+  }
+): string[] {
+  const uses = (v: { ref: string; type: StateType }) => REF_TYPES.has(v.type) && v.ref === id;
+  return [
+    ...places.appState.filter(uses).map((v) => `App state ${v.name}`),
+    ...places.constants.filter(uses).map((v) => `Constant ${v.name}`),
+    ...places.dataTypes.flatMap((d) =>
+      d.fields.filter(uses).map((f) => `Field ${d.name}.${f.name}`)
+    )
+  ];
 }

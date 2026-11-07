@@ -20,6 +20,13 @@ describe("placeFloating", () => {
     expect(p.left + size.width).toBeLessThanOrEqual(992);
   });
 
+  it("can prefer below", () => {
+    const p = placeFloating({ left: 500, top: 400, width: 40, height: 40 }, size, viewport, {
+      prefer: "bottom"
+    });
+    expect(p.side).toBe("bottom");
+  });
+
   it("goes below when there is no room above", () => {
     const p = placeFloating({ left: 500, top: 10, width: 40, height: 30 }, size, viewport);
     expect(p.side).toBe("bottom");

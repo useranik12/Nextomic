@@ -29,6 +29,8 @@ Source images live in `blueprint/`. Use this doc as the index and the images as 
 | App Settings                                                      | NOT designed. Replicate FlutterFlow structure                                                                                                                                                                                                                                         | `inspiration/flutterflow-app-settings.png`                    |
 | Media                                                             | NOT designed. Replicate Instatic structure                                                                                                                                                                                                                                            | `inspiration/instatic-media-asset-manager.png`                |
 | State Management page (App State and Constants tabs)              | NOT designed visually. Behavior specified in 4.10; reuse the table pattern of the API Data Variables tab                                                                                                                                                                              | `pages/editor-api-data-variables.png`                         |
+| Data Types page (Custom Data Types and ENUM tabs)                 | NOT designed visually. Behavior specified in 4.14; list on the left like the Pages and Templates manager, editor on the right                                                                                                                                                         | none                                                          |
+| Expression suggestions (n8n-style)                                | NOT designed visually. Behavior specified in 4.15                                                                                                                                                                                                                                     | none                                                          |
 | Design System page, Custom Codes, Git Connection, Version History | Nav items only. Ask before building each                                                                                                                                                                                                                                              | none                                                          |
 | Builder UI components                                             | Designed (HeroUI kit)                                                                                                                                                                                                                                                                 | `components/*.png`                                            |
 | Template and Theme management screens                             | Themes tab BUILT in the Design System modal following the Variables and Classes tab patterns (no design exists). Pages & Templates manager and template options BUILT from the written spec (`templates-and-themes.md` 4.7); other template screens NOT designed, ask before building | none                                                          |
@@ -118,15 +120,16 @@ Never use raw HeroUI `Input` or `Button` for form fields and actions. Use `compo
 **Left rail** (Navigator is open by default). Items in order, as in the Supabase and API Data screens:
 
 1. Navigator (with a "+" button that opens the Elements flyout)
-2. State Management
-3. Media
-4. Supabase
-5. API Data
-6. Design System
-7. Custom Codes
-8. Git Connection
-9. Version History
-   Bottom: App Settings and a rail collapse toggle. Supabase and API Data are two separate items. There is no "Data Management" group; the Navigator mock is outdated on this.
+2. Data Types
+3. State Management
+4. Media
+5. Supabase
+6. API Data
+7. Design System
+8. Custom Codes
+9. Git Connection
+10. Version History
+    Bottom: App Settings and a rail collapse toggle. Supabase and API Data are two separate items. There is no "Data Management" group; the Navigator mock is outdated on this.
 
 **Navigator panel (left).** Holds all elements of the current page or template as a tree (structure behavior in 4.7). Pages and templates are not listed here; use the page select in the top bar.
 
@@ -224,7 +227,7 @@ Opens from the left rail as a full page (like the Supabase page) with two tabs: 
 **App State tab** (global variables that actions can change):
 
 - Columns: Name, Type, Is List, Default Value, Persist (switch), delete. "Add Variable" button and a search field. Expanding a row shows Description, "Keep after logout" (only when Persist is on), Storage (Local storage or Cookie), and a "Where used" list with the usage count.
-- Types (any of these, each also as a list): String, Integer, Float, Boolean, DateTime, Date, Time, Color, URL (image, video, or audio), JSON (object), Enum (options defined on the row). The Default Value control changes with the type (switch for Boolean, picker for Color and dates, code editor for JSON).
+- Types (any of these, each also as a list): String, Number (whole and decimal), Boolean, JSON, Timestamptz (an ISO timestamp with or without a zone), Color, URL, ENUM (one of the enums made on the Data Types page), Data Type (one of the data types made on the Data Types page), Supabase Row (a row of a fetched Supabase table or view; selectable once Supabase is connected in step 4d). ENUM, Data Type and Supabase Row show a second select for which one. Older Integer and Float become Number; DateTime, Date and Time become Timestamptz. The Default Value control changes with the type: a select for Boolean and ENUM, a color field for Color, a text field with a calendar button for Timestamptz, and a vertically resizable box with the Format icon for JSON, Data Type values and lists.
 - **Persist:** when on, the value is saved in the visitor's browser and restored the next time the site opens, even after the browser or tab is closed. It stays until the visitor logs out (default) or clears site data. Details and limits are in `dynamic-data-and-actions.md` section 5.
 
 **Constants tab** (fixed values; read-only at runtime):
@@ -263,6 +266,27 @@ For the page or template being edited. Route, Page Parameters, "Requires Authent
 
 - Every icon-only button shows a tooltip after the pointer rests on it for 300 ms (`AutoTooltips`, from its title or accessible name); controls with their own tooltip (InfoTip) are left alone. HTML tag lists show plain tag names (no angle brackets); Button has a tag option (button, a, div, span). Naming a class on an element creates it in the project, so the Design System lists it.
 
+### 4.14 Data Types page
+
+Opens from the left rail ("Data Types", just before State Management) as a full page. Left aside: title with a "+" button, two tabs **Custom Data Types** and **ENUM**, a search field, and the list. Right: the selected item's name, description, delete, and its editor.
+
+- **ENUM:** an ordered list of unique text values (add, move up or down, delete). An app state variable, constant, page state variable or data type field of type ENUM accepts only these values.
+- **Custom Data Types:** a table of fields (Name, Type, Is List, Description, delete) and "Add Field". A field takes every type except Supabase Row. A value of a data type is a JSON object whose keys are the field names; unknown keys are refused.
+- Names are valid identifiers and unique within their tab. Deleting an enum or a data type that a variable or another data type uses lists those users and asks first.
+
+Built (Phase 4a fixes): `components/editor/data-types/*`; stored in project settings (`enums`, `dataTypes`).
+
+### 4.15 Expression suggestions
+
+Every field that has the dynamic bolt accepts n8n-style expressions inside `{{ }}`; text outside the braces stays text. While the caret is inside `{{ }}`, a panel opens below the field (above when there is no room; it follows the floating position rule):
+
+- Left: the names, fields and methods that fit at the caret. After `.` it lists the fields of the value and the methods for its type (text, number, list, object, timestamp), using the declared type when the preview value is empty.
+- Right: the active item's signature, what it does, and an example.
+- Footer: the result of the expression with the current preview values, or the error.
+- Arrow Up and Down move, Enter or Tab inserts (methods with arguments place the caret inside the parentheses), Escape closes, hovering an item shows its details. The panel never takes focus from the field.
+
+Built (Phase 4a fixes): `components/editor/expression/*`. The syntax and the method list are in `dynamic-data-and-actions.md`.
+
 ### 4.13 Animations editor (replicate `inspiration/bricksforge-gsap-animation-timeline.png`)
 
 - Opened from the left rail item "Animations". A full-height layer over the editor body; the top bar stays. The real page canvas shows through the middle, so previews play on the actual elements. Esc or "Back to editor" closes it.
@@ -298,4 +322,4 @@ The three-dots menu next to the breakpoint switcher opens a manager:
 2. Logo click is read as "return to All Projects with this project highlighted". Confirm (it could mean a project overview page, which does not exist yet).
 3. What the dashboard header's grid and open-in-new icons do.
 4. Publishing applies to the whole project (see 4.3). Confirm, or say if per-page publishing is required.
-5. The State Management and Page Settings screens have no visual design; they follow the patterns named in 4.10 and 4.11 and need owner approval.
+5. The State Management, Data Types and Page Settings screens and the expression suggestions have no visual design; they follow the patterns named in 4.10 and 4.11 and need owner approval.

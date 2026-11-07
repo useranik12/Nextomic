@@ -7,7 +7,8 @@ describe("formatCode", () => {
       ".a {\n  color: red;\n  margin: 0;\n}"
     );
     expect((await formatCode("gsap.to('.a',{x:1})", "js")).code).toBe('gsap.to(".a", { x: 1 });');
-    expect((await formatCode('{"x":1}', "json")).code).toBe('{ "x": 1 }');
+    expect((await formatCode('{"x":1}', "json")).code).toBe('{\n  "x": 1\n}');
+    expect((await formatCode("{bad", "json")).ok).toBe(false);
   });
 
   it("leaves broken code as it is and says why", async () => {

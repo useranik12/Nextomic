@@ -2,8 +2,6 @@
 
 import { Switch } from "@heroui/react";
 import {
-  STATE_TYPES,
-  STATE_TYPE_LABELS,
   stateNameProblem,
   valueAfterTypeChange,
   type AppStateVariable,
@@ -16,18 +14,17 @@ import { Icon } from "@/lib/icons/Icon";
 import { compactFieldClass } from "../right-panel/setting-row";
 import { RowDetails } from "./row-details";
 import { describePlaces, type UsagePlace } from "./use-state-usage";
-import { ValueControl } from "./value-control";
+import { TypePicker, useTypeRegistry } from "../data-types/type-picker";
+import { ValueControl } from "../data-types/value-control";
 
 export type StateRowVariable =
   | { kind: "app"; variable: AppStateVariable }
   | { kind: "const"; variable: Constant };
 
 export const ROW_GRID = {
-  app: "grid-cols-[minmax(10rem,1.4fr)_9rem_7rem_minmax(10rem,1.6fr)_4.5rem_2rem_2rem]",
-  const: "grid-cols-[minmax(10rem,1.4fr)_9rem_7rem_minmax(10rem,1.6fr)_minmax(8rem,1fr)_2rem_2rem]"
+  app: "grid-cols-[minmax(10rem,1.4fr)_11rem_7rem_minmax(10rem,1.6fr)_4.5rem_2rem_2rem]",
+  const: "grid-cols-[minmax(10rem,1.4fr)_11rem_7rem_minmax(10rem,1.6fr)_minmax(8rem,1fr)_2rem_2rem]"
 } as const;
-
-const TYPE_OPTIONS = STATE_TYPES.map((t) => ({ value: t, label: STATE_TYPE_LABELS[t] }));
 
 /** Name input: commits a valid, free name on blur or Enter; shows why a name is refused. */
 function NameCell({
@@ -90,9 +87,10 @@ export function StateRow({
   const v = row.variable;
   const valueKey = row.kind === "app" ? "defaultValue" : "value";
   const value = row.kind === "app" ? row.variable.defaultValue : row.variable.value;
+  const registry = useTypeRegistry();
 
-  function changeShape(type: StateType, isList: boolean) {
-    if (places.length > 0 && (type !== v.type || isList !== v.isList)) {
+  function changeShape(type: StateType, isList: boolean, ref: string) {
+    if (places.length > 0 && (type !== v.type || isList !== v.isList || ref !== v.ref)) {
       const ok = window.confirm(
         `"${v.name}" is used in: ${describePlaces(places)}. Changing its type can make those bindings show the wrong value. Change it?`
       );
@@ -102,7 +100,8 @@ export function StateRow({
       ...v,
       type,
       isList,
-      [valueKey]: valueAfterTypeChange(value, type, isList, v.enumOptions)
+      ref,
+      [valueKey]: valueAfterTypeChange(value, { type, isList, ref }, registry)
     });
   }
 
@@ -110,13 +109,10 @@ export function StateRow({
     <li className="border-b border-divider last:border-b-0">
       <div className={`grid ${ROW_GRID[row.kind]} items-start gap-2 py-2`}>
         <NameCell value={v.name} taken={taken} onCommit={onRename} />
-        <SelectField
-          compact
-          hideLabel
+        <TypePicker
           label={`Type of ${v.name}`}
-          value={v.type}
-          options={TYPE_OPTIONS}
-          onValueChange={(t) => changeShape(t as StateType, v.isList)}
+          spec={v}
+          onChange={(next) => changeShape(next.type, v.isList, next.ref)}
         />
         <SelectField
           compact
@@ -127,13 +123,12 @@ export function StateRow({
             { value: "false", label: "False" },
             { value: "true", label: "True" }
           ]}
-          onValueChange={(l) => changeShape(v.type, l === "true")}
+          onValueChange={(l) => changeShape(v.type, l === "true", v.ref)}
         />
         <ValueControl
           label={row.kind === "app" ? `Default value of ${v.name}` : `Value of ${v.name}`}
-          type={v.type}
-          isList={v.isList}
-          options={v.enumOptions}
+          spec={v}
+          registry={registry}
           value={value}
           onChange={(next) => onChange({ ...v, [valueKey]: next })}
         />

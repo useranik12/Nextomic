@@ -22,20 +22,22 @@ export function placeFloating(
   anchor: Box,
   size: { width: number; height: number },
   viewport: { width: number; height: number },
-  options: { gap?: number; gutter?: number } = {}
+  options: { gap?: number; gutter?: number; prefer?: "top" | "bottom" } = {}
 ): Placement {
   const gap = options.gap ?? 6;
   const gutter = options.gutter ?? 8;
   const roomAbove = anchor.top - gap - gutter;
   const roomBelow = viewport.height - (anchor.top + anchor.height) - gap - gutter;
-  const side =
-    size.height <= roomAbove
-      ? "top"
-      : size.height <= roomBelow
-        ? "bottom"
-        : roomAbove >= roomBelow
-          ? "top"
-          : "bottom";
+  const fits = { top: size.height <= roomAbove, bottom: size.height <= roomBelow };
+  const prefer = options.prefer ?? "top";
+  const other = prefer === "top" ? "bottom" : "top";
+  const side = fits[prefer]
+    ? prefer
+    : fits[other]
+      ? other
+      : roomAbove >= roomBelow
+        ? "top"
+        : "bottom";
   const top = side === "top" ? anchor.top - gap - size.height : anchor.top + anchor.height + gap;
   const left = anchor.left + anchor.width / 2 - size.width / 2;
   return {

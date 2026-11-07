@@ -31,9 +31,9 @@ function memoryEnv(namespace = "p1"): PersistEnv {
 
 const def = (over: Partial<PersistedDef> = {}): PersistedDef => ({
   name: "count",
-  type: "integer",
+  type: "number",
   isList: false,
-  enumOptions: [],
+  ref: "",
   defaultValue: "0",
   persist: true,
   storage: "local",
@@ -60,6 +60,7 @@ describe("persisted app state", () => {
 
   it("refuses a value that does not fit the type", () => {
     expect(writePersisted(def(), "abc", memoryEnv()).ok).toBe(false);
+    expect(writePersisted(def(), "4.5", memoryEnv()).ok).toBe(true);
   });
 
   it("logout clears persisted values except Keep after logout", () => {
@@ -93,7 +94,7 @@ describe("persisted app state", () => {
   it("keeps a stored value that still fits after a type change, resets one that does not", () => {
     const env = memoryEnv();
     writePersisted(def(), "7", env);
-    expect(restorePersisted([def({ type: "float" })], env)).toEqual({ count: "7" });
+    expect(restorePersisted([def({ type: "string" })], env)).toEqual({ count: "7" });
     expect(restorePersisted([def({ type: "boolean", defaultValue: "false" })], env)).toEqual({
       count: "false"
     });

@@ -2,7 +2,6 @@
 
 import {
   breakpointPreviewWidth,
-  buildDynamicContext,
   customCssFor,
   findNode,
   setStyle,
@@ -20,6 +19,7 @@ import {
 } from "react";
 import { useDragActive } from "../dnd";
 import { useEditorStore } from "../store/editor-store";
+import { useEditorDynamicContext } from "../use-editor-context";
 import { themeModeFor, useResolvedTheme } from "../store/use-resolved-theme";
 import { onAnimationCommand, reportAnimationState } from "./animation-bridge";
 import { setCanvasDropTarget } from "./canvas-drop";
@@ -82,8 +82,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const variables = useEditorStore((s) => s.project.variables);
   const fonts = useEditorStore((s) => s.project.fonts);
   const cssFiles = useEditorStore((s) => s.project.cssFiles);
-  const appState = useEditorStore((s) => s.project.appState);
-  const constants = useEditorStore((s) => s.project.constants);
+  const dynamic = useEditorDynamicContext();
   const pageId = useEditorStore((s) => s.page?.id ?? null);
   const projectId = useEditorStore((s) => s.projectId);
   const theme = useResolvedTheme();
@@ -277,7 +276,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   useEffect(() => onAnimationCommand((command) => ready && send(command)), [ready, send]);
 
   useEffect(() => {
-    if (!ready || !doc) return;
+    if (!ready || !doc || !dynamic) return;
     // A hovered picker option is drawn on a copy, so nothing is saved or added to the history.
     let tree = doc.tree;
     let sentClasses = classes;
@@ -319,18 +318,11 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       mode: themeModeFor(theme, mode),
       selectedId,
       hideSelection,
-      dynamic: buildDynamicContext({
-        page: { name: doc.name, route: doc.route, settings: doc.settings },
-        tree: doc.tree,
-        mode: "editor",
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        globals: { appState, constants }
-      })
+      dynamic
     });
   }, [
     ready,
-    appState,
-    constants,
+    dynamic,
     doc,
     withLayout,
     breakpoints,

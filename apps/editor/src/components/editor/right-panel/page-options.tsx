@@ -1,7 +1,8 @@
 "use client";
 
 import { Checkbox } from "@heroui/react";
-import { ROUTE_PATTERN, pageVariableTypeSchema, type PageSettings } from "@nextomic/schema";
+import { PARAM_TYPES, ROUTE_PATTERN, STATE_TYPE_LABELS, type PageSettings } from "@nextomic/schema";
+import { TypePicker } from "../data-types/type-picker";
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -10,7 +11,6 @@ import { DynamicBolt } from "./dynamic-bolt";
 import { MarkingGroup } from "./marking-group";
 import { compactFieldClass } from "./setting-row";
 
-const TYPES = pageVariableTypeSchema.options;
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 type Params = PageSettings["params"];
@@ -70,7 +70,7 @@ function TypeSelect({
 }: {
   label: string;
   value: string;
-  onChange: (v: (typeof TYPES)[number]) => void;
+  onChange: (v: (typeof PARAM_TYPES)[number]) => void;
 }) {
   return (
     <SelectField
@@ -78,8 +78,8 @@ function TypeSelect({
       hideLabel
       label={label}
       value={value}
-      options={TYPES.map((t) => ({ value: t, label: t }))}
-      onValueChange={(next) => onChange(next as (typeof TYPES)[number])}
+      options={PARAM_TYPES.map((t) => ({ value: t, label: STATE_TYPE_LABELS[t] }))}
+      onValueChange={(next) => onChange(next as (typeof PARAM_TYPES)[number])}
       className="w-28 shrink-0"
     />
   );
@@ -405,11 +405,15 @@ function StateVariables() {
                 />
               </div>
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                <TypeSelect
-                  label="Variable type"
-                  value={v.type}
-                  onChange={(type) => set(vars.map((x, i) => (i === index ? { ...x, type } : x)))}
-                />
+                <div className="w-full">
+                  <TypePicker
+                    label="Variable type"
+                    spec={v}
+                    onChange={(next) =>
+                      set(vars.map((x, i) => (i === index ? { ...x, ...next } : x)))
+                    }
+                  />
+                </div>
                 <Checkbox
                   size="sm"
                   isSelected={v.isList}
@@ -459,7 +463,8 @@ function StateVariables() {
                   vars.map((x) => x.name)
                 ),
                 type: "string",
-                isList: false
+                isList: false,
+                ref: ""
               }
             ])
           }

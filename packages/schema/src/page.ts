@@ -22,7 +22,8 @@ export const pageStateVariableSchema = z.object({
   type: pageVariableTypeSchema,
   isList: z.boolean().default(false),
   defaultValue: propValueSchema.optional(),
-  enumOptions: z.array(z.string()).optional(),
+  /** The enum id, data type id or Supabase table, for those types. */
+  ref: z.string().max(200).default(""),
   description: z.string().max(300).optional()
 });
 
