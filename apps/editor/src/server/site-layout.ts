@@ -143,6 +143,8 @@ export interface PageLayoutInput {
 export function layoutForPage(input: PageLayoutInput): {
   tree: ElementNode;
   dynamic: DynamicContext;
+  /** The request facts, for theme rules too. */
+  rules: RuleContext;
 } {
   const { settings, page } = input;
   const dynamic = buildDynamicContext({
@@ -183,7 +185,8 @@ export function layoutForPage(input: PageLayoutInput): {
       layout.footer?.tree ?? null,
       layout.header?.settings.sticky
     ),
-    dynamic
+    dynamic,
+    rules: ctx
   };
 }
 
@@ -231,7 +234,7 @@ export function layoutForNotFound(input: {
   request: RequestFacts;
   mode: DynamicContext["mode"];
   projectId: string;
-}): { tree: ElementNode; dynamic: DynamicContext; themeId: string | null } {
+}): { tree: ElementNode; dynamic: DynamicContext; themeId: string | null; rules: RuleContext } {
   const root = emptyPageTree();
   const dynamic = buildDynamicContext({
     page: { name: "Not found", route: input.request.path, settings: { params: [], state: [] } },
@@ -251,7 +254,7 @@ export function layoutForNotFound(input: {
     input.templates.map((t) => ({ ...t })),
     ctx
   );
-  if (!found) return { tree: defaultNotFoundTree(root), dynamic, themeId: null };
+  if (!found) return { tree: defaultNotFoundTree(root), dynamic, themeId: null, rules: ctx };
   const layout = resolveLayout(
     input.templates.map((t) => ({ ...t })),
     { header: found.settings.header, footer: found.settings.footer },
@@ -265,6 +268,7 @@ export function layoutForNotFound(input: {
       layout.header?.settings.sticky
     ),
     dynamic,
-    themeId: found.settings.themeId
+    themeId: found.settings.themeId,
+    rules: ctx
   };
 }

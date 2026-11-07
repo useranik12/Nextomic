@@ -61,18 +61,20 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 gap-6">
-      <aside className="flex w-64 shrink-0 flex-col gap-3" aria-label="CSS files">
-        <ActionButton size="sm" onPress={add} isDisabled={files.length >= CSS_FILE_MAX_COUNT}>
-          <Icon name="ph:plus" width={14} height={14} />
-          New CSS file
-        </ActionButton>
+    <div className="flex h-full min-h-0">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-divider" aria-label="CSS files">
+        <div className="flex flex-col gap-2 border-b border-divider p-3">
+          <ActionButton size="sm" onPress={add} isDisabled={files.length >= CSS_FILE_MAX_COUNT}>
+            <Icon name="ph:plus" width={14} height={14} />
+            New CSS file
+          </ActionButton>
+        </div>
         {files.length === 0 ? (
-          <p className="text-small text-default-500">
+          <p className="p-3 text-small text-default-500">
             No CSS files yet. Add one for rules that apply across the site.
           </p>
         ) : (
-          <ul className="flex flex-col gap-1">
+          <ul className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
             {files.map((file, index) => {
               const valid = validateCssFile(file.css).ok;
               return (
@@ -127,7 +129,7 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
       </aside>
 
       <section
-        className="flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto pr-1"
+        className="flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto p-4"
         aria-label="CSS file"
       >
         {selected ? (

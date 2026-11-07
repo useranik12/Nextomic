@@ -135,14 +135,13 @@ async function previewTemplate(
   };
   if (stored.type === "error-404") {
     const others = all.filter((t) => t.id !== stored.id);
-    const { tree, dynamic } = layoutForNotFound({
+    return layoutForNotFound({
       templates: [...others, forced],
       settings,
       request,
       mode: "preview",
       projectId
     });
-    return { tree, dynamic };
   }
   const sample = sampleContent();
   const dynamic = buildDynamicContext({
@@ -154,7 +153,8 @@ async function previewTemplate(
       stored.type === "header"
         ? composePage(sample, stored.tree, null, stored.settings.sticky)
         : composePage(sample, null, stored.tree),
-    dynamic
+    dynamic,
+    rules: undefined
   };
 }
 
@@ -201,7 +201,7 @@ export default async function PreviewPage({
   const shown = templateId
     ? await previewTemplate(id, templateId, page, settings, draftTemplates, request)
     : null;
-  const { tree, dynamic } =
+  const laid =
     shown ??
     layoutForPage({
       tree: page.tree,
@@ -229,10 +229,12 @@ export default async function PreviewPage({
       creatorName: "",
       projectId: id
     });
+  const { tree, dynamic } = laid;
   const { theme } = resolveTheme(settings.themes, {
     pageId: page.id,
     route: page.route,
-    forcedThemeId: page.settings.themeId
+    forcedThemeId: page.settings.themeId,
+    rules: laid.rules
   });
   return (
     <>

@@ -90,7 +90,7 @@ export default async function PublishedPage({
   }
   const { page, pageId, settings, publishedAt, meta } = await resolve(id, path);
   const query = new URLSearchParams(values).toString();
-  const { tree, dynamic } = layoutForPage({
+  const { tree, dynamic, rules } = layoutForPage({
     tree: page.tree,
     templates: await getPublishedTemplates(id),
     settings,
@@ -116,7 +116,8 @@ export default async function PublishedPage({
   const { theme } = resolveTheme(settings.themes, {
     pageId,
     route: page.route,
-    forcedThemeId: page.settings.themeId
+    forcedThemeId: page.settings.themeId,
+    rules
   });
   return (
     <>

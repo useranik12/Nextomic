@@ -4,7 +4,7 @@ Two systems that decide how a page looks and what surrounds it. Both pick what a
 
 ## 1. Vocabulary (use these words exactly)
 
-- **Color mode:** light, dark, or a custom mode inside a theme. Visitors can switch it at runtime.
+- **Color mode:** light or dark inside a theme (dark only when the theme turns dark mode on). Custom color modes were removed; old ones are dropped when read. Visitors can switch it at runtime. Letting visitors switch between whitelisted themes is planned as an action later.
 - **Theme:** a named style set for the whole site, like Bricks "Theme Styles". A site can have many themes. Exactly one theme is active on any page render, chosen by conditions.
 - **Template:** a page-level structure such as header, footer, 404, popup, archive, or single. Templates apply to pages by conditions.
 - **Page:** a routed document.
@@ -12,7 +12,7 @@ Two systems that decide how a page looks and what surrounds it. Both pick what a
 
 ## 2. Rules (conditions shared by templates, and later themes, popups and elements)
 
-> BUILT for templates (`packages/schema/src/rules.ts`, editor `components/editor/rules/rule-builder.tsx`). Themes still use their older page and route conditions; moving them onto rules is open.
+> BUILT for templates and themes (`packages/schema/src/rules.ts`, editor `components/editor/rules/rule-builder.tsx`). Theme conditions are rule sets now; older page and route conditions are read as rules (a page list becomes "Page ID is in", `/blog/*` becomes "Page route starts with /blog/"). On the live site and preview, theme rules get the full request facts.
 
 A **rule** compares one **field** with a **value** using an **operator**. Rules join in **groups**: **all** (AND) or **any** (OR). A group can hold other groups (4 levels, 100 rules). An empty set applies everywhere.
 
@@ -28,7 +28,7 @@ A **rule** compares one **field** with a **value** using an **operator**. Rules 
 
 ### 3.1 Model
 
-> Built so far (see the decisions log in `spec.md`): id, name, slug, isDefault, priority, static page/route conditions, modes, defaultMode, respectSystemPreference, allowModeSwitch (off locks visitors to the default mode: saved choice and system preference are ignored), per-mode variable overrides. The first theme created is the default. `elementDefaults`, `fonts` and `customCss` below are still open.
+> Built so far (see the decisions log in `spec.md`): id, name, slug, isDefault, priority, rule-set conditions (same builder as templates; not used by the default theme), light and dark modes, defaultMode, respectSystemPreference, allowModeSwitch (off locks visitors to the default mode: saved choice and system preference are ignored), per-mode variable overrides. The first theme created is the default. `elementDefaults`, `fonts` and `customCss` below are still open.
 
 ```ts
 interface Theme {

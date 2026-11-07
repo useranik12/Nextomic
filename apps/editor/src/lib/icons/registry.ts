@@ -110,6 +110,7 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:arrows-left-right" },
   { id: "ph:arrows-out-line-vertical" },
   { id: "ph:circle-half" },
+  { id: "ph:magic-wand" },
   { id: "ph:columns" },
   { id: "ph:cursor" },
   { id: "ph:dots-three" },

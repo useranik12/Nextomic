@@ -1,5 +1,6 @@
 "use client";
 
+import { CssCodeEditor } from "@/components/ui/code-editor";
 import { importFrameworkCss, type Framework, type ImportReport } from "@nextomic/schema";
 import { useState } from "react";
 import { ActionButton, FormInput } from "@/components/ui/controls";
@@ -55,14 +56,7 @@ export function ImportFramework({
         />
       </label>
       <FormInput compact label="Framework name" value={name} onValueChange={setName} />
-      <textarea
-        aria-label="CSS"
-        value={css}
-        onChange={(e) => setCss(e.target.value)}
-        rows={8}
-        spellCheck={false}
-        className="w-full rounded-large border border-default-200 bg-transparent p-2 font-mono text-tiny outline-none focus:border-default-800"
-      />
+      <CssCodeEditor label="CSS" value={css} onChange={setCss} />
       {error ? (
         <p role="alert" className="text-tiny text-danger">
           {error}

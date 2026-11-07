@@ -28,7 +28,8 @@ export default async function SiteNotFound() {
   const {
     tree,
     dynamic: context,
-    themeId
+    themeId,
+    rules
   } = layoutForNotFound({
     templates,
     settings,
@@ -39,7 +40,8 @@ export default async function SiteNotFound() {
   const { theme } = resolveTheme(settings.themes, {
     pageId: "",
     route: "",
-    forcedThemeId: themeId
+    forcedThemeId: themeId,
+    rules
   });
   return (
     <>

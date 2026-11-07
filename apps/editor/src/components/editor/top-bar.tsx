@@ -17,6 +17,7 @@ import { BreakpointManager } from "./breakpoint-manager";
 import { BreakpointGlyph } from "./icons";
 import { PageMenu } from "./page-menu";
 import { PageSettingsModal } from "./page-settings-modal";
+import { TemplateSettingsModal } from "./template-settings-modal";
 import {
   breakpointHasStyles,
   unsavedDraftLabels,
@@ -440,7 +441,7 @@ function PublishControl({
   );
 }
 
-/** Previews a color mode: a sun/moon switch for two modes, a menu when the theme has more. */
+/** Previews the site in light or dark mode (shown only when the theme has dark mode). */
 function ModePreview({
   mode,
   onModeChange
@@ -449,52 +450,22 @@ function ModePreview({
   onModeChange: (mode: string) => void;
 }) {
   const theme = useResolvedTheme();
-  const modes = theme
-    ? themeModes(theme)
-    : [
-        { id: "light", name: "Light" },
-        { id: "dark", name: "Dark" }
-      ];
-  const current = themeModeFor(theme, mode);
-  const button =
-    "rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground";
-  if (modes.length <= 1) return null;
-  if (modes.length === 2) {
-    const dark = current === "dark";
-    return (
-      <button
-        type="button"
-        aria-label={dark ? "Preview the site in light mode" : "Preview the site in dark mode"}
-        onClick={() => onModeChange(dark ? "light" : "dark")}
-        className={button}
-      >
-        {dark ? (
-          <Icon name="ph:moon" width={20} height={20} />
-        ) : (
-          <Icon name="ph:sun" width={20} height={20} />
-        )}
-      </button>
-    );
-  }
+  const modes = theme ? themeModes(theme) : [];
+  if (theme && modes.length <= 1) return null;
+  const dark = themeModeFor(theme, mode) === "dark";
   return (
-    <Dropdown>
-      <DropdownTrigger>
-        <button type="button" aria-label="Preview a color mode" className={button}>
-          <Icon name="ph:circle-half" width={20} height={20} />
-        </button>
-      </DropdownTrigger>
-      <DropdownMenu
-        aria-label="Color modes"
-        selectionMode="single"
-        disallowEmptySelection
-        selectedKeys={new Set([current])}
-        onAction={(key) => onModeChange(String(key))}
-      >
-        {modes.map((m) => (
-          <DropdownItem key={m.id}>{m.name}</DropdownItem>
-        ))}
-      </DropdownMenu>
-    </Dropdown>
+    <button
+      type="button"
+      aria-label={dark ? "Preview the site in light mode" : "Preview the site in dark mode"}
+      onClick={() => onModeChange(dark ? "light" : "dark")}
+      className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+    >
+      {dark ? (
+        <Icon name="ph:moon" width={20} height={20} />
+      ) : (
+        <Icon name="ph:sun" width={20} height={20} />
+      )}
+    </button>
   );
 }
 
@@ -574,9 +545,7 @@ export function TopBar({
         <button
           type="button"
           aria-label={isTemplate ? "Template settings" : "Page settings"}
-          onClick={() =>
-            isTemplate ? useEditorStore.getState().select(null) : setSettingsOpen(true)
-          }
+          onClick={() => setSettingsOpen(true)}
           className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
         >
           <Icon name="ph:sliders-horizontal" width={20} height={20} />
@@ -595,7 +564,10 @@ export function TopBar({
       </div>
 
       {managerOpen ? <BreakpointManager isOpen onClose={() => setManagerOpen(false)} /> : null}
-      {settingsOpen && pageId ? (
+      {settingsOpen && pageId && isTemplate ? (
+        <TemplateSettingsModal onClose={() => setSettingsOpen(false)} />
+      ) : null}
+      {settingsOpen && pageId && !isTemplate ? (
         <PageSettingsModal
           pages={pages}
           onPagesChange={onPagesChange}

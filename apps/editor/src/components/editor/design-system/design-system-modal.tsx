@@ -128,7 +128,7 @@ export function DesignSystemModal({
               ))}
             </nav>
             <div className="min-w-0 flex-1">
-              {tab === "themes" ? <ThemesTab pages={pages} /> : null}
+              {tab === "themes" ? <ThemesTab /> : null}
               {tab === "framework" ? <FrameworkTab /> : null}
               {tab === "colors" ? <ColorsTab /> : null}
               {tab === "typography" ? <TypographyTab /> : null}

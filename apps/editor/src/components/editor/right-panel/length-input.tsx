@@ -179,6 +179,7 @@ export function LengthInput({
           setOpen(next);
         }}
         placement="bottom-end"
+        shouldCloseOnScroll={false}
       >
         <PopoverTrigger>
           <button

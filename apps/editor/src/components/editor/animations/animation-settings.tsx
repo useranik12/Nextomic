@@ -1,5 +1,6 @@
 "use client";
 
+import { FormatButton } from "@/components/ui/format-button";
 import {
   ANIMATION_METHODS,
   GSAP_EASES,
@@ -250,19 +251,29 @@ export function AnimationSettings({
           label="GSAP vars (JSON)"
           tip='Extra GSAP settings as a JSON object, merged over the values above. Example: {"rotation": 360, "transformOrigin": "center"}. It must be one object, with no functions.'
         >
-          <textarea
-            aria-label="GSAP vars (JSON)"
-            aria-invalid={varsCheck?.ok === false}
-            spellCheck={false}
-            rows={5}
-            value={animation.vars}
-            placeholder='{ "transformOrigin": "center" }'
-            onChange={(e) => patch({ vars: e.target.value })}
-            className={
-              "w-full resize-y rounded-medium bg-default-100 p-3 font-mono text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30 " +
-              (varsCheck?.ok === false ? "ring-1 ring-danger" : "")
-            }
-          />
+          <div className="relative">
+            <div className="absolute right-2 top-2 z-10">
+              <FormatButton
+                code={animation.vars}
+                language="json"
+                label="Format GSAP vars"
+                onFormatted={(vars) => patch({ vars })}
+              />
+            </div>
+            <textarea
+              aria-label="GSAP vars (JSON)"
+              aria-invalid={varsCheck?.ok === false}
+              spellCheck={false}
+              rows={5}
+              value={animation.vars}
+              placeholder='{ "transformOrigin": "center" }'
+              onChange={(e) => patch({ vars: e.target.value })}
+              className={
+                "w-full resize-y rounded-medium bg-default-100 p-3 font-mono text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30 " +
+                (varsCheck?.ok === false ? "ring-1 ring-danger" : "")
+              }
+            />
+          </div>
         </TipField>
         {varsCheck?.ok === false ? (
           <p role="alert" className="text-tiny text-danger">

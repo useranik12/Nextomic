@@ -405,7 +405,9 @@ test("custom CSS file applies, and a heading's styles convert to a class", async
   await page.getByRole("button", { name: "Design System" }).click();
   await page.getByRole("button", { name: /Custom CSS/ }).click();
   await page.getByRole("button", { name: "New CSS file" }).click();
-  await page.getByLabel("CSS of styles-1.css").fill("h1,h2,h3,h4,h5,h6{letter-spacing:7px}");
+  await page
+    .getByLabel("CSS of styles-1.css", { exact: true })
+    .fill("h1,h2,h3,h4,h5,h6{letter-spacing:7px}");
   await page.getByRole("button", { name: "Close the Design System" }).click();
   await page.getByRole("button", { name: "Save and close" }).click();
   await expect(canvas.getByRole("heading")).toHaveCSS("letter-spacing", "7px");
@@ -568,31 +570,30 @@ test("icon tooltips, new class is created, button HTML tag shows names", async (
   await expect(page.getByText("fresh-class").first()).toBeVisible();
 });
 
-test("custom color mode: add it, preview it from the top bar, remove it", async ({ page }) => {
+test("themes: light and dark only, conditions are rules, custom CSS formats", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "Design System" }).click();
   await page.getByRole("button", { name: /^Themes/ }).click();
-
-  // Light and dark only: the top bar keeps its two-way switch.
   await page.getByRole("switch", { name: /Dark mode for the whole site/ }).check({ force: true });
-  await page.getByLabel("New mode name").fill("Sepia");
-  await page.getByRole("button", { name: "Add mode" }).click();
-  await expect(page.getByLabel("Mode sepia")).toHaveValue("Sepia");
+  await expect(page.getByLabel("New mode name")).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Close the Design System" }).click();
-  await page.getByRole("button", { name: "Save and close" }).click();
-  await page.getByRole("button", { name: "Preview a color mode" }).click();
-  await expect(page.getByRole("menuitemradio", { name: "Sepia" })).toBeVisible();
-  await page.keyboard.press("Escape");
+  // A second theme gets the same rule builder as templates.
+  await page.getByLabel("New theme name").fill("Blog");
+  await page.getByRole("button", { name: "New theme" }).click();
+  const conditions = page.getByRole("region", { name: "Conditions" });
+  await conditions.getByRole("button", { name: "Rule", exact: true }).click();
+  await expect(conditions.getByRole("button", { name: "Rule 1 field" })).toBeVisible();
 
-  // Removing the mode brings the two-way switch back.
-  await page.getByRole("button", { name: "Design System" }).click();
-  await page.getByRole("button", { name: /^Themes/ }).click();
-  await page.getByRole("button", { name: "Remove the Sepia mode" }).click();
-  await page.getByRole("button", { name: "Close the Design System" }).click();
-  await page.getByRole("button", { name: "Save and close" }).click();
-  await expect(page.getByRole("button", { name: "Preview a color mode" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Preview the site in/ })).toBeVisible();
+  // Custom CSS: the Format button tidies the code.
+  await page
+    .getByRole("button", { name: /Custom CSS/ })
+    .first()
+    .click();
+  await page.getByRole("button", { name: "New CSS file" }).click();
+  const css = page.getByLabel(/^CSS of styles/);
+  await css.fill(".a{color:red}");
+  await page.getByRole("button", { name: /^Format CSS of styles/ }).click();
+  await expect(css).toHaveValue(".a {\n  color: red;\n}");
 });
 
 test("Pages & Templates: manager, marking, header template on the site, default 404", async ({
@@ -636,8 +637,12 @@ test("Pages & Templates: manager, marking, header template on the site, default 
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   await page.getByRole("button", { name: "Template settings" }).click();
-  await page.getByRole("button", { name: /^Status/ }).click();
-  await page.getByRole("option", { name: "Published", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /^Status/ })
+    .click();
+  await page.locator("[role=option]", { hasText: "Published" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
 
@@ -655,6 +660,11 @@ test("Pages & Templates: manager, marking, header template on the site, default 
 
 test("Generate Screenshots makes one picture per page for the grid", async ({ page }) => {
   await signUpAndCreateProject(page);
+  // An image with no address used to stop the picture from being drawn.
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Image", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible();
   await page.getByRole("button", { name: "App Settings" }).click();
   await page.getByRole("switch", { name: "Generate Screenshots" }).check({ force: true });
   await page.getByRole("button", { name: "Pages & Templates" }).click();
@@ -692,7 +702,7 @@ test("conditions: nested group, excluding, whole site and the wrapping field pic
   // The field picker searches and shows the whole name.
   await conditions.getByRole("button", { name: "Rule 1 field" }).first().click();
   await page.getByLabel("Search Rule 1 field").fill("whole");
-  await page.getByRole("option", { name: "Whole site" }).click({ force: true });
+  await page.locator("[role=option]", { hasText: "Whole site" }).click();
   await expect(conditions.getByRole("button", { name: "Rule 1 field" }).first()).toContainText(
     "Whole site"
   );
@@ -707,14 +717,21 @@ test("sticky header settings reach the live site; scheduled status shows a date 
 }) => {
   const projectId = await signUpAndCreateProject(page);
   await newHeaderTemplate(page, "Sticky header");
-  await page.getByRole("button", { name: /^Status/ }).click();
-  await page.getByRole("option", { name: "Scheduled", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /^Status/ })
+    .click();
+  await page.locator("[role=option]", { hasText: "Scheduled" }).click();
   await expect(page.getByLabel("Go live at").first()).toBeVisible();
-  await page.getByRole("button", { name: /^Status/ }).click();
-  await page.getByRole("option", { name: "Published", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /^Status/ })
+    .click();
+  await page.locator("[role=option]", { hasText: "Published" }).click();
   await page.getByRole("switch", { name: "Sticky header" }).check({ force: true });
   await expect(page.getByLabel("Slide up after", { exact: true })).toBeVisible();
   await page.getByRole("switch", { name: "Sticky on scroll" }).check({ force: true });
+  await page.getByRole("button", { name: "Done" }).click();
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
   await page.getByRole("button", { name: "Publish", exact: true }).click();
