@@ -10,7 +10,7 @@ import {
   type Completion
 } from "@nextomic/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { placeFloating } from "@/lib/place-floating";
+import { placeBeside } from "@/lib/place-floating";
 import { useTypeRegistry } from "../data-types/type-picker";
 import { useEditorDynamicContext } from "../use-editor-context";
 import { asExpressionField, replaceInField, type TextField } from "./expression-field";
@@ -141,10 +141,34 @@ export function ExpressionAssist() {
   }, []);
 
   useEffect(() => {
+    // Deleting a brace of an opening "{{" also removes the "}}" that closed it.
+    let pendingClose: { el: TextField; at: number } | null = null;
+    const onBeforeInput = (e: InputEvent) => {
+      pendingClose = null;
+      const el = asExpressionField(e.target);
+      const backward = e.inputType === "deleteContentBackward";
+      if (!el || (!backward && e.inputType !== "deleteContentForward")) return;
+      if (el.selectionStart !== el.selectionEnd) return;
+      const caret = el.selectionStart ?? 0;
+      const deleted = backward ? caret - 1 : caret;
+      if (el.value[deleted] !== "{") return;
+      const open =
+        el.value[deleted - 1] === "{" ? deleted - 1 : el.value[deleted + 1] === "{" ? deleted : -1;
+      if (open === -1) return;
+      const part = splitTemplate(el.value).find((p) => typeof p !== "string" && p.start === open);
+      // After the brace is gone the "}}" sits one character earlier.
+      if (part && typeof part !== "string") pendingClose = { el, at: part.end - 3 };
+    };
     const onInput = (e: Event) => {
       const el = asExpressionField(e.target);
       if (!el) return;
       const caret = el.selectionStart ?? 0;
+      const brace = pendingClose;
+      pendingClose = null;
+      if (brace && brace.el === el && el.value.slice(brace.at, brace.at + 2) === "}}") {
+        const from = el.value[brace.at - 1] === " " ? brace.at - 1 : brace.at;
+        replaceInField(el, from, brace.at + 2, "", caret);
+      }
       // Typing the second "{" closes the expression and puts the caret between the braces.
       if (
         e instanceof InputEvent &&
@@ -199,6 +223,7 @@ export function ExpressionAssist() {
       if (inPanel(e.relatedTarget) || e.relatedTarget === state.el) return;
       setOpen(null);
     };
+    document.addEventListener("beforeinput", onBeforeInput, true);
     document.addEventListener("input", onInput, true);
     document.addEventListener("keyup", onCaret, true);
     document.addEventListener("click", onCaret, true);
@@ -206,6 +231,7 @@ export function ExpressionAssist() {
     document.addEventListener("keydown", onKey, true);
     document.addEventListener("focusout", onBlur, true);
     return () => {
+      document.removeEventListener("beforeinput", onBeforeInput, true);
       document.removeEventListener("input", onInput, true);
       document.removeEventListener("keyup", onCaret, true);
       document.removeEventListener("click", onCaret, true);
@@ -218,11 +244,11 @@ export function ExpressionAssist() {
   if (!open) return null;
   const items = shownOf(open);
   const rect = open.el.getBoundingClientRect();
-  const place = placeFloating(
+  // Beside the field (left or right, whichever has more room), never over its text.
+  const place = placeBeside(
     rect,
     { width: Math.min(PANEL.width, window.innerWidth - 16), height: PANEL.height },
-    { width: window.innerWidth, height: window.innerHeight },
-    { prefer: "bottom" }
+    { width: window.innerWidth, height: window.innerHeight }
   );
   return (
     <ExpressionPanel

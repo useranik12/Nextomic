@@ -78,3 +78,41 @@ export function ScheduleDialog({
     </Modal>
   );
 }
+
+/** Publish pressed while a publish is scheduled: publishing now removes the schedule. */
+export function ReplaceScheduleDialog({
+  scheduledAt,
+  onConfirm,
+  onCancel
+}: {
+  scheduledAt: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const when = new Date(scheduledAt).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+  return (
+    <Modal isOpen onClose={onCancel} backdrop="blur" size="sm">
+      <ModalContent>
+        <ModalHeader className="flex items-center gap-2">
+          <Icon name="ph:calendar-blank" width={18} height={18} className="text-default-500" />A
+          publish is scheduled
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-small text-default-600">
+            The project is scheduled to publish on {when}. It can only have one publish state, so
+            publishing now removes the schedule.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <ActionButton tone="ghost" onPress={onCancel}>
+            Keep schedule
+          </ActionButton>
+          <ActionButton onPress={onConfirm}>Publish now and remove schedule</ActionButton>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}

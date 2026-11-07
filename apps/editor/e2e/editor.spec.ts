@@ -908,6 +908,12 @@ test("expressions: auto close, grouped suggestions, result, invalid tags", async
   await text.fill("");
   await text.pressSequentially("Hi {{");
   await expect(text).toHaveValue("Hi {{  }}");
+  // The panel sits beside the field, not over it.
+  const fieldBox = await text.boundingBox();
+  const panelBox = await page.getByRole("dialog", { name: "Expression suggestions" }).boundingBox();
+  expect(
+    panelBox!.x + panelBox!.width <= fieldBox!.x || panelBox!.x >= fieldBox!.x + fieldBox!.width
+  ).toBe(true);
   const panel = page.getByRole("dialog", { name: "Expression suggestions" });
   await expect(panel.getByRole("option", { name: /const.brand/ })).toBeVisible();
   await expect(panel.getByText("Functions", { exact: true }).first()).toBeVisible();
@@ -918,6 +924,12 @@ test("expressions: auto close, grouped suggestions, result, invalid tags", async
   await expect(text).toHaveValue("Hi {{ const.brand.toUpperCase() }}");
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.getByRole("heading", { name: "Hi NEXTOMIC" })).toBeVisible();
+
+  // Deleting a brace of "{{" also removes its "}}".
+  await text.fill("Hi {{ a }}");
+  await text.evaluate((el) => (el as HTMLTextAreaElement).setSelectionRange(5, 5));
+  await text.press("Backspace");
+  await expect(text).toHaveValue("Hi { a");
 
   // Nothing is suggested inside a string; an unknown variable marks the element in the Navigator.
   await text.fill("{{ const.brand.replace('n");
@@ -934,10 +946,39 @@ test("publish menu: schedule a publish and remove it", async ({ page }) => {
   await dialog.getByRole("button", { name: "Schedule", exact: true }).click();
   const chip = page.getByRole("button", { name: /^Publishes / });
   await expect(chip).toBeVisible();
+
+  // Publishing now asks first, since only one publish state can stand.
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  const replace = page.getByRole("dialog", { name: "A publish is scheduled" });
+  await replace.getByRole("button", { name: "Keep schedule" }).click();
+  await expect(chip).toBeVisible();
+
+  await page.getByRole("button", { name: "More publish options" }).click();
+  await page.getByText("Edit schedule", { exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Schedule publish" })
+    .getByRole("button", { name: "Schedule", exact: true })
+    .click();
   await chip.click();
   await page
     .getByRole("dialog", { name: "Schedule publish" })
     .getByRole("button", { name: "Remove schedule" })
     .click();
   await expect(chip).toHaveCount(0);
+
+  // Scheduled again, then published now: the schedule goes away.
+  await page.getByRole("button", { name: "More publish options" }).click();
+  await page.getByText("Schedule publish", { exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Schedule publish" })
+    .getByRole("button", { name: "Schedule", exact: true })
+    .click();
+  await expect(chip).toBeVisible();
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "A publish is scheduled" })
+    .getByRole("button", { name: "Publish now and remove schedule" })
+    .click();
+  await expect(chip).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Published", exact: true })).toBeVisible();
 });
