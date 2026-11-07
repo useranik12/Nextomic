@@ -61,11 +61,17 @@ For each action the user picks an API Data call and maps variables and response 
 - Option for static-only sites: client-side storage (local storage). Show a warning in the UI that it is less secure.
 - For Supabase, use the official server-side auth helper for the target framework where one exists (verify current docs). Do not hand-roll token refresh logic that the helper already provides.
 - Refresh runs on the server (middleware or route) and on the client when needed. Failed refresh signs the user out and redirects to the Entry Page.
-- Raw tokens are never rendered into HTML, never exposed in dynamic data, and never readable by custom HTML/JS elements. The `jwt` variable in API calls is resolved by the server only.
+- Raw tokens are never rendered into HTML, never exposed in dynamic data, and never readable by custom HTML/JS elements, with ONE exception: a project that turns on "Expose the raw access token to the page" (App Settings > Authentication, off by default, warning shown) gets `{{user.accessToken}}`. Even then, custom code elements never receive it. The `jwt` variable in API calls is resolved by the server only and remains the way to send the token (custom auth, Supabase, a Cloudflare Worker that checks the user).
+- Token claims: with "Keep token data as dynamic data" on, the server decodes the access token's payload (base64url; the signature is checked where the provider allows) from the session cookie on each request and after each refresh, and gives the page the claims as one JSON value. Claims are not secret, but the page cannot trust them: use them for display and conditions, never as proof. Servers check the token itself.
 
 ## 3. Dynamic data: User group
 
-Built (2026-11-08): the bolt picker's **User** group offers `{{user.id}}` (uid), `{{user.email}}`, `{{user.phone}}`, `{{user.emailVerified}}` and `{{user.loggedIn}}`. There is no JWT tag: raw tokens never reach dynamic data (section 2); queries and API calls send the token themselves. The separate **Nextomic User** group is the BUILDER account (see `dynamic-data-and-actions.md`).
+Built (2026-11-08): the bolt picker's **User** group offers `{{user.id}}` (uid), `{{user.email}}`, `{{user.phone}}`, `{{user.emailVerified}}` and `{{user.loggedIn}}`. Queries and API calls send the token themselves.
+
+Token tags (2026-11-08, owner decision; only while authentication is on, see section 2):
+
+- `{{user.jwt}}` (JSON), shown when "Keep token data as dynamic data" is on: every claim of the access token in one tag, read with dot notation, for example `{{user.jwt.sub}}`, `{{user.jwt.role}}`, `{{user.jwt.app_metadata.plan}}`, `{{user.jwt.exp}}`. Empty (`{}`) while signed out and in the editor.
+- `{{user.accessToken}}` (text), shown only when "Expose the raw access token to the page" is on. Empty in the editor. The separate **Nextomic User** group is the BUILDER account (see `dynamic-data-and-actions.md`).
 
 Planned: `User.isLoggedIn`, `User.id`, `User.email`, `User.phone`, `User.name`, `User.avatarUrl`, `User.role`, `User.metadata.<path>`, `User.claims.<path>`. Available in all content inputs, conditional visibility, conditions (themes, templates), and action params. In the editor, the "Preview as" control chooses Logged out or Logged in with a mock user (editable JSON that the owner writes; it is not fetched).
 

@@ -107,7 +107,7 @@ const BUILT_IN: DynamicGroup[] = [
         token: "user.loggedIn",
         label: "Logged in",
         hint: "true or false",
-        help: "The signed-in user of the built app (App Settings > Authentication). Empty while nobody is signed in. Session tokens are never available here; queries send them for you."
+        help: "The signed-in user of the built app (App Settings > Authentication). Empty while nobody is signed in. Queries and API calls send the session token for you."
       }
     ]
   },
@@ -150,6 +150,33 @@ const BUILT_IN: DynamicGroup[] = [
   }
 ];
 
+const TOKEN_CLAIMS_TAG: DynamicTag = {
+  token: "user.jwt",
+  label: "Token data (JWT)",
+  hint: "JSON",
+  help: "The decoded claims of the signed-in user's access token. Read any claim with dot notation: {{user.jwt.sub}}, {{user.jwt.role}}, {{user.jwt.app_metadata.plan}}, {{user.jwt.exp}}. For display and conditions only: anyone can change what their page shows, so servers must check the token itself. Empty in the editor."
+};
+
+const ACCESS_TOKEN_TAG: DynamicTag = {
+  token: "user.accessToken",
+  label: "Access token (raw)",
+  hint: "text",
+  help: "The raw signed-in token. Any script on the page can read it, so prefer [jwt] in API calls, which the server fills. Never available to custom code elements. Empty in the editor."
+};
+
+/** The User group with the token tags App Settings > Authentication turns on. */
+function withTokenTags(group: DynamicGroup, auth: { claims: boolean; raw: boolean }): DynamicGroup {
+  if (group.id !== "user") return group;
+  return {
+    ...group,
+    tags: [
+      ...group.tags,
+      ...(auth.claims ? [TOKEN_CLAIMS_TAG] : []),
+      ...(auth.raw ? [ACCESS_TOKEN_TAG] : [])
+    ]
+  };
+}
+
 /**
  * The groups a field can use. A field that holds a parameter or a state variable's own value
  * cannot reference those groups (they would refer to themselves), so callers can leave them out.
@@ -157,7 +184,11 @@ const BUILT_IN: DynamicGroup[] = [
 export function dynamicGroups(
   settings: Pick<PageSettings, "params" | "state"> | undefined,
   exclude: ("params" | "state")[] = [],
-  globals?: { appState: readonly AppStateVariable[]; constants: readonly Constant[] }
+  globals?: {
+    appState: readonly AppStateVariable[];
+    constants: readonly Constant[];
+    auth?: { claims: boolean; raw: boolean };
+  }
 ): DynamicGroup[] {
   const groups: DynamicGroup[] = [];
   const typeHint = (v: { type: string; isList: boolean }) => (v.isList ? `${v.type}[]` : v.type);
@@ -203,5 +234,6 @@ export function dynamicGroups(
         hint: v.isList ? `${v.type}[]` : v.type
       }))
     });
-  return [...groups, ...BUILT_IN];
+  const auth = globals?.auth;
+  return [...groups, ...(auth ? BUILT_IN.map((g) => withTokenTags(g, auth)) : BUILT_IN)];
 }

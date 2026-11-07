@@ -1,6 +1,7 @@
 "use client";
 
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
+import { tokenTags } from "@nextomic/schema";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
@@ -90,6 +91,7 @@ function DynamicDataModal({
   const settings = useEditorStore((s) => s.doc?.settings);
   const appState = useEditorStore((s) => s.project.appState);
   const constants = useEditorStore((s) => s.project.constants);
+  const appAuth = useEditorStore((s) => s.project.appAuth);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("all");
   const excludeKey = exclude?.join(",") ?? "";
@@ -97,9 +99,10 @@ function DynamicDataModal({
     () =>
       dynamicGroups(settings, excludeKey ? (excludeKey.split(",") as Exclude) : [], {
         appState,
-        constants
+        constants,
+        auth: tokenTags(appAuth)
       }),
-    [settings, excludeKey, appState, constants]
+    [settings, excludeKey, appState, constants, appAuth]
   );
   const q = query.trim().toLowerCase();
   const visible = groups
