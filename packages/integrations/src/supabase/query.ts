@@ -27,6 +27,12 @@ export const filterSchema = z.discriminatedUnion("operator", [
 ]);
 
 const filters = z.array(filterSchema).max(50);
+/** Exposed schema to use instead of the connection's (sent as Accept-Profile / Content-Profile). */
+const schema = z
+  .string()
+  .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "Use a schema name such as public.")
+  .max(63)
+  .optional();
 const row = z.record(column, z.unknown());
 
 /** A select list such as `id,title,author:profiles(name)`; no quotes, semicolons or slashes. */
@@ -38,6 +44,7 @@ const selectList = z
 export const supabaseRequestSchema = z.discriminatedUnion("op", [
   z.object({
     op: z.literal("select"),
+    schema,
     select: selectList.optional(),
     filters: filters.default([]),
     order: z
@@ -47,12 +54,22 @@ export const supabaseRequestSchema = z.discriminatedUnion("op", [
     limit: z.number().int().min(1).max(1000).optional(),
     offset: z.number().int().min(0).max(1_000_000).optional()
   }),
-  z.object({ op: z.literal("insert"), values: z.union([row, z.array(row).min(1).max(1000)]) }),
+  z.object({
+    op: z.literal("insert"),
+    schema,
+    values: z.union([row, z.array(row).min(1).max(1000)])
+  }),
   // Updates and deletes need at least one filter so a missing condition never hits every row.
-  z.object({ op: z.literal("update"), values: row, filters: filters.min(1) }),
-  z.object({ op: z.literal("delete"), filters: filters.min(1) }),
-  z.object({ op: z.literal("rpc"), args: z.record(z.unknown()).default({}) }),
-  z.object({ op: z.literal("storage.list"), prefix: z.string().max(1024).default("") })
+  z.object({ op: z.literal("update"), schema, values: row, filters: filters.min(1) }),
+  z.object({ op: z.literal("delete"), schema, filters: filters.min(1) }),
+  z.object({ op: z.literal("rpc"), schema, args: z.record(z.unknown()).default({}) }),
+  z.object({ op: z.literal("storage.list"), prefix: z.string().max(1024).default("") }),
+  // A short-lived signed URL for one object of a private bucket (the anon role needs read access).
+  z.object({
+    op: z.literal("storage.sign"),
+    path: z.string().min(1).max(1024),
+    expiresIn: z.number().int().min(60).max(3600).default(600)
+  })
 ]);
 
 export type SupabaseRequest = z.infer<typeof supabaseRequestSchema>;

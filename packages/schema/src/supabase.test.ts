@@ -3,9 +3,12 @@ import { appEnumListSchema } from "./state";
 import {
   enumInSync,
   enumNameOf,
+  mergeSchemaEntry,
   nextomicTypeOf,
   saveSupabaseEnums,
   shortPgType,
+  supabaseRowTargets,
+  supabaseStructureSchema,
   tableEnums,
   type SupabaseTable
 } from "./supabase";
@@ -82,5 +85,55 @@ describe("supabase enums", () => {
     ]);
     expect(appEnumListSchema.safeParse(saved).success).toBe(true);
     expect(enumInSync(saved, { name: "size", values: ["s", "m"] })).toBe(true);
+  });
+});
+
+describe("supabase schemas", () => {
+  const table = (name: string): SupabaseTable => ({
+    name,
+    kind: "table",
+    description: null,
+    columns: [],
+    operations: ["select"]
+  });
+  const bucket = { name: "media", public: true, objectCount: 1, countCapped: false };
+
+  it("reads a structure saved before schemas were separate as one entry", () => {
+    const old = { schema: "public", tables: [table("users")], functions: [], buckets: [bucket] };
+    expect(supabaseStructureSchema.parse(old)).toEqual({
+      schemas: [{ schema: "public", tables: [table("users")], functions: [] }],
+      buckets: [bucket]
+    });
+  });
+
+  it("merges a fetched schema: replaces the same name, keeps others, public first", () => {
+    const first = mergeSchemaEntry(
+      null,
+      { schema: "billing", tables: [table("plans")], functions: [] },
+      []
+    );
+    const second = mergeSchemaEntry(
+      first,
+      { schema: "public", tables: [table("users")], functions: [] },
+      [bucket]
+    );
+    const third = mergeSchemaEntry(
+      second,
+      { schema: "billing", tables: [table("invoices")], functions: [] },
+      [bucket]
+    );
+    expect(third.schemas.map((s) => s.schema)).toEqual(["public", "billing"]);
+    expect(third.schemas[1]?.tables.map((t) => t.name)).toEqual(["invoices"]);
+    expect(third.buckets).toEqual([bucket]);
+  });
+
+  it("names row targets schema.table outside public", () => {
+    const structure = mergeSchemaEntry(
+      mergeSchemaEntry(null, { schema: "public", tables: [table("users")], functions: [] }, []),
+      { schema: "billing", tables: [table("plans")], functions: [] },
+      []
+    );
+    expect(supabaseRowTargets(structure)).toEqual(["users", "billing.plans"]);
+    expect(supabaseRowTargets(null)).toEqual([]);
   });
 });

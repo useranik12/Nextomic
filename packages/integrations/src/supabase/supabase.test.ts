@@ -140,6 +140,23 @@ describe("supabase requests", () => {
     );
   });
 
+  it("accepts a schema per table request and a storage sign request", () => {
+    expect(supabaseRequestSchema.parse({ op: "select", schema: "billing" })).toMatchObject({
+      schema: "billing"
+    });
+    expect(supabaseRequestSchema.safeParse({ op: "select", schema: "bad-name" }).success).toBe(
+      false
+    );
+    expect(supabaseRequestSchema.parse({ op: "storage.sign", path: "a/b.png" })).toEqual({
+      op: "storage.sign",
+      path: "a/b.png",
+      expiresIn: 600
+    });
+    expect(
+      supabaseRequestSchema.safeParse({ op: "storage.sign", path: "a.png", expiresIn: 10 }).success
+    ).toBe(false);
+  });
+
   it("parses resource ids", () => {
     expect(parseResourceId("table:users")).toEqual({ kind: "table", name: "users" });
     expect(parseResourceId("bucket:app-uploads")).toEqual({ kind: "bucket", name: "app-uploads" });
