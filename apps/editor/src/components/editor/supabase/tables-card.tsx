@@ -225,7 +225,7 @@ function SchemaTabs({
     <div
       role="tablist"
       aria-label="Database schemas"
-      className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-default-100 p-1"
+      className="flex w-fit max-w-full shrink-0 select-none gap-1 overflow-x-auto rounded-full bg-default-100 p-1"
     >
       {schemas.map((s) => (
         <button
@@ -235,7 +235,7 @@ function SchemaTabs({
           aria-selected={s.schema === current}
           onClick={() => onPick(s.schema)}
           className={
-            "whitespace-nowrap rounded-full px-3 py-1 font-mono text-tiny transition-colors duration-300 " +
+            "shrink-0 whitespace-nowrap rounded-full px-3 py-1 font-mono text-tiny transition-colors duration-300 " +
             (s.schema === current
               ? "bg-default-300 font-medium text-foreground"
               : "text-default-600 hover:text-foreground")
@@ -299,6 +299,7 @@ export function TablesCard({ model }: { model: SupabasePageModel }) {
             <div className="mt-2 flex min-h-0 flex-1 flex-col gap-4 md:flex-row">
               <div className="flex min-h-0 w-full shrink-0 flex-col gap-2 md:w-72">
                 <FormInput
+                  compact
                   aria-label="Search table or view"
                   placeholder="Search table or view"
                   value={query}

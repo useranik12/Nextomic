@@ -172,8 +172,9 @@ export function SelectField({
   );
 }
 
-export function PasswordInput(props: InputProps) {
+export function PasswordInput(props: InputProps & { compact?: boolean }) {
   const [visible, setVisible] = useState(false);
+  const iconSize = props.compact ? 16 : 20;
   return (
     <FormInput
       {...props}
@@ -187,9 +188,9 @@ export function PasswordInput(props: InputProps) {
           className="rounded-full p-1 text-default-500 outline-none transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800"
         >
           {visible ? (
-            <Icon name="ph:eye-slash" width={20} height={20} />
+            <Icon name="ph:eye-slash" width={iconSize} height={iconSize} />
           ) : (
-            <Icon name="ph:eye" width={20} height={20} />
+            <Icon name="ph:eye" width={iconSize} height={iconSize} />
           )}
         </button>
       }

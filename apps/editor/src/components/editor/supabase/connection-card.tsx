@@ -97,9 +97,10 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
         ) : null
       }
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-        <div className="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-[2fr_2fr_1fr]">
+      <div className="flex flex-col gap-5">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[2fr_2fr_1fr]">
           <FormInput
+            compact
             label="Supabase URL"
             placeholder="https://xyz.supabase.co"
             value={url}
@@ -110,6 +111,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             autoComplete="off"
           />
           <PasswordInput
+            compact
             label="Anon Key/Publishable Key"
             placeholder={
               keyMask?.hasSecret
@@ -124,6 +126,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             autoComplete="off"
           />
           <FormInput
+            compact
             label="Schema"
             placeholder="public"
             value={schema}
@@ -137,8 +140,9 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             autoComplete="off"
           />
         </div>
-        <div className="flex shrink-0 justify-end gap-2">
+        <div className="flex flex-wrap justify-start gap-2">
           <ActionButton
+            size="sm"
             isLoading={busy === "fetch"}
             isDisabled={!canFetch || busy !== null}
             onPress={() => void fetchSchema()}
@@ -147,6 +151,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             {schemaSaved ? "Refetch Schema" : "Fetch Schema"}
           </ActionButton>
           <ActionButton
+            size="sm"
             tone="danger-ghost"
             className="border border-danger"
             isLoading={busy === "clear"}
@@ -205,10 +210,10 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             ) : null}
           </ModalBody>
           <ModalFooter>
-            <ActionButton tone="ghost" onPress={() => setConfirmClear(false)}>
+            <ActionButton size="sm" tone="ghost" onPress={() => setConfirmClear(false)}>
               Cancel
             </ActionButton>
-            <ActionButton tone="danger" onPress={() => void clear()}>
+            <ActionButton size="sm" tone="danger" onPress={() => void clear()}>
               Clear Schema
             </ActionButton>
           </ModalFooter>

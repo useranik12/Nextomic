@@ -58,6 +58,7 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
           </Switch>
           {enabled && supabaseAuthOn ? (
             <PasswordInput
+              compact
               label="Web Client ID"
               value={clientId}
               onValueChange={(v) => {
