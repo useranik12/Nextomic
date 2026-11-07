@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { StateType } from "./state";
+import type { AppEnum, StateType } from "./state";
 
 // The saved STRUCTURE of a Supabase project: tables, views, functions and buckets with their
 // columns and types. Never row data. Fetched with the anon key from PostgREST's OpenAPI document
@@ -50,9 +50,7 @@ export const supabaseStructureSchema = z.object({
   schema: z.string().max(63),
   tables: z.array(supabaseTableSchema).max(2000),
   functions: z.array(supabaseFunctionSchema).max(2000),
-  buckets: z.array(supabaseBucketSchema).max(500),
-  /** User metadata kept across fetches: starred columns per table. */
-  favorites: z.record(z.array(identifier).max(1000)).default({})
+  buckets: z.array(supabaseBucketSchema).max(500)
 });
 
 export type SupabaseColumn = z.infer<typeof supabaseColumnSchema>;
@@ -61,13 +59,8 @@ export type SupabaseFunction = z.infer<typeof supabaseFunctionSchema>;
 export type SupabaseBucket = z.infer<typeof supabaseBucketSchema>;
 export type SupabaseStructure = z.infer<typeof supabaseStructureSchema>;
 
-const NUMBER_TYPES = new Set([
-  "smallint",
-  "integer",
-  "bigint",
-  "int2",
-  "int4",
-  "int8",
+const INT_TYPES = new Set(["smallint", "integer", "bigint", "int2", "int4", "int8"]);
+const FLOAT_TYPES = new Set([
   "real",
   "double precision",
   "float4",
@@ -77,6 +70,8 @@ const NUMBER_TYPES = new Set([
   "money"
 ]);
 const TIME_TYPES = new Set([
+  "timetz",
+  "time",
   "timestamp with time zone",
   "timestamp without time zone",
   "timestamptz",
@@ -92,11 +87,37 @@ export function nextomicTypeOf(pgType: string): StateType {
     .trim()
     .toLowerCase()
     .replace(/\(.*\)$/, "");
-  if (NUMBER_TYPES.has(base)) return "number";
+  if (INT_TYPES.has(base)) return "int";
+  if (FLOAT_TYPES.has(base)) return "float";
   if (base === "boolean" || base === "bool") return "boolean";
   if (TIME_TYPES.has(base)) return "timestamptz";
   if (base === "json" || base === "jsonb") return "json";
   return "string";
+}
+
+/** PostgreSQL's own short names for the long spellings PostgREST reports. */
+const SHORT_PG_TYPES: Record<string, string> = {
+  "timestamp with time zone": "timestamptz",
+  "timestamp without time zone": "timestamp",
+  "time with time zone": "timetz",
+  "time without time zone": "time",
+  "character varying": "varchar",
+  character: "char",
+  "double precision": "float8",
+  real: "float4",
+  integer: "int4",
+  bigint: "int8",
+  smallint: "int2",
+  boolean: "bool",
+  "bit varying": "varbit"
+};
+
+/** `timestamp with time zone` as `timestamptz`, `integer` as `int4`; other names unchanged. */
+export function shortPgType(pgType: string): string {
+  const trimmed = pgType.trim();
+  const match = /^([^(]+?)\s*(\(.*\))?$/.exec(trimmed);
+  const base = (match?.[1] ?? trimmed).toLowerCase();
+  return `${SHORT_PG_TYPES[base] ?? base}${match?.[2] ?? ""}`;
 }
 
 /** Splits `text[]` / `character varying[]` into the element type and a list flag. */
@@ -110,4 +131,55 @@ export function splitArrayType(pgType: string): { base: string; isList: boolean 
 /** Table and view names a Supabase Row type can point at. */
 export function supabaseRowTargets(structure: SupabaseStructure | null): string[] {
   return structure ? structure.tables.map((t) => t.name) : [];
+}
+
+/** A Postgres enum used by a column: its type name (without `[]`) and values in order. */
+export interface SupabaseEnum {
+  name: string;
+  values: string[];
+}
+
+/** The Postgres enums a table's columns use, once each, in column order. */
+export function tableEnums(table: SupabaseTable): SupabaseEnum[] {
+  const found = new Map<string, string[]>();
+  for (const column of table.columns) {
+    if (!column.enumValues) continue;
+    const name = column.pgType.replace(/\[\]$/, "");
+    if (!found.has(name)) found.set(name, column.enumValues);
+  }
+  return [...found].map(([name, values]) => ({ name, values }));
+}
+
+/** True when the app already has an enum of this name with exactly these values, in order. */
+export function enumInSync(enums: readonly AppEnum[], item: SupabaseEnum): boolean {
+  const saved = enums.find((e) => e.name === item.name);
+  return (
+    saved !== undefined &&
+    saved.values.length === item.values.length &&
+    saved.values.every((v, i) => v === item.values[i])
+  );
+}
+
+/**
+ * The app enums with these Supabase enums saved: an enum of the same name gets the fetched values
+ * (in order, description kept); a new name is added. `newId` makes ids for added enums.
+ */
+export function saveSupabaseEnums(
+  enums: readonly AppEnum[],
+  items: readonly SupabaseEnum[],
+  newId: () => string
+): AppEnum[] {
+  const next = [...enums];
+  for (const item of items) {
+    const at = next.findIndex((e) => e.name === item.name);
+    if (at >= 0) next[at] = { ...(next[at] as AppEnum), values: [...item.values] };
+    else
+      next.push({
+        id: newId(),
+        name: item.name,
+        description: "From Supabase",
+        values: [...item.values]
+      });
+  }
+  return next;
 }

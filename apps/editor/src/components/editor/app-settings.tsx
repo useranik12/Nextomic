@@ -3,12 +3,21 @@
 import { Switch } from "@heroui/react";
 import type { ProjectSettings } from "@nextomic/schema";
 import { useState } from "react";
-import { saveProjectSettingsAction } from "@/app/(builder)/editor/[id]/actions";
+import { saveProjectSettingsAction, setHomePageAction } from "@/app/(builder)/editor/[id]/actions";
+import { SelectField } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
+import type { PageSummary } from "@/server/pages";
+import { AppAuthSettingsGroup } from "./app-auth-settings";
 import { useEditorStore } from "./store/editor-store";
 
 // App-wide settings (docs/platform.md App Settings). Only settings that exist today are listed.
-export function AppSettings() {
+export function AppSettings({
+  pages,
+  onPagesChange
+}: {
+  pages: PageSummary[];
+  onPagesChange: (pages: PageSummary[]) => void;
+}) {
   const generateIds = useEditorStore((s) => s.project.generateElementIds);
   const versionControl = useEditorStore((s) => s.project.versionControl);
   const hideEditBorder = useEditorStore((s) => s.project.hideEditBorder);
@@ -38,10 +47,37 @@ export function AppSettings() {
     setError(null);
   }
 
+  /** The home page is a page setting; it is saved on the server and mirrored in the open page. */
+  async function changeHome(pageId: string) {
+    setSaving(true);
+    const result = await setHomePageAction(useEditorStore.getState().projectId, pageId);
+    setSaving(false);
+    if (result.error !== null) return setError(result.error);
+    setError(null);
+    onPagesChange(pages.map((p) => ({ ...p, isHome: p.id === pageId })));
+    const store = useEditorStore.getState();
+    if (store.page) store.syncIsHome(store.page.id === pageId);
+  }
+
+  const home = pages.find((p) => p.isHome)?.id ?? "";
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto">
       <h2 className="px-3 py-2 text-small font-medium text-foreground">App Settings</h2>
       <div className="flex flex-col gap-5 px-3 pb-3">
+        <SelectField
+          label="Home page"
+          value={home || "none"}
+          isDisabled={saving || pages.length === 0}
+          description="The page served at the site's address."
+          options={[
+            ...(home ? [] : [{ value: "none", label: "Choose a page" }]),
+            ...pages.map((p) => ({ value: p.id, label: `${p.name} (${p.route})` }))
+          ]}
+          onValueChange={(v) => {
+            if (v !== "none" && v !== home) void changeHome(v);
+          }}
+        />
         <div className="flex flex-col gap-1">
           <Switch
             isSelected={generateIds}
@@ -109,6 +145,7 @@ export function AppSettings() {
             Shows a running clock (hh:mm:ss, AM or PM) in the top bar, left of the open page link.
           </p>
         </div>
+        <AppAuthSettingsGroup pages={pages} saving={saving} change={change} />
         {error ? (
           <p role="alert" className="text-small text-danger">
             {error}

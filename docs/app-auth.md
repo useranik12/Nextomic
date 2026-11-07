@@ -65,7 +65,9 @@ For each action the user picks an API Data call and maps variables and response 
 
 ## 3. Dynamic data: User group
 
-`User.isLoggedIn`, `User.id`, `User.email`, `User.phone`, `User.name`, `User.avatarUrl`, `User.role`, `User.metadata.<path>`, `User.claims.<path>`. Available in all content inputs, conditional visibility, conditions (themes, templates), and action params. In the editor, the "Preview as" control chooses Logged out or Logged in with a mock user (editable JSON that the owner writes; it is not fetched).
+Built (2026-11-08): the bolt picker's **User** group offers `{{user.id}}` (uid), `{{user.email}}`, `{{user.phone}}`, `{{user.emailVerified}}` and `{{user.loggedIn}}`. There is no JWT tag: raw tokens never reach dynamic data (section 2); queries and API calls send the token themselves. The separate **Nextomic User** group is the BUILDER account (see `dynamic-data-and-actions.md`).
+
+Planned: `User.isLoggedIn`, `User.id`, `User.email`, `User.phone`, `User.name`, `User.avatarUrl`, `User.role`, `User.metadata.<path>`, `User.claims.<path>`. Available in all content inputs, conditional visibility, conditions (themes, templates), and action params. In the editor, the "Preview as" control chooses Logged out or Logged in with a mock user (editable JSON that the owner writes; it is not fetched).
 
 ## 4. Route protection
 
@@ -107,6 +109,17 @@ For each action the user picks an API Data call and maps variables and response 
 - Built-in validation presets: email format, password policy (min length, character rules), password confirmation match, OTP length.
 
 ## 7. Settings data
+
+Built (2026-11-08) in project settings as `appAuth` (`packages/schema/src/app-auth.ts`), edited in App Settings > Authentication:
+
+- `enabled` ("Use authentication"). Off: the provider is effectively None; "Requires Authentication" in page settings is disabled and pages are not protected.
+- `requireByDefault` ("New pages require authentication"): a page created while this is on starts with Requires Authentication checked.
+- `entryPageId` ("Login page"): never requires sign-in (its checkbox is disabled); signed-out visitors of protected pages go here; signed-in users are sent away from it.
+- `loggedInPageId` ("After sign-in page"): where users go after sign-in when the action flow does not navigate.
+- `provider`: `supabase` or `custom` (REST API and others); with `custom`, `userDataTypeId` picks the app data type that holds the user's data.
+- `pageRequiresAuth(auth, page)` decides protection. Until the built-app auth runtime exists, live sites do not serve protected pages at all.
+
+The full planned shape:
 
 ```ts
 interface AppAuthSettings {

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
+import { ConnectionStatusChip } from "./connection-status";
 import { SupabaseCard } from "./supabase-page";
 import type { SupabasePageModel } from "./use-supabase-page";
 
@@ -72,6 +73,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
   return (
     <SupabaseCard
       title="Connection"
+      badge={<ConnectionStatusChip status={model.status} />}
       aside={
         connector ? (
           <Switch
@@ -85,41 +87,41 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
         ) : null
       }
     >
-      <div className="flex flex-wrap items-end gap-4">
-        <FormInput
-          label="Supabase URL"
-          placeholder="https://xyz.supabase.co"
-          value={url}
-          onValueChange={(v) => {
-            setUrl(v);
-            setError(null);
-          }}
-          className="w-full max-w-sm"
-          autoComplete="off"
-        />
-        <PasswordInput
-          label="Anon Key/Publishable Key"
-          placeholder={
-            keyMask?.hasSecret
-              ? `Saved${keyMask.tail ? ` (…${keyMask.tail})` : ""}. Paste to replace.`
-              : "eyJ… or sb_publishable_…"
-          }
-          value={key}
-          onValueChange={(v) => {
-            setKey(v);
-            setError(null);
-          }}
-          className="w-full max-w-sm"
-          autoComplete="off"
-        />
-        <div className="ml-auto flex gap-2">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+        <div className="grid flex-1 gap-4 sm:grid-cols-2">
+          <FormInput
+            label="Supabase URL"
+            placeholder="https://xyz.supabase.co"
+            value={url}
+            onValueChange={(v) => {
+              setUrl(v);
+              setError(null);
+            }}
+            autoComplete="off"
+          />
+          <PasswordInput
+            label="Anon Key/Publishable Key"
+            placeholder={
+              keyMask?.hasSecret
+                ? `Saved${keyMask.tail ? ` (…${keyMask.tail})` : ""}. Paste to replace.`
+                : "eyJ… or sb_publishable_…"
+            }
+            value={key}
+            onValueChange={(v) => {
+              setKey(v);
+              setError(null);
+            }}
+            autoComplete="off"
+          />
+        </div>
+        <div className="flex shrink-0 justify-end gap-2">
           <ActionButton
             isLoading={busy === "fetch"}
             isDisabled={!canFetch || busy !== null}
             onPress={() => void fetchSchema()}
           >
             <Icon name="ph:download-simple" width={16} height={16} />
-            Fetch Schema
+            {data?.schema ? "Refetch Schema" : "Fetch Schema"}
           </ActionButton>
           <ActionButton
             tone="danger-ghost"

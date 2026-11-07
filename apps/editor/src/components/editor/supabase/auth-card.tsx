@@ -3,12 +3,15 @@
 import { Switch } from "@heroui/react";
 import { useState } from "react";
 import { ActionButton, PasswordInput } from "@/components/ui/controls";
+import { useEditorStore } from "../store/editor-store";
 import { SupabaseCard } from "./supabase-page";
 import { authOf, type SupabasePageModel } from "./use-supabase-page";
 
 /** Supabase auth providers for the built app. Public values only; saved with Save. */
 export function AuthCard({ model }: { model: SupabasePageModel }) {
   const saved = authOf(model.connector?.config);
+  const appAuth = useEditorStore((s) => s.project.appAuth);
+  const supabaseAuthOn = appAuth.enabled && appAuth.provider === "supabase";
   const [enabled, setEnabled] = useState(saved.google.enabled);
   const [clientId, setClientId] = useState(saved.google.webClientId);
   const [busy, setBusy] = useState(false);
@@ -33,6 +36,11 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
       title="Authentication"
       description="Supabase authentication for the app. Works only if Supabase Authentication is selected in App Settings."
     >
+      {!supabaseAuthOn ? (
+        <p className="text-small text-warning">
+          Not in use: turn on authentication with the Supabase method in App Settings.
+        </p>
+      ) : null}
       {!model.connector ? (
         <p className="text-small text-default-500">Connect Supabase first.</p>
       ) : (

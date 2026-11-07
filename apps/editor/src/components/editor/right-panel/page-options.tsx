@@ -312,6 +312,9 @@ function PageParameters() {
 function RouteSettings() {
   const route = useEditorStore((s) => s.doc?.route ?? "/");
   const requiresAuth = useEditorStore((s) => s.doc?.settings.requiresAuth ?? false);
+  const appAuth = useEditorStore((s) => s.project.appAuth);
+  const pageId = useEditorStore((s) => s.page?.id ?? "");
+  const isLoginPage = appAuth.enabled && pageId !== "" && pageId === appAuth.entryPageId;
   const updateMeta = useEditorStore((s) => s.updatePageMeta);
   const updateSettings = useEditorStore((s) => s.updatePageSettings);
   const [open, setOpen] = useState(true);
@@ -361,11 +364,21 @@ function RouteSettings() {
           )}
           <Checkbox
             size="sm"
-            isSelected={requiresAuth}
+            isSelected={requiresAuth && !isLoginPage}
+            isDisabled={!appAuth.enabled || isLoginPage}
             onValueChange={(v) => updateSettings({ requiresAuth: v })}
           >
             <span className="text-small">Requires Authentication</span>
           </Checkbox>
+          {!appAuth.enabled ? (
+            <p className="text-tiny text-default-500">
+              Turn on authentication in App Settings to use this.
+            </p>
+          ) : isLoginPage ? (
+            <p className="text-tiny text-default-500">
+              This is the login page, so it never requires sign-in.
+            </p>
+          ) : null}
         </>
       ) : null}
     </section>
@@ -463,7 +476,7 @@ function StateVariables() {
                 <span className="text-tiny text-default-500">
                   {" "}
                   {v.type}
-                  {v.isList ? " list" : ""}
+                  {v.isList ? "[]" : ""}
                 </span>
                 {typeof v.defaultValue === "string" && v.defaultValue ? (
                   <span className="text-tiny text-default-500"> = {v.defaultValue}</span>

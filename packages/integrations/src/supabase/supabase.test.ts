@@ -67,11 +67,14 @@ describe("supabase schema reading", () => {
     const col = (name: string) => users?.columns.find((c) => c.name === name);
     expect(col("user_id")).toMatchObject({
       primaryKey: true,
-      type: "number",
+      type: "int",
       nullable: false,
       description: null
     });
     expect(col("email")).toMatchObject({ type: "string", nullable: false, primaryKey: false });
+    expect(col("user_id")?.pgType).toBe("int8");
+    expect(col("verified")?.pgType).toBe("bool");
+    expect(col("joined_at")?.pgType).toBe("timestamptz");
     expect(col("joined_at")).toMatchObject({
       type: "timestamptz",
       hasDefault: true,
@@ -158,7 +161,7 @@ const url = process.env.E2E_SUPABASE_URL;
 const anonKey = process.env.E2E_SUPABASE_ANON_KEY;
 
 describe.skipIf(!url || !anonKey)("supabase connector against a real project", () => {
-  const cfg = supabaseConfigSchema.parse({ projectUrl: url });
+  const cfg = supabaseConfigSchema.parse({ projectUrl: url ?? "https://example.invalid" });
   const secrets = { anonKey: anonKey ?? "" };
   const ctx = () => ({
     projectId: "p",

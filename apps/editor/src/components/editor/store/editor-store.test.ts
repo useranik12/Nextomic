@@ -1,4 +1,5 @@
 import {
+  defaultAppAuthSettings,
   DEFAULT_BREAKPOINTS,
   emptyPageTree,
   defaultPageSettings,
@@ -29,7 +30,8 @@ const project: ProjectSettings = {
   appState: [],
   constants: [],
   enums: [],
-  dataTypes: []
+  dataTypes: [],
+  appAuth: defaultAppAuthSettings()
 };
 
 function reset() {

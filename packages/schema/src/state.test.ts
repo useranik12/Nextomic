@@ -57,9 +57,10 @@ const registry: TypeRegistry = {
 
 describe("typed values", () => {
   it.each([
-    ["number", "42", true],
-    ["number", "4.2", true],
-    ["number", "abc", false],
+    ["int", "42", true],
+    ["int", "4.2", false],
+    ["float", "4.2", true],
+    ["float", "abc", false],
     ["boolean", "true", true],
     ["boolean", "yes", false],
     ["timestamptz", "2026-01-31T09:30:00Z", true],
@@ -79,7 +80,8 @@ describe("typed values", () => {
   });
 
   it("reads old type names as their replacements", () => {
-    expect(stateTypeSchema.parse("integer")).toBe("number");
+    expect(stateTypeSchema.parse("integer")).toBe("int");
+    expect(stateTypeSchema.parse("number")).toBe("float");
     expect(stateTypeSchema.parse("date")).toBe("timestamptz");
   });
 
@@ -100,23 +102,23 @@ describe("typed values", () => {
   });
 
   it("reads lists as JSON arrays of the type", () => {
-    expect(checkStateValue(spec("number", true), "[1, 2.5]")).toBeNull();
-    expect(checkStateValue(spec("number", true), '[1, "a"]')).toMatch(/Item 2/);
+    expect(checkStateValue(spec("float", true), "[1, 2.5]")).toBeNull();
+    expect(checkStateValue(spec("int", true), '[1, "a"]')).toMatch(/Item 2/);
     expect(checkStateValue(spec("string", true), "a, b")).not.toBeNull();
   });
 
   it("treats empty text as no value", () => {
-    expect(checkStateValue(spec("number"), "")).toBeNull();
+    expect(checkStateValue(spec("int"), "")).toBeNull();
   });
 
   it("refuses a saved value that does not fit", () => {
-    const c = { ...newConstant("1", []), type: "number" as const, value: "abc" };
+    const c = { ...newConstant("1", []), type: "int" as const, value: "abc" };
     expect(constantListSchema.safeParse([c]).success).toBe(false);
   });
 
   it("keeps a value across a type change only when it still fits", () => {
     expect(valueAfterTypeChange("3", spec("string"))).toBe("3");
-    expect(valueAfterTypeChange("abc", spec("number"))).toBe("");
+    expect(valueAfterTypeChange("abc", spec("int"))).toBe("");
   });
 
   it("finds where an enum or data type is referenced", () => {
@@ -129,7 +131,7 @@ describe("typed values", () => {
   });
 
   it("describes types with their reference", () => {
-    expect(describeType(spec("enum", true, "e1"), registry)).toBe("Enum Size list");
+    expect(describeType(spec("enum", true, "e1"), registry)).toBe("Enum Size[]");
   });
 
   it("projects without state read as empty lists", () => {
@@ -153,7 +155,7 @@ describe("app and const tags", () => {
           ref: "",
           defaultValue: '{"items":[{"name":"Tea"}]}'
         },
-        { name: "count", type: "number", isList: false, ref: "", defaultValue: "3" },
+        { name: "count", type: "int", isList: false, ref: "", defaultValue: "3" },
         {
           name: "since",
           type: "timestamptz",

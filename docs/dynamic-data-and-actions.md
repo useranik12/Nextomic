@@ -5,7 +5,7 @@
 - Dynamic data works EVERYWHERE (see "Universal dynamic data" in `elements.md`): content, attributes, style values, conditions, action params, query params, route and SEO fields.
 - Any input accepts a mix of static text and dynamic tokens, e.g. `Hello {{user.name}}, you have {{query.orders.count}} orders`. Token syntax is `{{ path }}` everywhere except inside API call definitions (see `integrations.md`).
 - The bolt icon (amber) opens the dynamic data modal: searchable, grouped, type-aware, with live preview values.
-- Groups: **Site**, **Page**, **Template**, **User** (see `app-auth.md`), **App state**, **Constants**, **Page state**, **Route params**, **Component/Item (loop)**, **Supabase Query (<element/query name>)**, **API Query (<name>)**, **Form** (values of named form fields), **Action outputs**, **Date/Time**, **Theme** (active theme name and color mode).
+- Groups: **Site**, **Page**, **Template**, **User** (the built app's signed-in user, see `app-auth.md`), **Nextomic User** (the builder account viewing the editor or preview: `{{nextomic.user.id|name|email|image|role|emailVerified|twoFactorEnabled|passkeys|createdAt}}`; empty on live sites; no tokens), **App state**, **Constants**, **Page state**, **Route params**, **Component/Item (loop)**, **Supabase Query (<element/query name>)**, **API Query (<name>)**, **Form** (values of named form fields), **Action outputs**, **Date/Time**, **Theme** (active theme name and color mode).
 - Dot notation reaches into nested JSON (`item.address.city`, `response.data[0].id`). Parent query data can be parsed by children with dot notation.
 - Dynamic data renders on the editor canvas.
 
@@ -60,7 +60,7 @@ Everything between `{{` and `}}` is an expression in a JavaScript-like syntax, n
 
 UI: State Management page (tabs App State and Constants, `ui-reference.md` 4.10) and the Page State Variables list in the right panel when nothing is selected (4.3).
 
-- **App state variables** (global): typed, optionally a list. Types: String, Number (whole and decimal), Boolean, JSON, Timestamptz, Color, URL, ENUM (an enum from the Data Types page), Data Type (a custom data type from the Data Types page), Supabase Row (a row of a fetched Supabase table or view, from step 4d). Each has a name, default value, description, and a **Persist** switch.
+- **App state variables** (global): typed, optionally a list. Types: String, Int (whole numbers), Float (any number), Boolean, JSON, Timestamptz, Color, URL, ENUM (an enum from the Data Types page), Data Type (a custom data type from the Data Types page), Supabase Row (a row of a fetched Supabase table or view, from step 4d). Each has a name, default value, description, and a **Persist** switch.
 - **Constants** (global, read-only at runtime): same types, a fixed value and description. Actions cannot change them.
 - **Page state variables** (per page): same types, local to the page, reset when the page is left, never persisted.
 - **Page parameters**: String, Number, Boolean or Timestamptz (they come from the address).

@@ -1,15 +1,15 @@
 "use client";
 
-import type { SupabaseStructure } from "@nextomic/schema";
 import { useCallback, useEffect, useState } from "react";
 import {
   clearSupabaseSchemaAction,
   fetchSupabaseSchemaAction,
   getSupabasePageAction,
   saveConnectorAction,
-  setSupabaseFavoriteAction,
+  testSupabaseAction,
   type SupabasePageData
 } from "@/app/(builder)/editor/[id]/connector-actions";
+import type { ConnectionStatus } from "./connection-status";
 import { useSupabaseTables } from "./supabase-store";
 
 export interface SupabaseAuthConfig {
@@ -42,7 +42,28 @@ export function authOf(config: Record<string, unknown> | undefined): SupabaseAut
 export function useSupabasePage(projectId: string) {
   const [data, setData] = useState<SupabasePageData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [status, setStatus] = useState<ConnectionStatus>({ kind: "checking" });
   const setTables = useSupabaseTables((s) => s.setTables);
+
+  /** Live status: not set up, turned off, failing test, missing schema, or connected. */
+  const check = useCallback(
+    async (next: SupabasePageData) => {
+      const { connector, schema } = next;
+      if (!connector) return setStatus({ kind: "none" });
+      if (!connector.active)
+        return setStatus({ kind: "warning", message: "The connection is turned off." });
+      setStatus({ kind: "checking" });
+      const result = await testSupabaseAction(projectId, connector.id);
+      if (result.data === null) return setStatus({ kind: "failed", message: result.error });
+      if (!result.data.ok) return setStatus({ kind: "failed", message: result.data.message });
+      setStatus(
+        schema
+          ? { kind: "connected", message: result.data.message }
+          : { kind: "warning", message: "Connected, but the schema is not fetched yet." }
+      );
+    },
+    [projectId]
+  );
 
   const reload = useCallback(async () => {
     const result = await getSupabasePageAction(projectId);
@@ -50,7 +71,8 @@ export function useSupabasePage(projectId: string) {
     setLoadError(null);
     setData(result.data);
     setTables(result.data.schema?.structure.tables.map((t) => t.name) ?? []);
-  }, [projectId, setTables]);
+    void check(result.data);
+  }, [projectId, setTables, check]);
 
   useEffect(() => {
     void reload();
@@ -97,24 +119,7 @@ export function useSupabasePage(projectId: string) {
     return { data: null, error: null };
   }
 
-  async function setFavorite(
-    table: string,
-    column: string,
-    starred: boolean
-  ): Promise<string | null> {
-    if (!connector || !data?.schema) return null;
-    const result = await setSupabaseFavoriteAction(projectId, connector.id, {
-      table,
-      column,
-      starred
-    });
-    if (result.data === null) return result.error;
-    const structure: SupabaseStructure = { ...data.schema.structure, favorites: result.data };
-    setData({ ...data, schema: { ...data.schema, structure } });
-    return null;
-  }
-
-  return { data, loadError, reload, connector, save, fetchSchema, clearSchema, setFavorite };
+  return { data, loadError, reload, status, connector, save, fetchSchema, clearSchema };
 }
 
 export type SupabasePageModel = ReturnType<typeof useSupabasePage>;

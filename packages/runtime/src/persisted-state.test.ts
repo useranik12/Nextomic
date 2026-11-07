@@ -31,7 +31,7 @@ function memoryEnv(namespace = "p1"): PersistEnv {
 
 const def = (over: Partial<PersistedDef> = {}): PersistedDef => ({
   name: "count",
-  type: "number",
+  type: "int",
   isList: false,
   ref: "",
   defaultValue: "0",
@@ -60,7 +60,8 @@ describe("persisted app state", () => {
 
   it("refuses a value that does not fit the type", () => {
     expect(writePersisted(def(), "abc", memoryEnv()).ok).toBe(false);
-    expect(writePersisted(def(), "4.5", memoryEnv()).ok).toBe(true);
+    expect(writePersisted(def(), "4", memoryEnv()).ok).toBe(true);
+    expect(writePersisted(def(), "4.5", memoryEnv()).ok).toBe(false);
   });
 
   it("logout clears persisted values except Keep after logout", () => {

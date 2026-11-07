@@ -1,6 +1,7 @@
 import {
   elementNodeSchema,
   isLive,
+  pageRequiresAuth,
   themeCss,
   usedClassNames,
   pageSettingsSchema,
@@ -243,9 +244,17 @@ export async function getPublishedView(
     route === null
       ? (snapshots.find((p) => p.settings.isHome) ?? snapshots[0])
       : snapshots.find((p) => p.route === route);
-  if (!found || found.settings.requiresAuth) return null;
+  if (!found) return null;
   const settings = projectSettingsSchema.safeParse(project.settings);
   if (!settings.success) return null;
+  // Pages behind sign-in are not served until the built-app auth runtime exists.
+  if (
+    pageRequiresAuth(settings.data.appAuth, {
+      id: found.id,
+      requiresAuth: found.settings.requiresAuth
+    })
+  )
+    return null;
   return {
     publishedAt: project.publishedAt,
     pageId: found.id,

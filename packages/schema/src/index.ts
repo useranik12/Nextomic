@@ -9,6 +9,7 @@ export * from "./element";
 export * from "./page";
 export * from "./state";
 export * from "./supabase";
+export * from "./app-auth";
 export * from "./status";
 export * from "./project-settings";
 export * from "./tree";

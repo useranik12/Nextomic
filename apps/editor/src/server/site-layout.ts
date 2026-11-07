@@ -10,6 +10,7 @@ import {
   resolveLayout,
   resolveNotFound,
   type DynamicContext,
+  type NextomicUser,
   type ElementNode,
   type PageSeo,
   type PageSettings,
@@ -137,6 +138,8 @@ export interface PageLayoutInput {
   mode: DynamicContext["mode"];
   creatorName: string;
   projectId: string;
+  /** The builder account viewing a preview, for {{nextomic.user.*}}; absent on live sites. */
+  nextomicUser?: NextomicUser | null;
 }
 
 /** The page tree inside its header and footer, and the dynamic context the renderer needs. */
@@ -158,7 +161,8 @@ export function layoutForPage(input: PageLayoutInput): {
     mode: input.mode,
     paramValues: input.params,
     query: input.request.query,
-    globals: input.settings
+    globals: input.settings,
+    nextomicUser: input.nextomicUser ?? null
   });
   const ctx = serverRuleContext({
     kind: "page",

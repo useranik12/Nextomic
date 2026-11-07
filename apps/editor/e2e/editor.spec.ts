@@ -773,9 +773,9 @@ test("state management: drafts, guard, and values feed dynamic data", async ({ p
     "data-disabled",
     "true"
   );
-  await page.locator("[role=option]", { hasText: "Number" }).click();
-  await page.getByLabel("Default value of cart_count").fill("abc");
-  await expect(page.getByText("Expected a number.")).toBeVisible();
+  await page.locator("[role=option]", { hasText: /^Int$/ }).click();
+  await page.getByLabel("Default value of cart_count").fill("2.5");
+  await expect(page.getByText("Expected a whole number.")).toBeVisible();
   await page.getByLabel("Default value of cart_count").fill("3");
   await page.getByRole("switch", { name: "Persist cart_count" }).click({ force: true });
   await page.getByRole("button", { name: "Show details of cart_count" }).click();
@@ -813,7 +813,7 @@ test("state management: drafts, guard, and values feed dynamic data", async ({ p
   await page.getByRole("button", { name: "Save Constants" }).click();
 
   // Both groups show in the bolt picker and resolve on the canvas.
-  await page.getByRole("button", { name: "Navigator" }).click();
+  await page.getByRole("button", { name: "Navigator", exact: true }).click();
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   await page.getByRole("button", { name: "Dynamic value for Text" }).click();
@@ -1023,4 +1023,25 @@ test("connector proxy guards: sign-in, same origin, JSON, project scope", async 
     ok: false,
     error: { code: "not_found", message: "Connector not found." }
   });
+});
+
+test("App Settings: home page and app authentication", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await expect(page.locator("button", { hasText: "Home (/)" })).toBeVisible();
+  // Requires Authentication waits for authentication to be turned on.
+  const requires = page.getByLabel("Requires Authentication");
+  await page.getByRole("switch", { name: "Use authentication" }).click({ force: true });
+  const byDefault = page.getByLabel("New pages require authentication");
+  await expect(byDefault).toBeEnabled();
+  await byDefault.check({ force: true });
+  await expect(byDefault).toBeChecked();
+  // Controls are disabled while the settings save; enabled again means the save finished.
+  await expect(byDefault).toBeEnabled();
+  await page.getByRole("button", { name: "Navigator" }).click();
+  await expect(requires).toBeEnabled();
+  await page.reload();
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await expect(page.getByRole("switch", { name: "Use authentication" })).toBeChecked();
+  await expect(page.getByLabel("New pages require authentication")).toBeChecked();
 });

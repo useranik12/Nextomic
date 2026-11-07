@@ -105,6 +105,8 @@ export interface SelectFieldProps {
   onValueChange: (value: string) => void;
   compact?: boolean;
   isDisabled?: boolean;
+  /** Help text under the field. */
+  description?: string;
   className?: string;
 }
 
@@ -116,6 +118,7 @@ export function SelectField({
   onValueChange,
   compact = false,
   isDisabled,
+  description,
   className
 }: SelectFieldProps) {
   // Opening the list inside a scrolling modal makes the modal body fire one stray scroll event, and
@@ -138,6 +141,7 @@ export function SelectField({
       variant="bordered"
       disallowEmptySelection
       isDisabled={isDisabled}
+      description={description}
       onOpenChange={(open) => {
         if (open) openedAt.current = Date.now();
       }}

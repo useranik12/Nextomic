@@ -1,5 +1,6 @@
 import { getElementDefinition } from "@nextomic/renderer";
 import {
+  defaultAppAuthSettings,
   BASE_BREAKPOINT_ID,
   sortBreakpoints,
   anyStylesAt,
@@ -204,6 +205,8 @@ interface EditorState {
   setTargetStyles: (id: string, styles: StyleMap) => void;
   updatePageMeta: (patch: Partial<Pick<PageDoc, "name" | "route">>) => void;
   updatePageSettings: (patch: Partial<PageSettings>) => void;
+  /** Mirrors a home page change saved on the server; not an edit (no history, not dirty). */
+  syncIsHome: (isHome: boolean) => void;
   updateTemplateSettings: (patch: Partial<TemplateSettings>) => void;
   replaceProject: (project: ProjectSettings) => void;
   setBreakpoints: (
@@ -304,7 +307,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
       appState: [],
       constants: [],
       enums: [],
-      dataTypes: []
+      dataTypes: [],
+      appAuth: defaultAppAuthSettings()
     },
     page: null,
     doc: null,
@@ -979,6 +983,12 @@ export const useEditorStore = create<EditorState>((set, get) => {
       void edit(`meta:${Object.keys(patch).join(",")}`, (draft) => {
         Object.assign(draft, patch);
       }),
+
+    syncIsHome: (isHome) => {
+      const doc = get().doc;
+      if (!doc || doc.settings.isHome === isHome) return;
+      set({ doc: { ...doc, settings: { ...doc.settings, isHome } } });
+    },
 
     updatePageSettings: (patch) =>
       void edit(`settings:${Object.keys(patch).join(",")}`, (draft) => {
