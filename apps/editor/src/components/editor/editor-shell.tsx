@@ -28,6 +28,8 @@ import { useAutosave } from "./use-autosave";
 import { VersionHistory } from "./version-history";
 import { StateManager } from "./state/state-manager";
 import { DataTypesManager } from "./data-types/data-types-manager";
+import { SupabasePage } from "./supabase/supabase-page";
+import { useSupabaseTables } from "./supabase/supabase-store";
 import { ExpressionAssist } from "./expression/expression-assist";
 import { ExpressionHighlights } from "./expression/expression-highlights";
 
@@ -80,12 +82,15 @@ export function EditorShell({
   projectId,
   project,
   initialPages,
-  initialPage
+  initialPage,
+  supabaseTables
 }: {
   projectId: string;
   project: ProjectSettings;
   initialPages: PageSummary[];
   initialPage: StoredPage;
+  /** Tables and views of the saved Supabase schema, for the Supabase Row type. */
+  supabaseTables: string[];
 }) {
   const [ready, setReady] = useState(false);
   const navigatorWidth = usePanelWidth("nxt:navigator-width", NAVIGATOR_MIN, NAVIGATOR_MIN);
@@ -121,6 +126,7 @@ export function EditorShell({
     setCollapsed(true);
     const store = useEditorStore.getState();
     store.init(projectId, project);
+    useSupabaseTables.getState().setTables(supabaseTables);
     store.loadPage(
       { id: initialPage.id, version: initialPage.version },
       {
@@ -131,7 +137,7 @@ export function EditorShell({
       }
     );
     setReady(true);
-  }, [projectId, project, initialPage]);
+  }, [projectId, project, initialPage, supabaseTables]);
 
   // One left panel at a time: with the Navigator open the section rail is folded to its icons, and
   // selecting an element closes the Elements popup (an insert selects the new element). Other
@@ -168,7 +174,8 @@ export function EditorShell({
   }
 
   // Sections that take the whole width; the canvas and side panels are hidden meanwhile.
-  const fullPage = rail === "pages-templates" || rail === "state" || rail === "data-types";
+  const fullPage =
+    rail === "pages-templates" || rail === "state" || rail === "data-types" || rail === "supabase";
   const railLabel = RAIL_ITEMS.find((i) => i.id === rail)?.label ?? "App Settings";
 
   return (
@@ -243,6 +250,10 @@ export function EditorShell({
           ) : rail === "data-types" ? (
             <main className="min-w-0 flex-1">
               <DataTypesManager />
+            </main>
+          ) : rail === "supabase" ? (
+            <main className="min-w-0 flex-1">
+              <SupabasePage projectId={projectId} />
             </main>
           ) : null}
           <div

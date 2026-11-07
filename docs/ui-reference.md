@@ -166,6 +166,7 @@ Cards, top to bottom:
 3. Tables & Views: left list with search, right detail with columns: Field Name (with key icon for primary key and star icon for fields flagged as favorites/used), Data Type (Integer, DateTime, String, Boolean), PostgreSQL Type (int, timestamptz, text, bool).
 4. Storage: bucket list with object count badge, selected bucket shows name, Public/Private badge, folder chips, object URL with "Copy URL".
    Behavior is in `integrations.md`.
+   Built (4d) notes: Fetch Schema saves changed URL/key first (a "Discard changes" link resets them); the key field never shows the saved key, only "Saved (…tail)". The Authentication card saves with Save/Discard. Data Type uses the Nextomic type list (Number, String, Boolean, Timestamptz, JSON) instead of the mock's Integer/DateTime. Views carry a "View (read only)" label. With no buckets visible to the anon key, the Storage card shows the RLS policy to add.
 
 ### 4.5 API Data page (`pages/editor-api-data-*.png`)
 

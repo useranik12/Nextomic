@@ -51,25 +51,27 @@ Rules:
 
 UI: the Supabase page (see `ui-reference.md` 4.4 and `blueprint/pages/editor-supabase.png`).
 
-Config: `projectUrl`, `schema` (default `public`), `active` (toggle).
-Secrets: `anonKey` / publishable key (required; masked in the UI, stored encrypted), `serviceRoleKey` (optional, server-side actions only).
+Config: `projectUrl`, `schema` (default `public`), `active` (toggle), `auth.google` (`enabled`, `webClientId`).
+Secrets: `anonKey` (anon or publishable key; required; masked in the UI, stored encrypted). **Only the anon key is used** (owner decision 2026-11-08): no service role key in the builder or in built apps. What the connector can read and write is exactly what the project's grants and RLS give the anon role.
 Auth settings (public values): enabled providers and their client IDs, for example Google "Web Client ID". These only take effect when App Settings > Authentication is set to Supabase (see `app-auth.md`).
 
 Capabilities:
 
-- **Fetch Schema** (button): reads tables, views, columns, keys, and storage buckets and saves the STRUCTURE only. **Clear Schema** removes the saved structure (confirm first; warn about bindings that will break). Depending on the Supabase project's configuration, the anon key may not be allowed to read the full schema document. Verify current Supabase behavior. If access is insufficient, show clear guidance and offer an optional one-time service key input that is used for the fetch and discarded unless the owner opts in to store it encrypted.
-- Tables & Views browser: searchable list, columns with Field Name, Data Type (Integer, DateTime, String, Boolean, and others), PostgreSQL type, primary key icon, and a star for fields flagged as used or favorite (flag is user metadata saved with the structure).
-- CRUD resources: select (filters, order, limit, pagination), insert, update, delete, rpc.
-- Auth for built apps: see `app-auth.md`.
-- Storage: bucket list with object counts and Public/Private status, folder and object browsing, public URL with "Copy URL", signed URL. Persist only bucket names, public flags, and counts. Folder and object listings are fetched live on demand and never persisted.
-- Bindings can pass the end user's JWT so the end project's own RLS applies.
-- The "Active" toggle off hides the connector's resources from pickers and flags existing bindings as inactive (warning, not silent failure).
+- **Fetch Schema** (button): reads PostgREST's OpenAPI 2.0 document at `GET /rest/v1/` with the anon key (tables, views, columns, types, primary and foreign keys from the `<pk/>` / `<fk .../>` markers, enum values, defaults, nullability, and `/rpc/*` functions with their parameters) plus the buckets from `GET /storage/v1/bucket`, and saves the STRUCTURE only in `connector_schemas`. A path with no write method is shown as a view (read only for this key). Fetch saves changed URL/key fields first; creating the connection runs the test. **Clear Schema** removes the saved structure after a confirm that lists app state variables typed as Supabase Row.
+- Tables & Views browser: searchable list, columns with Field Name, Data Type (the Nextomic type list: Number, String, Boolean, Timestamptz, JSON, with "list" for arrays), PostgreSQL type, key icon for primary keys, a star for favorite fields (user metadata saved with the structure; stars on columns that disappear are dropped on the next fetch), foreign key target.
+- Type mapping (`nextomicTypeOf` in `packages/schema/src/supabase.ts`): integer, numeric, real, double and money types are Number; boolean is Boolean; timestamp, date and time types are Timestamptz; json and jsonb are JSON; everything else (text, varchar, uuid, enums) is String. `x[]` is a list of x.
+- Execute (proxy `execute` op, server side): `select` (validated column names, `eq/neq/gt/gte/lt/lte/like/ilike/is/in` filters, order, limit up to 1000, offset), `insert`, `update` and `delete` (both need at least one filter), `rpc`, and `storage.list` (one folder of a bucket). Resource ids: `table:<name>`, `view:<name>`, `rpc:<name>`, `bucket:<name>`.
+- Storage: the bucket list shows what the anon key can see. Supabase returns only buckets the anon role may read (RLS on `storage.buckets`); when none come back, the page shows the policy to add (`create policy ... on storage.buckets for select to anon using (true)`). Persisted per bucket: name, public flag, and the top-level entry count (capped at 1000, shown as "1000+"). Folder listings are fetched live (connection must be on) and never saved. Public buckets show the public object URL with "Copy URL"; private bucket files are reached with signed URLs at run time.
+- Bindings can pass the end user's JWT so the end project's own RLS applies (with queries, later in Phase 4).
+- The "Active" toggle off hides the connector's resources from pickers and flags existing bindings as inactive (warning, not silent failure). Turning it on runs the test first.
+- "Supabase Row" in the type pickers lists the saved tables and views; it is disabled until a schema is fetched.
 
 Rules:
 
-- Default to the anon key. Use the service role key only when the user explicitly marks an action as "server-side only", and never expose it in generated client code.
 - Generated client code reads keys from env vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`), never inline literals.
-- Warn in UI when a table has RLS disabled (when detectable).
+- RLS status is not visible to the anon key, so there is no RLS warning.
+
+Built (4d): `packages/integrations/src/supabase/{connector,openapi,query}.ts`, `packages/schema/src/supabase.ts`, `apps/editor/src/server/connectors/supabase-schema.ts`, actions in `connector-actions.ts`, UI in `components/editor/supabase/*`. Tests: unit (parsing, mapping, request building, structure), a live check against a real project (`E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`; skipped when unset) and `e2e/supabase.spec.ts`.
 
 ## 4. REST connector (the API Data page)
 
