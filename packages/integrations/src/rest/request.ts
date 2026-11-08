@@ -1,8 +1,8 @@
 import {
   BODY_METHODS,
+  callVariables,
   fillBrackets,
   fillJsonBody,
-  fillTextBody,
   joinUrl,
   variableValue,
   type RestAuth,
@@ -78,7 +78,7 @@ function multipart(fields: { key: string; value: string }[], boundary: string): 
 export function buildRequest(input: BuildInput): BuiltRequest {
   const { call, group } = input;
   const values: Record<string, unknown> = { ...input.builtIns };
-  for (const variable of call.variables)
+  for (const variable of callVariables(call, group))
     values[variable.name] = variableValue(variable, input.values[variable.name]);
 
   const raw = group
@@ -90,6 +90,9 @@ export function buildRequest(input: BuildInput): BuiltRequest {
   } catch {
     throw new ConnectorError("invalid_request", `"${raw.slice(0, 200)}" is not a full URL.`);
   }
+  // Query parameters add to any query string typed in the URL; URLSearchParams encodes them.
+  for (const q of call.query)
+    url.searchParams.append(fillBrackets(q.key, values), fillBrackets(q.value, values));
 
   const headers: Record<string, string> = {};
   for (const h of [...(group?.headers ?? []), ...call.headers])
@@ -106,7 +109,7 @@ export function buildRequest(input: BuildInput): BuiltRequest {
       body = fillJsonBody(call.body, values);
       if (!hasHeader(headers, "content-type")) headers["content-type"] = "application/json";
     } else if (call.bodyType === "text") {
-      body = fillTextBody(call.body, values);
+      body = fillBrackets(call.body, values);
       if (!hasHeader(headers, "content-type"))
         headers["content-type"] = "text/plain; charset=utf-8";
     } else if (call.bodyType === "form") {

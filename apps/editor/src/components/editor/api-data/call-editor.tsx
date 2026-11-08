@@ -1,28 +1,44 @@
 "use client";
 
-import { callProblems, type JsonShape, type RestCall, type RestConfig } from "@nextomic/schema";
+import {
+  availableVariables,
+  callProblems,
+  restCallSchema,
+  type RestCall,
+  type RestConfig
+} from "@nextomic/schema";
 import { useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
-import { SwitchRow } from "@/components/ui/switch-row";
 import { Icon } from "@/lib/icons/Icon";
 import { DraftScope } from "../draft-scope";
-import { AuthBlock } from "./auth-block";
-import { BodyTab } from "./body-tab";
-import { CallConnection } from "./call-connection";
+import { CallDefinition, type SubTab } from "./call-definition";
 import { EditorFooter } from "./editor-footer";
-import { KeyValueLines } from "./key-value-lines";
 import { ResponseType } from "./response-type";
 import { Tabs } from "./tabs";
 import { TestPreview } from "./test-preview";
 import type { ApiDataModel, SecretDraft } from "./use-api-data";
 import { useCallTest } from "./use-call-test";
-import { VariablesTab } from "./variables-tab";
 
 const MAIN_TABS = [
   { id: "definition", label: "Call Definition" },
   { id: "test", label: "Test API" }
 ] as const;
-type SubTab = "header" | "body" | "variables" | "auth" | "advanced";
+
+/** The first schema problem of a draft, named by where it is (the server checks the same). */
+function schemaProblem(call: RestCall): string | null {
+  const parsed = restCallSchema.safeParse(call);
+  if (parsed.success) return null;
+  const issue = parsed.error.issues[0];
+  if (!issue) return null;
+  const [first, second, third] = issue.path;
+  if (first === "response" && second === "jsonPaths" && typeof third === "number")
+    return `JSON path ${third + 1}: ${issue.message}`;
+  if (first === "variables" && typeof second === "number")
+    return `Variable ${second + 1}: ${issue.message}`;
+  if (first === "query" && typeof second === "number")
+    return `Query parameter ${second + 1}: ${issue.message}`;
+  return issue.message;
+}
 
 /** "Define API Call": the definition and test tabs, with Delete, Cancel and Save. */
 export function CallEditor({
@@ -45,18 +61,12 @@ export function CallEditor({
   const test = useCallTest(model);
   const group = config.groups.find((g) => g.id === draft.groupId) ?? null;
   const typedSecret = Object.values(secrets).some((v) => v !== "" && v !== undefined);
-  const shape: JsonShape | null = test.result?.ok ? test.shape : null;
+  const shape = test.unsavedShape;
   const dirty =
     isNew || typedSecret || shape !== null || JSON.stringify(draft) !== JSON.stringify(saved);
-  const problems = callProblems(draft, group);
-  const subTabs = [
-    { id: "header" as const, label: "Header" },
-    { id: "body" as const, label: "Body" },
-    { id: "variables" as const, label: "Variables" },
-    ...(group ? [] : [{ id: "auth" as const, label: "Authentication" }]),
-    { id: "advanced" as const, label: "Advanced Settings" }
-  ];
-  const shownSub = subTabs.some((t) => t.id === sub) ? sub : "header";
+  const schemaIssue = schemaProblem(draft);
+  const problems = [...(schemaIssue ? [schemaIssue] : []), ...callProblems(draft, group)];
+  const variables = availableVariables(draft.variables, group?.variables);
 
   async function save(): Promise<boolean> {
     if (problems[0]) {
@@ -65,14 +75,23 @@ export function CallEditor({
     }
     setSaving(true);
     setError(null);
-    const result = await model.saveCall(draft, secrets, shape);
-    setSaving(false);
-    if (result.error) {
-      setError(result.error);
+    try {
+      const result = await model.saveCall(draft, secrets, shape);
+      if (result.error) {
+        setError(result.error);
+        return false;
+      }
+      // The stored call is the new baseline, and the saved test shape is no longer pending.
+      if (result.saved) setDraft(result.saved);
+      test.markSaved();
+      setSecrets({});
+      return true;
+    } catch {
+      setError("Could not save the API call. Check your connection and try again.");
       return false;
+    } finally {
+      setSaving(false);
     }
-    setSecrets({});
-    return true;
   }
   const discard = () => {
     setDraft(saved);
@@ -110,51 +129,28 @@ export function CallEditor({
         ) : null}
       </div>
       {main === "definition" ? (
-        <>
-          <CallConnection call={draft} groups={config.groups} onChange={setDraft} />
-          <Tabs
-            label="Call settings"
-            variant="underline"
-            tabs={subTabs}
-            value={shownSub}
-            onChange={setSub}
-          />
-          {shownSub === "header" ? (
-            <KeyValueLines
-              title="Headers to add"
-              kind="header"
-              items={draft.headers}
-              onChange={(headers) => setDraft({ ...draft, headers })}
-              addPlaceholder="Add header as key:value"
-              addLabel="Add Header"
-            />
-          ) : shownSub === "body" ? (
-            <BodyTab call={draft} onChange={setDraft} />
-          ) : shownSub === "variables" ? (
-            <VariablesTab call={draft} onChange={setDraft} />
-          ) : shownSub === "auth" ? (
-            <AuthBlock
-              ownerId={draft.id}
-              auth={draft.auth}
-              onChange={(auth) => setDraft({ ...draft, auth })}
-              masks={model.data?.secrets ?? {}}
-              secrets={secrets}
-              onSecretsChange={setSecrets}
-            />
-          ) : (
-            <SwitchRow
-              label="Include credentials"
-              tip="Sends cookies, authorization headers and TLS client certificates of the app's visitor with this call (built apps)."
-              selected={draft.includeCredentials || Boolean(group?.includeCredentials)}
-              disabled={Boolean(group?.includeCredentials)}
-              onChange={(includeCredentials) => setDraft({ ...draft, includeCredentials })}
-            />
-          )}
-        </>
+        <CallDefinition
+          draft={draft}
+          onChange={setDraft}
+          config={config}
+          group={group}
+          variables={variables}
+          sub={sub}
+          onSub={setSub}
+          masks={model.data?.secrets ?? {}}
+          secrets={secrets}
+          onSecretsChange={setSecrets}
+        />
       ) : (
         <>
           <TestPreview test={test} call={draft} config={config} />
-          <ResponseType call={draft} onChange={setDraft} json={test.result?.json ?? null} />
+          <ResponseType
+            call={draft}
+            onChange={setDraft}
+            json={test.result?.json ?? null}
+            shown={test.shown}
+            onToggleShown={test.toggleShown}
+          />
         </>
       )}
       {error ? (

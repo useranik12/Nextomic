@@ -10,8 +10,7 @@ import {
 import { Icon } from "@/lib/icons/Icon";
 
 /** A preview colored like the design: text orange, numbers violet, objects teal, nothing gray. */
-export function ValuePreview({ value, hidden }: { value: unknown; hidden: boolean }) {
-  if (hidden) return <span className="block py-1.5 text-small text-default-400">••••</span>;
+export function ValuePreview({ value }: { value: unknown }) {
   const sample = Array.isArray(value) ? value.find((v) => v !== null) : value;
   const color =
     value === null || value === undefined
@@ -28,29 +27,26 @@ export function ValuePreview({ value, hidden }: { value: unknown; hidden: boolea
   );
 }
 
-/** Shows or hides a preview value (handy for tokens in a response). */
+/** Picks a path for the response viewer: with any picked, it shows only those paths' values. */
 export function EyeButton({
-  hidden,
+  shown,
   label,
   onToggle
 }: {
-  hidden: boolean;
+  shown: boolean;
   label: string;
   onToggle: () => void;
 }) {
   return (
     <button
       type="button"
-      aria-pressed={hidden}
-      aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
+      aria-pressed={shown}
+      aria-label={`Show ${label} in the response viewer`}
+      data-tip={shown ? "Shown in the response viewer" : "Show in the response viewer"}
       onClick={onToggle}
-      className="flex h-8 w-8 items-center justify-center rounded-full text-default-500 hover:bg-default-100 hover:text-foreground"
+      className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-default-100 ${shown ? "bg-primary-500/10 text-primary-600 dark:text-primary-400" : "text-default-400 hover:text-foreground"}`}
     >
-      {hidden ? (
-        <Icon name="ph:eye-slash" width={16} height={16} />
-      ) : (
-        <Icon name="ph:eye" width={16} height={16} />
-      )}
+      <Icon name="ph:eye" width={16} height={16} />
     </button>
   );
 }

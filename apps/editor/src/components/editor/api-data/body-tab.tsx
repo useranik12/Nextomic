@@ -2,8 +2,8 @@
 
 import {
   BODY_METHODS,
-  insertableVariables,
   REST_BODY_TYPES,
+  type AvailableVariable,
   type RestBodyType,
   type RestCall
 } from "@nextomic/schema";
@@ -24,9 +24,11 @@ const BODY_LABELS: Record<RestBodyType, string> = {
 /** Body Type, the variable chips and the body itself (JSON, text, or fields). */
 export function BodyTab({
   call,
+  variables,
   onChange
 }: {
   call: RestCall;
+  variables: readonly AvailableVariable[];
   onChange: (next: RestCall) => void;
 }) {
   const area = useRef<HTMLTextAreaElement>(null);
@@ -39,7 +41,7 @@ export function BodyTab({
 
   const insert = (name: string) => {
     const el = area.current;
-    const token = `<${name}>`;
+    const token = `[${name}]`;
     if (!el) return onChange({ ...call, body: call.body + token });
     replaceInField(el, el.selectionStart, el.selectionEnd, token, el.selectionStart + token.length);
   };
@@ -58,9 +60,11 @@ export function BodyTab({
       </div>
       {textual ? (
         <div className="flex flex-col gap-2">
-          <p className="text-small text-default-500">Available variables to add</p>
+          <p className="text-small text-default-500">
+            Available variables to add (or type [ to pick one)
+          </p>
           <div className="flex flex-wrap gap-1.5">
-            {insertableVariables(call).map((name) => (
+            {variables.map(({ name }) => (
               <button
                 key={name}
                 type="button"

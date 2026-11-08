@@ -3,54 +3,46 @@
 import type { RestCallResult } from "@nextomic/integrations";
 import {
   callPlaceholders,
-  createTokenResolver,
-  fillTokens,
+  callVariables,
   jsonShape,
   type JsonShape,
   type RestCall,
   type RestConfig
 } from "@nextomic/schema";
-import { useState } from "react";
-import { useEditorDynamicContext } from "../use-editor-context";
+import { useMemo, useState } from "react";
 import type { ApiDataModel, SecretDraft } from "./use-api-data";
+import { toggleIn } from "./json-path-parts";
 
 export interface SampleValue {
   value: string;
   include: boolean;
 }
 
-/** `{{tags}}` in the definition, filled with what they show in the editor right now. */
-function withTags(call: RestCall, resolve: (token: string) => string): RestCall {
-  const fill = (text: string) => fillTokens(text, resolve);
-  return {
-    ...call,
-    url: fill(call.url),
-    body: fill(call.body),
-    headers: call.headers.map((h) => ({ ...h, value: fill(h.value) })),
-    fields: call.fields.map((f) => ({ ...f, value: fill(f.value) }))
-  };
-}
-
-/** Sample values, the last result and the response shape it gives, for the Test API tab. */
+/**
+ * The Test API tab's state: sample values, the last result, the response shape it gives (until it
+ * is saved), and which JSON paths the response viewer shows (the eyes).
+ */
 export function useCallTest(model: ApiDataModel) {
-  const context = useEditorDynamicContext();
   const [samples, setSamples] = useState<Record<string, SampleValue>>({});
   const [result, setResult] = useState<RestCallResult | null>(null);
+  const [savedResult, setSavedResult] = useState<RestCallResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [shown, setShown] = useState<Set<string>>(new Set());
 
-  /** Sample rows: the call's variables (default value first), then jwt and user_ip when used. */
+  /** Sample rows: the call's and its group's variables, then jwt and user_ip when used. */
   function rows(call: RestCall, config: RestConfig): { name: string; sample: SampleValue }[] {
     const group = config.groups.find((g) => g.id === call.groupId) ?? null;
     const used = callPlaceholders(call, group);
+    const variables = callVariables(call, group);
     const names = [
-      ...call.variables.map((v) => v.name),
+      ...variables.map((v) => v.name),
       ...(["jwt", "user_ip"] as const).filter((n) => used.includes(n))
     ];
     return names.map((name) => ({
       name,
       sample: samples[name] ?? {
-        value: call.variables.find((v) => v.name === name)?.defaultValue ?? "",
+        value: variables.find((v) => v.name === name)?.defaultValue ?? "",
         include: true
       }
     }));
@@ -59,7 +51,6 @@ export function useCallTest(model: ApiDataModel) {
   async function run(call: RestCall, config: RestConfig, secrets: SecretDraft) {
     setRunning(true);
     setError(null);
-    const resolve = context ? createTokenResolver(context) : () => "";
     const values: Record<string, string> = {};
     let jwt = "";
     let userIp = "";
@@ -74,19 +65,27 @@ export function useCallTest(model: ApiDataModel) {
         (e): e is [string, string] => typeof e[1] === "string" && e[1] !== ""
       )
     );
-    const response = await model.test({
-      call: withTags(call, resolve),
-      values,
-      builtIns: { jwt, user_ip: userIp },
-      secrets: typed
-    });
-    setRunning(false);
-    setResult(response.data);
-    setError(response.error);
+    try {
+      const response = await model.test({
+        call,
+        values,
+        builtIns: { jwt, user_ip: userIp },
+        secrets: typed
+      });
+      setResult(response.data);
+      setError(response.error);
+    } catch {
+      setResult(null);
+      setError("The test could not reach the builder. Check your connection and try again.");
+    } finally {
+      setRunning(false);
+    }
   }
 
-  const shape: JsonShape | null =
-    result?.json !== undefined && result?.json !== null ? jsonShape(result.json) : null;
+  const shape = useMemo<JsonShape | null>(
+    () => (result?.ok && result.json !== null ? jsonShape(result.json) : null),
+    [result]
+  );
 
   return {
     rows,
@@ -95,7 +94,13 @@ export function useCallTest(model: ApiDataModel) {
     running,
     result,
     error,
-    shape
+    /** The shape of a successful test that has not been saved yet; saving the call stores it. */
+    unsavedShape: result !== savedResult ? shape : null,
+    markSaved: () => setSavedResult(result),
+    /** JSON path keys (path ids, or `rec:<path>` for recommended ones) the viewer shows. */
+    shown,
+    toggleShown: (key: string) => setShown((s) => toggleIn(s, key)),
+    showAll: () => setShown(new Set())
   };
 }
 

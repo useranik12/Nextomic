@@ -5,7 +5,7 @@ import {
   REST_VALUE_TYPES,
   stateNameProblem,
   valueAfterTypeChange,
-  type RestCall,
+  RESERVED_NAMES,
   type RestVariable
 } from "@nextomic/schema";
 import { useEffect, useState } from "react";
@@ -21,6 +21,7 @@ const GRID =
 function nameProblem(name: string, taken: string[]): string | null {
   if ((BUILT_IN_REST_VARIABLES as readonly string[]).includes(name))
     return `"${name}" is filled by the server.`;
+  if (RESERVED_NAMES.has(name)) return `"${name}" is a JSON word; pick another name.`;
   return stateNameProblem(name, taken);
 }
 
@@ -70,30 +71,26 @@ function freeName(taken: string[]): string {
 
 /** Name, Type, Is List, Default Value, bolt (usually bound to dynamic data), delete. */
 export function VariablesTab({
-  call,
-  onChange
+  variables,
+  onChange,
+  description
 }: {
-  call: RestCall;
-  onChange: (next: RestCall) => void;
+  variables: RestVariable[];
+  onChange: (next: RestVariable[]) => void;
+  description: string;
 }) {
   const registry = useTypeRegistry();
-  const names = call.variables.map((v) => v.name);
+  const names = variables.map((v) => v.name);
   const update = (id: string, patch: Partial<RestVariable>) =>
-    onChange({
-      ...call,
-      variables: call.variables.map((v) => (v.id === id ? { ...v, ...patch } : v))
-    });
+    onChange(variables.map((v) => (v.id === id ? { ...v, ...patch } : v)));
 
   return (
-    <section aria-label="Variables" className="flex flex-col gap-3">
+    <section aria-label="Variables" data-no-vars className="flex flex-col gap-3">
       <div>
         <h3 className="text-small font-medium text-foreground">Variables</h3>
-        <p className="text-small text-default-500">
-          Values the call needs. Use [name] in the URL and headers, &lt;name&gt; in the body. jwt
-          and user_ip are filled by the server.
-        </p>
+        <p className="text-small text-default-500">{description}</p>
       </div>
-      {call.variables.length > 0 ? (
+      {variables.length > 0 ? (
         <div className={`${GRID} text-small text-default-500`}>
           <span>Name</span>
           <span>Type</span>
@@ -105,7 +102,7 @@ export function VariablesTab({
       ) : (
         <p className="text-small text-default-500">No variables yet.</p>
       )}
-      {call.variables.map((v) => (
+      {variables.map((v) => (
         <div key={v.id} className={GRID}>
           <NameCell
             value={v.name}
@@ -155,9 +152,7 @@ export function VariablesTab({
           <button
             type="button"
             aria-label={`Delete ${v.name}`}
-            onClick={() =>
-              onChange({ ...call, variables: call.variables.filter((x) => x.id !== v.id) })
-            }
+            onClick={() => onChange(variables.filter((x) => x.id !== v.id))}
             className="flex h-8 w-8 items-center justify-center rounded-full text-danger hover:bg-danger/10"
           >
             <Icon name="ph:trash" width={16} height={16} />
@@ -169,21 +164,18 @@ export function VariablesTab({
         tone="ghost"
         className="self-start border border-default-200"
         onPress={() =>
-          onChange({
-            ...call,
-            variables: [
-              ...call.variables,
-              {
-                id: crypto.randomUUID(),
-                name: freeName(names),
-                type: "string",
-                ref: "",
-                isList: false,
-                defaultValue: "",
-                dynamic: false
-              }
-            ]
-          })
+          onChange([
+            ...variables,
+            {
+              id: crypto.randomUUID(),
+              name: freeName(names),
+              type: "string",
+              ref: "",
+              isList: false,
+              defaultValue: "",
+              dynamic: false
+            }
+          ])
         }
       >
         <Icon name="ph:plus-circle" width={14} height={14} />

@@ -85,10 +85,10 @@ Storage: ONE REST connector per project, named "API Data" (type `rest`, always o
 
 Structure: **API groups** contain **API calls**. Calls can also be ungrouped.
 
-- Group: `name`, `baseUrl` (https; http and local hosts only with `ALLOW_PRIVATE_CONNECTOR_HOSTS` in development, see section 6), shared `headers`, shared **authentication** (like Postman: None, Bearer token, Basic auth, API key in a header or query parameter), **Include credentials**.
-- Call: `name`, `active`, `groupId` (null = ungrouped), `method` (GET, POST, PUT, PATCH, DELETE, OPTIONS, QUERY), `url` (the endpoint appended to the group base URL, or the full URL of an ungrouped call), `headers`, `bodyType` (`none | json | text | multipart | form`), `body` (JSON or text), `fields` (multipart and form), `variables`, `auth` (ungrouped calls only), `includeCredentials`, `response` (`parseAsDataType`, `dataTypeId`, `isList`, `jsonPaths`).
+- Group: `name`, `baseUrl` (https; http and local hosts only with `ALLOW_PRIVATE_CONNECTOR_HOSTS` in development, see section 6), shared `headers`, shared `variables` (every call in the group can use them; a call's own variable with the same name wins), shared **authentication** (like Postman: None, Bearer token, Basic auth, API key in a header or query parameter), **Include credentials**.
+- Call: `name`, `active`, `groupId` (null = ungrouped), `method` (GET, POST, PUT, PATCH, DELETE, OPTIONS, QUERY), `url` (the endpoint appended to the group base URL, or the full URL of an ungrouped call), `query` (query parameters as `key: value` lines, appended to the URL and encoded; a query string typed in the URL is kept and both are sent), `headers`, `bodyType` (`none | json | text | multipart | form`), `body` (JSON or text), `fields` (multipart and form), `variables`, `auth` (ungrouped calls only), `includeCredentials`, `response` (`parseAsDataType`, `dataTypeId`, `isList`, `jsonPaths`).
 - An ungrouped call has every setting itself: full URL, headers, body, variables, authentication, advanced settings. A call moves into or out of a group with the Group select.
-- Deleting a group keeps its calls as ungrouped calls with the group's URL, headers, authentication (secrets copied) and Include credentials folded in.
+- Deleting a group keeps its calls as ungrouped calls with the group's URL, headers, variables, authentication (secrets copied) and Include credentials folded in.
 - Method badge colors: GET green, POST purple, PUT orange, PATCH amber, DELETE pink/red, OPTIONS sky, QUERY teal. An inactive call shows a muted badge with a red x. GET and OPTIONS send no body; QUERY (the new safe method with a body) does.
 - Advanced Settings holds one option only (owner decision): **Include credentials**. A group's setting applies to all its calls. It takes effect in built apps (the generated server route forwards the visitor's cookies, authorization and client certificates); the builder's Test tab has no visitor, so it does nothing there.
 
@@ -96,11 +96,12 @@ Secrets: tokens, passwords and API keys of an auth block are sealed (section 5) 
 
 Placeholder syntax:
 
-- JSON/text bodies: `<variable_name>` (highlighted; click a chip under "Available variables to add" to insert at the caret). In JSON, a placeholder inside quotes is filled as escaped text, one outside quotes as a JSON value (number, true/false, list, object).
-- URL, endpoint, header values and multipart/form field values: `[variable_name]` (URL values are percent-encoded).
-- `{{dynamic tags}}` are accepted in the URL, endpoint, headers, base URL, body and fields (bolt beside each input). In the builder's Test tab they are filled with what they show in the editor; in built apps the runtime fills them (Phase 4e).
+- One syntax everywhere: `[variable_name]` in the base URL, URL/endpoint, query keys and values, header values, JSON/text bodies and multipart/form field values. URL values are percent-encoded; query parameters are encoded by the URL builder.
+- In JSON bodies a placeholder inside quotes is filled as escaped text, one outside quotes as a JSON value (number, true/false, list, object). `[true]`, `[false]` and `[null]` stay JSON arrays, so those three are not allowed as variable names.
+- **Only variables, no dynamic data** (owner decision 2026-11-08, replaces the earlier `{{tags}}` in API inputs): the call's variables, its group's variables and the server-filled `jwt`/`user_ip`. Dynamic data is bound to a call's variables where the call is used (queries and actions, Phase 4e).
+- Typing `[` adds the closing `]`, puts the caret between them and opens a list of the available variables with their type, default value and origin (Group, Server). The list filters as you type; ArrowUp/ArrowDown move, Enter or Tab insert, Escape closes. The Body tab also has chips that insert `[name]` at the caret. Names (call, group), the Variables table and authentication fields do not open the list.
 - Header lines are entered as `key: value`; each line edits in place and its X clears it.
-- A placeholder that is not defined in Variables is a save error. The JSON body editor shows the first syntax problem with its line, a helper text, and a Format button that keeps placeholders.
+- A placeholder that is not defined in Variables (the call's or its group's) is a save error; a group's base URL and headers may use only the group's variables and the built-ins. The JSON body editor shows the first syntax problem with its line, a helper text, and a Format button that keeps placeholders.
 
 Variables tab columns: Name, Type (the app's types: String, Int, Float, Boolean, JSON, Timestamptz, Color, URL, Enum, Data Type), Is List (True/False), Default Value, bolt (marks the variable as usually bound to dynamic data), delete, and "Add Variable".
 
@@ -109,9 +110,10 @@ Built-in variables (always available, not defined by the user): `jwt` (the signe
 Test API tab:
 
 - "Test API Call" runs the CURRENT draft (saved group and secrets, plus auth values typed but not saved for that call or its group) through the proxy (rate limit, audit, SSRF rules). Variables table: Name, Value, Include (unticked uses the default). Preview: API URL, request Headers (secrets shown as \*\*\*\*), Test Response (Body JSON, Raw Body, response Headers; `set-cookie` is never shown; body cut at 1 MB), and the status line (green success, red failure, latency). A 4xx/5xx answer is shown, not treated as an error.
-- Response Type: "Parse as Data Type" (one app data type, or a list of it), and **JSON Paths**: JSON Path, Name, Response Preview (from the last test, never saved), Type, List, preview eye (hides a value on screen), delete, "Add JSON Path". "Recommended" lists the top-level fields of the last response, each with its own "Add JSON Path".
+- Response Type: "Parse as Data Type" (one app data type, or a list of it), and **JSON Paths**: JSON Path, Name, Response Preview (from the last test, never saved), Type, List, eye (picks the path for the response viewer: while any path is picked, Body JSON shows only the picked paths' values by name, with "Show whole response" to go back; the Response Preview column always stays), delete, "Add JSON Path". "Recommended" lists the top-level fields of the last response, each with its own "Add JSON Path".
 - JSON path syntax (the builder reads responses with `JSON.parse`): `$` the response, `.name` or `["name"]` a field, `[2]` an item, `[:]` or `[*]` every item (the result is a flat list). Types are inferred when a path is added.
-- Saving a call after a successful test saves the inferred response shape (structure only) for dynamic data and query fields.
+- Saving a call after a successful test saves the inferred response shape (structure only) for dynamic data and query fields. After a save the stored call becomes the editor's baseline, so Save turns off until the next change or test.
+- Saved JSON paths are the call's named outputs: actions and query loops (4e) offer them by Name instead of a hand-written path. `jsonPathValues(paths, json)` (schema) reads them from a response by name.
 
 Still to come: pagination presets, retries and caching options arrive with queries (4e).
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readJsonPath } from "./json-path";
 import { IDENTIFIER_PATTERN, parseStateValue, stateNameProblem, type StateType } from "./state";
 
 // API Data: REST calls in groups (docs/integrations.md section 4). One REST connector per project
@@ -39,6 +40,9 @@ export const REST_VALUE_TYPES = [
 
 /** Values the server fills; a call may use them without defining them. */
 export const BUILT_IN_REST_VARIABLES = ["jwt", "user_ip"] as const;
+
+/** Names a variable cannot have: `[true]` in a JSON body is an array, not a placeholder. */
+export const RESERVED_NAMES: ReadonlySet<string> = new Set(["true", "false", "null"]);
 
 /** Secret fields of an auth block, by auth type. */
 export const AUTH_SECRET_FIELDS: Record<RestAuthType, readonly string[]> = {
@@ -84,6 +88,8 @@ export const restVariableSchema = z.object({
     if (problem) ctx.addIssue({ code: "custom", message: problem });
     if ((BUILT_IN_REST_VARIABLES as readonly string[]).includes(value))
       ctx.addIssue({ code: "custom", message: `"${value}" is filled by the server.` });
+    if (RESERVED_NAMES.has(value))
+      ctx.addIssue({ code: "custom", message: `"${value}" is a JSON word; pick another name.` });
   }),
   type: z.enum(REST_VALUE_TYPES).default("string"),
   /** The enum or data type id for enum and data type variables. */
@@ -116,8 +122,16 @@ export const restGroupSchema = z.object({
   name,
   baseUrl: z.string().trim().max(2000).default(""),
   headers: z.array(restHeaderSchema).max(100).default([]),
+  /** Shared variables: every call in the group can use them (a call's own variable wins). */
+  variables: z.array(restVariableSchema).max(200).default([]),
   auth: restAuthSchema.default({}),
   includeCredentials: z.boolean().default(false)
+});
+
+/** A query parameter added to the URL; key and value may hold `[variable]` placeholders. */
+export const restQuerySchema = z.object({
+  key: z.string().trim().min(1).max(500),
+  value: text(8000)
 });
 
 export const restCallSchema = z.object({
@@ -129,9 +143,11 @@ export const restCallSchema = z.object({
   method: z.enum(REST_METHODS).default("GET"),
   /** The endpoint appended to the group base URL, or the full URL of an ungrouped call. */
   url: z.string().trim().max(4000).default(""),
+  /** Query parameters appended to the URL (a query string typed in the URL is kept too). */
+  query: z.array(restQuerySchema).max(100).default([]),
   headers: z.array(restHeaderSchema).max(100).default([]),
   bodyType: z.enum(REST_BODY_TYPES).default("none"),
-  /** JSON or text body with `<variable>` placeholders. */
+  /** JSON or text body with `[variable]` placeholders. */
   body: text(200_000),
   /** Multipart and form fields. */
   fields: z.array(restFieldSchema).max(200).default([]),
@@ -149,6 +165,7 @@ export const restConfigSchema = z.object({
 
 export type RestHeader = z.infer<typeof restHeaderSchema>;
 export type RestField = z.infer<typeof restFieldSchema>;
+export type RestQuery = z.infer<typeof restQuerySchema>;
 export type RestAuth = z.infer<typeof restAuthSchema>;
 export type RestVariable = z.infer<typeof restVariableSchema>;
 export type RestJsonPath = z.infer<typeof restJsonPathSchema>;
@@ -180,39 +197,80 @@ export function parseHeaderLine(line: string): { header: RestHeader } | { error:
 
 export const headerLine = (header: RestHeader) => `${header.key}: ${header.value}`;
 
-// ------------------------------------------------------------------ placeholders
+/// ------------------------------------------------------------------ placeholders
 
-const BRACKET = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g;
-const ANGLE = /<([A-Za-z_][A-Za-z0-9_]*)>/g;
+/** `[name]`: one placeholder syntax everywhere (URL, query, headers, body, fields). */
+const PLACEHOLDER = /\[([A-Za-z_][A-Za-z0-9_]*)\]/g;
 
-/** `[name]` placeholders of a URL, endpoint, header or field value, in order, once each. */
-export function bracketPlaceholders(source: string): string[] {
-  return [...new Set([...source.matchAll(BRACKET)].map((m) => m[1] as string))];
-}
-
-/** `<name>` placeholders of a JSON or text body, in order, once each. */
-export function anglePlaceholders(source: string): string[] {
-  return [...new Set([...source.matchAll(ANGLE)].map((m) => m[1] as string))];
-}
-
-/** Every placeholder a call uses (URL, headers, body, fields) and the group's base URL and headers. */
-export function callPlaceholders(call: RestCall, group: RestGroup | null): string[] {
-  const bracketSources = [
-    call.url,
-    ...call.headers.map((h) => `${h.key} ${h.value}`),
-    ...call.fields.map((f) => f.value),
-    ...(group ? [group.baseUrl, ...group.headers.map((h) => h.value)] : [])
+/** `[name]` placeholders of a text, in order, once each (`[true]`, `[false]`, `[null]` are JSON). */
+export function placeholders(source: string): string[] {
+  return [
+    ...new Set(
+      [...source.matchAll(PLACEHOLDER)].map((m) => m[1] as string).filter(isPlaceholderName)
+    )
   ];
-  const fromBody =
-    call.bodyType === "json" || call.bodyType === "text" ? anglePlaceholders(call.body) : [];
-  return [...new Set([...bracketSources.flatMap(bracketPlaceholders), ...fromBody])];
 }
 
-/** Variable names chips can insert: the call's own variables, then the built-in ones. */
-export const insertableVariables = (call: RestCall): string[] => [
-  ...call.variables.map((v) => v.name),
-  ...BUILT_IN_REST_VARIABLES
-];
+const isPlaceholderName = (placeholder: string) => !RESERVED_NAMES.has(placeholder);
+
+/** Every placeholder a call uses (URL, query, headers, body, fields) and its group's ones. */
+export function callPlaceholders(call: RestCall, group: RestGroup | null): string[] {
+  const sources = [
+    call.url,
+    ...call.query.map((q) => `${q.key} ${q.value}`),
+    ...call.headers.map((h) => h.value),
+    ...(call.bodyType === "json" || call.bodyType === "text" ? [call.body] : []),
+    ...(call.bodyType === "multipart" || call.bodyType === "form"
+      ? call.fields.map((f) => f.value)
+      : []),
+    ...(group ? groupSources(group) : [])
+  ];
+  return [...new Set(sources.flatMap(placeholders))];
+}
+
+const groupSources = (group: RestGroup) => [group.baseUrl, ...group.headers.map((h) => h.value)];
+
+/** The variables a call can use: its own, then its group's (a call's own variable wins). */
+export function callVariables(call: RestCall, group: RestGroup | null): RestVariable[] {
+  const own = new Set(call.variables.map((v) => v.name));
+  return [...call.variables, ...(group?.variables ?? []).filter((v) => !own.has(v.name))];
+}
+
+export interface AvailableVariable {
+  name: string;
+  type: RestVariable["type"];
+  isList: boolean;
+  defaultValue: string;
+  from: "call" | "group" | "server";
+}
+
+const SERVER_VARIABLES: AvailableVariable[] = BUILT_IN_REST_VARIABLES.map((n) => ({
+  name: n,
+  type: "string",
+  isList: false,
+  defaultValue: "",
+  from: "server"
+}));
+
+/** What `[` can insert: the call's variables, its group's, then the server-filled ones. */
+export function availableVariables(
+  own: readonly RestVariable[],
+  shared: readonly RestVariable[] = []
+): AvailableVariable[] {
+  const ownNames = new Set(own.map((v) => v.name));
+  const pick = (v: RestVariable, from: AvailableVariable["from"]): AvailableVariable => ({
+    name: v.name,
+    type: v.type,
+    isList: v.isList,
+    defaultValue: v.defaultValue,
+    from
+  });
+  return [
+    ...own.map((v) => pick(v, "call")),
+    ...shared.filter((v) => !ownNames.has(v.name)).map((v) => pick(v, "group")),
+    ...SERVER_VARIABLES
+  ];
+}
 
 // ------------------------------------------------------------------ JSON body
 
@@ -233,11 +291,13 @@ function insideJsonString(source: string, at: number): boolean {
   return inside;
 }
 
-/** The body with each unquoted `<name>` replaced by `stand`, so it can be parsed or formatted. */
+/** The body with each unquoted `[name]` replaced by `stand`, so it can be parsed or formatted. */
 function standIn(source: string, stand: (name: string, index: number) => string): string {
   let index = 0;
-  return source.replace(ANGLE, (match, placeholder: string, offset: number) =>
-    insideJsonString(source, offset) ? match : stand(placeholder, index++)
+  return source.replace(PLACEHOLDER, (match, placeholder: string, offset: number) =>
+    !isPlaceholderName(placeholder) || insideJsonString(source, offset)
+      ? match
+      : stand(placeholder, index++)
   );
 }
 
@@ -247,7 +307,7 @@ function lineAndColumn(source: string, offset: number): { line: number; column: 
   return { line, column: offset - before.lastIndexOf("\n") };
 }
 
-/** Why a JSON body with `<variable>` placeholders cannot be read, or null when it can. */
+/** Why a JSON body with `[variable]` placeholders cannot be read, or null when it can. */
 export function jsonBodyProblem(source: string): JsonBodyProblem | null {
   if (source.trim() === "") return null;
   // Stand-ins never span lines, so the reported line is right; the column may shift a little.
@@ -274,7 +334,7 @@ export function formatJsonBody(source: string): string | null {
   });
   try {
     const formatted = JSON.stringify(JSON.parse(parsable), null, 2);
-    return formatted.replace(/"@@nxph_(\d+)@@"/g, (_, i: string) => `<${names[Number(i)]}>`);
+    return formatted.replace(/"@@nxph_(\d+)@@"/g, (_, i: string) => `[${names[Number(i)]}]`);
   } catch {
     return null;
   }
@@ -282,15 +342,36 @@ export function formatJsonBody(source: string): string | null {
 
 // ------------------------------------------------------------------ problems
 
-/** Everything that stops a call from being saved, in display order. Empty when it can be saved. */
-export function callProblems(call: RestCall, group: RestGroup | null): string[] {
+function variableProblems(variables: readonly RestVariable[], where: string): string[] {
   const problems: string[] = [];
   const names = new Set<string>();
-  for (const variable of call.variables) {
-    if (names.has(variable.name)) problems.push(`Two variables are named "${variable.name}".`);
+  for (const variable of variables) {
+    if (names.has(variable.name))
+      problems.push(`Two ${where} variables are named "${variable.name}".`);
     names.add(variable.name);
   }
-  const known = new Set([...names, ...BUILT_IN_REST_VARIABLES]);
+  return problems;
+}
+
+/** Everything that stops a group from being saved, in display order. */
+export function groupProblems(group: RestGroup): string[] {
+  const problems = variableProblems(group.variables, "group");
+  const known = new Set([...group.variables.map((v) => v.name), ...BUILT_IN_REST_VARIABLES]);
+  for (const placeholder of new Set(groupSources(group).flatMap(placeholders)))
+    if (!known.has(placeholder))
+      problems.push(`"${placeholder}" is used but not defined in the group's Variables.`);
+  if (group.baseUrl && !/^https?:\/\//i.test(group.baseUrl))
+    problems.push("The base URL must start with https://.");
+  return problems;
+}
+
+/** Everything that stops a call from being saved, in display order. Empty when it can be saved. */
+export function callProblems(call: RestCall, group: RestGroup | null): string[] {
+  const problems = variableProblems(call.variables, "call");
+  const known = new Set([
+    ...callVariables(call, group).map((v) => v.name),
+    ...BUILT_IN_REST_VARIABLES
+  ]);
   for (const placeholder of callPlaceholders(call, group))
     if (!known.has(placeholder))
       problems.push(`"${placeholder}" is used but not defined in Variables.`);
@@ -328,14 +409,14 @@ const asText = (value: unknown): string =>
       ? value
       : JSON.stringify(value);
 
-/** Fills `[name]` placeholders; `encode` percent-encodes values (URLs). */
+/** Fills `[name]` placeholders with text; `encode` percent-encodes values (URLs). */
 export function fillBrackets(
   source: string,
   values: Record<string, unknown>,
   encode = false
 ): string {
-  return source.replace(BRACKET, (match, placeholder: string) =>
-    placeholder in values
+  return source.replace(PLACEHOLDER, (match, placeholder: string) =>
+    placeholder in values && isPlaceholderName(placeholder)
       ? encode
         ? encodeURIComponent(asText(values[placeholder]))
         : asText(values[placeholder])
@@ -344,27 +425,34 @@ export function fillBrackets(
 }
 
 /**
- * Fills `<name>` placeholders of a JSON body: inside a string the value is escaped text, outside
+ * Fills `[name]` placeholders of a JSON body: inside a string the value is escaped text, outside
  * it is the value as JSON (a string becomes a quoted string, a list an array).
  */
 export function fillJsonBody(source: string, values: Record<string, unknown>): string {
-  return source.replace(ANGLE, (match, placeholder: string, offset: number) => {
-    if (!(placeholder in values)) return match;
+  return source.replace(PLACEHOLDER, (match, placeholder: string, offset: number) => {
+    if (!(placeholder in values) || !isPlaceholderName(placeholder)) return match;
     const value = values[placeholder];
     if (insideJsonString(source, offset)) return JSON.stringify(asText(value)).slice(1, -1);
     return JSON.stringify(value === undefined ? null : value);
   });
 }
 
-/** Fills `<name>` placeholders of a text body with plain text. */
-export const fillTextBody = (source: string, values: Record<string, unknown>): string =>
-  source.replace(ANGLE, (match, placeholder: string) =>
-    placeholder in values ? asText(values[placeholder]) : match
-  );
-
 /** Joins a base URL and an endpoint with exactly one slash. */
 export function joinUrl(base: string, endpoint: string): string {
   if (!endpoint) return base;
   if (!base) return endpoint;
   return `${base.replace(/\/+$/, "")}/${endpoint.replace(/^\/+/, "")}`;
+}
+
+// ------------------------------------------------------------------ response outputs
+
+/**
+ * The call's saved JSON paths read from a response, by name: what actions and query loops use
+ * (`readJsonPath` semantics; a path that finds nothing gives null).
+ */
+export function jsonPathValues(
+  paths: readonly Pick<RestJsonPath, "name" | "path">[],
+  json: unknown
+): Record<string, unknown> {
+  return Object.fromEntries(paths.map((p) => [p.name, readJsonPath(json, p.path) ?? null]));
 }

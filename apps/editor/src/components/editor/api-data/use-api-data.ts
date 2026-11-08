@@ -56,20 +56,36 @@ export function useApiData(projectId: string) {
       setSelection(next);
       setNewItem(item);
     },
-    async saveCall(call: RestCall, secrets: SecretDraft, shape: JsonShape | null): Promise<Result> {
-      const result = apply(await saveApiCallAction(projectId, call, secrets, shape));
+    /** Saves a call; `saved` is the call as the server stored it (the editor's new baseline). */
+    async saveCall(
+      call: RestCall,
+      secrets: SecretDraft,
+      shape: JsonShape | null
+    ): Promise<Result & { saved: RestCall | null }> {
+      const response = await saveApiCallAction(projectId, call, secrets, shape);
+      const result = apply(response);
       if (!result.error) setSelection({ kind: "call", id: call.id });
-      return result;
+      return {
+        ...result,
+        saved: response.data?.config.calls.find((c) => c.id === call.id) ?? null
+      };
     },
     async deleteCall(id: string): Promise<Result> {
       const result = apply(await deleteApiCallAction(projectId, id));
       if (!result.error) setSelection(null);
       return result;
     },
-    async saveGroup(group: RestGroup, secrets: SecretDraft): Promise<Result> {
-      const result = apply(await saveApiGroupAction(projectId, group, secrets));
+    async saveGroup(
+      group: RestGroup,
+      secrets: SecretDraft
+    ): Promise<Result & { saved: RestGroup | null }> {
+      const response = await saveApiGroupAction(projectId, group, secrets);
+      const result = apply(response);
       if (!result.error) setSelection({ kind: "group", id: group.id });
-      return result;
+      return {
+        ...result,
+        saved: response.data?.config.groups.find((g) => g.id === group.id) ?? null
+      };
     },
     async deleteGroup(id: string): Promise<Result> {
       const result = apply(await deleteApiGroupAction(projectId, id));
