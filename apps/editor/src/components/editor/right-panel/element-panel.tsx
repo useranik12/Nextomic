@@ -262,18 +262,6 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 </div>
               )}
             </AccordionSection>
-            {!q || "attributes".includes(q) ? (
-              <AccordionSection
-                id="attributes"
-                title="Attributes"
-                icon={<Icon name="ph:tag" width={18} height={18} />}
-                open={q ? true : elementSection === "attributes"}
-                onToggle={toggleElementSection}
-                changed={Object.keys(node.attributes ?? {}).length > 0}
-              >
-                <AttributesEditor node={node} />
-              </AccordionSection>
-            ) : null}
             {canHaveQuery(node.type) && (!q || "query loop".includes(q)) ? (
               <AccordionSection
                 id="query"
@@ -284,6 +272,18 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 changed={node.query?.enabled ?? false}
               >
                 <QueryLoopGroup node={node} />
+              </AccordionSection>
+            ) : null}
+            {!q || "attributes".includes(q) ? (
+              <AccordionSection
+                id="attributes"
+                title="Attributes"
+                icon={<Icon name="ph:tag" width={18} height={18} />}
+                open={q ? true : elementSection === "attributes"}
+                onToggle={toggleElementSection}
+                changed={Object.keys(node.attributes ?? {}).length > 0}
+              >
+                <AttributesEditor node={node} />
               </AccordionSection>
             ) : null}
           </div>

@@ -11,7 +11,7 @@ export interface DesignProperty {
   tip?: string;
   /** Options come from the font in use: the weights and styles it really has. */
   fontOption?: "weight" | "style";
-  /** Shown at half width beside the next half-width property (min and max width, the two gaps). */
+  /** Shown at half width beside the next half-width property (min and max width, flex grow and shrink). */
   half?: boolean;
   /** Ready-made values listed under the field while it has focus. */
   suggestions?: string[];
@@ -50,14 +50,8 @@ export const DESIGN_GROUPS: DesignGroup[] = [
         options: ["nowrap", "wrap", "wrap-reverse"]
       },
       { property: "gap", label: "Gap", placeholder: "16px", cluster: "gaps" },
-      {
-        property: "column-gap",
-        label: "Column gap",
-        placeholder: "normal",
-        half: true,
-        cluster: "gaps"
-      },
-      { property: "row-gap", label: "Row gap", placeholder: "normal", half: true, cluster: "gaps" },
+      { property: "column-gap", label: "Column gap", placeholder: "normal", cluster: "gaps" },
+      { property: "row-gap", label: "Row gap", placeholder: "normal", cluster: "gaps" },
       {
         property: "flex-direction",
         cluster: "align",

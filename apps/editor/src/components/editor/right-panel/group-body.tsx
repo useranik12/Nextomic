@@ -40,7 +40,7 @@ export function GroupBody({
           {cluster.rows.map((row) => (
             <div
               key={row[0]?.property}
-              className={row.length > 1 ? "grid grid-cols-2 gap-2" : undefined}
+              className={row.length > 1 ? "grid grid-cols-2 items-end gap-2" : undefined}
             >
               {row.map((property) => (
                 <div

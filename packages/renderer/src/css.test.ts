@@ -38,4 +38,10 @@ describe("container defaults", () => {
     expect(builtinStyle({ type: "container", htmlTag: "div" }, "gap")).toBeUndefined();
     expect(builtinStyle({ type: "heading", htmlTag: "h1" }, "display")).toBeUndefined();
   });
+  it("BASE_CSS removes browser margins from text tags with zero specificity", async () => {
+    const { BASE_CSS } = await import("./css");
+    expect(BASE_CSS).toContain(
+      ":where(h1,h2,h3,h4,h5,h6,p,blockquote,figure,pre,ul,ol,dl,dd){margin:0}"
+    );
+  });
 });
