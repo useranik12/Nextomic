@@ -145,7 +145,7 @@ export function VariablesTab({
             aria-label={`${v.name} is usually bound to dynamic data`}
             data-tip="Usually bound to dynamic data where the call is used"
             onClick={() => update(v.id, { dynamic: !v.dynamic })}
-            className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-default-100 ${v.dynamic ? "text-warning" : "text-default-400"}`}
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-default-100 ${v.dynamic ? "text-yellow-500 dark:text-yellow-400" : "text-default-400"}`}
           >
             <Icon name="ph:lightning" width={16} height={16} />
           </button>
