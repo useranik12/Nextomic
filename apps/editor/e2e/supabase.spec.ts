@@ -81,3 +81,45 @@ test("connect Supabase with the anon key, fetch, inspect and clear the schema", 
   await expect(page.getByText("Schema public cleared.")).toBeVisible();
   await expect(page.getByText("Fetch the schema to see the tables and views.")).toBeVisible();
 });
+
+test("a Container runs a Supabase query loop set in the Query Loop group", async ({ page }) => {
+  test.setTimeout(150_000);
+  await openEditor(page);
+  await page.getByRole("button", { name: "Supabase", exact: true }).click();
+  await page.getByLabel("Supabase URL").fill(url ?? "");
+  await page.getByLabel("Anon Key/Publishable Key").fill(anonKey ?? "");
+  await page.getByRole("button", { name: "Fetch Schema" }).click();
+  await expect(page.getByText("Schema fetched.")).toBeVisible({ timeout: 60_000 });
+  const firstTable = page.getByRole("list", { name: "Tables" }).getByRole("button").first();
+  const tableName = (await firstTable.innerText()).trim().split("\n")[0] ?? "";
+
+  await page.getByRole("button", { name: "Navigator", exact: true }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Container", exact: true }).click();
+  // Only Container and Section have the group.
+  const group = page.getByRole("button", { name: "Query Loop" });
+  await group.click();
+  const settings = page.getByRole("region", { name: "Query Loop" });
+  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await expect(page.getByLabel("Query Type", { exact: true })).toBeVisible();
+
+  const tablePicker = settings.getByRole("combobox", { name: "Table or view" });
+  await tablePicker.fill(tableName);
+  await page.getByRole("option", { name: tableName, exact: true }).click();
+  await expect(settings.getByText("Choose a table or view.")).toHaveCount(0);
+
+  await settings.getByRole("button", { name: "Add filter" }).click();
+  await expect(settings.getByRole("button", { name: /Remove filter on/ })).toBeVisible();
+  await settings.getByRole("button", { name: "Add order" }).click();
+  await expect(settings.getByRole("button", { name: /Remove order by/ })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Enable realtime query" })).not.toBeChecked();
+
+  // The Navigator marks the element with the orange query icon.
+  await expect(page.getByRole("img", { name: "Query loop: Supabase Query" })).toBeVisible();
+
+  // Turning the query off keeps its settings.
+  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await expect(page.getByRole("img", { name: "Query loop: Supabase Query" })).toHaveCount(0);
+  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await expect(tablePicker).toHaveValue(tableName);
+});

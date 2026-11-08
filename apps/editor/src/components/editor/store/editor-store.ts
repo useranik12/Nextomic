@@ -33,6 +33,7 @@ import {
   walkElements,
   type BreakpointDef,
   type ElementAnimation,
+  type ElementQuery,
   type ElementNode,
   type PageSettings,
   type StyleMap,
@@ -118,6 +119,8 @@ interface EditorState {
   cancelPicking: () => void;
   /** Sets or clears (null) the element's CSS animation settings. */
   setElementAnimation: (id: string, animation: ElementAnimation | null) => void;
+  /** Sets or clears (null) the element's query loop (Container and Section). */
+  setElementQuery: (id: string, query: ElementQuery | null) => void;
   setActiveClass: (name: string | null) => void;
   setPageDraft: <K extends keyof PageDrafts>(kind: K, value: PageDrafts[K]) => void;
   clearPageDrafts: () => void;
@@ -402,6 +405,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (!found) return;
         if (animation) found.node.animation = animation;
         else delete found.node.animation;
+      }),
+    setElementQuery: (id, query) =>
+      void edit(`query:${id}`, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (!found) return;
+        if (query) found.node.query = query;
+        else delete found.node.query;
       }),
     setActiveClass: (name) => set({ activeClass: name }),
     setPageDraft: (kind, value) =>

@@ -101,8 +101,10 @@ describe("query requests", () => {
       listPath: "p",
       limit: 2
     };
-    expect(restQueryValues(rest, call, fillWith({ param: { q: "x" } }))).toEqual({ q: "x" });
-    expect(restQueryValues(rest, call, fillWith({ param: {} }))).toEqual({});
+    expect(restQueryValues(rest, call.variables, fillWith({ param: { q: "x" } }))).toEqual({
+      q: "x"
+    });
+    expect(restQueryValues(rest, call.variables, fillWith({ param: {} }))).toEqual({});
     const json = { data: [1, 2, 3] };
     expect(restRows(rest, call, json)).toEqual({ rows: [1, 2], hasMore: true });
     expect(restRows(rest, call, json, 2)).toEqual({ rows: [3], hasMore: false });
