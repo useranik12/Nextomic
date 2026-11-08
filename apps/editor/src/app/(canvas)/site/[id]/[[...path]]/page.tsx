@@ -12,6 +12,7 @@ import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { cache } from "react";
 import { getPublishedView } from "@/server/publish";
+import { pageLoopRows, projectWorkspaceId, siteExecutor } from "@/server/queries/run-query";
 import { requestFacts } from "@/server/request-facts";
 import { layoutForPage, resolveSeo } from "@/server/site-layout";
 import { getPublishedTemplates } from "@/server/templates";
@@ -113,6 +114,10 @@ export default async function PublishedPage({
     creatorName: meta.createdBy,
     projectId: id
   });
+  const workspaceId = await projectWorkspaceId(id);
+  const loopRows = workspaceId
+    ? await pageLoopRows({ projectId: id, tree, dynamic, execute: siteExecutor(id, workspaceId) })
+    : {};
   const { theme } = resolveTheme(settings.themes, {
     pageId,
     route: page.route,
@@ -139,6 +144,7 @@ export default async function PublishedPage({
         }
         customCss={customCssFor(settings.cssFiles, pageId, { minify: true })}
         dynamic={dynamic}
+        loopRows={loopRows}
         bootScript
         pruneUnusedClasses
       />

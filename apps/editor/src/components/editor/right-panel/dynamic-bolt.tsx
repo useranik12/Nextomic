@@ -1,11 +1,14 @@
 "use client";
 
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
-import { tokenTags } from "@nextomic/schema";
-import { useMemo, useState } from "react";
+import { getElementDefinition } from "@nextomic/renderer";
+import { loopAncestors, tokenTags } from "@nextomic/schema";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
+import { useQuerySourcesStore } from "../query/use-query-sources";
 import { dynamicGroups } from "./dynamic-sources";
+import { loopGroups } from "./loop-groups";
 
 type Exclude = ("params" | "state")[];
 
@@ -92,9 +95,28 @@ function DynamicDataModal({
   const appState = useEditorStore((s) => s.project.appState);
   const constants = useEditorStore((s) => s.project.constants);
   const appAuth = useEditorStore((s) => s.project.appAuth);
+  const tree = useEditorStore((s) => s.doc?.tree);
+  const selectedId = useEditorStore((s) => s.selectedId);
+  const projectId = useEditorStore((s) => s.projectId);
+  const sources = useQuerySourcesStore((s) => s.data);
+  const loadSources = useQuerySourcesStore((s) => s.load);
+  useEffect(() => {
+    if (projectId) void loadSources(projectId);
+  }, [projectId, loadSources]);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("all");
   const excludeKey = exclude?.join(",") ?? "";
+  const loops = useMemo(
+    () =>
+      tree && selectedId
+        ? loopGroups(
+            loopAncestors(tree, selectedId),
+            { supabase: sources?.supabase?.structure ?? null, rest: sources?.rest ?? null },
+            (node) => node.name ?? getElementDefinition(node.type)?.label ?? node.type
+          )
+        : [],
+    [tree, selectedId, sources]
+  );
   const groups = useMemo(
     () =>
       dynamicGroups(settings, excludeKey ? (excludeKey.split(",") as Exclude) : [], {
@@ -104,8 +126,9 @@ function DynamicDataModal({
       }),
     [settings, excludeKey, appState, constants, appAuth]
   );
+  const allGroups = useMemo(() => [...loops, ...groups], [loops, groups]);
   const q = query.trim().toLowerCase();
-  const visible = groups
+  const visible = allGroups
     .filter((g) => group === "all" || g.id === group)
     .map((g) => ({
       ...g,
@@ -147,7 +170,7 @@ function DynamicDataModal({
             />
           </label>
           <div role="group" aria-label="Tag groups" className="flex flex-wrap gap-2">
-            {[{ id: "all", label: "All" }, ...groups].map((g) => (
+            {[{ id: "all", label: "All" }, ...allGroups].map((g) => (
               <button
                 key={g.id}
                 type="button"

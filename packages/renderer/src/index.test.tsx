@@ -3,6 +3,7 @@ import {
   buildDynamicContext,
   defaultPageSettings,
   emptyPageTree,
+  newElementQuery,
   newTheme,
   type ElementNode
 } from "@nextomic/schema";
@@ -398,5 +399,92 @@ describe("dynamic style values", () => {
     expect(elementCss(el, DEFAULT_BREAKPOINTS, () => "40")).toBe(
       '[data-nid="c"]{width:40px;color:40}'
     );
+  });
+});
+
+describe("query loops", () => {
+  const dynamic = buildDynamicContext({
+    page: { name: "Blog", route: "/", settings: defaultPageSettings() },
+    mode: "live"
+  });
+  const loopTree = () => {
+    const root = emptyPageTree();
+    root.children = [
+      node({
+        id: "list",
+        type: "container",
+        query: newElementQuery(),
+        children: [
+          node({
+            id: "t",
+            type: "text",
+            props: {
+              text: { kind: "mixed", parts: [{ token: "item.title" }, " #", { token: "index" }] }
+            }
+          })
+        ]
+      })
+    ];
+    return root;
+  };
+
+  it("repeats the children once per row with item and index", () => {
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={loopTree()}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        loopRows={{ list: { rows: [{ title: "A" }, { title: "B" }], hasMore: false } }}
+      />
+    );
+    expect(html).toContain('<p data-nid="t">A #0</p><p data-nid="t">B #1</p>');
+  });
+
+  it("renders no children without rows, or one placeholder copy on the canvas", () => {
+    const none = renderToStaticMarkup(
+      <PageRenderer tree={loopTree()} breakpoints={DEFAULT_BREAKPOINTS} dynamic={dynamic} />
+    );
+    expect(none).not.toContain('data-nid="t"');
+    const placeholder = renderToStaticMarkup(
+      <PageRenderer
+        tree={loopTree()}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        loopPlaceholder
+      />
+    );
+    expect(placeholder).toContain('<p data-nid="t"> #0</p>');
+  });
+
+  it("reaches outer rows as parent in nested loops", () => {
+    const root = loopTree();
+    const outer = root.children[0]!;
+    const inner = node({
+      id: "inner",
+      type: "container",
+      query: newElementQuery(),
+      children: [
+        node({
+          id: "c",
+          type: "text",
+          props: {
+            text: { kind: "mixed", parts: [{ token: "parent.item.title" }, "/", { token: "item" }] }
+          }
+        })
+      ]
+    });
+    outer.children = [inner];
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={root}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        loopRows={{
+          list: { rows: [{ title: "A" }], hasMore: false },
+          "list#0/inner": { rows: ["x", "y"], hasMore: false }
+        }}
+      />
+    );
+    expect(html).toContain('<p data-nid="c">A/x</p><p data-nid="c">A/y</p>');
   });
 });

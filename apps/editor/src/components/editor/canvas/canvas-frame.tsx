@@ -20,6 +20,7 @@ import {
 import { useDragActive } from "../dnd";
 import { useEditorStore } from "../store/editor-store";
 import { useEditorDynamicContext } from "../use-editor-context";
+import { useCanvasLoopRows } from "./use-canvas-loop-rows";
 import { themeModeFor, useResolvedTheme } from "../store/use-resolved-theme";
 import { onAnimationCommand, reportAnimationState } from "./animation-bridge";
 import { setCanvasDropTarget } from "./canvas-drop";
@@ -85,6 +86,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const dynamic = useEditorDynamicContext();
   const pageId = useEditorStore((s) => s.page?.id ?? null);
   const projectId = useEditorStore((s) => s.projectId);
+  const loopRows = useCanvasLoopRows(projectId, doc?.tree ?? null, dynamic);
   const theme = useResolvedTheme();
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
@@ -318,11 +320,13 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       mode: themeModeFor(theme, mode),
       selectedId,
       hideSelection,
-      dynamic
+      dynamic,
+      loopRows
     });
   }, [
     ready,
     dynamic,
+    loopRows,
     doc,
     withLayout,
     breakpoints,

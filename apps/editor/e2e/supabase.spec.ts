@@ -122,4 +122,38 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
   await expect(page.getByRole("img", { name: "Query loop: Supabase Query" })).toHaveCount(0);
   await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
   await expect(tablePicker).toHaveValue(tableName);
+
+  // A heading inside the loop repeats once per row the anon key can read (limit 20).
+  const answer = await page.request.get(`${url}/rest/v1/${tableName}?select=*&limit=20`, {
+    headers: { apikey: anonKey ?? "", Authorization: `Bearer ${anonKey ?? ""}` }
+  });
+  const expected: unknown = answer.ok() ? await answer.json() : [];
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading")).toHaveCount(
+    Array.isArray(expected) ? expected.length : 0,
+    { timeout: 30_000 }
+  );
+
+  // The heading's dynamic data offers the loop's row tags, named after the element.
+  await page.getByRole("button", { name: "Dynamic value for Text" }).click();
+  const tags = page.getByRole("dialog");
+  await expect(tags.getByRole("button", { name: "Container (Supabase Query)" })).toBeVisible();
+  const loopTags = tags.getByRole("region", { name: "Container (Supabase Query)" });
+  await expect(loopTags.getByText("{{item}}", { exact: true })).toBeVisible();
+  await expect(loopTags.getByText("{{index}}", { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  // The preview renders the loop on the server with the same rows.
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 15_000
+  });
+  const projectId = /\/editor\/([^/?#]+)/.exec(page.url())?.[1] ?? "";
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  await expect(preview.getByRole("heading")).toHaveCount(
+    Array.isArray(expected) ? expected.length : 0
+  );
 });

@@ -10,6 +10,7 @@ import {
 } from "@nextomic/schema";
 import { ActionButton, SelectField, type SelectOption } from "@/components/ui/controls";
 import { SwitchRow } from "@/components/ui/switch-row";
+import { useLoopPreview } from "../canvas/use-canvas-loop-rows";
 import { useEditorStore } from "../store/editor-store";
 import { RestQueryForm } from "./rest-query-form";
 import { SupabaseQueryForm } from "./supabase-query-form";
@@ -47,6 +48,7 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
   const projectId = useEditorStore((s) => s.projectId);
   const setQuery = useEditorStore((s) => s.setElementQuery);
   const { data, error, loading, reload } = useQuerySources(projectId);
+  const previewError = useLoopPreview((s) => s.errors[node.id]);
   const query = node.query;
   const enabled = query?.enabled ?? false;
 
@@ -111,6 +113,11 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
               onChange={(rest) => update({ ...query, rest })}
             />
           )}
+          {enabled && problems.length === 0 && previewError ? (
+            <p role="status" className="text-tiny text-danger">
+              Canvas preview: {previewError}
+            </p>
+          ) : null}
           {enabled && problems.length > 0 ? (
             <ul role="status" className="flex flex-col gap-1 text-tiny text-warning">
               {problems.map((problem) => (
