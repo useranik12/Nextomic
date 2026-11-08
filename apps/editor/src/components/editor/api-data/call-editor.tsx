@@ -143,11 +143,17 @@ export function CallEditor({
         />
       ) : (
         <>
-          <TestPreview test={test} call={draft} config={config} />
+          <TestPreview
+            test={test}
+            call={draft}
+            config={config}
+            masks={model.data?.secrets ?? {}}
+            secrets={secrets}
+          />
           <ResponseType
             call={draft}
             onChange={setDraft}
-            json={test.result?.json ?? null}
+            json={test.json}
             shown={test.shown}
             onToggleShown={test.toggleShown}
           />

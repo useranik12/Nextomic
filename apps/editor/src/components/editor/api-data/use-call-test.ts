@@ -48,18 +48,22 @@ export function useCallTest(model: ApiDataModel) {
     }));
   }
 
+  /** The sample values to send: ticked rows only (unticked ones use their default). */
+  function inputs(call: RestCall, config: RestConfig) {
+    const values: Record<string, string> = {};
+    const builtIns = { jwt: "", user_ip: "" };
+    for (const { name, sample } of rows(call, config)) {
+      if (!sample.include) continue;
+      if (name === "jwt" || name === "user_ip") builtIns[name] = sample.value;
+      else values[name] = sample.value;
+    }
+    return { values, builtIns };
+  }
+
   async function run(call: RestCall, config: RestConfig, secrets: SecretDraft) {
     setRunning(true);
     setError(null);
-    const values: Record<string, string> = {};
-    let jwt = "";
-    let userIp = "";
-    for (const { name, sample } of rows(call, config)) {
-      if (!sample.include) continue;
-      if (name === "jwt") jwt = sample.value;
-      else if (name === "user_ip") userIp = sample.value;
-      else values[name] = sample.value;
-    }
+    const { values, builtIns } = inputs(call, config);
     const typed = Object.fromEntries(
       Object.entries(secrets).filter(
         (e): e is [string, string] => typeof e[1] === "string" && e[1] !== ""
@@ -69,7 +73,7 @@ export function useCallTest(model: ApiDataModel) {
       const response = await model.test({
         call,
         values,
-        builtIns: { jwt, user_ip: userIp },
+        builtIns,
         secrets: typed
       });
       setResult(response.data);
@@ -82,17 +86,25 @@ export function useCallTest(model: ApiDataModel) {
     }
   }
 
-  const shape = useMemo<JsonShape | null>(
-    () => (result?.ok && result.json !== null ? jsonShape(result.json) : null),
+  // An empty response body reads as an empty list.
+  const json = useMemo<unknown>(
+    () => (!result ? null : result.body.trim() === "" ? [] : result.json),
     [result]
+  );
+  const shape = useMemo<JsonShape | null>(
+    () => (result?.ok && json !== null ? jsonShape(json) : null),
+    [result, json]
   );
 
   return {
     rows,
+    inputs,
     setSample: (name: string, sample: SampleValue) => setSamples((s) => ({ ...s, [name]: sample })),
     run,
     running,
     result,
+    /** The response as JSON (an empty body is []), or null when there is none or it is not JSON. */
+    json,
     error,
     /** The shape of a successful test that has not been saved yet; saving the call stores it. */
     unsavedShape: result !== savedResult ? shape : null,
