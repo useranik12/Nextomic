@@ -4,14 +4,13 @@ import { parseHeaderLine } from "@nextomic/schema";
 import { useEffect, useState } from "react";
 import { ActionButton, FormInput } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
-import { DynamicBolt } from "../right-panel/dynamic-bolt";
 
 export interface KeyValue {
   key: string;
   value: string;
 }
 
-export type LineKind = "header" | "field";
+export type LineKind = "header" | "field" | "query";
 
 /** Reads `key: value`; headers also need a valid header name. */
 function readLine(line: string, kind: LineKind): { item: KeyValue } | { error: string } {
@@ -20,7 +19,10 @@ function readLine(line: string, kind: LineKind): { item: KeyValue } | { error: s
     return "error" in parsed ? parsed : { item: parsed.header };
   }
   const at = line.indexOf(":");
-  if (at <= 0) return { error: "Write the field as key: value." };
+  if (at <= 0)
+    return {
+      error: `Write the ${kind === "query" ? "parameter" : "field"} as key: value.`
+    };
   return { item: { key: line.slice(0, at).trim(), value: line.slice(at + 1).trim() } };
 }
 
@@ -53,35 +55,31 @@ function Line({
   };
 
   return (
-    <div className="flex items-start gap-1.5">
-      <FormInput
-        compact
-        isClearable
-        aria-label={label}
-        value={draft}
-        isInvalid={error !== null}
-        errorMessage={error ?? undefined}
-        onValueChange={(v) => {
-          setDraft(v);
-          setError(null);
-        }}
-        onClear={onRemove}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-        }}
-        className="font-mono"
-      />
-      <div className="pt-1">
-        <DynamicBolt label={label} onInsert={(token) => setDraft((d) => `${d}{{${token}}}`)} />
-      </div>
-    </div>
+    <FormInput
+      compact
+      isClearable
+      aria-label={label}
+      value={draft}
+      isInvalid={error !== null}
+      errorMessage={error ?? undefined}
+      onValueChange={(v) => {
+        setDraft(v);
+        setError(null);
+      }}
+      onClear={onRemove}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+      }}
+      className="font-mono"
+    />
   );
 }
 
 /** Lines of `key: value` (headers, form fields) with an add field and button. */
 export function KeyValueLines({
   title,
+  description,
   kind,
   items,
   onChange,
@@ -89,6 +87,7 @@ export function KeyValueLines({
   addLabel
 }: {
   title: string;
+  description?: string;
   kind: LineKind;
   items: KeyValue[];
   onChange: (next: KeyValue[]) => void;
@@ -113,6 +112,7 @@ export function KeyValueLines({
       className="flex flex-col gap-3 rounded-large border border-default-200 p-5"
     >
       <h3 className="text-small font-medium text-foreground">{title}</h3>
+      {description ? <p className="-mt-2 text-tiny text-default-500">{description}</p> : null}
       {items.map((item, i) => (
         <Line
           key={`${i}-${item.key}`}

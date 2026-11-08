@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  availableVariables,
+  callPlaceholders,
   callProblems,
+  callVariables,
+  groupProblems,
+  jsonPathValues,
   fillBrackets,
   fillJsonBody,
   formatJsonBody,
@@ -62,22 +67,22 @@ describe("rest placeholders and problems", () => {
       headers: [{ key: "Authorization", value: "Bearer [jwt]" }],
       method: "POST",
       bodyType: "json",
-      body: '{"name": "<name>", "count": <count>}',
+      body: '{"name": "[name]", "count": [count]}',
       variables: [variable("id"), variable("name")]
     });
     expect(callProblems(c, group)).toEqual([
-      '"version" is used but not defined in Variables.',
-      '"count" is used but not defined in Variables.'
+      '"count" is used but not defined in Variables.',
+      '"version" is used but not defined in Variables.'
     ]);
   });
 
   it("reports JSON body errors with a line, ignoring placeholders", () => {
-    expect(jsonBodyProblem('{\n  "a": <a>,\n  "b": "<b>"\n}')).toBeNull();
+    expect(jsonBodyProblem('{\n  "a": [a],\n  "b": "[b]"\n}')).toBeNull();
     expect(jsonBodyProblem('{\n  "a": 1,\n  "b": \n}')?.line).toBe(4);
   });
 
   it("formats a JSON body and keeps placeholders", () => {
-    expect(formatJsonBody('{"a":<a>,"b":"x <b>"}')).toBe('{\n  "a": <a>,\n  "b": "x <b>"\n}');
+    expect(formatJsonBody('{"a":[a],"b":"x [b]"}')).toBe('{\n  "a": [a],\n  "b": "x [b]"\n}');
     expect(formatJsonBody("{bad")).toBeNull();
   });
 
@@ -99,9 +104,69 @@ describe("rest filling", () => {
 
   it("fills URLs encoded and JSON bodies by context", () => {
     expect(fillBrackets("/q/[term]", { term: "a b/c" }, true)).toBe("/q/a%20b%2Fc");
-    expect(fillJsonBody('{"a": <a>, "s": "hi <s>", "l": <l>}', { a: 3, s: 'x"y', l: ["p"] })).toBe(
+    expect(fillJsonBody('{"a": [a], "s": "hi [s]", "l": [l]}', { a: 3, s: 'x"y', l: ["p"] })).toBe(
       '{"a": 3, "s": "hi x\\"y", "l": ["p"]}'
     );
     expect(joinUrl("https://x.dev/api/", "/users")).toBe("https://x.dev/api/users");
+  });
+});
+
+describe("group variables, query parameters and [name] placeholders", () => {
+  const group = { ...newRestGroup("g1", "Main"), variables: [variable("version"), variable("id")] };
+
+  it("lets calls use group variables, with the call's own variable winning", () => {
+    const own = call({
+      url: "/[version]/users/[id]",
+      variables: [variable("id", { type: "int" })]
+    });
+    expect(callProblems(own, group)).toEqual([]);
+    expect(callVariables(own, group).map((v) => `${v.name}:${v.type}`)).toEqual([
+      "id:int",
+      "version:string"
+    ]);
+    expect(availableVariables(own.variables, group.variables).map((v) => v.from)).toEqual([
+      "call",
+      "group",
+      "server",
+      "server"
+    ]);
+    expect(callProblems(own, null)).toContain('"version" is used but not defined in Variables.');
+  });
+
+  it("checks a group's own placeholders and duplicate names", () => {
+    expect(groupProblems({ ...group, baseUrl: "https://x.dev/[version]" })).toEqual([]);
+    expect(groupProblems({ ...group, baseUrl: "https://x.dev/[missing]" })[0]).toContain(
+      '"missing"'
+    );
+    expect(groupProblems({ ...group, variables: [variable("a"), variable("a")] })[0]).toContain(
+      "Two group variables"
+    );
+  });
+
+  it("counts query keys and values as used placeholders", () => {
+    const own = call({ query: [{ key: "q", value: "[term]" }] });
+    expect(callPlaceholders(own, null)).toEqual(["term"]);
+  });
+
+  it("keeps [true], [false] and [null] as JSON arrays and refuses them as names", () => {
+    expect(jsonBodyProblem('{"flags": [true], "n": [null], "x": [count]}')).toBeNull();
+    expect(fillJsonBody('{"f": [true], "c": [count]}', { count: 2, true: 1 })).toBe(
+      '{"f": [true], "c": 2}'
+    );
+    expect(restVariableSchema.safeParse({ id: "t", name: "true" }).success).toBe(false);
+  });
+
+  it("reads saved JSON paths by name", () => {
+    const json = { data: [{ id: 1 }, { id: 2 }], total: 2 };
+    expect(
+      jsonPathValues(
+        [
+          { name: "ids", path: "$.data[:].id" },
+          { name: "total", path: "$.total" },
+          { name: "none", path: "$.missing" }
+        ],
+        json
+      )
+    ).toEqual({ ids: [1, 2], total: 2, none: null });
   });
 });

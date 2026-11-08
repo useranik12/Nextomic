@@ -1,7 +1,7 @@
 "use client";
 
 import { Checkbox, Spinner } from "@heroui/react";
-import type { RestCall, RestConfig } from "@nextomic/schema";
+import { jsonPathValues, type RestCall, type RestConfig } from "@nextomic/schema";
 import { useState } from "react";
 import { Tabs } from "./tabs";
 import type { CallTestModel } from "./use-call-test";
@@ -27,6 +27,19 @@ function CodeView({ text, label }: { text: string; label: string }) {
       <pre className="m-0 flex-1 whitespace-pre px-3 py-2.5 text-foreground">{text}</pre>
     </div>
   );
+}
+
+/** The response, or only the JSON paths picked with the eyes (by name) when any are picked. */
+function responseText(json: unknown, call: RestCall, shown: ReadonlySet<string>): string {
+  if (json === null) return "The response is not JSON. See Raw Body.";
+  if (shown.size === 0) return JSON.stringify(json, null, 2);
+  const picked = [
+    ...call.response.jsonPaths.filter((p) => shown.has(p.id)),
+    ...[...shown]
+      .filter((key) => key.startsWith("rec:"))
+      .map((key) => ({ name: key.slice(4), path: key.slice(4) }))
+  ];
+  return JSON.stringify(jsonPathValues(picked, json), null, 2);
 }
 
 const headerText = (headers: Record<string, string>) =>
@@ -97,8 +110,7 @@ export function TestPreview({
           </div>
         )}
         <p className="text-tiny text-default-500">
-          Test values are not saved. Unticked variables use their default value. {"{{tags}}"} use
-          what they show in the editor.
+          Test values are not saved. Unticked variables use their default value.
         </p>
       </div>
       <div className="flex min-w-0 flex-col gap-3">
@@ -137,14 +149,24 @@ export function TestPreview({
               />
             </div>
             {view === "json" ? (
-              <CodeView
-                label="Response JSON"
-                text={
-                  result.json === null
-                    ? "The response is not JSON. See Raw Body."
-                    : JSON.stringify(result.json, null, 2)
-                }
-              />
+              <>
+                {test.shown.size > 0 && result.json !== null ? (
+                  <p className="flex flex-wrap items-center gap-2 text-tiny text-default-500">
+                    Showing {test.shown.size} picked JSON path{test.shown.size === 1 ? "" : "s"}.
+                    <button
+                      type="button"
+                      onClick={test.showAll}
+                      className="text-primary-600 underline-offset-2 hover:underline dark:text-primary-400"
+                    >
+                      Show whole response
+                    </button>
+                  </p>
+                ) : null}
+                <CodeView
+                  label="Response JSON"
+                  text={responseText(result.json, call, test.shown)}
+                />
+              </>
             ) : view === "raw" ? (
               <CodeView label="Raw response body" text={result.body || "Empty body."} />
             ) : (

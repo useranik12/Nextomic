@@ -13,12 +13,17 @@ const NONE = "none";
 export function ResponseType({
   call,
   onChange,
-  json
+  json,
+  shown,
+  onToggleShown
 }: {
   call: RestCall;
   onChange: (next: RestCall) => void;
   /** The last test response, for previews and recommendations (never saved). */
   json: unknown;
+  /** JSON paths the response viewer shows (the eyes). */
+  shown: ReadonlySet<string>;
+  onToggleShown: (key: string) => void;
 }) {
   const dataTypes = useEditorStore((s) => s.project.dataTypes);
   const response = call.response;
@@ -78,6 +83,8 @@ export function ResponseType({
       <JsonPaths
         paths={response.jsonPaths}
         json={json}
+        shown={shown}
+        onToggleShown={onToggleShown}
         onChange={(jsonPaths) => set({ jsonPaths })}
       />
     </section>

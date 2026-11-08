@@ -43,7 +43,23 @@ test("create a group and a call, test it, add a JSON path and save", async ({ pa
   await page.getByRole("option", { name: "API key" }).click();
   await page.getByLabel("Key name").fill("apikey");
   await page.getByRole("textbox", { name: "API key" }).fill(anonKey ?? "");
+  // A group variable every call can use.
+  await page.getByRole("tab", { name: "Variables" }).click();
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const groupVar = page.getByLabel("Variable name");
+  await groupVar.fill("profile");
+  await groupVar.press("Enter");
+  await page.getByLabel("Default value of profile").fill("public");
+  await page.getByLabel("Default value of profile").blur();
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const sizeVar = page.getByLabel("Variable name").nth(1);
+  await sizeVar.fill("page_size");
+  await sizeVar.press("Enter");
+  await page.getByLabel("Default value of page_size").fill("1");
+  await page.getByLabel("Default value of page_size").blur();
   await page.getByRole("button", { name: "Save Group" }).click();
+  await expect(page.getByRole("button", { name: "Save Group" })).toBeDisabled();
+  await page.getByRole("tab", { name: "Authentication" }).click();
   await expect(page.getByRole("textbox", { name: "API key" })).toHaveValue("");
   expect(await page.content()).not.toContain(anonKey ?? "");
 
@@ -65,15 +81,47 @@ test("create a group and a call, test it, add a JSON path and save", async ({ pa
   await page.getByLabel("Default value of accept").fill("application/openapi+json");
   await page.getByLabel("Default value of accept").blur();
 
+  // Typing [ closes the bracket and lists the variables (call, group, server); Enter inserts.
+  await page.getByRole("tab", { name: "Header" }).click();
+  const addHeader = page.getByLabel("Add header as key:value");
+  await addHeader.click();
+  await page.keyboard.type("Accept-Profile: [pro");
+  const list = page.getByRole("listbox", { name: "Variables" });
+  await expect(list.getByRole("option", { name: /profile/ })).toBeVisible();
+  await expect(list).toContainText("Default: public");
+  await page.keyboard.press("Enter");
+  await expect(addHeader).toHaveValue("Accept-Profile: [profile]");
+  await page.getByRole("button", { name: "Add Header" }).click();
+
+  // A query parameter is added to the URL for us.
+  await page.getByRole("tab", { name: "Query" }).click();
+  await page.getByLabel("Add query parameter as key:value").fill("limit: [page_size]");
+  await page.getByRole("button", { name: "Add Query Parameter" }).click();
+
   // Test with the draft, then pick a recommended path.
   await page.getByRole("tab", { name: "Test API" }).click();
   await page.getByRole("button", { name: "Test API Call" }).click();
   await expect(page.getByText(/Status: 200 \(Success\)/)).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("tab", { name: "API URL" }).click();
+  await expect(page.getByRole("region", { name: "Called URL" })).toContainText("?limit=1");
   await page.getByRole("tab", { name: "Headers" }).first().click();
-  await expect(page.getByRole("region", { name: "Request headers" })).toContainText("apikey: ••••");
+  const sent = page.getByRole("region", { name: "Request headers" });
+  await expect(sent).toContainText("apikey: ••••");
+  await expect(sent).toContainText("accept-profile: public");
   expect(await page.content()).not.toContain(anonKey ?? "");
   await page.getByRole("button", { name: "Add JSON Path" }).nth(1).click();
-  await expect(page.getByLabel("JSON path").first()).not.toHaveValue("$");
+  const path = page.getByLabel("JSON path").first();
+  await expect(path).not.toHaveValue("$");
+
+  // The eye shows only the picked path in the response viewer.
+  await page.getByRole("tab", { name: "Test Response" }).click();
+  const pathName = await page.getByLabel("Name", { exact: true }).first().inputValue();
+  await page.getByRole("button", { name: `Show ${pathName} in the response viewer` }).click();
+  await expect(page.getByText("Showing 1 picked JSON path.")).toBeVisible();
+  const viewer = page.getByRole("region", { name: "Response JSON" });
+  await expect(viewer).toContainText(`"${pathName}"`);
+  await page.getByRole("button", { name: "Show whole response" }).click();
+  await expect(page.getByText("Showing 1 picked JSON path.")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Save API" }).click();
   await expect(page.getByRole("button", { name: "Save API" })).toBeDisabled();

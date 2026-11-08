@@ -26,7 +26,7 @@ describe("rest request building", () => {
     url: "/users/[id]",
     headers: [{ key: "X-User", value: "[jwt]" }],
     bodyType: "json",
-    body: '{"name": "<name>", "count": <count>}',
+    body: '{"name": "[name]", "count": [count]}',
     variables: [
       variable("id"),
       variable("name"),
@@ -51,6 +51,27 @@ describe("rest request building", () => {
     });
     expect(built.body).toBe('{"name": "Ana", "count": 2}');
     expect(maskSecrets(built.headers.authorization ?? "", built.secretValues)).toBe("Bearer ••••");
+  });
+
+  it("adds query parameters to a typed query string and fills group variables", () => {
+    const built = buildRequest({
+      call: {
+        ...call,
+        method: "GET",
+        url: "/[version]/search?fixed=1",
+        query: [
+          { key: "q", value: "[term]" },
+          { key: "page", value: "2" }
+        ],
+        variables: [variable("term")]
+      },
+      group: { ...group, variables: [variable("version", { defaultValue: "v2" })] },
+      values: { term: "a&b" },
+      builtIns: { jwt: "", user_ip: "" },
+      secrets: {}
+    });
+    expect(built.url).toBe("https://api.example.com/v1/v2/search?fixed=1&q=a%26b&page=2");
+    expect(built.body).toBeUndefined();
   });
 
   it("puts an API key in the query and builds form and multipart bodies", () => {

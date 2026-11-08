@@ -10,6 +10,8 @@ import {
 import {
   AUTH_SECRET_FIELDS,
   callProblems,
+  callVariables,
+  groupProblems,
   joinUrl,
   restCallSchema,
   restConfigSchema,
@@ -188,8 +190,8 @@ export async function saveApiGroup(
 ): Promise<string> {
   const group = restGroupSchema.parse(raw);
   const incoming = secretsInputSchema.parse(rawSecrets);
-  if (group.baseUrl && !/^https?:\/\//i.test(group.baseUrl))
-    throw new ConnectorError("invalid_request", "The base URL must start with https://.");
+  const problem = groupProblems(group)[0];
+  if (problem) throw new ConnectorError("invalid_request", problem);
   await mutate(caller, (config, secrets) => ({
     config: {
       ...config,
@@ -202,7 +204,7 @@ export async function saveApiGroup(
   return group.id;
 }
 
-/** Deletes a group; its calls become ungrouped with the group's URL, headers and auth copied in. */
+/** Deletes a group; its calls become ungrouped with the group's URL, headers, variables and auth copied in. */
 export async function deleteApiGroup(caller: ProxyCaller, groupId: string): Promise<void> {
   await mutate(caller, (config, secrets) => {
     const group = config.groups.find((g) => g.id === groupId);
@@ -233,6 +235,7 @@ const ungroup = (call: RestCall, group: RestGroup): RestCall => ({
     ),
     ...call.headers
   ],
+  variables: callVariables(call, group),
   auth: group.auth,
   includeCredentials: call.includeCredentials || group.includeCredentials
 });

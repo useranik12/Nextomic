@@ -3,7 +3,6 @@
 import { Switch } from "@heroui/react";
 import { REST_METHODS, type RestCall, type RestGroup, type RestMethod } from "@nextomic/schema";
 import { FormInput, SelectField } from "@/components/ui/controls";
-import { DynamicBolt } from "../right-panel/dynamic-bolt";
 
 const NO_GROUP = "none";
 
@@ -36,12 +35,14 @@ export function CallConnection({
         </Switch>
       </div>
       <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
-        <FormInput
-          compact
-          label="API Call Name"
-          value={call.name}
-          onValueChange={(name) => onChange({ ...call, name })}
-        />
+        <div data-no-vars>
+          <FormInput
+            compact
+            label="API Call Name"
+            value={call.name}
+            onValueChange={(name) => onChange({ ...call, name })}
+          />
+        </div>
         <SelectField
           compact
           label="Group"
@@ -69,7 +70,7 @@ export function CallConnection({
             </span>
           </div>
         ) : null}
-        <div className={`flex items-end gap-1.5 ${group ? "" : "md:col-span-2"}`}>
+        <div className={group ? "" : "md:col-span-2"}>
           <FormInput
             compact
             label={urlLabel}
@@ -78,12 +79,6 @@ export function CallConnection({
             onValueChange={(url) => onChange({ ...call, url })}
             className="font-mono"
           />
-          <div className="pb-1">
-            <DynamicBolt
-              label={urlLabel}
-              onInsert={(t) => onChange({ ...call, url: `${call.url}{{${t}}}` })}
-            />
-          </div>
         </div>
       </div>
     </section>

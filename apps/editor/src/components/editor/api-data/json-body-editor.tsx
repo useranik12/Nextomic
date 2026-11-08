@@ -5,13 +5,14 @@ import { Fragment, useMemo, useRef, useState, type ReactNode, type RefObject } f
 import { Icon } from "@/lib/icons/Icon";
 
 // The Body tab's JSON editor: a transparent textarea over a colored copy (typing, selection and
-// undo stay native), line numbers, `<variable>` and `{{tag}}` highlighting, a Format button that
-// keeps placeholders, and the first problem with its line under the box.
+// undo stay native), line numbers, `[variable]` highlighting, a Format button that keeps
+// placeholders, and the first problem with its line under the box.
 
+// `[true]`, `[false]` and `[null]` are JSON arrays, never placeholders.
 const TOKEN =
-  /("(?:\\.|[^"\\\n])*"?)|(<[A-Za-z_]\w*>)|(\{\{[^}\n]*\}\})|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|(\btrue\b|\bfalse\b|\bnull\b)/g;
-const PLACEHOLDER = /(<[A-Za-z_]\w*>|\{\{[^}\n]*\}\})/;
-const IS_PLACEHOLDER = /^(<[A-Za-z_]\w*>|\{\{[^}\n]*\}\})$/;
+  /("(?:\\.|[^"\\\n])*"?)|(\[(?!(?:true|false|null)\])[A-Za-z_]\w*\])|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|(\btrue\b|\bfalse\b|\bnull\b)/g;
+const PLACEHOLDER = /(\[(?!(?:true|false|null)\])[A-Za-z_]\w*\])/;
+const IS_PLACEHOLDER = /^\[(?!(?:true|false|null)\])[A-Za-z_]\w*\]$/;
 
 const COLORS = {
   key: "text-[#0451a5] dark:text-[#9cdcfe]",
@@ -41,12 +42,12 @@ function highlight(source: string): ReactNode[] {
   for (const match of source.matchAll(TOKEN)) {
     const at = match.index ?? 0;
     if (at > last) out.push(source.slice(last, at));
-    const [text, str, angle, tag, num] = match;
+    const [text, str, placeholder, num] = match;
     const key = String(at);
     if (str) {
       const isKey = /^\s*:/.test(source.slice(at + text.length));
       out.push(...stringParts(str, isKey ? COLORS.key : COLORS.string, key));
-    } else if (angle || tag)
+    } else if (placeholder)
       out.push(
         <span key={key} className={COLORS.placeholder}>
           {text}
@@ -130,7 +131,7 @@ export function JsonBodyEditor({
             autoCorrect="off"
             wrap="off"
             value={value}
-            placeholder={'{\n  "name": "<name>"\n}'}
+            placeholder={'{\n  "name": "[name]"\n}'}
             onChange={(e) => onChange(e.target.value)}
             onScroll={(e) => {
               const { scrollTop, scrollLeft } = e.currentTarget;
@@ -161,7 +162,7 @@ export function JsonBodyEditor({
           ? `Line ${problem.line}: ${problem.message}`
           : formatError
             ? "The JSON could not be formatted. Fix the problem first."
-            : 'Use <name> for a variable: inside quotes for text ("<name>"), without quotes for numbers, true/false, lists and JSON (<count>).'}
+            : 'Type [ to add a variable: inside quotes for text ("[name]"), without quotes for numbers, true/false, lists and JSON ([count]).'}
       </p>
     </div>
   );
