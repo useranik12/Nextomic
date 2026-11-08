@@ -48,6 +48,7 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:calendar-blank" },
   { id: "ph:list" },
   { id: "ph:stack" },
+  { id: "ph:database" },
   { id: "ph:pencil-simple" },
   { id: "ph:trash" },
   { id: "ph:export" },

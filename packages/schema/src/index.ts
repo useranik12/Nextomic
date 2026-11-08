@@ -40,6 +40,8 @@ export * from "./font-support";
 export * from "./class-import";
 export * from "./state-usage";
 export * from "./expression";
+export * from "./query";
+export * from "./query-scope";
 export * from "./rest";
 export * from "./rest-request";
 export * from "./json-path";

@@ -4,7 +4,7 @@
 
 - Dynamic data works EVERYWHERE (see "Universal dynamic data" in `elements.md`): content, attributes, style values, conditions, action params, query params, route and SEO fields.
 - Any input accepts a mix of static text and dynamic tokens, e.g. `Hello {{user.name}}, you have {{query.orders.count}} orders`. Token syntax is `{{ path }}` everywhere except inside API call definitions (see `integrations.md`).
-- The bolt icon (amber) opens the dynamic data modal: searchable, grouped, type-aware, with live preview values.
+- The bolt icon (yellow) opens the dynamic data modal: searchable, grouped, type-aware, with live preview values.
 - Groups: **Site**, **Page**, **Template**, **User** (the built app's signed-in user, see `app-auth.md`), **Nextomic User** (the builder account viewing the editor or preview: `{{nextomic.user.id|name|email|image|role|emailVerified|twoFactorEnabled|passkeys|createdAt}}`; empty on live sites; no tokens), **App state**, **Constants**, **Page state**, **Route params**, **Component/Item (loop)**, **Supabase Query (<element/query name>)**, **API Query (<name>)**, **Form** (values of named form fields), **Action outputs**, **Date/Time**, **Theme** (active theme name and color mode).
 - Dot notation reaches into nested JSON (`item.address.city`, `response.data[0].id`). Parent query data can be parsed by children with dot notation.
 - Dynamic data renders on the editor canvas.
@@ -35,16 +35,21 @@ Everything between `{{` and `}}` is an expression in a JavaScript-like syntax, n
 
 ## 2. Scoping rules
 
-- Query data is available only to the element that owns the query and its descendants. Parents and siblings cannot see it.
-- Loop item data is available inside the looped element and its descendants as `item` (and `index`, `count`, `isFirst`, `isLast`).
-- Nested loops expose parent scopes by name (`item`, `parent.item`).
+- Query loop data is available only to the DESCENDANTS of the element that owns the query (owner decision 2026-11-08): not the element itself, its parents or its siblings. A tag used outside that scope is an unknown name: the Navigator marks the element with a red dot and save-time validation reports it.
+- Inside a loop, `item` is the current row and `index` its position. Nested loops expose the outer loop as `parent` (`parent.item`, `parent.parent.item`). Built: `withLoopScope`, `loopDepths`, `loopAncestors` (`packages/schema/src/query-scope.ts`).
+- In the dynamic data picker the query's group is named after the element and the query type, e.g. "Post grid (Supabase Query)" (`queryLabel`).
 - App state and constants are global. Page state is page-wide. Template queries are available inside that template.
 - The picker only shows tokens valid for the selected element. An out-of-scope token is a validation error at save time.
 
 ## 3. Queries
 
 - Sources: Supabase (table select, filters, order, pagination, rpc), REST endpoint (API Data call), App state, Static JSON.
-- A query can be attached to: any div-based element (as a loop), a page or template (runs on load), or fired by an action ("query data", "refresh query with new parameters").
+- Query loops (owner decision 2026-11-08) are available on **Container and Section only**, set in the Element tab's "Query Loop" group: "Enable Backend Query" toggle (everything below is disabled while off), Query Type (Supabase Query or REST API; a type is disabled until that source is set up).
+  - Supabase: table or view (searchable, A to Z, tables and views listed separately), Single Row or List of Rows (List shows Limit, default 20, up to 1000), Filters repeater (column, then only the operators PostgREST accepts for that column's type (`operatorsFor`), then a value control matching the type; values accept dynamic data), Order by repeater (column, Increasing or Decreasing), "Enable realtime query" (off by default) and "Infinite scroll" (loads more rows when 90% of the loaded rows have been viewed).
+  - REST API: a saved API Data call, a value for each of its variables (dynamic data allowed; unset uses the variable's default), the list to loop over (the whole response or one of the call's saved JSON paths by Name), Single or List with Limit, Infinite scroll.
+  - Model: `ElementNode.query` (`elementQuerySchema` in `packages/schema/src/query.ts`): `enabled`, `source`, and the settings of both sources (switching type keeps the other's settings). `queryProblems` lists what stops it from running.
+  - On the live site the first render runs queries on the server (REST secrets stay there; Supabase uses the anon key); the client runtime then re-fetches, scrolls for more and streams realtime changes through the site query endpoint. The editor canvas fetches live through the builder proxy and keeps results in memory only.
+  - Page and template level queries, and queries fired by actions ("query data", "refresh query with new parameters", Phase 5), come later.
 - Query parameters accept bindings (variables, form values, route params, filter elements).
 - Each query defines: name (unique in scope), source, params, loading/empty/error UI behavior, caching, run-on-load flag, and result shape.
 - **Schema saving:** On connect, "Fetch Schema", or "Test API", the builder stores the STRUCTURE only (tables, columns, types; JSON response shape inferred from a test call). No row data is stored. The stored structure powers query field pickers and dynamic data tokens everywhere. Re-fetch on demand and show diffs; deprecate removed fields with warnings.

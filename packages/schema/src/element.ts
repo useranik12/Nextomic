@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { elementAnimationSchema, type ElementAnimation } from "./css-animation";
 import { conditionGroupSchema, type ConditionGroup } from "./condition";
+import { elementQuerySchema, type ElementQuery } from "./query";
 import { styleMapSchema, type StyleMap } from "./style";
 import { propValueSchema, type PropValue } from "./value";
 
@@ -24,6 +25,8 @@ export interface ElementNode {
   visibility?: ConditionGroup | undefined;
   /** A ready-made CSS animation played by a trigger (Design > Animations). */
   animation?: ElementAnimation | undefined;
+  /** Query loop (Container and Section): repeats the children once per row. */
+  query?: ElementQuery | undefined;
   // Action flows land in Phase 5; flows are stored opaque until then.
   actions: Record<string, unknown[]>;
   children: ElementNode[];
@@ -48,6 +51,7 @@ export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = 
     hidden: z.boolean().optional(),
     visibility: conditionGroupSchema.optional(),
     animation: elementAnimationSchema.optional(),
+    query: elementQuerySchema.optional(),
     actions: z.record(z.string(), z.array(z.unknown())).default({}),
     children: z.array(elementNodeSchema).default([])
   })

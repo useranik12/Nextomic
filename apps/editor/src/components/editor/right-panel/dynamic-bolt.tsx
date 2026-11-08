@@ -34,7 +34,7 @@ export function DynamicBolt({
     "flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 " +
     (disabledReason
       ? "text-default-300"
-      : "text-default-500 hover:bg-default-200 hover:text-warning");
+      : "text-yellow-500 hover:bg-default-200 hover:text-yellow-400 dark:text-yellow-400");
 
   if (disabledReason) {
     return (
