@@ -21,8 +21,16 @@ import { VariablePicker } from "./variable-picker";
 
 type Link = "free" | "pairs" | "all";
 
+// The value cells blend into the box: no fill of their own, even while focused; a thin underline
+// marks the focused cell instead.
 const CELL_FIELD =
-  "h-7 w-10 min-w-0 bg-transparent px-0.5 text-center text-small text-foreground outline-none placeholder:text-default-400 focus:bg-default-200/60 rounded-medium";
+  "h-7 w-9 min-w-0 bg-transparent px-0.5 text-center text-small text-foreground outline-none placeholder:text-default-400 focus:shadow-[inset_0_-1px_0_currentColor]";
+
+// The variable and dynamic data buttons of a cell float above it on hover or focus, so the cell
+// itself is only the value and its unit and fits between the frame lines.
+const CELL_TOOLS =
+  "pointer-events-none absolute bottom-full left-1/2 z-10 flex -translate-x-1/2 items-center rounded-full bg-default-200 px-0.5 opacity-0 shadow-small transition-opacity duration-200 " +
+  "group-hover/cell:pointer-events-auto group-hover/cell:opacity-100 group-focus-within/cell:pointer-events-auto group-focus-within/cell:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100";
 
 const LINK_LABEL: Record<Link, string> = {
   free: "Each side on its own",
@@ -175,7 +183,7 @@ export function SidesField({
       <div
         role="group"
         aria-label={`${label} values`}
-        className={"relative w-full " + (corners ? "h-[104px]" : "h-[150px]")}
+        className={"relative w-full " + (corners ? "h-[104px]" : "h-[160px]")}
       >
         {corners ? (
           <div
@@ -189,7 +197,7 @@ export function SidesField({
           <div
             key={prop}
             className={
-              "absolute flex items-center rounded-medium " +
+              "group/cell absolute flex items-center " +
               (corners ? CORNER_POSITION[i] : SIDE_POSITION[i])
             }
           >
@@ -202,7 +210,7 @@ export function SidesField({
               onChange={(v) => edit(i, v)}
               fieldClass={CELL_FIELD}
             />
-            <div className="flex shrink-0 flex-col">
+            <div className={CELL_TOOLS}>
               <VariablePicker
                 label={`${label} ${names[i]}`}
                 property={prop}
