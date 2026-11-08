@@ -1,10 +1,17 @@
 "use client";
 
 import { getElementDefinition, type ControlDef } from "@nextomic/renderer";
-import { dynamicTextOf, findNode, parseDynamicText, type ElementNode } from "@nextomic/schema";
+import {
+  canHaveQuery,
+  dynamicTextOf,
+  findNode,
+  parseDynamicText,
+  type ElementNode
+} from "@nextomic/schema";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
+import { QueryLoopGroup } from "../query/query-loop-group";
 import { RenameField } from "../rename-field";
 import { useEditorStore } from "../store/editor-store";
 import { STATUS_DOT } from "../top-bar";
@@ -265,6 +272,18 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 changed={Object.keys(node.attributes ?? {}).length > 0}
               >
                 <AttributesEditor node={node} />
+              </AccordionSection>
+            ) : null}
+            {canHaveQuery(node.type) && (!q || "query loop".includes(q)) ? (
+              <AccordionSection
+                id="query"
+                title="Query Loop"
+                icon={<Icon name="ph:database" width={18} height={18} />}
+                open={q ? true : elementSection === "query"}
+                onToggle={toggleElementSection}
+                changed={node.query?.enabled ?? false}
+              >
+                <QueryLoopGroup node={node} />
               </AccordionSection>
             ) : null}
           </div>

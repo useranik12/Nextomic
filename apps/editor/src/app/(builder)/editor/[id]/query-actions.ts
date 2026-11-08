@@ -1,9 +1,15 @@
 "use server";
 
-import { elementQuerySchema, fillFrom, type QueryRows } from "@nextomic/schema";
+import {
+  elementQuerySchema,
+  fillFrom,
+  type QueryRows,
+  type RestConfig,
+  type SupabaseStructure
+} from "@nextomic/schema";
 import { z } from "zod";
 import { authorizeProjectMember, failResult, type ActionResult } from "@/server/authorize";
-import { editorExecutor, runElementQuery } from "@/server/queries/run-query";
+import { editorExecutor, querySources, runElementQuery } from "@/server/queries/run-query";
 
 // Runs a query loop for the editor canvas. The canvas resolves the {{ }} templates with its own
 // preview values and sends the filled text; the rows come back and stay in the browser's memory.
@@ -31,5 +37,24 @@ export async function runQueryAction(
     return { data: rows, error: null };
   } catch (error) {
     return failResult(error, "The query could not run.");
+  }
+}
+
+export interface QuerySourcesSnapshot {
+  /** Null when Supabase is not connected; `active` false when it is turned off. */
+  supabase: { active: boolean; structure: SupabaseStructure | null } | null;
+  /** API Data groups and calls (definitions only; auth values never leave the server). */
+  rest: RestConfig;
+}
+
+/** What the Query Loop panel can choose from: the saved Supabase structure and API Data calls. */
+export async function getQuerySourcesAction(
+  projectId: string
+): Promise<ActionResult<QuerySourcesSnapshot>> {
+  try {
+    await authorizeProjectMember(projectId);
+    return { data: await querySources(projectId), error: null };
+  } catch (error) {
+    return failResult(error, "Could not load the query sources.");
   }
 }

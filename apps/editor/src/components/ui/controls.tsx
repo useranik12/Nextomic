@@ -110,6 +110,25 @@ export interface SelectFieldProps {
   className?: string;
 }
 
+/**
+ * Opening a list inside a scrolling panel or modal makes it fire a stray scroll event (the trigger
+ * scrolls into view), and react-aria closes a popover on any scroll above its trigger. The returned
+ * `onOpenChange` handler marks the opening; scrolls in the next 400ms are ignored.
+ */
+export function useIgnoreOpeningScroll(): (open: boolean) => void {
+  const openedAt = useRef(0);
+  useEffect(() => {
+    function ignoreOpeningScroll(event: Event) {
+      if (Date.now() - openedAt.current < 400) event.stopImmediatePropagation();
+    }
+    window.addEventListener("scroll", ignoreOpeningScroll, true);
+    return () => window.removeEventListener("scroll", ignoreOpeningScroll, true);
+  }, []);
+  return (open) => {
+    if (open) openedAt.current = Date.now();
+  };
+}
+
 export function SelectField({
   label,
   hideLabel,
@@ -121,16 +140,7 @@ export function SelectField({
   description,
   className
 }: SelectFieldProps) {
-  // Opening the list inside a scrolling modal makes the modal body fire one stray scroll event, and
-  // react-aria closes a popover on any scroll above its trigger. Ignore scrolls right after opening.
-  const openedAt = useRef(0);
-  useEffect(() => {
-    function ignoreOpeningScroll(event: Event) {
-      if (Date.now() - openedAt.current < 400) event.stopImmediatePropagation();
-    }
-    window.addEventListener("scroll", ignoreOpeningScroll, true);
-    return () => window.removeEventListener("scroll", ignoreOpeningScroll, true);
-  }, []);
+  const markOpened = useIgnoreOpeningScroll();
   const known = options.some((option) => option.value === value);
   const items = known ? options : [{ value, label: value }, ...options];
   return (
@@ -142,9 +152,7 @@ export function SelectField({
       disallowEmptySelection
       isDisabled={isDisabled}
       description={description}
-      onOpenChange={(open) => {
-        if (open) openedAt.current = Date.now();
-      }}
+      onOpenChange={markOpened}
       selectedKeys={[value]}
       disabledKeys={items.filter((option) => option.disabled).map((option) => option.value)}
       onSelectionChange={(keys) => {

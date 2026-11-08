@@ -2,7 +2,7 @@ import { runExpression, toText } from "./expression";
 import { splitTemplate } from "./expression/template";
 import { readJsonPath } from "./json-path";
 import type { RestLoopQuery, SupabaseLoopQuery, SupabaseOperator } from "./query";
-import type { RestCall } from "./rest";
+import type { RestCall, RestVariable } from "./rest";
 import type { SupabaseColumn, SupabaseTable } from "./supabase";
 
 // How a query loop becomes a connector request, and how the answer becomes rows. Pure, so the
@@ -119,14 +119,17 @@ export function supabaseQueryRequest(
   };
 }
 
-/** The variable values of a REST query loop, filled; an empty value uses the variable's default. */
+/**
+ * The variable values of a REST query loop (the call's and its group's variables, see
+ * `callVariables`), filled; an empty value uses the variable's default.
+ */
 export function restQueryValues(
   query: RestLoopQuery,
-  call: RestCall,
+  variables: readonly RestVariable[],
   fill: (template: string) => string
 ): Record<string, string> {
   const values: Record<string, string> = {};
-  for (const variable of call.variables) {
+  for (const variable of variables) {
     const template = query.values[variable.name];
     if (template === undefined) continue;
     const text = fill(template);

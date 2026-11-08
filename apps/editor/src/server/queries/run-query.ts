@@ -1,6 +1,7 @@
 import { connectors, connectorSchemas, getDb } from "@nextomic/db";
 import { ConnectorError, type ExecuteResult, type RestCallResult } from "@nextomic/integrations";
 import {
+  callVariables,
   findTable,
   QueryInputError,
   restConfigSchema,
@@ -10,7 +11,9 @@ import {
   supabaseRows,
   supabaseStructureSchema,
   type ElementQuery,
-  type QueryRows
+  type QueryRows,
+  type RestConfig,
+  type SupabaseStructure
 } from "@nextomic/schema";
 import { and, eq } from "drizzle-orm";
 import { allowPrivateConnectorHosts } from "../connectors/env";
@@ -99,11 +102,14 @@ async function runRest(input: RunQueryInput): Promise<QueryRows> {
     ? config.data.calls.find((c) => c.id === input.query.rest.callId)
     : undefined;
   if (!row || !call) throw new ConnectorError("not_found", "Choose a saved API call.");
+  const group = config.success
+    ? (config.data.groups.find((g) => g.id === call.groupId) ?? null)
+    : null;
   const result = await input.execute(row, {
     resourceId: `call:${call.id}`,
     params: {
       callId: call.id,
-      values: restQueryValues(input.query.rest, call, input.fill),
+      values: restQueryValues(input.query.rest, callVariables(call, group), input.fill),
       builtIns: input.builtIns ?? { jwt: "", user_ip: "" },
       secrets: {}
     }
@@ -123,4 +129,25 @@ export async function runElementQuery(input: RunQueryInput): Promise<QueryRows> 
       throw new ConnectorError("invalid_request", error.message);
     throw error;
   }
+}
+
+/** The saved Supabase structure (with the connection's on/off state) and the API Data calls. */
+export async function querySources(projectId: string): Promise<{
+  supabase: { active: boolean; structure: SupabaseStructure | null } | null;
+  rest: RestConfig;
+}> {
+  const [supabase, rest] = await Promise.all([
+    projectConnector(projectId, "supabase"),
+    projectConnector(projectId, "rest")
+  ]);
+  const structure = supabase
+    ? supabaseStructureSchema.safeParse(await savedStructure(supabase.id))
+    : null;
+  const config = restConfigSchema.safeParse(rest?.config);
+  return {
+    supabase: supabase
+      ? { active: supabase.active, structure: structure?.success ? structure.data : null }
+      : null,
+    rest: config.success ? config.data : restConfigSchema.parse({})
+  };
 }
