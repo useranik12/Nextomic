@@ -17,6 +17,23 @@ export interface LoopStep {
 export const loopKey = (path: readonly LoopStep[], id: string): string =>
   [...path.map((s) => `${s.id}#${s.index}`), id].join("/");
 
+const KEY_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+/** A `loopKey` read back into the outer loop rows and the element id; null when malformed. */
+export function parseLoopKey(key: string): { path: LoopStep[]; id: string } | null {
+  const parts = key.split("/");
+  if (parts.length === 0 || parts.length > 20) return null;
+  const id = parts.pop() ?? "";
+  if (!KEY_ID.test(id)) return null;
+  const path: LoopStep[] = [];
+  for (const part of parts) {
+    const match = /^([A-Za-z0-9_-]{1,64})#(\d{1,7})$/.exec(part);
+    if (!match?.[1] || !match[2]) return null;
+    path.push({ id: match[1], index: Number(match[2]) });
+  }
+  return { path, id };
+}
+
 /** Rows of every loop run that finished, by `loopKey`. */
 export type LoopRows = Readonly<Record<string, QueryRows>>;
 
@@ -30,11 +47,25 @@ export interface LoopInstance {
   path: LoopStep[];
 }
 
+/** Where a walk starts when it begins inside loops (a subtree rendered on its own). */
+export interface LoopStart {
+  path: LoopStep[];
+  frames: LoopFrame[];
+}
+
+const TOP: LoopStart = { path: [], frames: [] };
+
 /**
  * The loop runs that can happen now, outer loops first: every loop whose enclosing loops have
- * rows. A loop below one without rows yet waits for them. At most `max` runs are listed.
+ * rows. A loop below one without rows yet waits for them. At most `max` runs are listed. Rows may
+ * be a sparse list (a later page of a loop): missing positions are skipped.
  */
-export function loopInstances(root: ElementNode, rows: LoopRows, max = 200): LoopInstance[] {
+export function loopInstances(
+  root: ElementNode,
+  rows: LoopRows,
+  max = 200,
+  start: LoopStart = TOP
+): LoopInstance[] {
   const out: LoopInstance[] = [];
   const visit = (node: ElementNode, path: LoopStep[], frames: LoopFrame[]) => {
     if (node.hidden || out.length >= max) return;
@@ -53,7 +84,7 @@ export function loopInstances(root: ElementNode, rows: LoopRows, max = 200): Loo
       for (const child of node.children) visit(child, innerPath, innerFrames);
     });
   };
-  visit(root, [], []);
+  visit(root, start.path, start.frames);
   return out.slice(0, max);
 }
 
@@ -75,11 +106,14 @@ export async function collectLoopRows(
   root: ElementNode,
   scope: Readonly<Record<string, unknown>>,
   run: LoopRunner,
-  max = 200
+  max = 200,
+  start: LoopStart = TOP,
+  /** Rows already known (they are not run again). */
+  seed: LoopRows = {}
 ): Promise<Record<string, QueryRows>> {
-  const rows: Record<string, QueryRows> = {};
+  const rows: Record<string, QueryRows> = { ...seed };
   for (;;) {
-    const pending = loopInstances(root, rows, max).filter((i) => !(i.key in rows));
+    const pending = loopInstances(root, rows, max, start).filter((i) => !(i.key in rows));
     if (pending.length === 0) break;
     const results = await Promise.all(
       pending.map((instance) =>

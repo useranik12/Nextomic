@@ -17,7 +17,7 @@ export function DashboardNav() {
   return (
     <nav className="flex w-56 shrink-0 flex-col gap-1" aria-label="Dashboard">
       {NAV_ITEMS.map((item) => {
-        const isActive = pathname.startsWith(item.href);
+        const isActive = (pathname ?? "").startsWith(item.href);
         return (
           <Link
             key={item.href}

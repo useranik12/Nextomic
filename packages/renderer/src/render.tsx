@@ -61,6 +61,12 @@ export interface RenderOptions {
    * so they stay visible and selectable. Elsewhere such a loop renders no children.
    */
   loopPlaceholder?: boolean;
+  /**
+   * Built pages: mark loop elements and the top elements of each copy with data attributes the
+   * client runtime reads (`data-nx-loop` key, row count, more rows, infinite scroll, realtime
+   * table; `data-nx-row` position).
+   */
+  loopMarkers?: boolean;
   /** What dynamic tags resolve to ({{page.name}}, {{param.id}}, {{now.date}} ...). */
   dynamic?: DynamicContext;
   resolveToken?: TokenResolver;
@@ -82,6 +88,8 @@ interface RenderScope {
   path: LoopStep[];
   frames: LoopFrame[];
   resolveToken: TokenResolver | undefined;
+  /** Set on the top elements of one loop copy: the row position they show. */
+  row?: number;
 }
 
 function elementAttrs(
@@ -120,7 +128,7 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
     node.children.map((child) => (
       <Fragment key={child.id + suffix}>{renderScoped(child, options, inner)}</Fragment>
     ));
-  if (!activeQuery(node)) return copy(scope, "");
+  if (!activeQuery(node)) return copy({ ...scope, row: undefined }, "");
   const result = options.loopRows?.[loopKey(scope.path, node.id)];
   const rows = result ? result.rows : options.loopPlaceholder ? [{}] : [];
   return rows.map((item, index) => {
@@ -129,27 +137,74 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
       {
         path: [...scope.path, { id: node.id, index }],
         frames,
-        resolveToken: loopResolver(options, frames)
+        resolveToken: loopResolver(options, frames),
+        row: index
       },
       `#${index}`
     );
   });
 }
 
+/** The data attributes the client runtime reads (only with `loopMarkers`). */
+function loopMarkers(
+  node: ElementNode,
+  options: RenderOptions,
+  scope: RenderScope
+): Record<string, string> {
+  const marks: Record<string, string> = {};
+  if (scope.row !== undefined) marks["data-nx-row"] = String(scope.row);
+  const query = activeQuery(node);
+  if (!query) return marks;
+  const key = loopKey(scope.path, node.id);
+  const result = options.loopRows?.[key];
+  marks["data-nx-loop"] = key;
+  // Rows may be a sparse list (a later page): count what is there.
+  marks["data-nx-count"] = String(result ? result.rows.filter(() => true).length : 0);
+  marks["data-nx-more"] = result?.hasMore ? "1" : "0";
+  const settings = query.source === "supabase" ? query.supabase : query.rest;
+  if (settings.infiniteScroll && !settings.single) marks["data-nx-scroll"] = "";
+  if (query.source === "supabase" && query.supabase.realtime && query.supabase.table)
+    marks["data-nx-realtime"] = `${query.supabase.schema}.${query.supabase.table}`;
+  return marks;
+}
+
 function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderScope): ReactNode {
   const definition = getElementDefinition(node.type);
   if (!definition || node.hidden) return null;
+  const attrs = elementAttrs(node, scope.resolveToken);
   return definition.render({
     node,
     text: (key) => resolveText(node.props[key], scope.resolveToken),
     bool: (key) => resolveBoolean(node.props[key]),
-    attrs: elementAttrs(node, scope.resolveToken),
+    attrs: options.loopMarkers ? { ...attrs, ...loopMarkers(node, options, scope) } : attrs,
     children: definition.canHaveChildren ? renderChildren(node, options, scope) : null
   });
 }
 
 export function renderNode(node: ElementNode, options: RenderOptions): ReactNode {
   return renderScoped(node, options, { path: [], frames: [], resolveToken: options.resolveToken });
+}
+
+/**
+ * The copies of one loop run on their own, without the loop element (the next page of an
+ * infinite scroll, or the rows again after a realtime change). `path` and `frames` place the run
+ * inside its outer loops; `options.loopRows` holds its rows (sparse for a later page) and those
+ * of loops nested in it.
+ */
+export function renderLoopCopies(
+  node: ElementNode,
+  given: RenderOptions,
+  start: { path: LoopStep[]; frames: LoopFrame[] }
+): ReactNode {
+  const options: RenderOptions = {
+    ...given,
+    resolveToken:
+      given.resolveToken ?? (given.dynamic ? createTokenResolver(given.dynamic) : undefined)
+  };
+  return renderChildren(node, options, {
+    ...start,
+    resolveToken: loopResolver(options, start.frames)
+  });
 }
 
 /** The page tree plus the CSS for every element at every breakpoint. */

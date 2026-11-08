@@ -11,6 +11,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   PageRenderer,
+  renderLoopCopies,
   elementCss,
   getElementDefinition,
   hasStylesAt,
@@ -486,5 +487,51 @@ describe("query loops", () => {
       />
     );
     expect(html).toContain('<p data-nid="c">A/x</p><p data-nid="c">A/y</p>');
+  });
+
+  it("marks loops and rows for the client runtime on built pages", () => {
+    const tree = loopTree();
+    const list = tree.children[0]!;
+    if (list.query)
+      list.query.supabase = {
+        ...list.query.supabase,
+        infiniteScroll: true,
+        realtime: true,
+        table: "posts"
+      };
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        loopMarkers
+        loopRows={{ list: { rows: [{ title: "A" }], hasMore: true } }}
+      />
+    );
+    expect(html).toContain(
+      'data-nx-loop="list" data-nx-count="1" data-nx-more="1" data-nx-scroll="" data-nx-realtime="public.posts"'
+    );
+    expect(html).toContain('<p data-nid="t" data-nx-row="0">A #0</p>');
+  });
+
+  it("renders a later page of copies on their own with their real positions", () => {
+    const rows: unknown[] = [];
+    rows[2] = { title: "C" };
+    const list = loopTree().children[0]!;
+    const html = renderToStaticMarkup(
+      <>
+        {renderLoopCopies(
+          list,
+          {
+            breakpoints: DEFAULT_BREAKPOINTS,
+            dynamic,
+            loopMarkers: true,
+            loopRows: { list: { rows, hasMore: false } }
+          },
+          { path: [], frames: [] }
+        )}
+      </>
+    );
+    expect(html).toBe('<p data-nid="t" data-nx-row="2">C #2</p>');
   });
 });

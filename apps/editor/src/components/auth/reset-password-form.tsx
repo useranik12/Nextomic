@@ -19,7 +19,7 @@ export function ResetPasswordView({ policy }: { policy: PasswordPolicy }) {
 function ResetPasswordForm({ policy }: { policy: PasswordPolicy }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get("token") ?? "";
+  const token = searchParams?.get("token") ?? "";
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);

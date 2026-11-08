@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ElementNode } from "./element";
 import { newElementQuery } from "./query";
-import { collectLoopRows, loopInstances, loopKey } from "./query-loop-rows";
+import { collectLoopRows, loopInstances, loopKey, parseLoopKey } from "./query-loop-rows";
 
 const node = (
   id: string,
@@ -74,5 +74,40 @@ describe("collectLoopRows", () => {
       2
     );
     expect(runs).toBe(2);
+  });
+});
+
+describe("loop keys from the browser", () => {
+  it("parses well-formed keys and rejects anything else", () => {
+    expect(parseLoopKey("posts#2/comments")).toEqual({
+      path: [{ id: "posts", index: 2 }],
+      id: "comments"
+    });
+    expect(parseLoopKey("posts")).toEqual({ path: [], id: "posts" });
+    for (const bad of ["", "a#x/b", "a/b#1", "a b", "posts#-1/c", `${"a#1/".repeat(25)}b`])
+      expect(parseLoopKey(bad)).toBeNull();
+  });
+});
+
+describe("a later page of a loop", () => {
+  it("starts inside the outer loops and runs nested loops only for the new rows", async () => {
+    const posts = tree.children[0];
+    if (!posts) throw new Error("tree");
+    const page: unknown[] = [];
+    page[5] = { id: 6 };
+    const seen: string[] = [];
+    const rows = await collectLoopRows(
+      posts,
+      {},
+      async (instance, fill) => {
+        seen.push(`${instance.key}:${fill("{{item.id}}")}`);
+        return { rows: [], hasMore: false };
+      },
+      200,
+      { path: [], frames: [] },
+      { posts: { rows: page, hasMore: true } }
+    );
+    expect(seen).toEqual(["posts#5/comments:6"]);
+    expect(rows.posts?.hasMore).toBe(true);
   });
 });

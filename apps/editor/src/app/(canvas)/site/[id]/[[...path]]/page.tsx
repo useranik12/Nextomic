@@ -11,11 +11,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { cache } from "react";
+import { publishedLayout } from "@/server/published-layout";
 import { getPublishedView } from "@/server/publish";
-import { pageLoopRows, projectWorkspaceId, siteExecutor } from "@/server/queries/run-query";
+import { LoopRuntime } from "@/components/runtime/loop-runtime";
+import {
+  pageLoopRows,
+  projectWorkspaceId,
+  realtimeConnection,
+  siteExecutor,
+  usesRealtime
+} from "@/server/queries/run-query";
 import { requestFacts } from "@/server/request-facts";
-import { layoutForPage, resolveSeo } from "@/server/site-layout";
-import { getPublishedTemplates } from "@/server/templates";
+import { resolveSeo } from "@/server/site-layout";
 
 export const dynamic = "force-dynamic";
 
@@ -89,35 +96,15 @@ export default async function PublishedPage({
   for (const [key, value] of Object.entries(search)) {
     if (typeof value === "string") values[key] = value;
   }
-  const { page, pageId, settings, publishedAt, meta } = await resolve(id, path);
-  const query = new URLSearchParams(values).toString();
-  const { tree, dynamic, rules } = layoutForPage({
-    tree: page.tree,
-    templates: await getPublishedTemplates(id),
-    settings,
-    page: {
-      id: pageId,
-      name: page.name,
-      route: page.route,
-      settings: page.settings,
-      meta: {
-        id: pageId,
-        status: "published",
-        ...meta,
-        categoryIds: page.settings.categoryIds,
-        tagIds: page.settings.tagIds
-      }
-    },
-    params: values,
-    request: requestFacts(await headers(), page.route, query),
-    mode: "live",
-    creatorName: meta.createdBy,
-    projectId: id
-  });
+  const view = await resolve(id, path);
+  const { page, pageId, settings, publishedAt } = view;
+  const { tree, dynamic, rules } = await publishedLayout(id, view, values, await headers());
   const workspaceId = await projectWorkspaceId(id);
   const loopRows = workspaceId
     ? await pageLoopRows({ projectId: id, tree, dynamic, execute: siteExecutor(id, workspaceId) })
     : {};
+  const hasLoops = Object.keys(loopRows).length > 0;
+  const realtime = hasLoops && usesRealtime(tree) ? await realtimeConnection(id) : null;
   const { theme } = resolveTheme(settings.themes, {
     pageId,
     route: page.route,
@@ -145,9 +132,11 @@ export default async function PublishedPage({
         customCss={customCssFor(settings.cssFiles, pageId, { minify: true })}
         dynamic={dynamic}
         loopRows={loopRows}
+        loopMarkers
         bootScript
         pruneUnusedClasses
       />
+      {hasLoops ? <LoopRuntime projectId={id} route={page.route} realtime={realtime} /> : null}
     </>
   );
 }

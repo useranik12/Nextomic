@@ -52,7 +52,7 @@ Rules:
 UI: the Supabase page (see `ui-reference.md` 4.4 and `blueprint/pages/editor-supabase.png`).
 
 Config: `projectUrl`, `schema` (default `public`), `active` (toggle), `auth.google` (`enabled`, `webClientId`).
-Secrets: `anonKey` (anon or publishable key; required; masked in the UI, stored encrypted). **Only the anon key is used** (owner decision 2026-11-08): no service role key in the builder or in built apps. What the connector can read and write is exactly what the project's grants and RLS give the anon role.
+Secrets: `anonKey` (anon or publishable key; required; masked in the UI, stored encrypted). **Only the anon key is used** (owner decision 2026-11-08): no service role key in the builder or in built apps. What the connector can read and write is exactly what the project's grants and RLS give the anon role. Exception to "secrets never reach the browser" (owner decision 2026-11-08): a published page with a realtime query loop receives the project URL and anon key so the visitor's browser can subscribe to Supabase Realtime (the anon key is public by Supabase's design). Turn on Realtime for the table in Supabase and give the anon role select access; RLS filters what streams.
 Auth settings (public values): enabled providers and their client IDs, for example Google "Web Client ID". These only take effect when App Settings > Authentication is set to Supabase (see `app-auth.md`).
 
 Capabilities:
