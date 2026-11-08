@@ -41,7 +41,14 @@ export const renderMessageSchema = z.object({
   // Hide the selection outline (Border settings are being edited).
   hideSelection: z.boolean().default(false),
   // What dynamic tags show: the page, its parameter defaults, state, date and time.
-  dynamic: dynamicContextSchema
+  dynamic: dynamicContextSchema,
+  // Rows of the page's query loop runs, by loop key (fetched live by the editor, memory only).
+  loopRows: z
+    .record(
+      z.string().max(4000),
+      z.object({ rows: z.array(z.unknown()).max(1000), hasMore: z.boolean() })
+    )
+    .default({})
 });
 export type RenderMessage = z.infer<typeof renderMessageSchema>;
 

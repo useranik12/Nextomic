@@ -1,3 +1,4 @@
+import { withLoopScope, type LoopFrame } from "./query-scope";
 import { z } from "zod";
 import { walkElements, type ElementNode } from "./element";
 import type { PageSettings } from "./page";
@@ -313,14 +314,19 @@ export function expressionScope(context: DynamicContext): Record<string, unknown
  * Turns what is written between {{ and }} into text. It is an expression (n8n style): names such
  * as `page.name`, methods such as `.toUpperCase()` or `$now.toFormat("yyyy")`, operators and
  * conditions. `attr @ ID:name` reads another element's attribute. Anything that fails or is
- * unknown gives "" so a typo never prints raw braces on a live page.
+ * unknown gives "" so a typo never prints raw braces on a live page. Inside query loops, `frames`
+ * adds the loop values.
  */
-export function createTokenResolver(context: DynamicContext): (token: string) => string {
+export function createTokenResolver(
+  context: DynamicContext,
+  /** Query loop rows around the element, innermost first (`item`, `index`, `parent`). */
+  frames: readonly LoopFrame[] = []
+): (token: string) => string {
   let scope: Record<string, unknown> | null = null;
   return (raw) => {
     const target = ELEMENT_ATTRIBUTE.exec(raw.trim());
     if (target) return fromElement(context, target);
-    scope ??= expressionScope(context);
+    scope ??= withLoopScope(expressionScope(context), frames);
     try {
       return toText(runExpression(raw, scope));
     } catch {

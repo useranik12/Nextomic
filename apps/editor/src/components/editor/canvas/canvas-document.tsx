@@ -328,6 +328,8 @@ export function CanvasDocument() {
         theme={payload.theme}
         customCss={payload.customCss}
         dynamic={payload.dynamic}
+        loopRows={payload.loopRows}
+        loopPlaceholder
       />
       <div id="nxt-drop" ref={markerRef} />
       <div id="nxt-pick" ref={pickRef} />

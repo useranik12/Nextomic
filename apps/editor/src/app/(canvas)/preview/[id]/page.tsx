@@ -21,6 +21,8 @@ import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
 import { currentNextomicUser } from "@/server/nextomic-user";
 import { getPageByRoute, getProjectSettings, listPages, type StoredPage } from "@/server/pages";
+import type { ProxyCaller } from "@/server/connectors/proxy";
+import { editorExecutor, pageLoopRows } from "@/server/queries/run-query";
 import { requestFacts } from "@/server/request-facts";
 import {
   layoutForNotFound,
@@ -40,8 +42,11 @@ const resolvePreview = cache(async (id: string, path: string | undefined) => {
   const sessionData = await getServerSession();
   if (!sessionData) redirect("/sign-in");
 
+  let workspaceId: string;
   try {
-    await requireProjectAccess(sessionData.user.id, id);
+    ({
+      membership: { workspaceId }
+    } = await requireProjectAccess(sessionData.user.id, id));
   } catch (error) {
     if (error instanceof AccessDeniedError) notFound();
     throw error;
@@ -56,7 +61,8 @@ const resolvePreview = cache(async (id: string, path: string | undefined) => {
     page = home ? await getPageByRoute(id, home.route) : null;
   }
   if (!page) notFound();
-  return { page, settings };
+  const caller: ProxyCaller = { userId: sessionData.user.id, projectId: id, workspaceId };
+  return { page, settings, caller };
 });
 
 // Preview applies the page's SEO fields so they can be checked before publishing. The preview
@@ -191,7 +197,7 @@ export default async function PreviewPage({
   const { id } = await params;
   const search = await searchParams;
   const path = typeof search.path === "string" ? search.path : undefined;
-  const { page, settings } = await resolvePreview(id, path);
+  const { page, settings, caller } = await resolvePreview(id, path);
   const values: Record<string, string> = {};
   for (const [key, value] of Object.entries(search)) {
     if (key !== "path" && typeof value === "string") values[key] = value;
@@ -233,6 +239,12 @@ export default async function PreviewPage({
       projectId: id
     });
   const { tree, dynamic } = laid;
+  const loopRows = await pageLoopRows({
+    projectId: id,
+    tree,
+    dynamic,
+    execute: editorExecutor(caller)
+  });
   const { theme } = resolveTheme(settings.themes, {
     pageId: page.id,
     route: page.route,
@@ -256,6 +268,7 @@ export default async function PreviewPage({
         theme={theme}
         customCss={customCssFor(settings.cssFiles, page.id)}
         dynamic={dynamic}
+        loopRows={loopRows}
         bootScript
         pruneUnusedClasses
       />

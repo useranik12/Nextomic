@@ -1,5 +1,7 @@
 import {
+  activeQuery,
   CLASS_NAME_PATTERN,
+  loopKey,
   URL_ATTRIBUTES,
   createTokenResolver,
   isAllowedAttribute,
@@ -11,6 +13,9 @@ import {
   usedClassNames,
   variablesCss,
   type BreakpointDef,
+  type LoopFrame,
+  type LoopRows,
+  type LoopStep,
   type ElementNode,
   type ProjectFont,
   type ProjectVariable,
@@ -49,6 +54,13 @@ export interface RenderOptions {
   pruneUnusedClasses?: boolean;
   /** Class names to keep even when no element has them (classes a script or action adds later). */
   keepClasses?: readonly string[];
+  /** Rows of each query loop run, by `loopKey` (fetched before rendering: server or canvas). */
+  loopRows?: LoopRows;
+  /**
+   * Editor canvas: a loop whose rows have not arrived shows its children once with an empty row,
+   * so they stay visible and selectable. Elsewhere such a loop renders no children.
+   */
+  loopPlaceholder?: boolean;
   /** What dynamic tags resolve to ({{page.name}}, {{param.id}}, {{now.date}} ...). */
   dynamic?: DynamicContext;
   resolveToken?: TokenResolver;
@@ -65,14 +77,24 @@ const BOOLEAN_ATTRIBUTES = new Set([
   "autofocus"
 ]);
 
-function elementAttrs(node: ElementNode, options: RenderOptions): Record<string, string> {
+/** Where an element renders: the loop rows around it and the resolver that sees them. */
+interface RenderScope {
+  path: LoopStep[];
+  frames: LoopFrame[];
+  resolveToken: TokenResolver | undefined;
+}
+
+function elementAttrs(
+  node: ElementNode,
+  resolveToken: TokenResolver | undefined
+): Record<string, string> {
   const attrs: Record<string, string> = { "data-nid": node.id };
   if (node.htmlId) attrs.id = node.htmlId;
   const classes = node.classIds.filter((name) => CLASS_NAME_PATTERN.test(name));
   if (classes.length > 0) attrs.className = classes.join(" ");
   for (const [name, value] of Object.entries(node.attributes ?? {})) {
     if (!isAllowedAttribute(name)) continue;
-    const text = resolveText(value, options.resolveToken);
+    const text = resolveText(value, resolveToken);
     if (BOOLEAN_ATTRIBUTES.has(name)) {
       // A switch attribute is on when it is empty or "true"; "false" leaves it off.
       if (text !== "false") attrs[name] = "true";
@@ -84,19 +106,50 @@ function elementAttrs(node: ElementNode, options: RenderOptions): Record<string,
   return attrs;
 }
 
-export function renderNode(node: ElementNode, options: RenderOptions): ReactNode {
+/** A resolver that also sees the loop rows (needs `dynamic`; a given `resolveToken` cannot). */
+function loopResolver(options: RenderOptions, frames: LoopFrame[]): TokenResolver | undefined {
+  return options.dynamic ? createTokenResolver(options.dynamic, frames) : options.resolveToken;
+}
+
+/**
+ * The children of an element. A query loop element repeats them once per row of its run, each
+ * copy reading its row as `item` and its position as `index` (outer loops become `parent`).
+ */
+function renderChildren(node: ElementNode, options: RenderOptions, scope: RenderScope): ReactNode {
+  const copy = (inner: RenderScope, suffix: string) =>
+    node.children.map((child) => (
+      <Fragment key={child.id + suffix}>{renderScoped(child, options, inner)}</Fragment>
+    ));
+  if (!activeQuery(node)) return copy(scope, "");
+  const result = options.loopRows?.[loopKey(scope.path, node.id)];
+  const rows = result ? result.rows : options.loopPlaceholder ? [{}] : [];
+  return rows.map((item, index) => {
+    const frames = [{ item, index }, ...scope.frames];
+    return copy(
+      {
+        path: [...scope.path, { id: node.id, index }],
+        frames,
+        resolveToken: loopResolver(options, frames)
+      },
+      `#${index}`
+    );
+  });
+}
+
+function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderScope): ReactNode {
   const definition = getElementDefinition(node.type);
   if (!definition || node.hidden) return null;
-  const children = node.children.map((child) => (
-    <Fragment key={child.id}>{renderNode(child, options)}</Fragment>
-  ));
   return definition.render({
     node,
-    text: (key) => resolveText(node.props[key], options.resolveToken),
+    text: (key) => resolveText(node.props[key], scope.resolveToken),
     bool: (key) => resolveBoolean(node.props[key]),
-    attrs: elementAttrs(node, options),
-    children: definition.canHaveChildren ? children : null
+    attrs: elementAttrs(node, scope.resolveToken),
+    children: definition.canHaveChildren ? renderChildren(node, options, scope) : null
   });
+}
+
+export function renderNode(node: ElementNode, options: RenderOptions): ReactNode {
+  return renderScoped(node, options, { path: [], frames: [], resolveToken: options.resolveToken });
 }
 
 /** The page tree plus the CSS for every element at every breakpoint. */

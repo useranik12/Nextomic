@@ -43,6 +43,7 @@ export * from "./expression";
 export * from "./query";
 export * from "./query-scope";
 export * from "./query-run";
+export * from "./query-loop-rows";
 export * from "./rest";
 export * from "./rest-request";
 export * from "./json-path";

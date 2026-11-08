@@ -1,8 +1,11 @@
-import { connectors, connectorSchemas, getDb } from "@nextomic/db";
+import { connectors, connectorSchemas, getDb, projects } from "@nextomic/db";
 import { ConnectorError, type ExecuteResult, type RestCallResult } from "@nextomic/integrations";
 import {
   callVariables,
+  collectLoopRows,
+  expressionScope,
   findTable,
+  loopInstances,
   QueryInputError,
   restConfigSchema,
   restQueryValues,
@@ -10,7 +13,10 @@ import {
   supabaseQueryRequest,
   supabaseRows,
   supabaseStructureSchema,
+  type DynamicContext,
+  type ElementNode,
   type ElementQuery,
+  type LoopRows,
   type QueryRows,
   type RestConfig,
   type SupabaseStructure
@@ -150,4 +156,43 @@ export async function querySources(projectId: string): Promise<{
       : null,
     rest: config.success ? config.data : restConfigSchema.parse({})
   };
+}
+
+/** Most query loop runs one page render makes (nested loops run once per outer row). */
+export const MAX_LOOP_RUNS = 100;
+
+/**
+ * The rows of every query loop on a page, for the server render. Templates are filled here from
+ * the page's dynamic context, so nothing a browser sent is evaluated. Pages without query loops
+ * cost nothing.
+ */
+export async function pageLoopRows(input: {
+  projectId: string;
+  tree: ElementNode;
+  dynamic: DynamicContext;
+  execute: Executor;
+}): Promise<LoopRows> {
+  if (loopInstances(input.tree, {}, 1).length === 0) return {};
+  return collectLoopRows(
+    input.tree,
+    expressionScope(input.dynamic),
+    (instance, fill) =>
+      runElementQuery({
+        projectId: input.projectId,
+        query: instance.query,
+        fill,
+        execute: input.execute
+      }),
+    MAX_LOOP_RUNS
+  );
+}
+
+/** The workspace a project belongs to (published pages run connectors in its name). */
+export async function projectWorkspaceId(projectId: string): Promise<string | null> {
+  const [row] = await getDb()
+    .select({ workspaceId: projects.workspaceId })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  return row?.workspaceId ?? null;
 }
