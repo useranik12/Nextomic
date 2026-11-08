@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 import { supabaseConfigSchema, supabaseConnector } from "./connector";
 import { openApiSchema, readFunctions, readTables } from "./openapi";
 import { parseResourceId, supabaseRequestSchema, tableQuery } from "./query";
+import {
+  fillWith,
+  newElementQuery,
+  supabaseQueryRequest,
+  supabaseRows,
+  supabaseTableSchema,
+  type SupabaseTable
+} from "@nextomic/schema";
 
 const doc = openApiSchema.parse({
   swagger: "2.0",
@@ -124,6 +132,20 @@ describe("supabase requests", () => {
     );
   });
 
+  it("builds containment filters for array and JSON columns", () => {
+    const request = supabaseRequestSchema.parse({
+      op: "select",
+      filters: [
+        { column: "tags", operator: "contains", value: ["news", "a b"] },
+        { column: "ids", operator: "overlaps", value: [1, 2] },
+        { column: "meta", operator: "containedBy", value: { plan: "pro" } }
+      ]
+    });
+    expect(decodeURIComponent(tableQuery(request).toString())).toBe(
+      'tags=cs.{news,"a+b"}&ids=ov.{1,2}&meta=cd.{"plan":"pro"}'
+    );
+  });
+
   it("refuses unsafe names, update/delete without filters, and odd select lists", () => {
     expect(
       supabaseRequestSchema.safeParse({
@@ -192,6 +214,25 @@ describe.skipIf(!url || !anonKey)("supabase connector against a real project", (
     expect(result.ok).toBe(true);
     const resources = await supabaseConnector.listResources(cfg, secrets, ctx());
     expect(resources.some((r) => r.kind === "table" || r.kind === "view")).toBe(true);
+  }, 60_000);
+
+  it("runs a query loop request built by the schema (first table, two rows, ordered)", async () => {
+    const resources = await supabaseConnector.listResources(cfg, secrets, ctx());
+    const table = resources
+      .map((r) => r.structure)
+      .find((t): t is SupabaseTable => supabaseTableSchema.safeParse(t).success);
+    expect(table).toBeDefined();
+    if (!table?.columns[0]) return;
+    const query = {
+      ...newElementQuery().supabase,
+      table: table.name,
+      limit: 2,
+      order: [{ id: "o", column: table.columns[0].name, ascending: true }]
+    };
+    const request = supabaseQueryRequest(query, table, fillWith({}));
+    const result = await supabaseConnector.execute(cfg, secrets, request, ctx());
+    expect(result.status).toBe(200);
+    expect(supabaseRows(query, result.data).rows.length).toBeLessThanOrEqual(2);
   }, 60_000);
 
   it("reports a wrong key as a failed test, not a crash", async () => {
