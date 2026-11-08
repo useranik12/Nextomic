@@ -138,3 +138,80 @@ test("create a group and a call, test it, add a JSON path and save", async ({ pa
   await expect(row).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Supabase REST", exact: true })).toBeVisible();
 });
+
+test("a Container runs a REST query loop with a group variable set in the loop", async ({
+  page,
+  request
+}) => {
+  test.setTimeout(150_000);
+  // A table the anon key can read, from PostgREST's own description.
+  const description = await request.get(`${url}/rest/v1/`, {
+    headers: { apikey: anonKey ?? "", Accept: "application/openapi+json" }
+  });
+  const spec = (await description.json()) as { definitions?: Record<string, unknown> };
+  const table = Object.keys(spec.definitions ?? {}).sort()[0] ?? "";
+  expect(table).not.toBe("");
+
+  await openEditor(page);
+  await page.getByRole("button", { name: "API Data", exact: true }).click();
+  await page.getByRole("button", { name: "Add API call or group" }).click();
+  await page.getByRole("menuitem", { name: "New API Group" }).click();
+  await page.getByLabel("Group Name").fill("Supabase REST");
+  await page.getByLabel("Base URL", { exact: true }).fill(`${url}/rest/v1`);
+  await page.getByRole("tab", { name: "Authentication" }).click();
+  await page.locator("button", { hasText: "No authentication" }).click();
+  await page.getByRole("option", { name: "API key" }).click();
+  await page.getByLabel("Key name").fill("apikey");
+  await page.getByRole("textbox", { name: "API key" }).fill(anonKey ?? "");
+  await page.getByRole("tab", { name: "Variables" }).click();
+  await page.getByRole("button", { name: "Add Variable" }).click();
+  const sizeVar = page.getByLabel("Variable name");
+  await sizeVar.fill("page_size");
+  await sizeVar.press("Enter");
+  await page.getByLabel("Default value of page_size").fill("1");
+  await page.getByLabel("Default value of page_size").blur();
+  await page.getByRole("button", { name: "Save Group" }).click();
+  await expect(page.getByRole("button", { name: "Save Group" })).toBeDisabled();
+
+  await page.getByRole("button", { name: "Add API call or group" }).click();
+  await page.getByRole("menuitem", { name: "New API Call" }).click();
+  await page.getByLabel("API Call Name").fill("Rows");
+  await page.locator("button", { hasText: "No group" }).click();
+  await page.getByRole("option", { name: "Supabase REST" }).click();
+  await page.getByLabel("Endpoint", { exact: true }).fill(`/${table}`);
+  await page.getByRole("tab", { name: "Query" }).click();
+  await page.getByLabel("Add query parameter as key:value").fill("limit: [page_size]");
+  await page.getByRole("button", { name: "Add Query Parameter" }).click();
+  await page.getByRole("button", { name: "Save API" }).click();
+  await expect(page.getByRole("button", { name: "Save API" })).toBeDisabled();
+
+  // The loop sets the group's page_size to 4: four copies on the canvas.
+  await page.getByRole("button", { name: "Navigator", exact: true }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Container", exact: true }).click();
+  await page.getByRole("button", { name: "Query Loop" }).click();
+  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  const settings = page.getByRole("region", { name: "Query Loop" });
+  await settings.getByLabel("Query Type", { exact: true }).click();
+  await page.getByRole("option", { name: "REST API" }).click();
+  await settings.getByLabel("API call", { exact: true }).click();
+  await page.getByRole("option", { name: "Supabase REST / Rows" }).click();
+  await settings.getByLabel("page_size", { exact: true }).fill("4");
+  await expect(settings.getByLabel("List", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading")).toHaveCount(4, { timeout: 30_000 });
+  await expect(page.getByRole("img", { name: "Query loop: REST API" })).toBeVisible();
+
+  // The preview's server render runs the same call with the same value.
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 15_000
+  });
+  const projectId = /\/editor\/([^/?#]+)/.exec(page.url())?.[1] ?? "";
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  await expect(preview.getByRole("heading")).toHaveCount(4);
+  expect(await preview.content()).not.toContain(anonKey ?? "");
+});
