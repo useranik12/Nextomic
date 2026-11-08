@@ -16,6 +16,18 @@ export const filterSchema = z.discriminatedUnion("operator", [
     value: z.union([z.string().max(10_000), z.number(), z.boolean()])
   }),
   z.object({ column, operator: z.literal("is"), value: z.union([z.null(), z.boolean()]) }),
+  // Containment for array and JSON columns: a list (`{a,b}`) or a JSON object or array.
+  z.object({
+    column,
+    operator: z.enum(["contains", "containedBy", "overlaps"]),
+    value: z.union([
+      z
+        .array(z.union([z.string().max(1000), z.number()]))
+        .min(1)
+        .max(500),
+      z.record(z.unknown())
+    ])
+  }),
   z.object({
     column,
     operator: z.literal("in"),
@@ -91,7 +103,25 @@ function listItem(value: string | number): string {
   return /[,()".:\s]/.test(text) ? `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"` : text;
 }
 
+const CONTAINMENT = { contains: "cs", containedBy: "cd", overlaps: "ov" } as const;
+
+/** A value inside a PostgreSQL array literal `{...}`: quoted when it holds reserved characters. */
+function arrayItem(value: string | number): string {
+  const text = String(value);
+  return /[,{}"\\\s]/.test(text) ? `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"` : text;
+}
+
 function filterValue(filter: SupabaseFilter): string {
+  if (
+    filter.operator === "contains" ||
+    filter.operator === "containedBy" ||
+    filter.operator === "overlaps"
+  ) {
+    const code = CONTAINMENT[filter.operator];
+    return Array.isArray(filter.value)
+      ? `${code}.{${filter.value.map(arrayItem).join(",")}}`
+      : `${code}.${JSON.stringify(filter.value)}`;
+  }
   if (filter.operator === "in") return `in.(${filter.value.map(listItem).join(",")})`;
   if (filter.operator === "is")
     return `is.${filter.value === null ? "null" : String(filter.value)}`;
