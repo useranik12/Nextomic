@@ -1,10 +1,12 @@
 import {
+  appendQuery,
+  authPlacement,
   BODY_METHODS,
-  callVariables,
   fillBrackets,
   fillJsonBody,
-  joinUrl,
-  variableValue,
+  requestBaseUrl,
+  requestHeaders,
+  requestValues,
   type RestAuth,
   type RestCall,
   type RestGroup
@@ -35,9 +37,6 @@ export interface BuildInput {
   boundary?: string;
 }
 
-const hasHeader = (headers: Record<string, string>, name: string) =>
-  Object.keys(headers).some((k) => k.toLowerCase() === name.toLowerCase());
-
 function applyAuth(
   auth: RestAuth,
   ownerId: string,
@@ -45,26 +44,15 @@ function applyAuth(
   headers: Record<string, string>,
   url: URL
 ): string[] {
-  const secret = (field: string) => secrets[`${ownerId}.${field}`] ?? "";
-  if (auth.type === "bearer") {
-    const token = secret("token");
-    if (token) headers.authorization = `Bearer ${token}`;
-    return token ? [token] : [];
-  }
-  if (auth.type === "basic") {
-    const password = secret("password");
-    const encoded = Buffer.from(`${auth.username}:${password}`).toString("base64");
-    headers.authorization = `Basic ${encoded}`;
-    return [encoded, ...(password ? [password] : [])];
-  }
-  if (auth.type === "apiKey" && auth.apiKeyName) {
-    const key = secret("apiKey");
-    if (!key) return [];
-    if (auth.apiKeyIn === "query") url.searchParams.set(auth.apiKeyName, key);
-    else headers[auth.apiKeyName.toLowerCase()] = key;
-    return [key];
-  }
-  return [];
+  const placed = authPlacement(
+    auth,
+    (field) => secrets[`${ownerId}.${field}`] ?? "",
+    (text) => Buffer.from(text).toString("base64")
+  );
+  if (!placed) return [];
+  if (placed.in === "query") url.searchParams.set(placed.name, placed.value);
+  else headers[placed.name] = placed.value;
+  return placed.secrets;
 }
 
 function multipart(fields: { key: string; value: string }[], boundary: string): Buffer {
@@ -77,13 +65,8 @@ function multipart(fields: { key: string; value: string }[], boundary: string): 
 
 export function buildRequest(input: BuildInput): BuiltRequest {
   const { call, group } = input;
-  const values: Record<string, unknown> = { ...input.builtIns };
-  for (const variable of callVariables(call, group))
-    values[variable.name] = variableValue(variable, input.values[variable.name]);
-
-  const raw = group
-    ? joinUrl(fillBrackets(group.baseUrl, values, true), fillBrackets(call.url, values, true))
-    : fillBrackets(call.url, values, true);
+  const values = requestValues(call, group, input.values, input.builtIns);
+  const raw = requestBaseUrl(call, group, values);
   let url: URL;
   try {
     url = new URL(raw);
@@ -91,12 +74,9 @@ export function buildRequest(input: BuildInput): BuiltRequest {
     throw new ConnectorError("invalid_request", `"${raw.slice(0, 200)}" is not a full URL.`);
   }
   // Query parameters add to any query string typed in the URL; URLSearchParams encodes them.
-  for (const q of call.query)
-    url.searchParams.append(fillBrackets(q.key, values), fillBrackets(q.value, values));
+  appendQuery(url, call, values);
 
-  const headers: Record<string, string> = {};
-  for (const h of [...(group?.headers ?? []), ...call.headers])
-    headers[h.key.toLowerCase()] = fillBrackets(h.value, values).replace(/[\r\n]/g, " ");
+  const headers = requestHeaders(call, group, values);
   const owner = group ?? call;
   const secretValues = applyAuth(owner.auth, owner.id, input.secrets, headers, url);
   if (input.builtIns.jwt) secretValues.push(input.builtIns.jwt);
@@ -105,19 +85,13 @@ export function buildRequest(input: BuildInput): BuiltRequest {
   if (BODY_METHODS.has(call.method)) {
     const fieldValues = () =>
       call.fields.map((f) => ({ key: f.key, value: fillBrackets(f.value, values) }));
-    if (call.bodyType === "json" && call.body.trim()) {
-      body = fillJsonBody(call.body, values);
-      if (!hasHeader(headers, "content-type")) headers["content-type"] = "application/json";
-    } else if (call.bodyType === "text") {
-      body = fillBrackets(call.body, values);
-      if (!hasHeader(headers, "content-type"))
-        headers["content-type"] = "text/plain; charset=utf-8";
-    } else if (call.bodyType === "form") {
+    if (call.bodyType === "json" && call.body.trim()) body = fillJsonBody(call.body, values);
+    else if (call.bodyType === "text") body = fillBrackets(call.body, values);
+    else if (call.bodyType === "form")
       body = new URLSearchParams(
         fieldValues().map((f): [string, string] => [f.key, f.value])
       ).toString();
-      headers["content-type"] = "application/x-www-form-urlencoded";
-    } else if (call.bodyType === "multipart") {
+    else if (call.bodyType === "multipart") {
       const boundary = input.boundary ?? `nextomic-${crypto.randomUUID()}`;
       body = multipart(fieldValues(), boundary);
       headers["content-type"] = `multipart/form-data; boundary=${boundary}`;

@@ -100,6 +100,10 @@ test("create a group and a call, test it, add a JSON path and save", async ({ pa
 
   // Test with the draft, then pick a recommended path.
   await page.getByRole("tab", { name: "Test API" }).click();
+  // The request preview follows the inputs before any test runs; the key stays masked.
+  await expect(page.getByRole("region", { name: "Called URL" })).toContainText("?limit=1");
+  await page.getByRole("tab", { name: "Headers" }).click();
+  await expect(page.getByRole("region", { name: "Request headers" })).toContainText("apikey: ••••");
   await page.getByRole("button", { name: "Test API Call" }).click();
   await expect(page.getByText(/Status: 200 \(Success\)/)).toBeVisible({ timeout: 60_000 });
   await page.getByRole("tab", { name: "API URL" }).click();
