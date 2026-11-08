@@ -1,8 +1,22 @@
 import { connectors, connectorSchemas, getDb, projects } from "@nextomic/db";
-import { ConnectorError, type ExecuteResult, type RestCallResult } from "@nextomic/integrations";
 import {
+  ConnectorError,
+  supabaseConfigSchema,
+  supabaseSecretsSchema,
+  type ExecuteResult,
+  type RestCallResult
+} from "@nextomic/integrations";
+import {
+  activeQuery,
   callVariables,
   collectLoopRows,
+  fillWith,
+  findNode,
+  loopAncestors,
+  loopKey,
+  parseLoopKey,
+  walkElements,
+  withLoopScope,
   expressionScope,
   findTable,
   loopInstances,
@@ -16,14 +30,16 @@ import {
   type DynamicContext,
   type ElementNode,
   type ElementQuery,
+  type LoopFrame,
   type LoopRows,
+  type LoopStep,
   type QueryRows,
   type RestConfig,
   type SupabaseStructure
 } from "@nextomic/schema";
 import { and, eq } from "drizzle-orm";
 import { allowPrivateConnectorHosts } from "../connectors/env";
-import { runOperation } from "../connectors/operation";
+import { runOperation, storedSecrets } from "../connectors/operation";
 import { proxyConnectorCall, type ProxyCaller } from "../connectors/proxy";
 import { toStored } from "../connectors/store";
 import { platformKeyring } from "../keyring";
@@ -195,4 +211,108 @@ export async function projectWorkspaceId(projectId: string): Promise<string | nu
     .where(eq(projects.id, projectId))
     .limit(1);
   return row?.workspaceId ?? null;
+}
+
+/** One more page of a loop run (infinite scroll) or its first page again (realtime refresh). */
+export interface LoopPage {
+  node: ElementNode;
+  start: { path: LoopStep[]; frames: LoopFrame[] };
+  /** The page's rows (a sparse list from `offset`) and those of loops nested in it. */
+  loopRows: LoopRows;
+  count: number;
+  hasMore: boolean;
+}
+
+/**
+ * The rows of one loop run from `offset`, for the site loop endpoint. The browser names the run by
+ * its key only; the server finds the loop in the published tree, runs the outer loops again to get
+ * the rows the key points at, and fills every template itself. Null when the key does not name a
+ * loop run of this page.
+ */
+export async function loopPage(input: {
+  projectId: string;
+  tree: ElementNode;
+  dynamic: DynamicContext;
+  execute: Executor;
+  key: string;
+  offset: number;
+}): Promise<LoopPage | null> {
+  const parsed = parseLoopKey(input.key);
+  const node = parsed ? findNode(input.tree, parsed.id)?.node : undefined;
+  const query = node ? activeQuery(node) : null;
+  if (!parsed || !node || !query) return null;
+  const outer = loopAncestors(input.tree, node.id).reverse();
+  if (outer.map((n) => n.id).join("/") !== parsed.path.map((s) => s.id).join("/")) return null;
+
+  const scope = expressionScope(input.dynamic);
+  const run = (q: ElementQuery, frames: LoopFrame[], offset: number) =>
+    runElementQuery({
+      projectId: input.projectId,
+      query: q,
+      fill: fillWith(withLoopScope(scope, frames)),
+      offset,
+      execute: input.execute
+    });
+
+  let frames: LoopFrame[] = [];
+  for (const [at, step] of parsed.path.entries()) {
+    const loop = outer[at];
+    const loopQuery = loop ? activeQuery(loop) : null;
+    if (!loopQuery) return null;
+    const single =
+      loopQuery.source === "supabase" ? loopQuery.supabase.single : loopQuery.rest.single;
+    if (single && step.index > 0) return null;
+    // Asking from the row's position makes the row the first one returned.
+    const found = await run(loopQuery, frames, step.index);
+    if (found.rows.length === 0) return null;
+    frames = [{ item: found.rows[0], index: step.index }, ...frames];
+  }
+
+  const page = await run(query, frames, input.offset);
+  const rows: unknown[] = [];
+  page.rows.forEach((row, at) => {
+    rows[input.offset + at] = row;
+  });
+  const start = { path: parsed.path, frames };
+  const loopRows = await collectLoopRows(
+    node,
+    scope,
+    (instance, fill) =>
+      runElementQuery({
+        projectId: input.projectId,
+        query: instance.query,
+        fill,
+        execute: input.execute
+      }),
+    MAX_LOOP_RUNS,
+    start,
+    { [loopKey(parsed.path, node.id)]: { rows, hasMore: page.hasMore } }
+  );
+  return { node, start, loopRows, count: page.rows.length, hasMore: page.hasMore };
+}
+
+/** True when a query loop on the page streams realtime changes. */
+export function usesRealtime(tree: ElementNode): boolean {
+  let found = false;
+  walkElements(tree, (node) => {
+    const query = activeQuery(node);
+    if (query?.source === "supabase" && query.supabase.realtime) found = true;
+  });
+  return found;
+}
+
+/**
+ * The Supabase URL and anon key a page with a realtime loop hands to the browser (owner decision
+ * 2026-11-08: the anon key is public by Supabase's design; RLS decides what streams). Null when
+ * Supabase is not connected or turned off.
+ */
+export async function realtimeConnection(
+  projectId: string
+): Promise<{ url: string; anonKey: string } | null> {
+  const row = await projectConnector(projectId, "supabase");
+  if (!row?.active) return null;
+  const config = supabaseConfigSchema.safeParse(row.config);
+  const secrets = supabaseSecretsSchema.safeParse(storedSecrets(toStored(row), platformKeyring));
+  if (!config.success || !secrets.success) return null;
+  return { url: config.data.projectUrl, anonKey: secrets.data.anonKey };
 }

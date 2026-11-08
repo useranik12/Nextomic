@@ -157,3 +157,74 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
     Array.isArray(expected) ? expected.length : 0
   );
 });
+
+test("a published query loop loads more rows on scroll through the site endpoint", async ({
+  page,
+  request
+}) => {
+  test.setTimeout(150_000);
+  await openEditor(page);
+  await page.getByRole("button", { name: "Supabase", exact: true }).click();
+  await page.getByLabel("Supabase URL").fill(url ?? "");
+  await page.getByLabel("Anon Key/Publishable Key").fill(anonKey ?? "");
+  await page.getByRole("button", { name: "Fetch Schema" }).click();
+  await expect(page.getByText("Schema fetched.")).toBeVisible({ timeout: 60_000 });
+  const firstTable = page.getByRole("list", { name: "Tables" }).getByRole("button").first();
+  const tableName = (await firstTable.innerText()).trim().split("\n")[0] ?? "";
+
+  await page.getByRole("button", { name: "Navigator", exact: true }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Container", exact: true }).click();
+  await page.getByRole("button", { name: "Query Loop" }).click();
+  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  const settings = page.getByRole("region", { name: "Query Loop" });
+  await settings.getByRole("combobox", { name: "Table or view" }).fill(tableName);
+  await page.getByRole("option", { name: tableName, exact: true }).click();
+  await settings.getByLabel("Limit").fill("5");
+  await page.getByRole("switch", { name: "Infinite scroll" }).click({ force: true });
+  await page.getByRole("switch", { name: "Enable realtime query" }).click({ force: true });
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 15_000
+  });
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
+  const projectId = /\/editor\/([^/?#]+)/.exec(page.url())?.[1] ?? "";
+
+  // The server render sends the first 5 rows; scrolling loads more through the endpoint.
+  const site = await page.context().newPage();
+  const socket = site.waitForEvent("websocket", {
+    predicate: (ws) => ws.url().includes("/realtime/v1/websocket"),
+    timeout: 30_000
+  });
+  await site.goto(`/site/${projectId}`);
+  const loop = site.locator("[data-nx-loop]");
+  await expect(loop).toHaveAttribute("data-nx-scroll", "");
+  // Realtime: the page subscribes to the table with the anon key only.
+  await expect(loop).toHaveAttribute("data-nx-realtime", `public.${tableName}`);
+  expect((await socket).url()).toContain(`apikey=${anonKey ?? ""}`);
+  await expect(site.getByRole("heading")).not.toHaveCount(0);
+  for (let i = 0; i < 4; i++) {
+    await site.getByRole("heading").last().scrollIntoViewIfNeeded();
+    await site.waitForTimeout(400);
+  }
+  await expect
+    .poll(async () => site.getByRole("heading").count(), { timeout: 30_000 })
+    .toBeGreaterThan(5);
+  const rows = await site
+    .locator("[data-nx-row]")
+    .evaluateAll((els) => els.map((el) => Number(el.getAttribute("data-nx-row"))));
+  expect(rows).toEqual(rows.map((_, i) => i));
+
+  // The endpoint only answers for loop runs of the published page.
+  const forged = await request.post(`/api/site/${projectId}/loop`, {
+    data: { route: "/", key: "nxtomc-nothere", offset: 0 }
+  });
+  expect(forged.status()).toBe(404);
+  const malformed = await request.post(`/api/site/${projectId}/loop`, {
+    data: { route: "/", key: "a b", offset: -1 }
+  });
+  expect(malformed.status()).toBe(400);
+});

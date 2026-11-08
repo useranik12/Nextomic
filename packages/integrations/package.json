@@ -10,9 +10,14 @@
   },
   "dependencies": {
     "@nextomic/schema": "workspace:*",
+    "@supabase/realtime-js": "2.118.0",
     "zod": "3.24.1"
   },
   "devDependencies": {
     "@types/node": "22.10.5"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./realtime": "./src/supabase/realtime-browser.ts"
   }
 }
