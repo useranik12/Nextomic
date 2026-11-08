@@ -7,3 +7,4 @@ export * from "./safe-fetch";
 export * from "./secrets";
 export * from "./types";
 export * from "./supabase";
+export * from "./rest";

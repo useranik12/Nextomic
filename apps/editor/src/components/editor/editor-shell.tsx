@@ -30,6 +30,7 @@ import { StateManager } from "./state/state-manager";
 import { DataTypesManager } from "./data-types/data-types-manager";
 import { useNextomicUser } from "./nextomic-user-store";
 import { SupabasePage } from "./supabase/supabase-page";
+import { ApiDataPage } from "./api-data/api-data-page";
 import { useSupabaseTables } from "./supabase/supabase-store";
 import { ExpressionAssist } from "./expression/expression-assist";
 import { ExpressionHighlights } from "./expression/expression-highlights";
@@ -180,7 +181,11 @@ export function EditorShell({
 
   // Sections that take the whole width; the canvas and side panels are hidden meanwhile.
   const fullPage =
-    rail === "pages-templates" || rail === "state" || rail === "data-types" || rail === "supabase";
+    rail === "pages-templates" ||
+    rail === "state" ||
+    rail === "data-types" ||
+    rail === "supabase" ||
+    rail === "api";
   const railLabel = RAIL_ITEMS.find((i) => i.id === rail)?.label ?? "App Settings";
 
   return (
@@ -259,6 +264,10 @@ export function EditorShell({
           ) : rail === "supabase" ? (
             <main className="min-w-0 flex-1">
               <SupabasePage projectId={projectId} />
+            </main>
+          ) : rail === "api" ? (
+            <main className="min-w-0 flex-1">
+              <ApiDataPage projectId={projectId} />
             </main>
           ) : null}
           <div

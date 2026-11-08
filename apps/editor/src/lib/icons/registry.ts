@@ -40,6 +40,7 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:folder-open" },
   { id: "ph:info" },
   { id: "ph:x" },
+  { id: "ph:play" },
   { id: "ph:minus" },
   { id: "ph:corners-out" },
   { id: "ph:device-rotate" },
