@@ -77,34 +77,43 @@ Built (4d): `packages/integrations/src/supabase/{connector,openapi,query}.ts`, `
 
 ## 4. REST connector (the API Data page)
 
-UI: see `ui-reference.md` 4.5 and `blueprint/pages/editor-api-data-*.png`.
+UI: see `ui-reference.md` 4.5 and `blueprint/pages/editor-api-data-*.png`; the Test API tab follows `blueprint/inspiration/ff-test-api-tab-part{1,2,3}.png` in Nextomic styling.
+
+Built (4c, 2026-11-08): `packages/schema/src/{rest,json-path}.ts`, `packages/integrations/src/rest/{connector,request}.ts`, `apps/editor/src/server/connectors/rest-data.ts`, `app/(builder)/editor/[id]/api-data-actions.ts`, `components/editor/api-data/*`.
+
+Storage: ONE REST connector per project, named "API Data" (type `rest`, always on). Its config holds every group and call (`restConfigSchema`); its sealed secrets hold the auth values under `<group or call id>.<field>`; `connector_schemas.structure` holds `{ calls: { <call id>: shape } }` (response STRUCTURE only). Every change (save or delete of one group or call) runs in a transaction that reads the row `FOR UPDATE`, so two people saving different calls never overwrite each other.
 
 Structure: **API groups** contain **API calls**. Calls can also be ungrouped.
 
-- Group: `name`, `baseUrl` (https only; http and local hosts only with `ALLOW_PRIVATE_CONNECTOR_HOSTS` in development, see section 6), shared `headers`, shared auth.
-- Call: `name`, `active` (toggle), `method` (GET, POST, PUT, PATCH, DELETE), `endpoint` (path appended to the group base URL), `headers[]`, `body` (`none | text | json | multipart`, plus form-urlencoded if needed), `variables[]`, `advancedSettings` (not designed: timeout, retries, caching, pagination; ask before building the UI), `responseSchema` (saved structure).
-- Method badge colors: GET green, POST purple, PUT orange, PATCH amber, DELETE pink/red. An inactive call shows a muted badge with a red x.
+- Group: `name`, `baseUrl` (https; http and local hosts only with `ALLOW_PRIVATE_CONNECTOR_HOSTS` in development, see section 6), shared `headers`, shared **authentication** (like Postman: None, Bearer token, Basic auth, API key in a header or query parameter), **Include credentials**.
+- Call: `name`, `active`, `groupId` (null = ungrouped), `method` (GET, POST, PUT, PATCH, DELETE, OPTIONS, QUERY), `url` (the endpoint appended to the group base URL, or the full URL of an ungrouped call), `headers`, `bodyType` (`none | json | text | multipart | form`), `body` (JSON or text), `fields` (multipart and form), `variables`, `auth` (ungrouped calls only), `includeCredentials`, `response` (`parseAsDataType`, `dataTypeId`, `isList`, `jsonPaths`).
+- An ungrouped call has every setting itself: full URL, headers, body, variables, authentication, advanced settings. A call moves into or out of a group with the Group select.
+- Deleting a group keeps its calls as ungrouped calls with the group's URL, headers, authentication (secrets copied) and Include credentials folded in.
+- Method badge colors: GET green, POST purple, PUT orange, PATCH amber, DELETE pink/red, OPTIONS sky, QUERY teal. An inactive call shows a muted badge with a red x. GET and OPTIONS send no body; QUERY (the new safe method with a body) does.
+- Advanced Settings holds one option only (owner decision): **Include credentials**. A group's setting applies to all its calls. It takes effect in built apps (the generated server route forwards the visitor's cookies, authorization and client certificates); the builder's Test tab has no visitor, so it does nothing there.
 
-Secrets: tokens, API key values, and basic credentials stored encrypted (config holds only references).
+Secrets: tokens, passwords and API keys of an auth block are sealed (section 5) and come back only as masks. Changing the auth type drops the secrets the new type does not use. Plain header values are NOT secret: put keys in the authentication block or in a variable.
 
-Placeholder syntax in the editor (follows the designs):
+Placeholder syntax:
 
-- JSON/text bodies: `<variable_name>` (highlighted in the code editor; click a variable chip under "Available variables to add" to insert).
-- Headers, URL, endpoint, and query params: `[variable_name]` (for example `Authorization: [apikey]`).
-- Header lines are entered as `key: value` and can contain placeholders.
-- A placeholder that is not defined in Variables is a validation error. A variable with a default value uses the default when the caller passes nothing.
+- JSON/text bodies: `<variable_name>` (highlighted; click a chip under "Available variables to add" to insert at the caret). In JSON, a placeholder inside quotes is filled as escaped text, one outside quotes as a JSON value (number, true/false, list, object).
+- URL, endpoint, header values and multipart/form field values: `[variable_name]` (URL values are percent-encoded).
+- `{{dynamic tags}}` are accepted in the URL, endpoint, headers, base URL, body and fields (bolt beside each input). In the builder's Test tab they are filled with what they show in the editor; in built apps the runtime fills them (Phase 4e).
+- Header lines are entered as `key: value`; each line edits in place and its X clears it.
+- A placeholder that is not defined in Variables is a save error. The JSON body editor shows the first syntax problem with its line, a helper text, and a Format button that keeps placeholders.
 
-Variables tab columns: Name, Type (String, Integer, Float, Boolean, JSON, DateTime), Is List (True/False), Default Value, bolt (marks the variable as typically bound to dynamic data), delete, and "Add Variable".
+Variables tab columns: Name, Type (the app's types: String, Int, Float, Boolean, JSON, Timestamptz, Color, URL, Enum, Data Type), Is List (True/False), Default Value, bolt (marks the variable as usually bound to dynamic data), delete, and "Add Variable".
 
-Built-in variables (always available, not defined by the user): `jwt` (the signed-in end user's access token, resolved on the server only) and `user_ip` (client IP resolved on the server from trusted proxy headers; never accepted from the client).
+Built-in variables (always available, not defined by the user): `jwt` (the signed-in end user's access token) and `user_ip` (the client IP from trusted proxy headers). Built apps resolve both on the server only and never accept them from the browser. The builder's Test tab is the one exception: it takes sample values typed by the project member testing the call, sent only to the builder's own proxy.
 
-Capabilities:
+Test API tab:
 
-- **Test API tab:** run the call with sample values; show status, headers, body, and latency. A successful test can "Save schema": the response shape is inferred and saved as STRUCTURE only (no response data stored). The saved structure powers dynamic data tokens and query fields.
-- Response mapping: JSONPath-style selectors map the response to a typed shape (list, object, scalar).
-- Pagination presets: none, page/limit, offset/limit, cursor.
-- Retry (idempotent GET only), timeout, and caching options per call.
-- Footer actions: Delete API (confirm; warn about bindings), Cancel, Save API.
+- "Test API Call" runs the CURRENT draft (saved group and secrets, plus auth values typed but not saved for that call or its group) through the proxy (rate limit, audit, SSRF rules). Variables table: Name, Value, Include (unticked uses the default). Preview: API URL, request Headers (secrets shown as \*\*\*\*), Test Response (Body JSON, Raw Body, response Headers; `set-cookie` is never shown; body cut at 1 MB), and the status line (green success, red failure, latency). A 4xx/5xx answer is shown, not treated as an error.
+- Response Type: "Parse as Data Type" (one app data type, or a list of it), and **JSON Paths**: JSON Path, Name, Response Preview (from the last test, never saved), Type, List, preview eye (hides a value on screen), delete, "Add JSON Path". "Recommended" lists the top-level fields of the last response, each with its own "Add JSON Path".
+- JSON path syntax (the builder reads responses with `JSON.parse`): `$` the response, `.name` or `["name"]` a field, `[2]` an item, `[:]` or `[*]` every item (the result is a flat list). Types are inferred when a path is added.
+- Saving a call after a successful test saves the inferred response shape (structure only) for dynamic data and query fields.
+
+Still to come: pagination presets, retries and caching options arrive with queries (4e).
 
 ## 5. Secrets
 

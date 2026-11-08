@@ -40,3 +40,5 @@ export * from "./font-support";
 export * from "./class-import";
 export * from "./state-usage";
 export * from "./expression";
+export * from "./rest";
+export * from "./json-path";

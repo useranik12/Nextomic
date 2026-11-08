@@ -170,10 +170,14 @@ Cards, top to bottom:
 
 ### 4.5 API Data page (`pages/editor-api-data-*.png`)
 
-- Left column "API Calls" with "+" button: API groups (collapsible, can contain calls) and ungrouped calls. Each call row shows a method badge.
-- Right: "Define API Call" with tabs "Call Definition" and "Test API". Connection card: Active toggle, API Call Name, Method dropdown, Group Base URL (inherited from the group, read-only), Endpoint.
-- Sub-tabs: Header, Body, Variables, Advanced Settings (not designed; ask). Header tab: list of `key: value` lines, input "Add header as key:value", "Add Header" button. Body tab: Body Type dropdown (JSON, None, Text, Multipart), "Available variables to add" chips (click to insert), code editor with line numbers and highlighted `<variable>` tokens. Variables tab: Name, Type, Is List, Default Value, bolt, delete, "Add Variable".
-- Footer: "Delete API" (danger outline), "Cancel", "Save API" (primary).
+Built (4c). Small inputs and buttons throughout (owner rule).
+
+- Left column "API Calls" with a "+" menu (New API Call, New API Group): API groups (collapsible, can contain calls) and ungrouped calls. Each call row shows a method badge (colors in `integrations.md` section 4). Empty state: "No API calls yet. Press + to add a call or a group."
+- **Define API Call**: pill tabs "Call Definition" and "Test API" ("Test API Call" button on the right of the Test tab). Connection card: Active toggle, API Call Name, Group select, Method (GET, POST, PUT, PATCH, DELETE, OPTIONS, QUERY), then the group's base URL (read-only) and Endpoint, or one full "API URL" for an ungrouped call. URL inputs have the dynamic bolt.
+- Sub-tabs (underlined): Header, Body, Variables, Authentication (ungrouped calls only), Advanced Settings (Include credentials only). Header tab: `key: value` lines, each with a clear X when it has text, input "Add header as key:value", "Add Header". Body tab: Body Type (None, JSON, Text, Multipart, Form URL-encoded), "Available variables to add" chips (insert at the caret), JSON code editor with line numbers, highlighted `<variable>` and `{{tag}}`, Format button, the first problem with its line, and helper text. Multipart and form use `key: value` field lines. Variables tab: Name, Type, Is List, Default Value, bolt, delete, "Add Variable".
+- Test API tab (from `inspiration/ff-test-api-tab-part1..3.png`): "Preview and Test" card (Variables with Value and Include on the left; Preview tabs API URL / Headers / Test Response with Body JSON / Raw Body / Headers on the right; status line), then the "Response Type" card (Parse as Data Type with Data Type and Is List; JSON Paths table; Recommended).
+- **Define API Group** (owner spec): Group card (Group Name, Base URL), sub-tabs Header (headers for every call), Authentication (None, Bearer, Basic, API key; secret values masked), Advanced Settings (Include credentials).
+- Footers: "Delete API" / "Delete Group" (danger outline, confirm), "Cancel", "Save API" / "Save Group" (primary). Edits are a draft: leaving with unsaved changes asks to save or discard.
   Behavior is in `integrations.md`.
 
 ### 4.6 Media (replicate `inspiration/instatic-media-asset-manager.png`)
