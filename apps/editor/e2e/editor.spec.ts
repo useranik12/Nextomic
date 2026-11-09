@@ -1105,3 +1105,43 @@ test("an Other Loops query loop repeats static JSON on the canvas and the previe
   await preview.goto(`/preview/${projectId}`);
   await expect(preview.getByRole("heading")).toHaveText(["Item A", "Item B", "Item C"]);
 });
+
+test("transforms: a tag is transformed in the bolt modal and reopened from the field", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const text = page.getByLabel("Text", { exact: true });
+  await text.fill("");
+  await page.getByRole("button", { name: "Dynamic value for Text" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Transform Page name" }).click();
+  await expect(modal.getByText("Starts as text")).toBeVisible();
+
+  // Only steps that fit text are offered; the preview follows the chain.
+  await modal.getByLabel("Add a transform", { exact: true }).click();
+  await expect(page.locator("[role=option]", { hasText: "Text: Uppercase" })).toBeVisible();
+  await expect(page.locator("[role=option]", { hasText: /^Number: Round$/ })).toHaveCount(0);
+  await page.locator("[role=option]", { hasText: "Text: Uppercase" }).click();
+  await expect(modal.locator("output")).toHaveText("HOME");
+  await modal.getByRole("button", { name: "Insert" }).click();
+  await expect(text).toHaveValue("{{ page.name?.toUpperCase() }}");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading", { name: "HOME" })).toBeVisible();
+
+  // With the caret inside the tag, the bolt reopens its transforms and updates the tag.
+  await text.focus();
+  await text.evaluate((el: HTMLInputElement | HTMLTextAreaElement) => el.setSelectionRange(5, 5));
+  await page.getByRole("button", { name: "Dynamic value for Text" }).click();
+  await expect(modal.getByRole("listitem").filter({ hasText: "Uppercase" })).toBeVisible();
+  await modal.getByRole("button", { name: "Remove Uppercase" }).click();
+  await modal.getByLabel("Add a transform", { exact: true }).click();
+  await page.locator("[role=option]", { hasText: "Text: Truncate" }).click();
+  await modal.getByRole("spinbutton", { name: "Length" }).fill("2");
+  await modal.getByLabel("Fallback when empty").fill("Untitled");
+  await expect(modal.locator("output")).toHaveText("Ho…");
+  await modal.getByRole("button", { name: "Update tag" }).click();
+  await expect(text).toHaveValue('{{ $ifEmpty(page.name?.truncate(2), "Untitled") }}');
+  await expect(canvas.getByRole("heading", { name: "Ho…" })).toBeVisible();
+});

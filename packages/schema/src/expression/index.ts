@@ -19,3 +19,21 @@ export {
 } from "./template";
 export { nowValues, ROOT_DOCS, typedGroup, typedValue, type TypedText } from "./scope";
 export { expressionProblem, firstExpressionProblem } from "./check";
+export {
+  chainKinds,
+  compileTransformChain,
+  newTransformStep,
+  parseTransformChain,
+  TRANSFORM_GROUPS,
+  TRANSFORMS,
+  transformDef,
+  transformsFor,
+  type TransformChain,
+  type TransformDef,
+  type TransformGroup,
+  type TransformKind,
+  type TransformParam,
+  type TransformStep,
+  type TransformValue,
+  type TransformValues
+} from "./transforms";

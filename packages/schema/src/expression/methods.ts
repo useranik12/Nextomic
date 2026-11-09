@@ -340,6 +340,17 @@ const STRING: Member[] = [
     }
   ),
   m(
+    "toInteger",
+    "()",
+    "number",
+    "The text read as a whole number (empty when it is not one).",
+    '"42.7".toInteger() → 42',
+    (s: string) => {
+      const n = Number(s);
+      return s.trim() === "" || !Number.isFinite(n) ? null : Math.trunc(n);
+    }
+  ),
+  m(
     "toBoolean",
     "()",
     "boolean",
@@ -442,6 +453,14 @@ const NUMBER: Member[] = [
       const f = 10 ** Math.min(Math.max(num(a, 0), 0), 15);
       return Math.round(n * f) / f;
     }
+  ),
+  m(
+    "toInteger",
+    "()",
+    "number",
+    "The whole part of the number.",
+    "3.9.toInteger() → 3",
+    (n: number) => Math.trunc(n)
   ),
   m("floor", "()", "number", "Rounds down to a whole number.", "3.9.floor() → 3", (n: number) =>
     Math.floor(n)
@@ -853,11 +872,11 @@ const OBJECT: Member[] = [
 const DATE: Member[] = [
   m(
     "toFormat",
-    "(format: string)",
+    "(format: string, locale?: string)",
     "string",
-    "The date as text in a format: yyyy year, MM month, dd day, HH hour, mm minutes, ss seconds, LLL short month, cccc weekday.",
+    "The date as text in a format: yyyy year, MM month, dd day, HH hour, mm minutes, ss seconds, LLL short month, cccc weekday. The language names months and weekdays.",
     '$now.toFormat("yyyy-MM-dd") → "2026-11-07"',
-    (d: DateTime, [f]) => text(d.toFormat(str(f, "yyyy-MM-dd HH:mm")))
+    (d: DateTime, [f, l]) => text(d.setLocale(str(l, "en-US")).toFormat(str(f, "yyyy-MM-dd HH:mm")))
   ),
   m(
     "toISO",
@@ -900,6 +919,14 @@ const DATE: Member[] = [
     (d: DateTime, [l]) => d.setLocale(str(l, "en-US")).toLocaleString(DateTime.DATE_MED)
   ),
   m(
+    "toTimeString",
+    "(locale?: string)",
+    "string",
+    "The time the way a language writes it.",
+    '$now.toTimeString("en-US") → "9:30 AM"',
+    (d: DateTime, [l]) => d.setLocale(str(l, "en-US")).toLocaleString(DateTime.TIME_SIMPLE)
+  ),
+  m(
     "plus",
     "(amount: number, unit: string)",
     "date",
@@ -937,7 +964,11 @@ const DATE: Member[] = [
     "date",
     "The same moment in another time zone.",
     '$now.setZone("Asia/Kolkata")',
-    (d: DateTime, [z]) => d.setZone(str(z, "UTC"))
+    (d: DateTime, [z]) => {
+      const zoned = d.setZone(str(z, "UTC"));
+      if (!zoned.isValid) throw new ExpressionError(`Unknown time zone "${str(z)}".`);
+      return zoned;
+    }
   ),
   m(
     "diffTo",
