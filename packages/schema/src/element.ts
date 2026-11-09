@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { elementAnimationSchema, type ElementAnimation } from "./css-animation";
-import { conditionGroupSchema, type ConditionGroup } from "./condition";
+import { storedVisibilitySchema, type Visibility } from "./condition";
 import { elementQuerySchema, type ElementQuery } from "./query";
 import { styleMapSchema, type StyleMap } from "./style";
 import { propValueSchema, type PropValue } from "./value";
@@ -22,7 +22,8 @@ export interface ElementNode {
   customCss?: string | undefined;
   /** Hidden in the editor and in output; set from the element menu. */
   hidden?: boolean | undefined;
-  visibility?: ConditionGroup | undefined;
+  /** Conditional visibility: the element renders only when its conditions hold. */
+  visibility?: Visibility | undefined;
   /** A ready-made CSS animation played by a trigger (Design > Animations). */
   animation?: ElementAnimation | undefined;
   /** Query loop (Container and Section): repeats the children once per row. */
@@ -49,7 +50,7 @@ export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = 
     styles: styleMapSchema.default({ breakpoints: {} }),
     customCss: z.string().max(100_000).optional(),
     hidden: z.boolean().optional(),
-    visibility: conditionGroupSchema.optional(),
+    visibility: storedVisibilitySchema,
     animation: elementAnimationSchema.optional(),
     query: elementQuerySchema.optional(),
     actions: z.record(z.string(), z.array(z.unknown())).default({}),

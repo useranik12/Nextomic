@@ -36,6 +36,7 @@ import {
   type BreakpointDef,
   type ElementAnimation,
   type ElementQuery,
+  type Visibility,
   type ElementNode,
   type PageSettings,
   type StyleMap,
@@ -123,6 +124,8 @@ interface EditorState {
   setElementAnimation: (id: string, animation: ElementAnimation | null) => void;
   /** Sets or clears (null) the element's query loop (Container and Section). */
   setElementQuery: (id: string, query: ElementQuery | null) => void;
+  /** Sets or removes (null) an element's conditional visibility. */
+  setElementVisibility: (id: string, visibility: Visibility | null) => void;
   /** Renames a query loop and every `%old` tag inside it. */
   renameLoop: (id: string, name: string) => void;
   setActiveClass: (name: string | null) => void;
@@ -151,6 +154,12 @@ interface EditorState {
   /** The element whose name is being edited (context menu > Rename); the navigator row and panel header react. */
   renamingId: string | null;
   setRenamingId: (id: string | null) => void;
+  /** Canvas preview of conditional visibility per element (Auto = absent). Never saved. */
+  visibilityPreview: Record<string, "show" | "hide">;
+  setVisibilityPreview: (id: string, mode: "show" | "hide" | null) => void;
+  /** Elements whose visibility conditions fail on the canvas, as the canvas reports them. */
+  conditionsFailed: ReadonlySet<string>;
+  setConditionsFailed: (ids: readonly string[]) => void;
   /** Sets one HTML attribute; adds an element ID first when the element has none. */
   setElementAttribute: (id: string, name: string, value: PropValue) => void;
   removeElementAttribute: (id: string, name: string) => void;
@@ -420,6 +429,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (query) found.node.query = query;
         else delete found.node.query;
       }),
+    setElementVisibility: (id, visibility) =>
+      void edit(`visibility:${id}`, (draft) => {
+        const found = findNode(draft.tree, id);
+        if (!found) return;
+        if (visibility) found.node.visibility = visibility;
+        else delete found.node.visibility;
+      }),
     renameLoop: (id, name) =>
       void edit(`loop-name:${id}`, (draft) => {
         const node = findNode(draft.tree, id)?.node;
@@ -583,6 +599,22 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
     renamingId: null,
     setRenamingId: (id) => set({ renamingId: id }),
+    visibilityPreview: {},
+    setVisibilityPreview: (id, mode) =>
+      set((state) => {
+        const next = { ...state.visibilityPreview };
+        if (mode) next[id] = mode;
+        else delete next[id];
+        return { visibilityPreview: next };
+      }),
+    conditionsFailed: new Set(),
+    setConditionsFailed: (ids) =>
+      set((state) => {
+        const same =
+          ids.length === state.conditionsFailed.size &&
+          ids.every((id) => state.conditionsFailed.has(id));
+        return same ? state : { conditionsFailed: new Set(ids) };
+      }),
 
     setElementAttribute: (id, name, value) => {
       edit(`attr:${id}:${name}`, (draft) => {

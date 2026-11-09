@@ -5,7 +5,11 @@ import {
   loopKey,
   URL_ATTRIBUTES,
   createTokenResolver,
+  expressionScope,
+  hasConditions,
   isAllowedAttribute,
+  isVisible,
+  withLoopScope,
   type DynamicContext,
   themeBootScript,
   fontPreloads,
@@ -71,6 +75,15 @@ export interface RenderOptions {
   /** What dynamic tags resolve to ({{page.name}}, {{param.id}}, {{now.date}} ...). */
   dynamic?: DynamicContext;
   resolveToken?: TokenResolver;
+  /**
+   * Editor canvas: per element, show or hide it whatever its conditions say (Auto / Show / Hide
+   * preview switch; never saved).
+   */
+  visibilityPreview?: Readonly<Record<string, "show" | "hide">>;
+  /** Editor canvas: collects the IDs of elements whose conditions fail (the Navigator marks them). */
+  conditionsFailed?: Set<string>;
+  /** Editor canvas: IDs whose conditions hold somewhere (a loop row may differ from another). */
+  conditionsHeld?: Set<string>;
 }
 
 const BOOLEAN_ATTRIBUTES = new Set([
@@ -170,9 +183,25 @@ function loopMarkers(
   return marks;
 }
 
+/**
+ * Whether the element renders: conditions are evaluated with the loop rows around it (a loop
+ * element's own conditions see the outer loops only). A failing element renders nothing, so its
+ * content never reaches the HTML. Without a dynamic context there is nothing to read: it shows.
+ */
+function passes(node: ElementNode, options: RenderOptions, scope: RenderScope): boolean {
+  const forced = options.visibilityPreview?.[node.id];
+  if (!hasConditions(node.visibility) || !options.dynamic) return forced !== "hide";
+  const holds = isVisible(
+    node.visibility,
+    withLoopScope(expressionScope(options.dynamic), scope.frames)
+  );
+  (holds ? options.conditionsHeld : options.conditionsFailed)?.add(node.id);
+  return forced ? forced === "show" : holds;
+}
+
 function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderScope): ReactNode {
   const definition = getElementDefinition(node.type);
-  if (!definition || node.hidden) return null;
+  if (!definition || node.hidden || !passes(node, options, scope)) return null;
   const attrs = elementAttrs(node, scope.resolveToken);
   return definition.render({
     node,

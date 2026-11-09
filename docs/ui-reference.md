@@ -221,6 +221,7 @@ Built (4c). Small inputs and buttons throughout (owner rule).
 - The pseudo state being edited (default, :hover, :focus, :active, :disabled) is a row of green chips under the ID and class chips, in every tab; a dot on a chip means that state has styles at the current breakpoint. Click selects, click again returns to default. Code fields (CSS) use syntax colors: VS Code Dark+ on dark, GitHub Light on light (`components/ui/code-editor.tsx`, `lib/css-highlight.ts`).
 
 - Element tab starts with: Query loop toggle (div-based elements only), HTML tag select, then the element's own content and properties (with data binding), conditional visibility, custom attributes.
+- Conditions group (built 2026-11-09, owner decisions; not in the Figma frames): layout as in `dynamic-data-and-actions.md` section 7. When conditions are false the element is removed from the canvas DOM (not dimmed) and its Navigator row turns yellow with a yellow condition icon; the Canvas preview switch (Auto / Show / Hide) can force it.
 - Bottom: "Search settings" input that filters all settings across tabs, plus a settings gear.
 - Navigator panel (left rail): holds all elements of the page or template. Filter dropdown ("All", or by element type/class), search, tree with expand/collapse, drag to reorder, and per-row indicators for classes, loop, condition, and actions.
 

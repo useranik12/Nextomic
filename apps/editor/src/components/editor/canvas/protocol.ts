@@ -48,7 +48,9 @@ export const renderMessageSchema = z.object({
       z.string().max(4000),
       z.object({ rows: z.array(z.unknown()).max(1000), hasMore: z.boolean() })
     )
-    .default({})
+    .default({}),
+  // Auto / Show / Hide preview switch per element (conditional visibility; never saved).
+  visibilityPreview: z.record(z.string().max(64), z.enum(["show", "hide"])).default({})
 });
 export type RenderMessage = z.infer<typeof renderMessageSchema>;
 
@@ -81,6 +83,11 @@ export const canvasMessageSchema = z.discriminatedUnion("type", [
     playing: z.boolean()
   }),
   z.object({ type: z.literal("select"), id: z.string().nullable() }),
+  // Elements whose visibility conditions fail on the canvas (the Navigator marks them).
+  z.object({
+    type: z.literal("conditions-failed"),
+    ids: z.array(z.string().max(64)).max(10_000)
+  }),
   // Right-click on an element; coordinates are inside the canvas document.
   z.object({ type: z.literal("context"), id: z.string(), clientX: finite, clientY: finite }),
   // Document height so the frame can grow to the page and the canvas pans instead of scrolling.
