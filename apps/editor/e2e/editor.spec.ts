@@ -1183,3 +1183,50 @@ test("conditions: a failing element leaves the canvas, turns yellow, and preview
   await page.getByRole("switch", { name: "Enable conditions" }).click({ force: true });
   await expect(heading).toBeVisible();
 });
+
+test("conditions: class checks and list values as chips", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByLabel("Text", { exact: true }).fill("Panel");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  const heading = canvas.getByRole("heading", { name: "Panel" });
+  await page.getByRole("button", { name: "Conditions", exact: true }).click();
+  await page.getByRole("button", { name: "Add condition" }).click();
+
+  // Class type: this element has no class "is-open", so "has" hides it and "does not have" shows it.
+  await page.getByLabel("Condition type", { exact: true }).click();
+  await page.locator("[role=option]", { hasText: "Class" }).click();
+  await page.getByLabel("Class name", { exact: true }).fill("is-open");
+  await expect(heading).toHaveCount(0);
+  await page.getByLabel("Operator", { exact: true }).click();
+  await page.locator("[role=option]", { hasText: "does not have" }).click();
+  await expect(heading).toBeVisible();
+
+  // Value comparison with "is in list": a comma or Enter makes a chip.
+  await page.getByLabel("Condition type", { exact: true }).click();
+  await page.locator("[role=option]", { hasText: "Value comparison" }).click();
+  await page.getByLabel("Value", { exact: true }).fill("{{ page.name }}");
+  await page.getByLabel("Operator", { exact: true }).click();
+  await page.locator("[role=option]", { hasText: "is in list" }).first().click();
+  const list = page.getByLabel("Compare with", { exact: true });
+  await list.pressSequentially("Blog,");
+  await expect(page.getByRole("button", { name: "Remove Blog" })).toBeVisible();
+  await expect(heading).toHaveCount(0);
+  await list.pressSequentially("Home");
+  await list.press("Enter");
+  await expect(heading).toBeVisible();
+
+  // Backspace in the empty field removes the last chip whole.
+  await list.press("Backspace");
+  await expect(page.getByRole("button", { name: "Remove Home" })).toHaveCount(0);
+  await expect(heading).toHaveCount(0);
+
+  // Double-click edits a chip; Enter saves it.
+  await page.getByRole("button", { name: "Blog", exact: true }).dblclick();
+  const edit = page.getByLabel("Edit Blog");
+  await edit.fill("home");
+  await edit.press("Enter");
+  await expect(page.getByRole("button", { name: "Remove home" })).toBeVisible();
+  await expect(heading).toBeVisible();
+});

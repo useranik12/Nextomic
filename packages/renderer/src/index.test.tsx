@@ -549,7 +549,11 @@ describe("conditional visibility", () => {
   });
   const when = (left: string, op: string, right = "") => ({
     enabled: true,
-    group: { id: "g", match: "all" as const, items: [{ id: "c", left, op: op as "equals", right }] }
+    group: {
+      id: "g",
+      match: "all" as const,
+      items: [{ id: "c", kind: "value" as const, left, op: op as "equals", right }]
+    }
   });
   const tree = () => {
     const root = emptyPageTree();
@@ -620,5 +624,70 @@ describe("conditional visibility", () => {
     );
     expect(html).toContain("Secret");
     expect(html).not.toContain("Shown");
+  });
+
+  it("checks the class, ID and attributes of this or another element", () => {
+    const has = (
+      kind: "class" | "id" | "attribute",
+      left: string,
+      target?: string,
+      right = ""
+    ) => ({
+      enabled: true,
+      group: {
+        id: "g",
+        match: "all" as const,
+        items: [{ id: "c", kind, target, left, op: "has" as const, right }]
+      }
+    });
+    const root = emptyPageTree();
+    root.children = [
+      node({
+        id: "btn",
+        type: "button",
+        props: { text: "Toggle", href: "" },
+        classIds: ["is-active"],
+        attributes: { "aria-expanded": "true" }
+      }),
+      node({
+        id: "p1",
+        type: "text",
+        props: { text: "PanelOne" },
+        visibility: has("class", "is-active", "btn")
+      }),
+      node({
+        id: "p2",
+        type: "text",
+        props: { text: "PanelTwo" },
+        visibility: has("class", "open", "btn")
+      }),
+      node({
+        id: "p3",
+        type: "text",
+        props: { text: "PanelThree" },
+        visibility: has("attribute", "aria-expanded", "btn", "true")
+      }),
+      node({
+        id: "p4",
+        type: "text",
+        htmlId: "nxtomc-self0001",
+        props: { text: "PanelFour" },
+        visibility: has("id", "nxtomc-self0001")
+      }),
+      node({
+        id: "p5",
+        type: "text",
+        props: { text: "PanelFive" },
+        visibility: has("class", "x", "gone")
+      })
+    ];
+    const html = renderToStaticMarkup(
+      <PageRenderer tree={root} breakpoints={DEFAULT_BREAKPOINTS} dynamic={dynamic} />
+    );
+    expect(html).toContain("PanelOne");
+    expect(html).not.toContain("PanelTwo");
+    expect(html).toContain("PanelThree");
+    expect(html).toContain("PanelFour");
+    expect(html).not.toContain("PanelFive");
   });
 });

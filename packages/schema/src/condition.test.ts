@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   conditionHolds,
+  conditionSchema,
+  elementConditionHolds,
   elementNodeSchema,
+  splitListText,
+  type Condition,
+  type ElementFacts,
   groupHolds,
   isVisible,
   operandValue,
@@ -59,13 +64,13 @@ describe("conditions", () => {
       id: "g",
       match: "all",
       items: [
-        { id: "a", left: "{{ app.count }}", op: "greaterThan", right: "1" },
+        { id: "a", kind: "value", left: "{{ app.count }}", op: "greaterThan", right: "1" },
         {
           id: "h",
           match: "any",
           items: [
-            { id: "b", left: "{{ user.loggedIn }}", op: "isTrue", right: "" },
-            { id: "c", left: "{{ user.role }}", op: "equals", right: "admin" }
+            { id: "b", kind: "value", left: "{{ user.loggedIn }}", op: "isTrue", right: "" },
+            { id: "c", kind: "value", left: "{{ user.role }}", op: "equals", right: "admin" }
           ]
         }
       ]
@@ -92,5 +97,55 @@ describe("conditions", () => {
       visibility: { match: "all", items: [{ left: "a", op: "equals" }] }
     });
     expect(node.visibility).toBeUndefined();
+  });
+
+  it("checks an element's class, ID and attribute", () => {
+    const self: ElementFacts = {
+      classes: ["card", "is-active"],
+      id: "nxtomc-ab12cd34",
+      attributes: { "aria-expanded": "true", hidden: "true" }
+    };
+    const facts = (target: string | undefined) => (target === undefined ? self : undefined);
+    const read = (t: string) => operandValue(t, scope);
+    const check = (c: Partial<Condition>) =>
+      elementConditionHolds(
+        { id: "x", kind: "class", left: "", op: "has", right: "", ...c },
+        read,
+        facts
+      );
+    expect(check({ left: "is-active" })).toBe(true);
+    expect(check({ left: "IS-ACTIVE" })).toBe(false);
+    expect(check({ left: "open", op: "notHas" })).toBe(true);
+    expect(check({ kind: "id", left: "nxtomc-ab12cd34" })).toBe(true);
+    expect(check({ kind: "attribute", left: "Aria-Expanded" })).toBe(true);
+    expect(check({ kind: "attribute", left: "aria-expanded", right: "TRUE" })).toBe(true);
+    expect(check({ kind: "attribute", left: "aria-expanded", right: "false" })).toBe(false);
+    expect(check({ left: "" })).toBe(false);
+    // A missing element has nothing.
+    expect(check({ target: "gone", left: "card" })).toBe(false);
+    expect(check({ target: "gone", left: "card", op: "notHas" })).toBe(true);
+    expect(
+      groupHolds(
+        {
+          id: "g",
+          match: "all",
+          items: [{ id: "c", kind: "class", left: "card", op: "has", right: "" }]
+        },
+        read,
+        facts
+      )
+    ).toBe(true);
+  });
+
+  it("refuses an operator that does not fit the condition type", () => {
+    expect(conditionSchema.safeParse({ id: "a", kind: "class", op: "equals" }).success).toBe(false);
+    expect(conditionSchema.safeParse({ id: "a", op: "has" }).success).toBe(false);
+    expect(conditionSchema.parse({ id: "a", left: "x" }).kind).toBe("value");
+  });
+
+  it("splits list text on commas outside tags", () => {
+    expect(splitListText("a, b ,, c")).toEqual(["a", "b", "c"]);
+    expect(splitListText('{{ x.join(",") }}, d')).toEqual(['{{ x.join(",") }}', "d"]);
+    expect(splitListText("")).toEqual([]);
   });
 });

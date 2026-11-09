@@ -8,6 +8,9 @@ import { splitTemplate } from "./expression/template";
 // {{ tags }}, so any dynamic data works (state, loop rows, user, params, dates ...). An element
 // whose conditions fail is not rendered at all: it is missing from the HTML, the canvas DOM and the
 // preview. Hiding by user or role is cosmetic only; data and pages are protected on the server.
+// A condition can also check an element (this one or another on the page): whether it has a
+// class, an ID, or an attribute (optionally with a value). Useful with actions that add, remove
+// or toggle classes, IDs and attributes.
 
 export const CONDITION_OPS = [
   "equals",
@@ -54,14 +57,51 @@ export const VALUELESS_CONDITION_OPS: readonly ConditionOp[] = [
   "isFalse"
 ];
 
-export const conditionSchema = z.object({
-  id: z.string().min(1).max(64),
-  /** The value tested, like {{ app.cart.length }}. */
-  left: z.string().max(2000).default(""),
-  op: z.enum(CONDITION_OPS).default("equals"),
-  /** The compare value; a list for "is in list" (comma separated or a JSON array tag). */
-  right: z.string().max(2000).default("")
-});
+/** What a condition tests: a value, or a class, ID or attribute of an element. */
+export const CONDITION_KINDS = ["value", "class", "id", "attribute"] as const;
+export type ConditionKind = (typeof CONDITION_KINDS)[number];
+
+export const CONDITION_KIND_LABELS: Record<ConditionKind, string> = {
+  value: "Value comparison",
+  class: "Class",
+  id: "ID",
+  attribute: "Attribute"
+};
+
+/** Operators of the class, ID and attribute kinds. */
+export const ELEMENT_CONDITION_OPS = ["has", "notHas"] as const;
+export type ElementConditionOp = (typeof ELEMENT_CONDITION_OPS)[number];
+
+export const ELEMENT_CONDITION_OP_LABELS: Record<ElementConditionOp, string> = {
+  has: "has",
+  notHas: "does not have"
+};
+
+const isElementOp = (op: string): op is ElementConditionOp =>
+  (ELEMENT_CONDITION_OPS as readonly string[]).includes(op);
+
+export const conditionSchema = z
+  .object({
+    id: z.string().min(1).max(64),
+    kind: z.enum(CONDITION_KINDS).default("value"),
+    /** Class, ID and attribute kinds: the element checked (its node id); absent = this element. */
+    target: z.string().min(1).max(64).optional(),
+    /**
+     * Value kind: the value tested, like {{ app.cart.length }}. Other kinds: the class name, the
+     * ID or the attribute name.
+     */
+    left: z.string().max(2000).default(""),
+    op: z.enum([...CONDITION_OPS, ...ELEMENT_CONDITION_OPS]).default("equals"),
+    /**
+     * Value kind: the compare value; a list for "is in list" (comma separated or a JSON array
+     * tag). Attribute kind: the attribute value, empty to only check the attribute is there.
+     */
+    right: z.string().max(2000).default("")
+  })
+  .refine((c) => (c.kind === "value") !== isElementOp(c.op), {
+    message: "This operator does not fit the condition type.",
+    path: ["op"]
+  });
 export type Condition = z.infer<typeof conditionSchema>;
 
 export interface ConditionGroup {
@@ -253,24 +293,95 @@ export function conditionHolds(op: ConditionOp, left: unknown, right: unknown): 
   }
 }
 
+/** What an element outputs: its classes, its ID and its other attributes (names lowercase). */
+export interface ElementFacts {
+  classes: readonly string[];
+  id: string | undefined;
+  attributes: Readonly<Record<string, string>>;
+}
+
+/** The facts of the element checked (`undefined` = this element); undefined when it is gone. */
+export type ElementFactsReader = (target: string | undefined) => ElementFacts | undefined;
+
+/**
+ * Whether a class, ID or attribute condition holds. Class names and IDs match exactly (as in
+ * CSS); attribute names ignore case, attribute values compare like "equals". A missing element
+ * has nothing, so "has" fails and "does not have" holds.
+ */
+export function elementConditionHolds(
+  condition: Condition,
+  read: (text: string) => unknown,
+  facts: ElementFactsReader | undefined
+): boolean {
+  const found = (() => {
+    const of = facts?.(condition.target);
+    const name = asText(read(condition.left));
+    if (!of || name === "") return false;
+    if (condition.kind === "class") return of.classes.includes(name);
+    if (condition.kind === "id") return of.id === name;
+    const value = of.attributes[name.toLowerCase()];
+    if (value === undefined) return false;
+    const wanted = asText(read(condition.right));
+    return wanted === "" || same(value, wanted);
+  })();
+  return condition.op === "notHas" ? !found : found;
+}
+
 /** Whether a group holds. An empty group holds. */
-export function groupHolds(group: ConditionGroup, read: (text: string) => unknown): boolean {
+export function groupHolds(
+  group: ConditionGroup,
+  read: (text: string) => unknown,
+  facts?: ElementFactsReader
+): boolean {
   if (group.items.length === 0) return true;
-  const test = (item: Condition | ConditionGroup): boolean =>
-    isConditionGroup(item)
-      ? groupHolds(item, read)
-      : conditionHolds(
-          item.op,
-          read(item.left),
-          VALUELESS_CONDITION_OPS.includes(item.op) ? undefined : read(item.right)
-        );
+  const test = (item: Condition | ConditionGroup): boolean => {
+    if (isConditionGroup(item)) return groupHolds(item, read, facts);
+    if (item.kind !== "value") return elementConditionHolds(item, read, facts);
+    if (isElementOp(item.op)) return false;
+    return conditionHolds(
+      item.op,
+      read(item.left),
+      VALUELESS_CONDITION_OPS.includes(item.op) ? undefined : read(item.right)
+    );
+  };
   return group.match === "all" ? group.items.every(test) : group.items.some(test);
 }
 
 /** Whether an element shows: no conditions, conditions off, or conditions that hold. */
-export function isVisible(visibility: Visibility | undefined, scope: Record<string, unknown>) {
+export function isVisible(
+  visibility: Visibility | undefined,
+  scope: Record<string, unknown>,
+  facts?: ElementFactsReader
+) {
   if (!hasConditions(visibility)) return true;
-  return groupHolds(visibility.group, (text) => operandValue(text, scope));
+  return groupHolds(visibility.group, (text) => operandValue(text, scope), facts);
+}
+
+/** The elements other than the one itself that a group's conditions check (node ids). */
+export function conditionTargets(group: ConditionGroup): string[] {
+  return group.items.flatMap((item) =>
+    isConditionGroup(item) ? conditionTargets(item) : item.target ? [item.target] : []
+  );
+}
+
+/** Splits list text on commas outside {{ tags }}; blank items are dropped. */
+export function splitListText(text: string): string[] {
+  const items: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (let i = 0; i < text.length; i += 1) {
+    const pair = text.slice(i, i + 2);
+    if (pair === "{{" || pair === "}}") {
+      depth = Math.max(0, depth + (pair === "{{" ? 1 : -1));
+      current += pair;
+      i += 1;
+    } else if (text[i] === "," && depth === 0) {
+      items.push(current);
+      current = "";
+    } else current += text[i];
+  }
+  items.push(current);
+  return items.map((item) => item.trim()).filter((item) => item !== "");
 }
 
 /** Every operand text of a group (for checks, renames and usage). */

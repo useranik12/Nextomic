@@ -22,6 +22,7 @@ const MATCH_OPTIONS = [
 
 export const newCondition = (): Condition => ({
   id: crypto.randomUUID(),
+  kind: "value",
   left: "",
   op: "equals",
   right: ""
