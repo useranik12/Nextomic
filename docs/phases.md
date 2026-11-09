@@ -85,7 +85,7 @@ Docs: `dynamic-data-and-actions.md`, `integrations.md`, `ui-reference.md` (Supab
 - [ ] Dynamic data modal (bolt icon): groups, scope rules, dot notation, live preview on canvas, type-aware
 - [ ] Universal bindability: every registered prop, attribute, style value, class toggle, SEO and route field accepts dynamic tokens
 - [ ] Loops on div-based elements with auto-duplicated children _Query loops on Container and Section built in 4e (owner decision: those two only). Other Loops (page parameters, page state, app state, constants, parent item, static JSON, expression) built in 4f; browser-persisted app state re-renders with the Phase 5 state store._
-- [ ] Transforms (type conversion) and date/time formatting presets
+- [ ] Transforms (type conversion) and date/time formatting presets _Plan proposed 2026-11-09 (awaiting owner): transforms compile to existing expression methods (no new storage field), typed chain, `$ifEmpty` fallback, date presets via setZone/setLocale/toFormat/toRelative, parse-back to reopen; UI location A (bolt modal panel), B (per-tag popover) or C (both) to be chosen._
 - [ ] Conditional visibility; runtime condition operands for themes and templates
 - [ ] Tests: scope validation, loops, transforms, bindings everywhere, connectors
 
