@@ -77,14 +77,14 @@ describe("rules", () => {
 
   it("compares a dynamic tag against a value that can hold tags too", () => {
     const ok = (r: Rule) => evaluateRules(group("all", r), ctx);
-    expect(ok(rule("dynamic", "equals", "42", "{{param.id}}"))).toBe(true);
+    expect(ok(rule("dynamic", "equals", "42", "{{ param.id }}"))).toBe(true);
     expect(
       ok({
-        ...rule("dynamic", "equals", "", "{{param.id}}"),
+        ...rule("dynamic", "equals", "", "{{ param.id }}"),
         value: { kind: "mixed", parts: [{ token: "param.id" }] }
       })
     ).toBe(true);
-    expect(ok(rule("dynamic", "equals", "7", "{{param.id}}"))).toBe(false);
+    expect(ok(rule("dynamic", "equals", "7", "{{ param.id }}"))).toBe(false);
   });
 
   it("joins with all and any, nests, and treats an empty set as everywhere", () => {
@@ -183,5 +183,21 @@ describe("layout resolution", () => {
     expect(resolveNotFound([t("h", "header")], ctx)).toBeNull();
     expect(resolveNotFound([t("n", "error-404", { status: "draft" })], ctx)).toBeNull();
     expect(resolveNotFound([t("n", "error-404")], ctx)?.id).toBe("n");
+  });
+});
+
+describe("tag spacing", () => {
+  it("reads only {{ spaced }} braces as tags; {{unspaced}} stays text", async () => {
+    const { splitTemplate, unspacedTags, fixedTag, tagText } = await import("./expression");
+    expect(splitTemplate("a {{b}} c")).toEqual(["a {{b}} c"]);
+    expect(splitTemplate("{{ b}} {{b }}")).toEqual(["{{ b}} {{b }}"]);
+    const parts = splitTemplate("x {{ user.name }} y");
+    expect(parts[1]).toMatchObject({ expr: "user.name", start: 2 });
+    const found = unspacedTags("{{a}} and {{ b }} and {{c.d()}} and {{}}");
+    expect(found.map((t) => t.inner)).toEqual(["a", "c.d()"]);
+    expect(found.map(fixedTag)).toEqual(["{{ a }}", "{{ c.d() }}"]);
+    expect(tagText("x")).toBe("{{ x }}");
+    expect(tagText(" x ")).toBe("{{ x }}");
+    expect(tagText("  x  ")).toBe("{{  x  }}");
   });
 });

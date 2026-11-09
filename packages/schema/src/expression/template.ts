@@ -1,5 +1,14 @@
 // Finds the {{ expression }} parts of a text. Everything outside {{ }} is plain text. Braces and
 // quotes inside an expression are balanced, so {{ {a: 1}.keys() }} and {{ "}}" }} work.
+// A tag needs a space on both sides inside the braces, n8n style (owner decision 2026-11-09):
+// `{{ user.name }}` is a tag, `{{user.name}}` is plain text.
+
+/** True when the text between {{ and }} has the spaces that make it a tag. */
+const spaced = (inner: string) => /^\s[\s\S]*\s$|^\s+$/.test(inner);
+
+/** The tag text for a dynamic data token: `{{ token }}` (spaces already written are kept). */
+export const tagText = (token: string) =>
+  spaced(token) ? `{{${token}}}` : `{{ ${token.trim()} }}`;
 
 export interface ExpressionPart {
   /** The text between {{ and }}, trimmed. */
@@ -38,6 +47,11 @@ export function splitTemplate(text: string): (string | ExpressionPart)[] {
   while (i !== -1) {
     const end = closeOf(text, i);
     if (end === -1) break;
+    if (!spaced(text.slice(i + 2, end - 2))) {
+      // Not a tag: stays text; a tag may still open inside it ({{a {{ b }}).
+      i = text.indexOf("{{", i + 1);
+      continue;
+    }
     if (i > last) parts.push(text.slice(last, i));
     parts.push({ expr: text.slice(i + 2, end - 2).trim(), start: i, end });
     last = end;
@@ -59,3 +73,32 @@ export function expressionAtCaret(
   if (end !== -1 && end - 2 < caret) return null;
   return { start: open + 2, source: text.slice(open + 2, caret) };
 }
+
+/** A `{{x}}` written without the spaces that make it a tag (it shows as plain text). */
+export interface UnspacedTag {
+  /** The text between the braces, as written. */
+  inner: string;
+  start: number;
+  end: number;
+}
+
+/** Every closed `{{x}}` whose inside is not spaced on both sides (and is not empty). */
+export function unspacedTags(text: string): UnspacedTag[] {
+  const found: UnspacedTag[] = [];
+  let i = text.indexOf("{{");
+  while (i !== -1) {
+    const end = closeOf(text, i);
+    if (end === -1) break;
+    const inner = text.slice(i + 2, end - 2);
+    if (spaced(inner)) {
+      i = text.indexOf("{{", end);
+      continue;
+    }
+    if (inner.trim()) found.push({ inner, start: i, end });
+    i = text.indexOf("{{", i + 1);
+  }
+  return found;
+}
+
+/** The tag a `{{x}}` becomes when fixed: `{{ x }}`. */
+export const fixedTag = (tag: UnspacedTag) => tagText(tag.inner);

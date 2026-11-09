@@ -139,3 +139,66 @@ describe("unique loop names", () => {
     expect(uniqueLoopNames(tree)).toBe(tree);
   });
 });
+
+describe("loop row samples", () => {
+  it("shapes a blank row from Supabase columns and REST data types", async () => {
+    const { loopRowSample } = await import("./query-sample");
+    const { elementQuerySchema } = await import("./query");
+    const col = (name: string, type: string, isList = false) => ({
+      name,
+      pgType: type,
+      type,
+      isList,
+      nullable: true
+    });
+    const supabase = {
+      schemas: [
+        {
+          schema: "public",
+          tables: [
+            {
+              name: "posts",
+              kind: "table",
+              columns: [col("title", "string"), col("views", "int"), col("tags", "string", true)]
+            }
+          ]
+        }
+      ]
+    } as never;
+    const query = elementQuerySchema.parse({ enabled: true, supabase: { table: "posts" } });
+    expect(loopRowSample(query, { supabase, rest: null })).toEqual({
+      title: "",
+      views: 0,
+      tags: []
+    });
+    const registry = {
+      enums: [],
+      dataTypes: [
+        {
+          id: "dt",
+          name: "Post",
+          description: "",
+          fields: [
+            { id: "f", name: "ok", type: "boolean", isList: false, ref: "", description: "" }
+          ]
+        }
+      ]
+    } as never;
+    const rest = {
+      groups: [],
+      calls: [
+        {
+          id: "c",
+          response: { parseAsDataType: true, dataTypeId: "dt", isList: true, jsonPaths: [] }
+        }
+      ]
+    } as never;
+    const restQuery = elementQuerySchema.parse({
+      enabled: true,
+      source: "rest",
+      rest: { callId: "c" }
+    });
+    expect(loopRowSample(restQuery, { supabase: null, rest }, registry)).toEqual({ ok: false });
+    expect(loopRowSample(restQuery, { supabase: null, rest: null })).toEqual({});
+  });
+});

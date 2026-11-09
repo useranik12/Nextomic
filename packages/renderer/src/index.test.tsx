@@ -393,7 +393,7 @@ describe("dynamic style values", () => {
       id: "c",
       type: "container",
       styles: {
-        breakpoints: { base: { default: { width: "{{page.name}}px", color: "{{page.name}}" } } }
+        breakpoints: { base: { default: { width: "{{ page.name }}px", color: "{{ page.name }}" } } }
       }
     });
     expect(elementCss(el, DEFAULT_BREAKPOINTS)).toBe("");

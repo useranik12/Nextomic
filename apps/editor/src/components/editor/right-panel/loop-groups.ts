@@ -25,7 +25,7 @@ function rowTags(node: ElementNode, prefix: string, sources: LoopSources): Dynam
       token: `${prefix}item`,
       label: "Row",
       hint: query.supabase.single || query.rest.single ? "object" : "object (one row)",
-      help: `The current row of the loop. Read a field with dot notation: {{${prefix}item.title}}.`
+      help: `The current row of the loop. Read a field with dot notation: {{ ${prefix}item.title }}.`
     },
     { token: `${prefix}index`, label: "Position", hint: "number, from 0" }
   ];

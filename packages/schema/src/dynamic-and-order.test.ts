@@ -40,12 +40,12 @@ describe("dynamic text", () => {
   });
 
   it("round-trips tokens between text", () => {
-    const value = parseDynamicText("Hi {{param.name}}, you have {{state.count}} items");
+    const value = parseDynamicText("Hi {{ param.name }}, you have {{ state.count }} items");
     expect(value).toEqual({
       kind: "mixed",
-      parts: ["Hi ", { token: "param.name" }, ", you have ", { token: "state.count" }, " items"]
+      parts: ["Hi ", { token: " param.name " }, ", you have ", { token: " state.count " }, " items"]
     });
-    expect(dynamicTextOf(value)).toBe("Hi {{param.name}}, you have {{state.count}} items");
+    expect(dynamicTextOf(value)).toBe("Hi {{ param.name }}, you have {{ state.count }} items");
   });
 
   it("keeps the spaces written inside the braces", () => {

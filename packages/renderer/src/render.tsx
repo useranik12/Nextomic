@@ -162,8 +162,9 @@ function loopMarkers(
   // Rows may be a sparse list (a later page): count what is there.
   marks["data-nx-count"] = String(result ? result.rows.filter(() => true).length : 0);
   marks["data-nx-more"] = result?.hasMore ? "1" : "0";
-  const settings = query.source === "supabase" ? query.supabase : query.rest;
-  if (settings.infiniteScroll && !settings.single) marks["data-nx-scroll"] = "";
+  // Only Supabase loops scroll for more; REST loops load one page (owner decision 2026-11-09).
+  if (query.source === "supabase" && query.supabase.infiniteScroll && !query.supabase.single)
+    marks["data-nx-scroll"] = "";
   if (query.source === "supabase" && query.supabase.realtime && query.supabase.table)
     marks["data-nx-realtime"] = `${query.supabase.schema}.${query.supabase.table}`;
   return marks;

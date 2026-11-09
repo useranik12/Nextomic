@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { splitTemplate } from "./expression/template";
+import { splitTemplate, tagText } from "./expression/template";
 
 export const staticValueSchema = z.union([
   z.string().max(100_000),
@@ -26,7 +26,7 @@ export function dynamicTextOf(value: PropValue | undefined): string {
   if (value === undefined || value === null) return "";
   if (typeof value !== "object") return String(value);
   return value.parts
-    .map((part) => (typeof part === "string" ? part : `{{${part.token}}}`))
+    .map((part) => (typeof part === "string" ? part : tagText(part.token)))
     .join("");
 }
 

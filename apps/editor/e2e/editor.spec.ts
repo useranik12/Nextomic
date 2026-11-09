@@ -216,12 +216,28 @@ test("dynamic tags show real values on the canvas", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
-  await page.getByLabel("Text", { exact: true }).fill("On {{page.name}} in {{$now.year}}");
+  const text = page.getByLabel("Text", { exact: true });
+  await text.fill("On {{ page.name }} in {{ $now.year }}");
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   const year = String(new Date().getFullYear());
   await expect(
     canvas.getByRole("heading", { name: new RegExp(`On Home in ${year}`) })
   ).toBeVisible();
+
+  // Without spaces inside the braces it is plain text; the prompt offers to fix it.
+  await text.fill("On {{page.name}}");
+  const prompt = page.getByRole("alertdialog", { name: "Make this a dynamic tag?" });
+  await expect(prompt).toBeVisible();
+  await expect(canvas.getByRole("heading", { name: "On {{page.name}}" })).toBeVisible();
+  await prompt.getByRole("button", { name: "Fix tag" }).click();
+  await expect(text).toHaveValue("On {{ page.name }}");
+  await expect(canvas.getByRole("heading", { name: "On Home" })).toBeVisible();
+
+  // Keep as text leaves it alone.
+  await text.fill("Write {{name}} here");
+  await prompt.getByRole("button", { name: "Keep as text" }).click();
+  await expect(prompt).toHaveCount(0);
+  await expect(text).toHaveValue("Write {{name}} here");
 });
 
 test("every element gets an ID that shows in the ID field", async ({ page }) => {

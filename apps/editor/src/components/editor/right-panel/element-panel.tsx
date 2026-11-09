@@ -6,7 +6,8 @@ import {
   dynamicTextOf,
   findNode,
   parseDynamicText,
-  type ElementNode
+  type ElementNode,
+  tagText
 } from "@nextomic/schema";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
@@ -40,7 +41,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
     : dynamicTextOf(node.props[control.key]);
   const onChange = (next: string) =>
     isTag ? setTag(node.id, next) : setProp(node.id, control.key, parseDynamicText(next));
-  const insertToken = (token: string) => onChange(`${value}{{${token}}}`);
+  const insertToken = (token: string) => onChange(`${value}${tagText(token)}`);
 
   if (control.kind === "select") {
     return (

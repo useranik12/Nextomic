@@ -189,7 +189,7 @@ describe("where state is used", () => {
   const tree = {
     props: {
       text: { kind: "mixed", parts: ["Hi ", { token: "app.name" }, { token: "const.site.url" }] },
-      title: "{{ app.name }} and {{app.named}}",
+      title: "{{ app.name }} and {{ app.named }}",
       label: "{{ $if(app.name, const.site, 'x') }} app.name outside"
     }
   };
@@ -204,7 +204,7 @@ describe("where state is used", () => {
   it("renames only the exact name and keeps paths", () => {
     const { value, changed } = renameStateTag(tree, "app", "name", "first");
     expect(changed).toBe(true);
-    expect(value.props.title).toBe("{{ app.first }} and {{app.named}}");
+    expect(value.props.title).toBe("{{ app.first }} and {{ app.named }}");
     expect(value.props.text.parts[1]).toEqual({ token: "app.first" });
     expect(value.props.label).toBe("{{ $if(app.first, const.site, 'x') }} app.name outside");
     expect(renameStateTag(tree, "const", "nope", "x").changed).toBe(false);

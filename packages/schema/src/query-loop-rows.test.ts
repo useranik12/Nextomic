@@ -51,7 +51,7 @@ describe("collectLoopRows", () => {
   it("runs outer loops first and fills inner templates with the outer row", async () => {
     const seen: string[] = [];
     const rows = await collectLoopRows(tree, { page: { name: "Blog" } }, async (instance, fill) => {
-      seen.push(`${instance.key}:${fill("{{page.name}}-{{%posts.item.id}}")}`);
+      seen.push(`${instance.key}:${fill("{{ page.name }}-{{ %posts.item.id }}")}`);
       return instance.node.id === "posts"
         ? { rows: [{ id: 7 }, { id: 8 }], hasMore: false }
         : { rows: ["c"], hasMore: false };
@@ -100,7 +100,7 @@ describe("a later page of a loop", () => {
       posts,
       {},
       async (instance, fill) => {
-        seen.push(`${instance.key}:${fill("{{%posts.item.id}}")}`);
+        seen.push(`${instance.key}:${fill("{{ %posts.item.id }}")}`);
         return { rows: [], hasMore: false };
       },
       200,

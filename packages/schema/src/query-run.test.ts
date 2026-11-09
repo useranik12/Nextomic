@@ -56,8 +56,8 @@ describe("query requests", () => {
       table: "posts",
       limit: 10,
       filters: [
-        { id: "a", column: "title", operator: "ilike" as const, value: "%{{param.q}}%" },
-        { id: "b", column: "id", operator: "gt" as const, value: "{{param.min}}" },
+        { id: "a", column: "title", operator: "ilike" as const, value: "%{{ param.q }}%" },
+        { id: "b", column: "id", operator: "gt" as const, value: "{{ param.min }}" },
         { id: "c", column: "live", operator: "eq" as const, value: "true" }
       ],
       order: [{ id: "o", column: "id", ascending: false }]
@@ -97,7 +97,7 @@ describe("query requests", () => {
     const rest = {
       ...newElementQuery().rest,
       callId: "c1",
-      values: { q: "{{param.q}}" },
+      values: { q: "{{ param.q }}" },
       listPath: "p",
       limit: 2
     };
@@ -114,11 +114,15 @@ describe("query requests", () => {
   it("lists templates and fills from values resolved elsewhere", () => {
     const query = newElementQuery();
     query.supabase.filters = [
-      { id: "a", column: "title", operator: "eq", value: "{{param.q}}" },
-      { id: "b", column: "title", operator: "eq", value: "{{param.q}}" }
+      { id: "a", column: "title", operator: "eq", value: "{{ param.q }}" },
+      { id: "b", column: "title", operator: "eq", value: "{{ param.q }}" }
     ];
-    expect(queryTemplates(query)).toEqual(["{{param.q}}"]);
-    const fill = fillFrom({ "{{param.q}}": "hi" });
-    expect([fill("{{param.q}}"), fill("static"), fill("{{other}}")]).toEqual(["hi", "static", ""]);
+    expect(queryTemplates(query)).toEqual(["{{ param.q }}"]);
+    const fill = fillFrom({ "{{ param.q }}": "hi" });
+    expect([fill("{{ param.q }}"), fill("static"), fill("{{ other }}")]).toEqual([
+      "hi",
+      "static",
+      ""
+    ]);
   });
 });

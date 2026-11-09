@@ -13,7 +13,8 @@ import {
   ruleFieldById,
   type Rule,
   type RuleGroup,
-  type RuleOp
+  type RuleOp,
+  tagText
 } from "@nextomic/schema";
 import { useState } from "react";
 import { SelectField } from "@/components/ui/controls";
@@ -55,7 +56,7 @@ function BoltText({
         className={compactFieldClass + " pr-9"}
       />
       <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-        <DynamicBolt label={label} onInsert={(token) => onChange(`${value}{{${token}}}`)} />
+        <DynamicBolt label={label} onInsert={(token) => onChange(`${value}${tagText(token)}`)} />
       </div>
     </div>
   );
