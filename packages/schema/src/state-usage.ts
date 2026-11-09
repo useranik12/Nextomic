@@ -8,7 +8,7 @@ export type StateGroup = "app" | "const";
 
 const NAME = "[A-Za-z_][A-Za-z0-9_]*";
 // A variable reference inside an expression, not the end of a longer name or path (`x.app.a`).
-const IN_EXPR = new RegExp(`(?<![\\w$.])(app|const)\\.(${NAME})`, "g");
+const IN_EXPR = new RegExp(`(?<![\\w$.%])(app|const)\\.(${NAME})`, "g");
 
 export type StateUsageCounts = Record<StateGroup, Record<string, number>>;
 
@@ -52,22 +52,34 @@ export function renameStateTag<T>(
   from: string,
   to: string
 ): { value: T; changed: boolean } {
+  const inExpr = new RegExp(`(?<![\\w$.%])(${group}\\.)${from}(?![A-Za-z0-9_])`, "g");
+  return mapExpressions(value, (expr) => expr.replace(inExpr, `$1${to}`));
+}
+
+/**
+ * A copy of `value` (any JSON) with every {{ }} expression passed through `rewrite`, and whether
+ * anything changed. Text gets each expression without its braces; a mixed value's `token` part is
+ * passed whole. Text outside {{ }} is never changed.
+ */
+export function mapExpressions<T>(
+  value: T,
+  rewrite: (expr: string) => string
+): { value: T; changed: boolean } {
   let changed = false;
-  const inExpr = new RegExp(`(?<![\\w$.])(${group}\\.)${from}(?![A-Za-z0-9_])`, "g");
-  const renameIn = (expr: string) => expr.replace(inExpr, `$1${to}`);
   const renameText = (text: string) => {
     let out = "";
     let at = 0;
     for (const part of splitTemplate(text)) {
       if (typeof part === "string") continue;
-      out += text.slice(at, part.start) + renameIn(text.slice(part.start, part.end));
+      const inner = text.slice(part.start + 2, part.end - 2);
+      out += text.slice(at, part.start) + "{{" + rewrite(inner) + "}}";
       at = part.end;
     }
     return out + text.slice(at);
   };
   const walk = (node: unknown, key?: string): unknown => {
     if (typeof node === "string") {
-      const next = key === "token" ? renameIn(node) : renameText(node);
+      const next = key === "token" ? rewrite(node) : renameText(node);
       if (next !== node) changed = true;
       return next;
     }

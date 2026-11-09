@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { elementNodeSchema, type ElementNode } from "./element";
-import { expressionProblem } from "./expression";
+import { expressionProblem, runExpression } from "./expression";
 import {
   activeQuery,
   elementQuerySchema,
@@ -155,17 +155,28 @@ describe("query scope", () => {
     expect(loopAncestors(tree, "list")).toEqual([]);
   });
 
-  it("makes item tags unknown outside a loop and readable inside", () => {
-    expect(expressionProblem("item.title", withLoopScope({}, []))).toBe('Unknown name "item".');
+  it("makes %loop tags unknown outside a loop and readable inside", () => {
+    expect(expressionProblem("%posts.item.title", withLoopScope({}, []))).toBe(
+      'No query loop named "posts" around this element.'
+    );
     const inside = withLoopScope({}, [
-      { item: { title: "B" }, index: 1 },
-      { item: { title: "A" }, index: 0 }
+      { name: "comments", item: { title: "B" }, index: 1 },
+      { name: "posts", item: { title: "A" }, index: 0 }
     ]);
-    expect(expressionProblem("item.title + parent.item.title + index", inside)).toBeNull();
+    expect(
+      expressionProblem("%comments.item.title + %posts.item.title + %comments.index", inside)
+    ).toBeNull();
+    expect(runExpression("%comments.item.title + %posts.item.title", inside)).toBe("BA");
     expect(inside).toMatchObject({
-      item: { title: "B" },
-      index: 1,
-      parent: { item: { title: "A" } }
+      "%comments": { item: { title: "B" }, index: 1 },
+      "%posts": { item: { title: "A" }, index: 0 }
     });
+  });
+
+  it("keeps % as modulo after a value", () => {
+    const scope = withLoopScope({ n: 7 }, [{ name: "posts", item: {}, index: 3 }]);
+    expect(runExpression("n % 4", scope)).toBe(3);
+    expect(runExpression("n %4", scope)).toBe(3);
+    expect(runExpression("(n) % 2 + %posts.index", scope)).toBe(4);
   });
 });

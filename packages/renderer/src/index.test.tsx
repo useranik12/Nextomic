@@ -414,13 +414,16 @@ describe("query loops", () => {
       node({
         id: "list",
         type: "container",
-        query: newElementQuery(),
+        query: { ...newElementQuery(), name: "posts" },
         children: [
           node({
             id: "t",
             type: "text",
             props: {
-              text: { kind: "mixed", parts: [{ token: "item.title" }, " #", { token: "index" }] }
+              text: {
+                kind: "mixed",
+                parts: [{ token: "%posts.item.title" }, " #", { token: "%posts.index" }]
+              }
             }
           })
         ]
@@ -429,7 +432,7 @@ describe("query loops", () => {
     return root;
   };
 
-  it("repeats the children once per row with item and index", () => {
+  it("repeats the children once per row with %name.item and %name.index", () => {
     const html = renderToStaticMarkup(
       <PageRenderer
         tree={loopTree()}
@@ -457,19 +460,22 @@ describe("query loops", () => {
     expect(placeholder).toContain('<p data-nid="t"> #0</p>');
   });
 
-  it("reaches outer rows as parent in nested loops", () => {
+  it("reaches outer rows by loop name in nested loops", () => {
     const root = loopTree();
     const outer = root.children[0]!;
     const inner = node({
       id: "inner",
       type: "container",
-      query: newElementQuery(),
+      query: { ...newElementQuery(), name: "tags" },
       children: [
         node({
           id: "c",
           type: "text",
           props: {
-            text: { kind: "mixed", parts: [{ token: "parent.item.title" }, "/", { token: "item" }] }
+            text: {
+              kind: "mixed",
+              parts: [{ token: "%posts.item.title" }, "/", { token: "%tags.item" }]
+            }
           }
         })
       ]

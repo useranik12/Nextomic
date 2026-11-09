@@ -1,5 +1,5 @@
 import {
-  elementNodeSchema,
+  pageTreeSchema,
   isLive,
   pageRequiresAuth,
   themeCss,
@@ -74,7 +74,7 @@ export function snapshotOfPage(row: {
 }) {
   const settings = pageSettingsSchema.parse(row.settings);
   if (settings.status === "draft") return null;
-  return { name: row.name, route: row.route, settings, tree: elementNodeSchema.parse(row.tree) };
+  return { name: row.name, route: row.route, settings, tree: pageTreeSchema.parse(row.tree) };
 }
 
 /** What publishing would write for a template row: only published templates go out. */
@@ -92,7 +92,7 @@ export function templateSnapshotOf(row: {
     type: row.type,
     name: row.name,
     settings,
-    tree: elementNodeSchema.parse(row.tree)
+    tree: pageTreeSchema.parse(row.tree)
   };
 }
 
@@ -263,7 +263,7 @@ export async function getPublishedView(
       name: found.name,
       route: found.route,
       settings: pageSettingsSchema.parse(found.settings),
-      tree: elementNodeSchema.parse(found.tree)
+      tree: pageTreeSchema.parse(found.tree)
     },
     settings: settings.data
   };
@@ -296,7 +296,7 @@ export async function getPublishedThemeCss(
   const used = new Set<string>();
   for (const row of rows) {
     if (!row.snapshot) continue;
-    const tree = elementNodeSchema.safeParse(row.snapshot.tree);
+    const tree = pageTreeSchema.safeParse(row.snapshot.tree);
     if (tree.success) for (const name of usedClassNames(tree.data)) used.add(name);
   }
   return { css: themeCss(theme, used), publishedAt: project.publishedAt };

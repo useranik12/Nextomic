@@ -121,6 +121,19 @@ describe("completions", () => {
     expect(labels(" us")).toEqual(expect.arrayContaining(["app.users", "user"]));
   });
 
+  it("suggests query loops by %name, then their item and index", () => {
+    const inLoop = { ...scope, "%posts": { item: { title: "A" }, index: 0 } };
+    const roots = completeExpression(" %po", inLoop);
+    expect(roots.from).toBe(1);
+    const loop = roots.items.find((i) => i.label === "%posts");
+    expect(loop?.group).toBe("Query loops");
+    expect(loop?.insert).toBe("%posts");
+    const fields = completeExpression(" %posts.", inLoop).items.map((i) => i.label);
+    expect(fields).toEqual(expect.arrayContaining(["item", "index"]));
+    const row = completeExpression(" %posts.item.", inLoop).items.map((i) => i.label);
+    expect(row).toContain("title");
+  });
+
   it("suggests nothing inside a quoted string", () => {
     expect(labels(' $now.toFormat("dd MM y')).toEqual([]);
     expect(labels(" `a ${app.co")).toContain("count");

@@ -6,6 +6,7 @@ import {
   activeQuery,
   expressionScope,
   firstExpressionProblem,
+  loopFrame,
   QUERY_SOURCE_LABELS,
   withLoopScope,
   type ElementNode,
@@ -19,9 +20,8 @@ import { RenameField } from "./rename-field";
 import { useEditorStore } from "./store/editor-store";
 import { useEditorDynamicContext } from "./use-editor-context";
 
+// Loop rows are fetched live, so tags are checked against an empty row (any field may be read).
 const NOT_OWN = new Set(["children"]);
-/** Loop values while checking tags (rows are fetched live; any field may be read). */
-const LOOP_SAMPLE: LoopFrame = { item: {}, index: 0 };
 
 interface Row {
   node: ElementNode;
@@ -213,8 +213,8 @@ export function Navigator({
 
   const rows = useMemo(() => (tree ? flatten(tree, collapsed, 0, []) : []), [tree, collapsed]);
 
-  // Elements whose {{tags}} would give nothing on the page: a red dot says so. Loop values (item,
-  // index) exist only inside a query loop's descendants, so a tag outside one is marked too.
+  // Elements whose {{tags}} would give nothing on the page: a red dot says so. Loop values
+  // (%name.item, %name.index) exist only inside that loop's descendants; a tag outside is marked.
   const dynamic = useEditorDynamicContext();
   const problems = useMemo(() => {
     const found = new Map<string, string>();
@@ -223,7 +223,7 @@ export function Navigator({
     const visit = (node: ElementNode, frames: LoopFrame[]) => {
       const problem = firstExpressionProblem(node, withLoopScope(base, frames), NOT_OWN);
       if (problem) found.set(node.id, problem);
-      const inner = activeQuery(node) ? [LOOP_SAMPLE, ...frames] : frames;
+      const inner = activeQuery(node) ? [loopFrame(node, {}, 0), ...frames] : frames;
       node.children.forEach((child) => visit(child, inner));
     };
     visit(tree, []);

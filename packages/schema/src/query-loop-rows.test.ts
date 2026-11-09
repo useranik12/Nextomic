@@ -16,7 +16,7 @@ const node = (
   styles: { breakpoints: {} },
   actions: {},
   children,
-  ...(query ? { query: newElementQuery() } : {})
+  ...(query ? { query: { ...newElementQuery(), name: id } } : {})
 });
 
 // A list of posts, each with a nested comments loop.
@@ -35,7 +35,7 @@ describe("loop instances", () => {
     const rows = { posts: { rows: [{ id: 1 }, { id: 2 }], hasMore: false } };
     const all = loopInstances(tree, rows);
     expect(all.map((i) => i.key)).toEqual(["posts", "posts#0/comments", "posts#1/comments"]);
-    expect(all[2]?.frames).toEqual([{ item: { id: 2 }, index: 1 }]);
+    expect(all[2]?.frames).toEqual([{ name: "posts", item: { id: 2 }, index: 1 }]);
     expect(loopInstances(tree, rows, 2)).toHaveLength(2);
   });
 
@@ -51,7 +51,7 @@ describe("collectLoopRows", () => {
   it("runs outer loops first and fills inner templates with the outer row", async () => {
     const seen: string[] = [];
     const rows = await collectLoopRows(tree, { page: { name: "Blog" } }, async (instance, fill) => {
-      seen.push(`${instance.key}:${fill("{{page.name}}-{{item.id}}")}`);
+      seen.push(`${instance.key}:${fill("{{page.name}}-{{%posts.item.id}}")}`);
       return instance.node.id === "posts"
         ? { rows: [{ id: 7 }, { id: 8 }], hasMore: false }
         : { rows: ["c"], hasMore: false };
@@ -100,7 +100,7 @@ describe("a later page of a loop", () => {
       posts,
       {},
       async (instance, fill) => {
-        seen.push(`${instance.key}:${fill("{{item.id}}")}`);
+        seen.push(`${instance.key}:${fill("{{%posts.item.id}}")}`);
         return { rows: [], hasMore: false };
       },
       200,

@@ -30,6 +30,8 @@ function unknownName(
         Object.hasOwn(NAMESPACES, node.name)
       )
         return null;
+      if (node.name.startsWith("%"))
+        return `No query loop named "${node.name.slice(1)}" around this element.`;
       return GLOBAL_FUNCTIONS.some((f) => f.name === node.name)
         ? null
         : `Unknown name "${node.name}".`;

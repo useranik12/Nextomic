@@ -1,10 +1,10 @@
 "use client";
 
-import { expressionProblem, expressionScope, runExpression, toText } from "@nextomic/schema";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { expressionProblem, runExpression, toText } from "@nextomic/schema";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { placeFloating } from "@/lib/place-floating";
-import { useEditorDynamicContext } from "../use-editor-context";
 import { asExpressionField, type TextField } from "./expression-field";
+import { useExpressionScope } from "./use-expression-scope";
 import { createMirror, fillMirror, removeMirror, syncGeometry, tagAt, type Mirror } from "./mirror";
 
 const HOVER_MS = 500;
@@ -24,8 +24,7 @@ interface Hover {
  * shows what it gives with the current preview values.
  */
 export function ExpressionHighlights() {
-  const context = useEditorDynamicContext();
-  const scope = useMemo(() => (context ? expressionScope(context) : null), [context]);
+  const scope = useExpressionScope();
   const scopeRef = useRef(scope);
   const version = useRef(0);
   const [hover, setHover] = useState<Hover | null>(null);

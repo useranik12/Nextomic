@@ -1,6 +1,7 @@
 import {
   activeQuery,
   CLASS_NAME_PATTERN,
+  loopFrame,
   loopKey,
   URL_ATTRIBUTES,
   createTokenResolver,
@@ -132,7 +133,7 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
   const result = options.loopRows?.[loopKey(scope.path, node.id)];
   const rows = result ? result.rows : options.loopPlaceholder ? [{}] : [];
   return rows.map((item, index) => {
-    const frames = [{ item, index }, ...scope.frames];
+    const frames = [loopFrame(node, item, index), ...scope.frames];
     return copy(
       {
         path: [...scope.path, { id: node.id, index }],

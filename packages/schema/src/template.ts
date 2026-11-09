@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { elementNodeSchema } from "./element";
+import { pageTreeSchema } from "./loop-names";
 import { ITEM_STATUSES, isLive, scheduledAtSchema } from "./status";
 import { evaluateRules, ruleSetSchema, ruleSpecificity, type RuleContext } from "./rules";
 
@@ -81,7 +81,7 @@ export const templateSchema = z.object({
   type: templateTypeSchema,
   name: templateNameSchema,
   settings: templateSettingsSchema,
-  tree: elementNodeSchema,
+  tree: pageTreeSchema,
   version: z.number().int().min(1),
   createdAt: z.date(),
   updatedAt: z.date()
@@ -92,7 +92,7 @@ export const saveTemplateInputSchema = z.object({
   baseVersion: z.number().int().min(1),
   name: templateNameSchema.optional(),
   settings: templateSettingsSchema.optional(),
-  tree: elementNodeSchema.optional()
+  tree: pageTreeSchema.optional()
 });
 export type SaveTemplateInput = z.infer<typeof saveTemplateInputSchema>;
 

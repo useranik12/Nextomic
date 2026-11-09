@@ -1,6 +1,9 @@
 "use client";
 
 import {
+  freeLoopName,
+  LOOP_NAME_BASES,
+  loopNames,
   newElementQuery,
   QUERY_SOURCE_LABELS,
   queryProblems,
@@ -12,14 +15,20 @@ import { ActionButton, SelectField, type SelectOption } from "@/components/ui/co
 import { SwitchRow } from "@/components/ui/switch-row";
 import { useLoopPreview } from "../canvas/use-canvas-loop-rows";
 import { useEditorStore } from "../store/editor-store";
+import { LoopNameField } from "./loop-name-field";
 import { RestQueryForm } from "./rest-query-form";
 import { SupabaseQueryForm } from "./supabase-query-form";
 import { useQuerySources } from "./use-query-sources";
 import type { QuerySourcesSnapshot } from "@/app/(builder)/editor/[id]/query-actions";
 
 // The Query Loop group of a Container or Section (docs/dynamic-data-and-actions.md section 3):
-// the Enable Backend Query toggle, the query type, and the settings of that type. Turning the
-// toggle off keeps the settings, so turning it on again restores them.
+// the Enable Query Loop toggle, the loop name (read as %name inside the loop), the query type, and
+// the settings of that type. Turning the toggle off keeps the settings, so turning it on again
+// restores them.
+
+/** True when a name is still a source's default (`supabaseLoop`, `restLoop2` ...). */
+const isDefaultName = (name: string) =>
+  Object.values(LOOP_NAME_BASES).some((base) => new RegExp(`^${base}\\d*$`).test(name));
 
 function sourceOptions(data: QuerySourcesSnapshot | null): SelectOption[] {
   const supabase = data?.supabase;
@@ -47,6 +56,8 @@ function sourceOptions(data: QuerySourcesSnapshot | null): SelectOption[] {
 export function QueryLoopGroup({ node }: { node: ElementNode }) {
   const projectId = useEditorStore((s) => s.projectId);
   const setQuery = useEditorStore((s) => s.setElementQuery);
+  const renameLoop = useEditorStore((s) => s.renameLoop);
+  const tree = useEditorStore((s) => s.doc?.tree);
   const { data, error, loading, reload } = useQuerySources(projectId);
   const previewError = useLoopPreview((s) => s.errors[node.id]);
   const query = node.query;
@@ -54,8 +65,17 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
 
   const update = (next: ElementQuery) => setQuery(node.id, next);
   const toggle = (on: boolean) => {
-    if (on) update(query ? { ...query, enabled: true } : newElementQuery());
+    if (on)
+      update(query ? { ...query, enabled: true } : newElementQuery(tree ? loopNames(tree) : []));
     else if (query) update({ ...query, enabled: false });
+  };
+
+  const changeSource = (source: QuerySource) => {
+    if (!query) return;
+    update({ ...query, source });
+    // A default name follows the type, so a REST loop is not left named supabaseLoop.
+    if (tree && isDefaultName(query.name))
+      renameLoop(node.id, freeLoopName(LOOP_NAME_BASES[source], loopNames(tree, node.id)));
   };
 
   const problems =
@@ -69,8 +89,8 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
   return (
     <div className="flex flex-col gap-5">
       <SwitchRow
-        label="Enable Backend Query"
-        tip="Run a Supabase or REST query and repeat this element's children once per row. The children bind the row as item and its position as index."
+        label="Enable Query Loop"
+        tip="Run a query and repeat this element's children once per row. Inside the loop, read the row as %name.item and its position as %name.index (name = the Loop name)."
         selected={enabled}
         onChange={toggle}
       />
@@ -93,12 +113,13 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
           aria-disabled={!enabled}
           className={"flex flex-col gap-5 transition-opacity " + (enabled ? "" : "opacity-50")}
         >
+          <LoopNameField node={node} />
           <SelectField
             compact
             label="Query Type"
             options={sourceOptions(data)}
             value={query.source}
-            onValueChange={(source) => update({ ...query, source: source as QuerySource })}
+            onValueChange={(source) => changeSource(source as QuerySource)}
           />
           {query.source === "supabase" ? (
             <SupabaseQueryForm

@@ -1,5 +1,5 @@
 import {
-  elementNodeSchema,
+  pageTreeSchema,
   emptyPageTree,
   templateSettingsSchema,
   defaultTemplateSettings,
@@ -39,7 +39,7 @@ function toStored(row: typeof templates.$inferSelect): StoredTemplate {
     type: row.type,
     name: row.name,
     settings: templateSettingsSchema.parse(row.settings),
-    tree: elementNodeSchema.parse(row.tree),
+    tree: pageTreeSchema.parse(row.tree),
     version: row.version,
     updatedAt: row.updatedAt
   };

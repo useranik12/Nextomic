@@ -13,6 +13,7 @@ import {
   fillWith,
   findNode,
   loopAncestors,
+  loopFrame,
   loopKey,
   parseLoopKey,
   walkElements,
@@ -258,14 +259,14 @@ export async function loopPage(input: {
   for (const [at, step] of parsed.path.entries()) {
     const loop = outer[at];
     const loopQuery = loop ? activeQuery(loop) : null;
-    if (!loopQuery) return null;
+    if (!loop || !loopQuery) return null;
     const single =
       loopQuery.source === "supabase" ? loopQuery.supabase.single : loopQuery.rest.single;
     if (single && step.index > 0) return null;
     // Asking from the row's position makes the row the first one returned.
     const found = await run(loopQuery, frames, step.index);
     if (found.rows.length === 0) return null;
-    frames = [{ item: found.rows[0], index: step.index }, ...frames];
+    frames = [loopFrame(loop, found.rows[0], step.index), ...frames];
   }
 
   const page = await run(query, frames, input.offset);

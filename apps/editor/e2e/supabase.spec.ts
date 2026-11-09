@@ -100,8 +100,13 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
   const group = page.getByRole("button", { name: "Query Loop" });
   await group.click();
   const settings = page.getByRole("region", { name: "Query Loop" });
-  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
   await expect(page.getByLabel("Query Type", { exact: true })).toBeVisible();
+  // A new loop is named after its source; renaming it changes how the children read it.
+  const loopName = settings.getByLabel("Loop name", { exact: true });
+  await expect(loopName).toHaveValue("supabaseLoop");
+  await loopName.fill("posts");
+  await loopName.press("Enter");
 
   const tablePicker = settings.getByRole("combobox", { name: "Table or view" });
   await tablePicker.fill(tableName);
@@ -118,9 +123,9 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
   await expect(page.getByRole("img", { name: "Query loop: Supabase Query" })).toBeVisible();
 
   // Turning the query off keeps its settings.
-  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
   await expect(page.getByRole("img", { name: "Query loop: Supabase Query" })).toHaveCount(0);
-  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
   await expect(tablePicker).toHaveValue(tableName);
 
   // A heading inside the loop repeats once per row the anon key can read (limit 20).
@@ -136,13 +141,14 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
     { timeout: 30_000 }
   );
 
-  // The heading's dynamic data offers the loop's row tags, named after the element.
+  // The heading's dynamic data offers the loop's row tags as %name.
   await page.getByRole("button", { name: "Dynamic value for Text" }).click();
   const tags = page.getByRole("dialog");
-  await expect(tags.getByRole("button", { name: "Container (Supabase Query)" })).toBeVisible();
-  const loopTags = tags.getByRole("region", { name: "Container (Supabase Query)" });
-  await expect(loopTags.getByText("{{item}}", { exact: true })).toBeVisible();
-  await expect(loopTags.getByText("{{index}}", { exact: true })).toBeVisible();
+  const loopGroup = "%posts · Container (Supabase Query)";
+  await expect(tags.getByRole("button", { name: loopGroup })).toBeVisible();
+  const loopTags = tags.getByRole("region", { name: loopGroup });
+  await expect(loopTags.getByText("{{%posts.item}}", { exact: true })).toBeVisible();
+  await expect(loopTags.getByText("{{%posts.index}}", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
 
   // The preview renders the loop on the server with the same rows.
@@ -176,7 +182,7 @@ test("a published query loop loads more rows on scroll through the site endpoint
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Container", exact: true }).click();
   await page.getByRole("button", { name: "Query Loop" }).click();
-  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
   const settings = page.getByRole("region", { name: "Query Loop" });
   await settings.getByRole("combobox", { name: "Table or view" }).fill(tableName);
   await page.getByRole("option", { name: tableName, exact: true }).click();
