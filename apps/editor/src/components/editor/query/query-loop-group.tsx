@@ -2,7 +2,8 @@
 
 import {
   freeLoopName,
-  LOOP_NAME_BASES,
+  isDefaultLoopName,
+  loopNameBase,
   loopNames,
   newElementQuery,
   QUERY_SOURCE_LABELS,
@@ -16,6 +17,7 @@ import { SwitchRow } from "@/components/ui/switch-row";
 import { useLoopPreview } from "../canvas/use-canvas-loop-rows";
 import { useEditorStore } from "../store/editor-store";
 import { LoopNameField } from "./loop-name-field";
+import { LocalQueryForm } from "./local-query-form";
 import { RestPreview } from "./rest-preview";
 import { RestQueryForm } from "./rest-query-form";
 import { SupabaseQueryForm } from "./supabase-query-form";
@@ -26,10 +28,6 @@ import type { QuerySourcesSnapshot } from "@/app/(builder)/editor/[id]/query-act
 // the Enable Query Loop toggle, the loop name (read as %name inside the loop), the query type, and
 // the settings of that type. Turning the toggle off keeps the settings, so turning it on again
 // restores them.
-
-/** True when a name is still a source's default (`supabaseLoop`, `restLoop2` ...). */
-const isDefaultName = (name: string) =>
-  Object.values(LOOP_NAME_BASES).some((base) => new RegExp(`^${base}\\d*$`).test(name));
 
 function sourceOptions(data: QuerySourcesSnapshot | null): SelectOption[] {
   const supabase = data?.supabase;
@@ -50,7 +48,8 @@ function sourceOptions(data: QuerySourcesSnapshot | null): SelectOption[] {
       disabled: !!supabaseHint,
       hint: supabaseHint
     },
-    { value: "rest", label: QUERY_SOURCE_LABELS.rest, disabled: !!restHint, hint: restHint }
+    { value: "rest", label: QUERY_SOURCE_LABELS.rest, disabled: !!restHint, hint: restHint },
+    { value: "local", label: QUERY_SOURCE_LABELS.local }
   ];
 }
 
@@ -71,12 +70,12 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
     else if (query) update({ ...query, enabled: false });
   };
 
-  const changeSource = (source: QuerySource) => {
-    if (!query) return;
-    update({ ...query, source });
-    // A default name follows the type, so a REST loop is not left named supabaseLoop.
-    if (tree && isDefaultName(query.name))
-      renameLoop(node.id, freeLoopName(LOOP_NAME_BASES[source], loopNames(tree, node.id)));
+  /** Applies new settings; a default name follows the type (a REST loop is not supabaseLoop). */
+  const change = (next: ElementQuery) => {
+    update(next);
+    const base = loopNameBase(next);
+    if (tree && query && isDefaultLoopName(query.name) && base !== loopNameBase(query))
+      renameLoop(node.id, freeLoopName(base, loopNames(tree, node.id)));
   };
 
   const problems =
@@ -120,7 +119,7 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
             label="Query Type"
             options={sourceOptions(data)}
             value={query.source}
-            onValueChange={(source) => changeSource(source as QuerySource)}
+            onValueChange={(source) => change({ ...query, source: source as QuerySource })}
           />
           {query.source === "supabase" ? (
             <SupabaseQueryForm
@@ -128,11 +127,17 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
               structure={data.supabase?.structure ?? null}
               onChange={(supabase) => update({ ...query, supabase })}
             />
-          ) : (
+          ) : query.source === "rest" ? (
             <RestQueryForm
               value={query.rest}
               config={data.rest}
               onChange={(rest) => update({ ...query, rest })}
+            />
+          ) : (
+            <LocalQueryForm
+              node={node}
+              value={query.local}
+              onChange={(local) => change({ ...query, local })}
             />
           )}
           {enabled && problems.length === 0 && previewError ? (

@@ -13,8 +13,10 @@ import {
   fillWith,
   findNode,
   loopAncestors,
+  localLoopRows,
   loopFrame,
   loopKey,
+  querySingle,
   parseLoopKey,
   walkElements,
   withLoopScope,
@@ -146,6 +148,8 @@ async function runRest(input: RunQueryInput): Promise<QueryRows> {
 /** The rows of a query loop. Bad filled values become a request error, not a crash. */
 export async function runElementQuery(input: RunQueryInput): Promise<QueryRows> {
   try {
+    if (input.query.source === "local")
+      throw new ConnectorError("invalid_request", "Other Loops run without a connector.");
     return input.query.source === "supabase" ? await runSupabase(input) : await runRest(input);
   } catch (error) {
     if (error instanceof QueryInputError)
@@ -246,23 +250,23 @@ export async function loopPage(input: {
   if (outer.map((n) => n.id).join("/") !== parsed.path.map((s) => s.id).join("/")) return null;
 
   const scope = expressionScope(input.dynamic);
-  const run = (q: ElementQuery, frames: LoopFrame[], offset: number) =>
-    runElementQuery({
-      projectId: input.projectId,
-      query: q,
-      fill: fillWith(withLoopScope(scope, frames)),
-      offset,
-      execute: input.execute
-    });
+  const run = async (q: ElementQuery, frames: LoopFrame[], offset: number) =>
+    q.source === "local"
+      ? localLoopRows(q.local, withLoopScope(scope, frames), offset)
+      : runElementQuery({
+          projectId: input.projectId,
+          query: q,
+          fill: fillWith(withLoopScope(scope, frames)),
+          offset,
+          execute: input.execute
+        });
 
   let frames: LoopFrame[] = [];
   for (const [at, step] of parsed.path.entries()) {
     const loop = outer[at];
     const loopQuery = loop ? activeQuery(loop) : null;
     if (!loop || !loopQuery) return null;
-    const single =
-      loopQuery.source === "supabase" ? loopQuery.supabase.single : loopQuery.rest.single;
-    if (single && step.index > 0) return null;
+    if (querySingle(loopQuery) && step.index > 0) return null;
     // Asking from the row's position makes the row the first one returned.
     const found = await run(loopQuery, frames, step.index);
     if (found.rows.length === 0) return null;
