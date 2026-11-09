@@ -132,6 +132,17 @@ UI: State Management page (tabs App State and Constants, `ui-reference.md` 4.10)
 - Hiding by user or role is cosmetic only. Protect data and pages on the server (see `app-auth.md`).
 - Editor can preview with condition forced on/off.
 
+**Built (2026-11-09, owner decisions):**
+
+- Element tab group "Conditions" (after the element's own settings, before Attributes). Empty state: a short explanation and "Add condition". With conditions: "Enable conditions" switch (off keeps them but always shows the element), "Canvas preview" Auto / Show / Hide, the top group's match (All = AND, Any = OR), condition cards and "Add condition" / "Add group". Groups nest up to 4 levels; at most 50 conditions per element.
+- A condition is Value, Operator, Compare with. Both values are text with `{{ tags }}`. A value that is one lone tag keeps its type (a list stays a list, a number a number); mixed text becomes text. Operators: equals, does not equal, is greater than, is less than (numbers and dates), contains, does not contain (text, or an item of a list), starts with, ends with, is empty, is not empty, is true, is false, is in list, is not in list (comma separated or a list tag), matches pattern. Text compares ignore case.
+- Pattern safety: at most 200 characters, nested repeats like `(a+)+` are refused, the tested text is capped at 10,000 characters, an invalid pattern never matches.
+- Rendering: an element whose conditions fail is not rendered at all. It is missing from the published HTML, the preview and the canvas DOM. Conditions are evaluated with the loop rows around the element (a loop element's own conditions see the outer loops only; its children are checked per row).
+- Canvas: hidden elements are removed from the canvas. The Navigator row of an element that is hidden now shows in yellow with a yellow condition icon (an element with conditions that pass shows a gray icon). Inside a loop an element counts as hidden only when it fails in every row. The Auto / Show / Hide switch is editor state only and never saved.
+- Elements that test `user.` show the note "Hiding by user or role only changes what shows. Protect data and pages on the server."
+- Limit until Phase 5: values that change in the browser (page state, persisted app state) are checked with their starting values when the page renders; live re-checks come with the client state store.
+- Source of truth: `packages/schema/src/condition.ts` (`visibilitySchema`, `conditionHolds`, `groupHolds`, `isVisible`, `operandValue`, `patternProblem`); renderer `passes()` in `packages/renderer/src/render.tsx`; editor `components/editor/conditions/*`.
+
 ## 8. Action flows
 
 Interactions and logic are the core of the builder. Each element, page, and template has an Action tab with triggers; each trigger holds an action flow.

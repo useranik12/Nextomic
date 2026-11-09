@@ -91,6 +91,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
   const hideSelection = useEditorStore((s) => s.hideSelection);
+  const visibilityPreview = useEditorStore((s) => s.visibilityPreview);
+  const setConditionsFailed = useEditorStore((s) => s.setConditionsFailed);
   const stylePreview = useEditorStore((s) => s.stylePreview);
   const withLayout = useLayoutComposer();
   const activeClass = useEditorStore((s) => s.activeClass);
@@ -247,6 +249,9 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
           });
           break;
         }
+        case "conditions-failed":
+          setConditionsFailed(message.ids);
+          break;
         case "anim-state":
           reportAnimationState({
             time: message.time,
@@ -262,7 +267,16 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [select, closeContextMenu, openContextMenu, viewportRef, panBy, panMove, wheelZoom]);
+  }, [
+    select,
+    closeContextMenu,
+    openContextMenu,
+    viewportRef,
+    panBy,
+    panMove,
+    wheelZoom,
+    setConditionsFailed
+  ]);
 
   const send = useCallback((message: HostMessage) => {
     iframeRef.current?.contentWindow?.postMessage(message, "*");
@@ -321,7 +335,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       selectedId,
       hideSelection,
       dynamic,
-      loopRows
+      loopRows,
+      visibilityPreview
     });
   }, [
     ready,
@@ -340,6 +355,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     mode,
     selectedId,
     hideSelection,
+    visibilityPreview,
     stylePreview,
     activeClass,
     activeState,

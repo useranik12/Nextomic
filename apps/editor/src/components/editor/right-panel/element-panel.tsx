@@ -5,6 +5,7 @@ import {
   canHaveQuery,
   dynamicTextOf,
   findNode,
+  hasConditions,
   parseDynamicText,
   type ElementNode,
   tagText
@@ -12,6 +13,7 @@ import {
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
+import { ConditionsGroup } from "../conditions/conditions-group";
 import { QueryLoopGroup } from "../query/query-loop-group";
 import { RenameField } from "../rename-field";
 import { useEditorStore } from "../store/editor-store";
@@ -273,6 +275,18 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 changed={node.query?.enabled ?? false}
               >
                 <QueryLoopGroup node={node} />
+              </AccordionSection>
+            ) : null}
+            {!q || "conditions visibility".includes(q) ? (
+              <AccordionSection
+                id="conditions"
+                title="Conditions"
+                icon={<Icon name="ph:git-fork" width={18} height={18} />}
+                open={q ? true : elementSection === "conditions"}
+                onToggle={toggleElementSection}
+                changed={hasConditions(node.visibility)}
+              >
+                <ConditionsGroup node={node} />
               </AccordionSection>
             ) : null}
             {!q || "attributes".includes(q) ? (

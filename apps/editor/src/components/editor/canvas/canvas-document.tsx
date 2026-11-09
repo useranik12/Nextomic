@@ -30,6 +30,23 @@ html[data-nxt-picking],html[data-nxt-picking] *{cursor:crosshair!important}
 #nxt-drop[data-zone="inside"]{background:rgba(0,111,238,.12);outline:2px solid #006fee;outline-offset:-2px}
 `;
 
+/**
+ * Sends the IDs whose conditions failed everywhere they render (inside a loop, in every row) once
+ * the render is committed.
+ */
+function ReportFailed({
+  failed,
+  held
+}: {
+  failed: ReadonlySet<string>;
+  held: ReadonlySet<string>;
+}) {
+  useEffect(() => {
+    postToHost({ type: "conditions-failed", ids: [...failed].filter((id) => !held.has(id)) });
+  });
+  return null;
+}
+
 function postToHost(message: CanvasMessage): void {
   window.parent.postMessage(message, "*");
 }
@@ -314,6 +331,9 @@ export function CanvasDocument() {
     el?.setAttribute("data-nxt-selected", "");
   });
 
+  // Elements whose conditions fail in this render; reported after commit for the Navigator.
+  const failed = new Set<string>();
+  const held = new Set<string>();
   if (!payload) return null;
   return (
     <>
@@ -330,7 +350,11 @@ export function CanvasDocument() {
         dynamic={payload.dynamic}
         loopRows={payload.loopRows}
         loopPlaceholder
+        visibilityPreview={payload.visibilityPreview}
+        conditionsFailed={failed}
+        conditionsHeld={held}
       />
+      <ReportFailed failed={failed} held={held} />
       <div id="nxt-drop" ref={markerRef} />
       <div id="nxt-pick" ref={pickRef} />
     </>

@@ -1145,3 +1145,41 @@ test("transforms: a tag is transformed in the bolt modal and reopened from the f
   await expect(text).toHaveValue('{{ $ifEmpty(page.name?.truncate(2), "Untitled") }}');
   await expect(canvas.getByRole("heading", { name: "Ho…" })).toBeVisible();
 });
+
+test("conditions: a failing element leaves the canvas, turns yellow, and previews with Show", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByLabel("Text", { exact: true }).fill("Members only");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  const heading = canvas.getByRole("heading", { name: "Members only" });
+  await expect(heading).toBeVisible();
+
+  await page.getByRole("button", { name: "Conditions", exact: true }).click();
+  await page.getByRole("button", { name: "Add condition" }).click();
+  await page.getByLabel("Value", { exact: true }).fill("{{ page.name }}");
+  await page.getByLabel("Compare with", { exact: true }).fill("Blog");
+  // Gone from the canvas DOM, and the Navigator row is marked.
+  await expect(heading).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "Has conditions: hidden now" })).toBeVisible();
+  await expect(page.getByText("so the element is hidden")).toBeVisible();
+
+  // The preview switch shows it without changing the conditions.
+  await page.getByRole("radio", { name: "Show" }).click();
+  await expect(heading).toBeVisible();
+  await page.getByRole("radio", { name: "Auto" }).click();
+  await expect(heading).toHaveCount(0);
+
+  // A matching compare value shows it again (text compares ignore case).
+  await page.getByLabel("Compare with", { exact: true }).fill("home");
+  await expect(heading).toBeVisible();
+  await expect(page.getByRole("img", { name: "Has conditions", exact: true })).toBeVisible();
+
+  // Switching the conditions off always shows the element.
+  await page.getByLabel("Compare with", { exact: true }).fill("Blog");
+  await expect(heading).toHaveCount(0);
+  await page.getByRole("switch", { name: "Enable conditions" }).click({ force: true });
+  await expect(heading).toBeVisible();
+});

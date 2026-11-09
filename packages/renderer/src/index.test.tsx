@@ -541,3 +541,84 @@ describe("query loops", () => {
     expect(html).toBe('<p data-nid="t" data-nx-row="2">C #2</p>');
   });
 });
+
+describe("conditional visibility", () => {
+  const dynamic = buildDynamicContext({
+    page: { name: "Shop", route: "/", settings: defaultPageSettings() },
+    mode: "live"
+  });
+  const when = (left: string, op: string, right = "") => ({
+    enabled: true,
+    group: { id: "g", match: "all" as const, items: [{ id: "c", left, op: op as "equals", right }] }
+  });
+  const tree = () => {
+    const root = emptyPageTree();
+    root.children = [
+      node({
+        id: "yes",
+        type: "text",
+        props: { text: "Shown" },
+        visibility: when("{{ page.name }}", "equals", "shop")
+      }),
+      node({
+        id: "no",
+        type: "text",
+        props: { text: "Secret" },
+        visibility: when("{{ page.name }}", "equals", "Blog")
+      }),
+      node({
+        id: "list",
+        type: "container",
+        query: { ...newElementQuery(), name: "posts" },
+        children: [
+          node({
+            id: "row",
+            type: "text",
+            props: { text: { kind: "mixed", parts: [{ token: "%posts.item.t" }] } },
+            visibility: when("{{ %posts.item.n }}", "greaterThan", "1")
+          })
+        ]
+      })
+    ];
+    return root;
+  };
+
+  it("leaves failing elements out of the HTML, per loop row too", () => {
+    const failed = new Set<string>();
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree()}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        conditionsFailed={failed}
+        loopRows={{
+          list: {
+            rows: [
+              { t: "A", n: 1 },
+              { t: "B", n: 2 }
+            ],
+            hasMore: false
+          }
+        }}
+      />
+    );
+    expect(html).toContain("Shown");
+    expect(html).not.toContain("Secret");
+    expect(html).not.toContain(">A<");
+    expect(html).toContain(">B<");
+    expect([...failed].sort()).toEqual(["no", "row"]);
+  });
+
+  it("follows the editor's Show / Hide preview switch", () => {
+    const html = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree()}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        visibilityPreview={{ no: "show", yes: "hide" }}
+      />
+    );
+    expect(html).toContain("Secret");
+    expect(html).not.toContain("Shown");
+  });
+});

@@ -6,6 +6,7 @@ import {
   activeQuery,
   expressionScope,
   firstExpressionProblem,
+  hasConditions,
   loopFrame,
   QUERY_SOURCE_LABELS,
   rawTokenProblem,
@@ -48,6 +49,7 @@ const NavigatorRow = memo(function NavigatorRow({
   selected,
   collapsed,
   problem,
+  conditionHidden,
   onToggle
 }: {
   row: Row;
@@ -55,6 +57,8 @@ const NavigatorRow = memo(function NavigatorRow({
   collapsed: boolean;
   /** Why a dynamic tag of this element does not work, if one does not. */
   problem: string | null;
+  /** Left out of the canvas by its conditions (or the Hide preview): the row shows in yellow. */
+  conditionHidden: boolean;
   onToggle: (id: string) => void;
 }) {
   const { node, depth, hasChildren } = row;
@@ -131,7 +135,22 @@ const NavigatorRow = memo(function NavigatorRow({
           {...draggable.listeners}
         >
           <ElementIcon type={node.type} size={16} />
-          <span className="truncate">{label}</span>
+          <span
+            className={"truncate" + (conditionHidden ? " text-warning" : "")}
+            title={conditionHidden ? "Hidden by its conditions" : undefined}
+          >
+            {label}
+          </span>
+          {hasConditions(node.visibility) ? (
+            <span
+              role="img"
+              aria-label={conditionHidden ? "Has conditions: hidden now" : "Has conditions"}
+              title={conditionHidden ? "Hidden by its conditions" : "Shown by its conditions"}
+              className={"shrink-0 " + (conditionHidden ? "text-warning" : "text-default-500")}
+            >
+              <Icon name="ph:git-fork" width={12} height={12} />
+            </span>
+          ) : null}
           {problem ? (
             <span
               role="img"
@@ -213,6 +232,11 @@ export function Navigator({
   const allCollapsed = foldable.length > 0 && foldable.every((id) => collapsed.has(id));
 
   const rows = useMemo(() => (tree ? flatten(tree, collapsed, 0, []) : []), [tree, collapsed]);
+  const conditionsFailed = useEditorStore((s) => s.conditionsFailed);
+  const visibilityPreview = useEditorStore((s) => s.visibilityPreview);
+  const conditionHidden = (id: string) =>
+    visibilityPreview[id] === "hide" ||
+    (conditionsFailed.has(id) && visibilityPreview[id] !== "show");
 
   // Elements whose {{tags}} would give nothing on the page: a red dot says so. Loop values
   // (%name.item, %name.index) exist only inside that loop's descendants; a tag outside is marked.
@@ -297,6 +321,7 @@ export function Navigator({
             selected={row.node.id === selectedId}
             collapsed={collapsed.has(row.node.id)}
             problem={problems.get(row.node.id) ?? null}
+            conditionHidden={conditionHidden(row.node.id)}
             onToggle={toggle}
           />
         ))}
