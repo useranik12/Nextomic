@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseJsonPath } from "./json-path";
 import type { RestConfig } from "./rest";
 import type { SupabaseColumn, SupabaseStructure, SupabaseTable } from "./supabase";
 
@@ -12,12 +13,40 @@ export const QUERY_LOOP_TYPES: ReadonlySet<string> = new Set(["container", "sect
 
 export const canHaveQuery = (type: string) => QUERY_LOOP_TYPES.has(type);
 
-export const QUERY_SOURCES = ["supabase", "rest"] as const;
+export const QUERY_SOURCES = ["supabase", "rest", "local"] as const;
 export type QuerySource = (typeof QUERY_SOURCES)[number];
 
 export const QUERY_SOURCE_LABELS: Record<QuerySource, string> = {
   supabase: "Supabase Query",
-  rest: "REST API"
+  rest: "REST API",
+  local: "Other Loops"
+};
+
+/**
+ * What an "Other Loops" loop repeats over (owner decision 2026-11-09): a page parameter, a page
+ * state variable, an app state variable, a constant, a list field of an enclosing loop's row,
+ * static JSON, or any expression that gives a list. Values are read on the server or canvas from
+ * the page's own data; nothing comes from a visitor.
+ */
+export const LOCAL_LOOP_KINDS = [
+  "param",
+  "state",
+  "app",
+  "const",
+  "parent",
+  "json",
+  "expression"
+] as const;
+export type LocalLoopKind = (typeof LOCAL_LOOP_KINDS)[number];
+
+export const LOCAL_LOOP_KIND_LABELS: Record<LocalLoopKind, string> = {
+  param: "Page Parameters",
+  state: "Page State",
+  app: "App State",
+  const: "Constants",
+  parent: "Parent Item",
+  json: "Static JSON",
+  expression: "Expression"
 };
 
 /** PostgREST filter operators a query loop offers. */
@@ -129,13 +158,63 @@ export function loopNameProblem(name: string, taken: readonly string[] = []): st
   return null;
 }
 
-/** The default loop name for each source, before a number is added to keep it unique. */
-export const LOOP_NAME_BASES: Record<QuerySource, string> = {
-  supabase: "supabaseLoop",
-  rest: "restLoop"
+const LOCAL_NAME_BASES: Record<LocalLoopKind, string> = {
+  param: "parameterLoop",
+  state: "pageStateLoop",
+  app: "appStateLoop",
+  const: "constantLoop",
+  parent: "parentLoop",
+  json: "jsonLoop",
+  expression: "expressionLoop"
 };
 
-/** An element's backend query. Both sources keep their settings while the other is chosen. */
+/** Every default loop name, before a number is added to keep it unique. */
+export const LOOP_NAME_BASES: readonly string[] = [
+  "supabaseLoop",
+  "restLoop",
+  ...Object.values(LOCAL_NAME_BASES)
+];
+
+/** The default name for a loop with these settings (`supabaseLoop`, `appStateLoop` ...). */
+export function loopNameBase(query: { source: QuerySource; local?: { kind: LocalLoopKind } }) {
+  if (query.source === "local") return LOCAL_NAME_BASES[query.local?.kind ?? "app"];
+  return query.source === "supabase" ? "supabaseLoop" : "restLoop";
+}
+
+/** True when a name is still a default (`supabaseLoop`, `restLoop2` ...), so it may follow the type. */
+export const isDefaultLoopName = (name: string) =>
+  LOOP_NAME_BASES.some((base) => name === base || new RegExp(`^${base}\\d+$`).test(name));
+
+/** Whether a query gives one row instead of a list. */
+export function querySingle(query: ElementQuery): boolean {
+  return query.source === "supabase"
+    ? query.supabase.single
+    : query.source === "rest"
+      ? query.rest.single
+      : query.local.single;
+}
+
+export const localLoopQuerySchema = z.object({
+  kind: z.enum(LOCAL_LOOP_KINDS).default("app"),
+  /** The variable's name, for page parameters, page state, app state and constants. */
+  variable: z.string().max(64).default(""),
+  /** The enclosing loop whose row holds the list (Parent Item). */
+  parentLoop: z.string().max(64).default(""),
+  /** Where the list is in that row: `tags`, `images[0].sizes` (a JSON path after `$.`). */
+  field: z.string().max(500).default(""),
+  /** A JSON array written in the panel (Static JSON). */
+  json: z.string().max(100_000).default(""),
+  /** One {{ expression }} that gives a list (Expression). */
+  expression: template,
+  single: z.boolean().default(false),
+  limit,
+  /** Rows to skip from the start of the list. */
+  offset: z.number().int().min(0).max(100_000).default(0)
+});
+
+export type LocalLoopQuery = z.infer<typeof localLoopQuerySchema>;
+
+/** An element's query. Each source keeps its settings while another is chosen. */
 export const elementQuerySchema = z.object({
   /** How expressions inside the loop read it: `%name.item`, `%name.index`. Unique per page. */
   name: z
@@ -146,7 +225,8 @@ export const elementQuerySchema = z.object({
   enabled: z.boolean().default(false),
   source: z.enum(QUERY_SOURCES).default("supabase"),
   supabase: supabaseLoopQuerySchema.default({}),
-  rest: restLoopQuerySchema.default({})
+  rest: restLoopQuerySchema.default({}),
+  local: localLoopQuerySchema.default({})
 });
 
 export type QueryFilter = z.infer<typeof queryFilterSchema>;
@@ -157,7 +237,7 @@ export type ElementQuery = z.infer<typeof elementQuerySchema>;
 
 /** A new enabled query named after its source, with a number when `taken` already has the name. */
 export const newElementQuery = (taken: readonly string[] = []): ElementQuery =>
-  elementQuerySchema.parse({ enabled: true, name: freeLoopName(LOOP_NAME_BASES.supabase, taken) });
+  elementQuerySchema.parse({ enabled: true, name: freeLoopName("supabaseLoop", taken) });
 
 /** `base`, or `base2`, `base3` ... whichever is not taken. */
 export function freeLoopName(base: string, taken: readonly string[]): string {
@@ -171,7 +251,9 @@ export const activeQuery = (node: { type: string; query?: ElementQuery | undefin
 
 /** How the query is named in the builder: the element's name and the query type. */
 export const queryLabel = (elementName: string, query: ElementQuery) =>
-  `${elementName} (${QUERY_SOURCE_LABELS[query.source]})`;
+  `${elementName} (${QUERY_SOURCE_LABELS[query.source]}${
+    query.source === "local" ? `: ${LOCAL_LOOP_KIND_LABELS[query.local.kind]}` : ""
+  })`;
 
 /** A table or view of the saved Supabase structure, by schema and name. */
 export function findTable(
@@ -216,6 +298,36 @@ function restProblems(query: RestLoopQuery, config: RestConfig | null): string[]
   return problems;
 }
 
+function localProblems(query: LocalLoopQuery): string[] {
+  switch (query.kind) {
+    case "param":
+    case "state":
+    case "app":
+    case "const":
+      return query.variable ? [] : ["Choose a variable."];
+    case "parent": {
+      if (!query.parentLoop) return ["Choose the loop whose row holds the list."];
+      if (!query.field.trim()) return ["Write the field that holds the list, like tags."];
+      const parsed = parseJsonPath(`$.${query.field.trim()}`);
+      return "error" in parsed ? [`The field is not a valid path: ${parsed.error}`] : [];
+    }
+    case "json":
+      return staticJsonProblem(query.json);
+    case "expression":
+      return query.expression.trim() ? [] : ["Write an expression that gives a list."];
+  }
+}
+
+/** Why a Static JSON value cannot be looped over (empty when it is a JSON array). */
+export function staticJsonProblem(text: string): string[] {
+  if (!text.trim()) return ["Write a JSON array, like [1, 2, 3]."];
+  try {
+    return Array.isArray(JSON.parse(text)) ? [] : ["The JSON must be an array: [ ... ]."];
+  } catch (error) {
+    return [`The JSON is not valid: ${error instanceof Error ? error.message : "parse error"}.`];
+  }
+}
+
 /** What stops a query from running, in display order. Empty when it can run. */
 export function queryProblems(query: ElementQuery, sources: QuerySources): string[] {
   if (!query.enabled) return [];
@@ -223,6 +335,8 @@ export function queryProblems(query: ElementQuery, sources: QuerySources): strin
   const problems =
     query.source === "supabase"
       ? supabaseProblems(query.supabase, sources.supabase)
-      : restProblems(query.rest, sources.rest);
+      : query.source === "rest"
+        ? restProblems(query.rest, sources.rest)
+        : localProblems(query.local);
   return naming ? [naming, ...problems] : problems;
 }

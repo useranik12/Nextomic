@@ -1066,3 +1066,42 @@ test("App Settings: home page and app authentication", async ({ page }) => {
   await expect(page.getByRole("switch", { name: "Use authentication" })).toBeChecked();
   await expect(page.getByLabel("New pages require authentication")).toBeChecked();
 });
+
+test("an Other Loops query loop repeats static JSON on the canvas and the preview", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Container", exact: true }).click();
+  await page.getByRole("button", { name: "Query Loop" }).click();
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
+  const settings = page.getByRole("region", { name: "Query Loop" });
+  await settings.getByLabel("Query Type", { exact: true }).click();
+  await page.getByRole("option", { name: "Other Loops" }).click();
+  // A default name follows the type and the source.
+  const loopName = settings.getByLabel("Loop name", { exact: true });
+  await expect(loopName).toHaveValue("appStateLoop");
+  await expect(settings.getByText("Choose a variable.")).toBeVisible();
+  await settings.getByLabel("Source", { exact: true }).click();
+  await page.getByRole("option", { name: "Static JSON" }).click();
+  await expect(loopName).toHaveValue("jsonLoop");
+  await settings
+    .getByRole("textbox", { name: "Static JSON" })
+    .fill('[{"t":"A"},{"t":"B"},{"t":"C"}]');
+  await expect(settings.getByText(/must be an array|not valid/)).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByLabel("Text", { exact: true }).fill("Item {{ %jsonLoop.item.t }}");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading")).toHaveText(["Item A", "Item B", "Item C"]);
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 15_000
+  });
+  const projectId = /\/editor\/([^/?#]+)/.exec(page.url())?.[1] ?? "";
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  await expect(preview.getByRole("heading")).toHaveText(["Item A", "Item B", "Item C"]);
+});

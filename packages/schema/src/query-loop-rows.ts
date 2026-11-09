@@ -1,5 +1,6 @@
 import type { ElementNode } from "./element";
 import { activeQuery, type ElementQuery } from "./query";
+import { localLoopRows } from "./query-local";
 import { fillWith, type QueryRows } from "./query-run";
 import { loopFrame, withLoopScope, type LoopFrame } from "./query-scope";
 
@@ -116,9 +117,13 @@ export async function collectLoopRows(
     const pending = loopInstances(root, rows, max, start).filter((i) => !(i.key in rows));
     if (pending.length === 0) break;
     const results = await Promise.all(
-      pending.map((instance) =>
-        run(instance, fillWith(withLoopScope(scope, instance.frames))).catch(() => NO_ROWS)
-      )
+      pending.map((instance) => {
+        const inner = withLoopScope(scope, instance.frames);
+        // Other Loops read the page's own values: no request, so no runner.
+        if (instance.query.source === "local")
+          return Promise.resolve(localLoopRows(instance.query.local, inner));
+        return run(instance, fillWith(inner)).catch(() => NO_ROWS);
+      })
     );
     pending.forEach((instance, at) => {
       rows[instance.key] = results[at] ?? NO_ROWS;

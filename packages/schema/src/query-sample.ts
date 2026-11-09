@@ -42,12 +42,50 @@ function dataTypeSample(
   return Object.fromEntries(type.fields.map((f) => [f.name, blank(f, registry, depth)]));
 }
 
+/** Variables an Other Loops loop can read, by source, for shaping its rows. */
+export type LoopVariables = Partial<
+  Record<"param" | "state" | "app" | "const", readonly (Typed & { name: string })[]>
+>;
+
+/** The first item of a JSON array, with its fields as typed blanks. */
+function jsonSample(text: string): Record<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(text);
+    const first: unknown = Array.isArray(parsed) ? parsed[0] : undefined;
+    if (first === null || typeof first !== "object" || Array.isArray(first)) return {};
+    return Object.fromEntries(
+      Object.entries(first).map(([key, v]) => [
+        key,
+        Array.isArray(v)
+          ? []
+          : typeof v === "object" && v !== null
+            ? {}
+            : typeof v === "number"
+              ? 0
+              : typeof v === "boolean"
+                ? false
+                : ""
+      ])
+    );
+  } catch {
+    return {};
+  }
+}
+
 /** A blank row with the fields a loop's rows have; `{}` when the shape is not known. */
 export function loopRowSample(
   query: ElementQuery,
   sources: QuerySources,
-  registry?: TypeRegistry
+  registry?: TypeRegistry,
+  variables: LoopVariables = {}
 ): Record<string, unknown> {
+  if (query.source === "local") {
+    const { kind } = query.local;
+    if (kind === "json") return jsonSample(query.local.json);
+    if (kind === "parent" || kind === "expression") return {};
+    const found = variables[kind]?.find((v) => v.name === query.local.variable);
+    return found?.type === "dataType" ? dataTypeSample(found.ref ?? "", registry, 0) : {};
+  }
   if (query.source === "supabase") {
     const table = findTable(sources.supabase, query.supabase.schema, query.supabase.table);
     return Object.fromEntries((table?.columns ?? []).map((c) => [c.name, blank(c, registry, 0)]));

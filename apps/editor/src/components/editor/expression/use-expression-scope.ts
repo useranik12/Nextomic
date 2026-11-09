@@ -28,6 +28,9 @@ export function useExpressionScope(): Record<string, unknown> | null {
   const sources = useQuerySourcesStore((s) => s.data);
   const loadSources = useQuerySourcesStore((s) => s.load);
   const registry = useTypeRegistry();
+  const appState = useEditorStore((s) => s.project.appState);
+  const constants = useEditorStore((s) => s.project.constants);
+  const pageState = useEditorStore((s) => s.doc?.settings.state);
   const loops = useMemo(
     () => (tree && selectedId ? loopAncestors(tree, selectedId) : []),
     [tree, selectedId]
@@ -45,8 +48,9 @@ export function useExpressionScope(): Record<string, unknown> | null {
     };
     const frames = loops.map((node) => {
       const query = activeQuery(node);
-      return loopFrame(node, query ? loopRowSample(query, known, registry) : {}, 0);
+      const variables = { app: appState, const: constants, state: pageState ?? [] };
+      return loopFrame(node, query ? loopRowSample(query, known, registry, variables) : {}, 0);
     });
     return withLoopScope(expressionScope(context), frames);
-  }, [context, loops, sources, registry]);
+  }, [context, loops, sources, registry, appState, constants, pageState]);
 }

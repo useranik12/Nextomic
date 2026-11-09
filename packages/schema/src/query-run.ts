@@ -171,14 +171,16 @@ export function restRows(
 
 /** Every template a query fills, once each: what a client resolves before asking the server. */
 export function queryTemplates(query: {
-  source: "supabase" | "rest";
+  source: "supabase" | "rest" | "local";
   supabase: SupabaseLoopQuery;
   rest: RestLoopQuery;
 }): string[] {
   const all =
     query.source === "supabase"
       ? query.supabase.filters.map((f) => f.value)
-      : Object.values(query.rest.values);
+      : query.source === "rest"
+        ? Object.values(query.rest.values)
+        : [];
   return [...new Set(all)];
 }
 

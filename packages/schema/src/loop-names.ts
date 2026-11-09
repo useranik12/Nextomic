@@ -1,7 +1,7 @@
 import { elementNodeSchema, type ElementNode } from "./element";
 import { lexExpression, type ExpressionToken } from "./expression/parse";
 import { mapExpressions } from "./state-usage";
-import { canHaveQuery, freeLoopName, LOOP_NAME_BASES } from "./query";
+import { canHaveQuery, freeLoopName, loopNameBase } from "./query";
 
 // Loop names (owner decision 2026-11-09): every query loop has a name, unique on its page, and
 // expressions read it as `%name.item` / `%name.index`. Pages saved before names used `item`,
@@ -122,7 +122,7 @@ export function upgradeLoopTree(root: ElementNode): ElementNode {
     const upgraded = mapExpressions(own, (expr) => upgradeLoopExpression(expr, names)).value;
     let query = upgraded.query;
     if (query && unnamed(node)) {
-      const name = freeLoopName(LOOP_NAME_BASES[query.source], taken);
+      const name = freeLoopName(loopNameBase(query), taken);
       taken.push(name);
       query = { ...query, name };
     }
