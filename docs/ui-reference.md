@@ -300,6 +300,7 @@ Built (Phase 4a fixes): `components/editor/data-types/*`; stored in project sett
 
 - After `%name.item.` the panel lists the loop row's fields under their own heading, "Loop row fields", shaped from the saved structure (Supabase columns, or the data type a REST call's list is read as; `loopRowSample`).
 - Dynamic data modal (bolt): each tag row shows its name on top (white, larger) and the tag below (small, gray, `{{ tag }}`); the description shows only as the hover tooltip.
+- Transform view of the bolt modal (2026-11-09, owner choice A; not in the Figma frames): each tag row has a wand button on its right that opens the Transform view (back arrow, tag name and tag, "Starts as <kind>" chip, numbered step cards with settings and move up / move down / remove, an "Add a transform" list filtered by the current kind, "Fallback when empty", a live Preview with the compiled tag, Cancel and Insert). Clicking a tag row still inserts it at once. With the caret inside a tag in a field, the bolt opens straight into the Transform view of that tag and the button reads "Update tag".
 
 Every field that has the dynamic bolt accepts n8n-style expressions inside `{{ }}`; text outside the braces stays text. While the caret is inside `{{ }}`, a panel opens beside the field, on the left or right, whichever side has more room; it is clamped to the screen and falls back to below the field only when neither side fits (`placeBeside` in `lib/place-floating.ts`):
 

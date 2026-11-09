@@ -113,6 +113,17 @@ UI: State Management page (tabs App State and Constants, `ui-reference.md` 4.10)
 - **Date/time formatting:** any timestamp/timestamptz or static date can be formatted with built-in presets (e.g. date, time, date-time, relative "2 hours ago", ISO, custom pattern) plus timezone and locale options. Invalid dates fall back to a configurable placeholder.
 - Transforms are typed: the UI only offers transforms valid for the input type. Failed conversions use the configured fallback, never crash the page.
 
+**Built (2026-11-09, owner decision: UI option A, bolt modal):**
+
+- A chain is not stored on its own. It compiles to the expression methods the evaluator already runs and is written into the field as a normal tag, so page, server and canvas evaluate it unchanged and it stays editable by hand. Example: `{{ $ifEmpty(app.price?.round(2)?.format("en-US", { style: "currency", currency: "USD" }), "-") }}`. Every step uses `?.`, so an empty value passes through to the fallback instead of failing.
+- Source of truth: `packages/schema/src/expression/transforms.ts` (`TRANSFORMS` catalog, `transformsFor`, `chainKinds`, `compileTransformChain`, `parseTransformChain`).
+- Steps: Convert (To number, To whole number, To true / false, To text: lists and objects become JSON text, Parse JSON, To date with an optional read format); Text (Uppercase, Lowercase, Capitalize every word or first letter, Trim spaces, Truncate with ending, Replace first or every match); List (Length, Join items, First item, Last item); Number (Round with decimals, Round down, Round up, Format number: number, currency or percent, fixed decimals, language); Date (Format date).
+- Format date presets: Date, Time, Date and time, Relative, ISO, Custom pattern (Luxon tokens), plus time zone (IANA name; an unknown zone shows an error) and language. Text input (ISO or SQL timestamps) is read as a date first; text that is no date gives empty, which shows the fallback.
+- "Fallback when empty" wraps the chain in `$ifEmpty(…, "text")`. It covers empty values, missing values and dates that cannot be read.
+- Typing: the starting kind comes from the tag's preview value (empty or unknown = any value, which offers every step). Each step's output kind decides what the Add list offers next; a step whose input no longer fits after reordering shows a warning.
+- Engine additions for transforms: `toInteger()` on text and numbers, `toTimeString(locale?)` on dates, an optional `locale` on `toFormat`, and `setZone` refusing unknown zones.
+- Limit: a tag reopens in the Transform view only when it is a plain path followed by known steps; anything hand-written is edited in the field.
+
 ## 7. Conditional visibility (Element tab, every element)
 
 - Condition groups with AND/OR, nesting allowed.
