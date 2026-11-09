@@ -9,6 +9,8 @@ import {
   hasConditions,
   isAllowedAttribute,
   isVisible,
+  walkElements,
+  type ElementFacts,
   withLoopScope,
   type DynamicContext,
   themeBootScript,
@@ -84,6 +86,11 @@ export interface RenderOptions {
   conditionsFailed?: Set<string>;
   /** Editor canvas: IDs whose conditions hold somewhere (a loop row may differ from another). */
   conditionsHeld?: Set<string>;
+  /**
+   * The whole page, for conditions that check another element's class, ID or attribute.
+   * PageRenderer sets it; a partial render (loop copies) passes the page tree.
+   */
+  tree?: ElementNode;
 }
 
 const BOOLEAN_ATTRIBUTES = new Set([
@@ -183,6 +190,31 @@ function loopMarkers(
   return marks;
 }
 
+const nodeIndexes = new WeakMap<ElementNode, Map<string, ElementNode>>();
+
+/** Every element of a tree by node id (built once per tree). */
+function nodeIndex(tree: ElementNode): Map<string, ElementNode> {
+  const known = nodeIndexes.get(tree);
+  if (known) return known;
+  const index = new Map<string, ElementNode>();
+  walkElements(tree, (node) => index.set(node.id, node));
+  nodeIndexes.set(tree, index);
+  return index;
+}
+
+/** What an element outputs, read from the attributes it renders with (so they always agree). */
+function factsOf(node: ElementNode, resolveToken: TokenResolver | undefined): ElementFacts {
+  const attributes: Record<string, string> = {};
+  let classes: string[] = [];
+  let id: string | undefined;
+  for (const [name, value] of Object.entries(elementAttrs(node, resolveToken))) {
+    if (name === "className") classes = value.split(" ").filter(Boolean);
+    else if (name === "id") id = value;
+    else if (name !== "data-nid") attributes[name.toLowerCase()] = value;
+  }
+  return { classes, id, attributes };
+}
+
 /**
  * Whether the element renders: conditions are evaluated with the loop rows around it (a loop
  * element's own conditions see the outer loops only). A failing element renders nothing, so its
@@ -191,9 +223,14 @@ function loopMarkers(
 function passes(node: ElementNode, options: RenderOptions, scope: RenderScope): boolean {
   const forced = options.visibilityPreview?.[node.id];
   if (!hasConditions(node.visibility) || !options.dynamic) return forced !== "hide";
+  const index = options.tree ? nodeIndex(options.tree) : undefined;
   const holds = isVisible(
     node.visibility,
-    withLoopScope(expressionScope(options.dynamic), scope.frames)
+    withLoopScope(expressionScope(options.dynamic), scope.frames),
+    (target) => {
+      const checked = target === undefined ? node : index?.get(target);
+      return checked ? factsOf(checked, scope.resolveToken) : undefined;
+    }
   );
   (holds ? options.conditionsHeld : options.conditionsFailed)?.add(node.id);
   return forced ? forced === "show" : holds;
@@ -242,6 +279,7 @@ export function renderLoopCopies(
 export function PageRenderer({ tree, ...given }: RenderOptions & { tree: ElementNode }) {
   const options: RenderOptions = {
     ...given,
+    tree,
     resolveToken:
       given.resolveToken ?? (given.dynamic ? createTokenResolver(given.dynamic) : undefined)
   };

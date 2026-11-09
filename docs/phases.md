@@ -86,7 +86,7 @@ Docs: `dynamic-data-and-actions.md`, `integrations.md`, `ui-reference.md` (Supab
 - [ ] Universal bindability: every registered prop, attribute, style value, class toggle, SEO and route field accepts dynamic tokens
 - [ ] Loops on div-based elements with auto-duplicated children _Query loops on Container and Section built in 4e (owner decision: those two only). Other Loops (page parameters, page state, app state, constants, parent item, static JSON, expression) built in 4f; browser-persisted app state re-renders with the Phase 5 state store._
 - [x] Transforms (type conversion) and date/time formatting presets _Built 2026-11-09 in the bolt modal (owner choice A); chains compile to expression methods. See `dynamic-data-and-actions.md` section 6._
-- [ ] Conditional visibility; runtime condition operands for themes and templates _Element conditional visibility built 2026-11-09 (Element tab > Conditions; see `dynamic-data-and-actions.md` section 7). Still open: runtime (browser) operands for theme and template rules, and live re-checks of browser state (Phase 5 state store)._
+- [ ] Conditional visibility; runtime condition operands for themes and templates _Element conditional visibility built 2026-11-09 (Element tab > Conditions; see `dynamic-data-and-actions.md` section 7); class, ID and attribute condition types on this or another element, and chip input for list operators, added the same day). Still open: runtime (browser) operands for theme and template rules, and live re-checks of browser state (Phase 5 state store)._
 - [ ] Tests: scope validation, loops, transforms, bindings everywhere, connectors
 
 ## Phase 5: Actions

@@ -86,7 +86,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
             breakpoints: view.settings.breakpoints,
             dynamic,
             loopRows: page.loopRows,
-            loopMarkers: true
+            loopMarkers: true,
+            tree
           },
           page.start
         )
