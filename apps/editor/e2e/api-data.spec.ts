@@ -190,7 +190,7 @@ test("a Container runs a REST query loop with a group variable set in the loop",
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Container", exact: true }).click();
   await page.getByRole("button", { name: "Query Loop" }).click();
-  await page.getByRole("switch", { name: "Enable Backend Query" }).click({ force: true });
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
   const settings = page.getByRole("region", { name: "Query Loop" });
   await settings.getByLabel("Query Type", { exact: true }).click();
   await page.getByRole("option", { name: "REST API" }).click();

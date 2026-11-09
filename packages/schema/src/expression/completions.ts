@@ -28,7 +28,8 @@ export interface CompletionResult {
   items: Completion[];
 }
 
-const WORD = /[\w$]*$/;
+// A word may start with % (a query loop: %posts).
+const WORD = /%?[\w$]*$/;
 
 /** Root names that still work but are not suggested (`now` was replaced by `$now`). */
 const HIDDEN_ROOTS = new Set(["now"]);
@@ -46,6 +47,7 @@ const DATE_ROOTS = new Set(["$now", "$today", "DateTime"]);
 /** Headings in display order; anything else comes after them. */
 export const COMPLETION_GROUP_ORDER = [
   "Fields",
+  "Query loops",
   "Page state",
   "App state",
   "Constants",
@@ -102,7 +104,7 @@ function chainStart(source: string, dot: number): number {
     else if (c === "(" || c === "[") {
       if (depth === 0) return i + 1;
       depth--;
-    } else if (depth === 0 && !/[\w$.?"'`]/.test(c)) return i + 1;
+    } else if (depth === 0 && !/[\w$.?"'`%]/.test(c)) return i + 1;
   }
   return 0;
 }
@@ -206,14 +208,18 @@ function rootItems(
       insert: name,
       caret: name.length,
       kind: "variable" as const,
-      group: DATE_ROOTS.has(name)
-        ? "Date and time"
-        : VALUE_ROOTS.has(name)
-          ? "Page and visitor"
-          : "Functions",
+      group: name.startsWith("%")
+        ? "Query loops"
+        : DATE_ROOTS.has(name)
+          ? "Date and time"
+          : VALUE_ROOTS.has(name)
+            ? "Page and visitor"
+            : "Functions",
       detail: kindOf(scope[name]),
-      description: ROOT_DOCS[name] ?? "",
-      example: ""
+      description: name.startsWith("%")
+        ? `Query loop: ${name}.item is the current row, ${name}.index its position.`
+        : (ROOT_DOCS[name] ?? ""),
+      example: name.startsWith("%") ? `{{ ${name}.item.title }}` : ""
     }));
   const fns: Completion[] = GLOBAL_FUNCTIONS.map((f) => ({
     label: f.name,

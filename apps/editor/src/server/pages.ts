@@ -7,7 +7,7 @@ import {
   countVariableUsageInTree,
   VERSION_LIMIT_MAX,
   effectiveVersionLimit,
-  elementNodeSchema,
+  pageTreeSchema,
   emptyPageTree,
   pageSettingsSchema,
   projectSettingsSchema,
@@ -56,7 +56,7 @@ function toStored(row: typeof pages.$inferSelect): StoredPage {
     name: row.name,
     route: row.route,
     settings: pageSettingsSchema.parse(row.settings),
-    tree: elementNodeSchema.parse(row.tree),
+    tree: pageTreeSchema.parse(row.tree),
     version: row.version,
     updatedAt: row.updatedAt
   };
@@ -350,7 +350,7 @@ export async function restoreVersion(
     name: snapshot.name,
     route: snapshot.route,
     settings: pageSettingsSchema.parse(snapshot.settings),
-    tree: elementNodeSchema.parse(snapshot.tree)
+    tree: pageTreeSchema.parse(snapshot.tree)
   });
 }
 
@@ -372,7 +372,7 @@ export async function classUsageInOtherPages(
     .from(pages)
     .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
   const counts: Record<string, number> = {};
-  for (const row of rows) countClassUsage(elementNodeSchema.parse(row.tree), counts);
+  for (const row of rows) countClassUsage(pageTreeSchema.parse(row.tree), counts);
   return counts;
 }
 
@@ -390,7 +390,7 @@ export async function replaceClassInOtherPages(
       .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
     let updated = 0;
     for (const row of rows) {
-      const tree = elementNodeSchema.parse(row.tree);
+      const tree = pageTreeSchema.parse(row.tree);
       if (!replaceClassInTree(tree, from, to)) continue;
       await tx
         .update(pages)
@@ -412,7 +412,7 @@ export async function variableUsageInOtherPages(
     .from(pages)
     .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
   const counts: Record<string, number> = {};
-  for (const row of rows) countVariableUsageInTree(elementNodeSchema.parse(row.tree), counts);
+  for (const row of rows) countVariableUsageInTree(pageTreeSchema.parse(row.tree), counts);
   return counts;
 }
 
@@ -430,7 +430,7 @@ export async function renameVariableInOtherPages(
       .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
     let updated = 0;
     for (const row of rows) {
-      const tree = elementNodeSchema.parse(row.tree);
+      const tree = pageTreeSchema.parse(row.tree);
       if (!renameVariableInTree(tree, from, to)) continue;
       await tx
         .update(pages)
@@ -456,7 +456,7 @@ export async function renameCssVarsInOtherPages(
       .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
     let updated = 0;
     for (const row of rows) {
-      const tree = elementNodeSchema.parse(row.tree);
+      const tree = pageTreeSchema.parse(row.tree);
       if (!renameCssVarsInTree(tree, renames)) continue;
       await tx
         .update(pages)
@@ -480,7 +480,7 @@ export async function fontUsageInOtherPages(
     .where(and(eq(pages.projectId, projectId), ne(pages.id, exceptPageId)));
   const counts: Record<string, number> = {};
   for (const row of rows) {
-    const tree = elementNodeSchema.parse(row.tree);
+    const tree = pageTreeSchema.parse(row.tree);
     for (const family of families) {
       const n = countFamilyInTree(tree, family);
       if (n > 0) counts[family] = (counts[family] ?? 0) + n;

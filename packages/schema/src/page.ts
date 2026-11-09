@@ -1,7 +1,8 @@
 import { ITEM_STATUSES, scheduledAtSchema } from "./status";
 import { layoutChoiceSchema } from "./template";
 import { z } from "zod";
-import { elementNodeSchema, type ElementNode } from "./element";
+import type { ElementNode } from "./element";
+import { pageTreeSchema } from "./loop-names";
 import { propValueSchema } from "./value";
 import { stateTypeSchema } from "./state";
 
@@ -101,7 +102,7 @@ export const pageSchema = z.object({
   name: pageNameSchema,
   route: pageRouteSchema,
   settings: pageSettingsSchema,
-  tree: elementNodeSchema,
+  tree: pageTreeSchema,
   version: z.number().int().min(1),
   createdAt: z.date(),
   updatedAt: z.date()
@@ -113,7 +114,7 @@ export const savePageInputSchema = z.object({
   name: pageNameSchema.optional(),
   route: pageRouteSchema.optional(),
   settings: pageSettingsSchema.optional(),
-  tree: elementNodeSchema.optional()
+  tree: pageTreeSchema.optional()
 });
 export type SavePageInput = z.infer<typeof savePageInputSchema>;
 

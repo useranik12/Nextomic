@@ -64,6 +64,20 @@ const PUNCT = [
 const ESCAPES: Record<string, string> = { n: "\n", t: "\t", r: "\r", "0": "\0" };
 const MAX_SOURCE = 5000;
 
+/** Whether a token ends a value, so a following "%" is the modulo operator. */
+function endsValue(tok: Tok | undefined): boolean {
+  if (!tok) return false;
+  if (tok.k === "p") return tok.v === ")" || tok.v === "]" || tok.v === "}";
+  return tok.k !== "id" || tok.v !== "typeof";
+}
+
+/** The tokens of an expression (for tools that rewrite names in place). */
+export function lexExpression(src: string): readonly Tok[] {
+  return lex(src);
+}
+
+export type ExpressionToken = Tok;
+
 function lex(src: string): Tok[] {
   if (src.length > MAX_SOURCE) throw new ExpressionError("The expression is too long.");
   const out: Tok[] = [];
@@ -107,6 +121,13 @@ function lex(src: string): Tok[] {
       if (j >= src.length) throw new ExpressionError("A text value is missing its closing quote.");
       out.push({ k: c === "`" ? "tpl" : "str", v, at: i });
       i = j + 1;
+      continue;
+    }
+    // "%name" where a value starts is a query loop (%posts.item.title); after a value it is modulo.
+    if (c === "%" && !endsValue(prev) && /[A-Za-z_]/.test(src[i + 1] ?? "")) {
+      const text = /^%[A-Za-z_]\w*/.exec(src.slice(i))?.[0] ?? c;
+      out.push({ k: "id", v: text, at: i });
+      i += text.length;
       continue;
     }
     const p = PUNCT.find((x) => src.startsWith(x, i));

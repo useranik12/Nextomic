@@ -3,18 +3,18 @@
 import {
   completeExpression,
   expressionAtCaret,
-  expressionScope,
   runExpression,
   splitTemplate,
   toText,
   type Completion
 } from "@nextomic/schema";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { placeBeside } from "@/lib/place-floating";
 import { useTypeRegistry } from "../data-types/type-picker";
 import { useEditorDynamicContext } from "../use-editor-context";
 import { asExpressionField, replaceInField, type TextField } from "./expression-field";
 import { ExpressionPanel, type PanelResult } from "./expression-panel";
+import { useExpressionScope } from "./use-expression-scope";
 
 interface Open {
   el: TextField;
@@ -79,7 +79,7 @@ function shownOf(state: Open): Completion[] {
 export function ExpressionAssist() {
   const context = useEditorDynamicContext();
   const registry = useTypeRegistry();
-  const scope = useMemo(() => (context ? expressionScope(context) : null), [context]);
+  const scope = useExpressionScope();
   const [open, setOpen] = useState<Open | null>(null);
   const openRef = useRef<Open | null>(null);
   openRef.current = open;

@@ -8,9 +8,9 @@ import {
 } from "@nextomic/schema";
 import type { DynamicGroup, DynamicTag } from "./dynamic-sources";
 
-// Dynamic tag groups for the query loops around an element (innermost first): the row as `item`,
-// its position as `index`, and for Supabase each column of the table as `item.<column>`. Outer
-// loops are reached through `parent` (`parent.item`, `parent.parent.item`, ...).
+// Dynamic tag groups for the query loops around an element (innermost first), each read by its
+// loop name: the row as `%name.item`, its position as `%name.index`, and for Supabase each column
+// of the table as `%name.item.<column>`.
 
 export interface LoopSources {
   supabase: SupabaseStructure | null;
@@ -25,7 +25,7 @@ function rowTags(node: ElementNode, prefix: string, sources: LoopSources): Dynam
       token: `${prefix}item`,
       label: "Row",
       hint: query.supabase.single || query.rest.single ? "object" : "object (one row)",
-      help: "The current row of the loop. Read a field with dot notation: {{item.title}}."
+      help: `The current row of the loop. Read a field with dot notation: {{${prefix}item.title}}.`
     },
     { token: `${prefix}index`, label: "Position", hint: "number, from 0" }
   ];
@@ -53,8 +53,10 @@ export function loopGroups(
     return [
       {
         id: `loop-${node.id}`,
-        label: queryLabel(labelOf(node), query) + (depth > 0 ? " (outer loop)" : ""),
-        tags: rowTags(node, "parent.".repeat(depth), sources)
+        label:
+          `%${query.name} · ${queryLabel(labelOf(node), query)}` +
+          (depth > 0 ? " (outer loop)" : ""),
+        tags: query.name ? rowTags(node, `%${query.name}.`, sources) : []
       }
     ];
   });

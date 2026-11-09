@@ -1,7 +1,7 @@
 import type { ElementNode } from "./element";
 import { activeQuery, type ElementQuery } from "./query";
 import { fillWith, type QueryRows } from "./query-run";
-import { withLoopScope, type LoopFrame } from "./query-scope";
+import { loopFrame, withLoopScope, type LoopFrame } from "./query-scope";
 
 // Which query loops a page runs and the rows each one got. A loop inside another loop runs once
 // per outer row, so a loop is identified by its place: the outer loops' element ids and row
@@ -80,7 +80,7 @@ export function loopInstances(
     if (!result) return;
     result.rows.forEach((item, index) => {
       const innerPath = [...path, { id: node.id, index }];
-      const innerFrames = [{ item, index }, ...frames];
+      const innerFrames = [loopFrame(node, item, index), ...frames];
       for (const child of node.children) visit(child, innerPath, innerFrames);
     });
   };

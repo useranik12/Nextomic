@@ -118,8 +118,32 @@ export const restLoopQuerySchema = z.object({
   infiniteScroll: z.boolean().default(false)
 });
 
+/** A loop name: an identifier, read in expressions as `%name` (empty only on pages saved before names). */
+export const LOOP_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]{0,63}$/;
+
+/** Why a loop name cannot be used, or null. `taken` holds the page's other loop names. */
+export function loopNameProblem(name: string, taken: readonly string[] = []): string | null {
+  if (!name) return "Give the loop a name.";
+  if (!LOOP_NAME_PATTERN.test(name))
+    return "Use letters, digits and _ only, starting with a letter or _ (up to 64).";
+  if (taken.includes(name)) return `Another loop on this page is named "${name}".`;
+  return null;
+}
+
+/** The default loop name for each source, before a number is added to keep it unique. */
+export const LOOP_NAME_BASES: Record<QuerySource, string> = {
+  supabase: "supabaseLoop",
+  rest: "restLoop"
+};
+
 /** An element's backend query. Both sources keep their settings while the other is chosen. */
 export const elementQuerySchema = z.object({
+  /** How expressions inside the loop read it: `%name.item`, `%name.index`. Unique per page. */
+  name: z
+    .string()
+    .max(64)
+    .regex(/^([A-Za-z_][A-Za-z0-9_]*)?$/)
+    .default(""),
   enabled: z.boolean().default(false),
   source: z.enum(QUERY_SOURCES).default("supabase"),
   supabase: supabaseLoopQuerySchema.default({}),
@@ -132,7 +156,15 @@ export type SupabaseLoopQuery = z.infer<typeof supabaseLoopQuerySchema>;
 export type RestLoopQuery = z.infer<typeof restLoopQuerySchema>;
 export type ElementQuery = z.infer<typeof elementQuerySchema>;
 
-export const newElementQuery = (): ElementQuery => elementQuerySchema.parse({ enabled: true });
+/** A new enabled query named after its source, with a number when `taken` already has the name. */
+export const newElementQuery = (taken: readonly string[] = []): ElementQuery =>
+  elementQuerySchema.parse({ enabled: true, name: freeLoopName(LOOP_NAME_BASES.supabase, taken) });
+
+/** `base`, or `base2`, `base3` ... whichever is not taken. */
+export function freeLoopName(base: string, taken: readonly string[]): string {
+  if (!taken.includes(base)) return base;
+  for (let n = 2; ; n++) if (!taken.includes(`${base}${n}`)) return `${base}${n}`;
+}
 
 /** The query an element runs, or null when it has none or it is turned off. */
 export const activeQuery = (node: { type: string; query?: ElementQuery | undefined }) =>
@@ -188,7 +220,10 @@ function restProblems(query: RestLoopQuery, config: RestConfig | null): string[]
 /** What stops a query from running, in display order. Empty when it can run. */
 export function queryProblems(query: ElementQuery, sources: QuerySources): string[] {
   if (!query.enabled) return [];
-  return query.source === "supabase"
-    ? supabaseProblems(query.supabase, sources.supabase)
-    : restProblems(query.rest, sources.rest);
+  const naming = loopNameProblem(query.name);
+  const problems =
+    query.source === "supabase"
+      ? supabaseProblems(query.supabase, sources.supabase)
+      : restProblems(query.rest, sources.rest);
+  return naming ? [naming, ...problems] : problems;
 }

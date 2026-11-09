@@ -2,32 +2,42 @@ import type { ElementNode } from "./element";
 import { activeQuery } from "./query";
 
 // Who can read a query loop's values: only the element's descendants (owner decision), never the
-// element itself, its parents or its siblings. Inside a loop, `item` is the current row and
-// `index` its position; in nested loops the outer loop is `parent` (`parent.item`,
-// `parent.parent.item`, ...).
+// element itself, its parents or its siblings. Each loop is read by its name with a % sign:
+// `%posts.item` is the current row of the loop named "posts" and `%posts.index` its position, so
+// nested loops are told apart by name (owner decision 2026-11-09).
 
 /** Loop values one loop level gives its descendants. */
 export interface LoopFrame {
+  /** The loop's name (`ElementQuery.name`). */
+  name: string;
   item: unknown;
   index: number;
 }
 
+/** The scope key of a loop: `%` and its name. */
+export const loopScopeKey = (name: string) => `%${name}`;
+
+/** The frame a loop element gives for one of its rows. */
+export const loopFrame = (node: ElementNode, item: unknown, index: number): LoopFrame => ({
+  name: node.query?.name ?? "",
+  item,
+  index
+});
+
 /**
- * The expression scope inside loops: `frames[0]` is the innermost loop. Without frames the scope
- * is returned unchanged, so `item` and `index` stay unknown names (an out-of-scope tag).
+ * The expression scope inside loops: `frames[0]` is the innermost loop. Each loop adds
+ * `%name: { item, index }`. Without frames the scope is returned unchanged, so `%name` stays an
+ * unknown name (an out-of-scope tag). A nameless loop (an old page not upgraded) adds nothing.
  */
 export function withLoopScope(
   scope: Readonly<Record<string, unknown>>,
   frames: readonly LoopFrame[]
 ): Record<string, unknown> {
-  if (frames.length === 0) return { ...scope };
-  const nest = (at: number): Record<string, unknown> | undefined => {
-    const frame = frames[at];
-    if (!frame) return undefined;
-    const outer = nest(at + 1);
-    return { item: frame.item, index: frame.index, ...(outer ? { parent: outer } : {}) };
-  };
-  return { ...scope, ...nest(0) };
+  const out: Record<string, unknown> = { ...scope };
+  // Outer first, so an inner loop wins if two loops around an element share a name.
+  for (const frame of [...frames].reverse())
+    if (frame.name) out[loopScopeKey(frame.name)] = { item: frame.item, index: frame.index };
+  return out;
 }
 
 /** How many query loops enclose each element (its own query does not count), by element id. */

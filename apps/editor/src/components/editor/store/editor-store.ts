@@ -9,6 +9,8 @@ import {
   collectHtmlIds,
   duplicateNode,
   findNode,
+  renameLoopTag,
+  uniqueLoopNames,
   generateHtmlId,
   indentNode,
   insertNode,
@@ -47,7 +49,7 @@ import {
   type PropValue,
   type PseudoState
 } from "@nextomic/schema";
-import { produce } from "immer";
+import { current, produce } from "immer";
 import { create } from "zustand";
 
 export interface PageDoc {
@@ -121,6 +123,8 @@ interface EditorState {
   setElementAnimation: (id: string, animation: ElementAnimation | null) => void;
   /** Sets or clears (null) the element's query loop (Container and Section). */
   setElementQuery: (id: string, query: ElementQuery | null) => void;
+  /** Renames a query loop and every `%old` tag inside it. */
+  renameLoop: (id: string, name: string) => void;
   setActiveClass: (name: string | null) => void;
   setPageDraft: <K extends keyof PageDrafts>(kind: K, value: PageDrafts[K]) => void;
   clearPageDrafts: () => void;
@@ -272,8 +276,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
   function edit(key: string | null, recipe: (doc: PageDoc) => void): boolean {
     const { doc, past, lastEditKey, lastEditAt } = get();
     if (!doc) return false;
-    const next = produce(doc, recipe);
-    if (next === doc) return false;
+    const produced = produce(doc, recipe);
+    if (produced === doc) return false;
+    // A duplicated or pasted loop gets a free name, so `%name` stays unique on the page.
+    const tree = uniqueLoopNames(produced.tree);
+    const next = tree === produced.tree ? produced : { ...produced, tree };
     const now = Date.now();
     const coalesce = key !== null && key === lastEditKey && now - lastEditAt < COALESCE_MS;
     set({
@@ -412,6 +419,15 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (!found) return;
         if (query) found.node.query = query;
         else delete found.node.query;
+      }),
+    renameLoop: (id, name) =>
+      void edit(`loop-name:${id}`, (draft) => {
+        const node = findNode(draft.tree, id)?.node;
+        if (!node?.query) return;
+        const from = node.query.name;
+        node.query.name = name;
+        // Only the loop's descendants can read it, so only they hold %from tags.
+        if (from) node.children = renameLoopTag(current(node.children), from, name).value;
       }),
     setActiveClass: (name) => set({ activeClass: name }),
     setPageDraft: (kind, value) =>
