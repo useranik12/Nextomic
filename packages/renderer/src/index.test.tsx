@@ -48,6 +48,35 @@ describe("registry", () => {
     }
   });
 
+  it("resolves a dynamic token in every bindable prop", () => {
+    const dynamic = buildDynamicContext({
+      page: { name: "Shop", route: "/", settings: defaultPageSettings() },
+      mode: "live"
+    });
+    for (const def of listElementDefinitions()) {
+      for (const [key, flag] of Object.entries(def.bindable)) {
+        if (flag !== true) continue;
+        const root = emptyPageTree();
+        const defaults = def.defaults();
+        root.children = [
+          node({
+            id: "n",
+            type: def.type,
+            ...defaults,
+            props: {
+              ...defaults.props,
+              [key]: { kind: "mixed", parts: ["x-", { token: "page.name" }] }
+            }
+          })
+        ];
+        const html = renderToStaticMarkup(
+          <PageRenderer tree={root} breakpoints={DEFAULT_BREAKPOINTS} dynamic={dynamic} />
+        );
+        expect(html, `${def.type}.${key}`).toContain("x-Shop");
+      }
+    }
+  });
+
   it("refuses an element with an unmarked prop", () => {
     expect(() =>
       registerElement({

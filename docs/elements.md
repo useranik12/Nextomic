@@ -50,6 +50,7 @@ Dynamic data works everywhere, with no exceptions unless justified:
 - Custom attributes, `htmlId`, class names added or removed by actions, `href`, `target`, `title`, `aria-*`, and `data-*` accept dynamic tokens.
 - Design values accept dynamic tokens. A dynamic style value compiles to an inline CSS custom property on the element (for example `style="--nxt-dyn-3: <value>"`) that the class CSS references with `var()`, so classes stay static and cacheable. Dynamic values are validated and escaped per property type to prevent CSS injection.
 - Conditional visibility operands, loop sources, query parameters, action parameters, route fields, SEO fields, and theme/template conditions accept bindings.
+  - Exception (owner decision 2026-11-09): the page **route pattern** itself (`/blog/:slug`) takes no tokens. It must be known when the site is built so pages can be matched and generated; the dynamic part of an address is its `:param` segments, read anywhere as `{{ param.<name> }}`.
 - Each registry entry declares `bindable: { [prop]: true | { reason: string } }`. A prop set to `false` needs a written reason (for example a prop that must be known at build time such as a loop `key` field). A test fails if a prop is not marked.
 - The bolt opens the dynamic data modal (see `dynamic-data-and-actions.md`). The modal only shows tokens valid in scope and offers type conversion and formatting.
 
