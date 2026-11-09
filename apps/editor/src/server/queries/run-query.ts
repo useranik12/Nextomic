@@ -204,7 +204,11 @@ export async function pageLoopRows(input: {
         fill,
         execute: input.execute
       }),
-    MAX_LOOP_RUNS
+    MAX_LOOP_RUNS,
+    undefined,
+    undefined,
+    // Query settings go to the connector, not the page: they may read the user's token.
+    expressionScope(input.dynamic, { server: true })
   );
 }
 
@@ -250,13 +254,14 @@ export async function loopPage(input: {
   if (outer.map((n) => n.id).join("/") !== parsed.path.map((s) => s.id).join("/")) return null;
 
   const scope = expressionScope(input.dynamic);
+  const serverScope = expressionScope(input.dynamic, { server: true });
   const run = async (q: ElementQuery, frames: LoopFrame[], offset: number) =>
     q.source === "local"
       ? localLoopRows(q.local, withLoopScope(scope, frames), offset)
       : runElementQuery({
           projectId: input.projectId,
           query: q,
-          fill: fillWith(withLoopScope(scope, frames)),
+          fill: fillWith(withLoopScope(serverScope, frames)),
           offset,
           execute: input.execute
         });
@@ -291,7 +296,8 @@ export async function loopPage(input: {
       }),
     MAX_LOOP_RUNS,
     start,
-    { [loopKey(parsed.path, node.id)]: { rows, hasMore: page.hasMore } }
+    { [loopKey(parsed.path, node.id)]: { rows, hasMore: page.hasMore } },
+    serverScope
   );
   return { node, start, loopRows, count: page.rows.length, hasMore: page.hasMore };
 }

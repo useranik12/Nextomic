@@ -110,7 +110,13 @@ export async function collectLoopRows(
   max = 200,
   start: LoopStart = TOP,
   /** Rows already known (they are not run again). */
-  seed: LoopRows = {}
+  seed: LoopRows = {},
+  /**
+   * The scope query settings are filled from (they are sent to a connector, never to the page):
+   * the server passes one with the user's token. Other Loops build page rows, so they always use
+   * `scope`.
+   */
+  fillScope: Readonly<Record<string, unknown>> = scope
 ): Promise<Record<string, QueryRows>> {
   const rows: Record<string, QueryRows> = { ...seed };
   for (;;) {
@@ -122,7 +128,9 @@ export async function collectLoopRows(
         // Other Loops read the page's own values: no request, so no runner.
         if (instance.query.source === "local")
           return Promise.resolve(localLoopRows(instance.query.local, inner));
-        return run(instance, fillWith(inner)).catch(() => NO_ROWS);
+        return run(instance, fillWith(withLoopScope(fillScope, instance.frames))).catch(
+          () => NO_ROWS
+        );
       })
     );
     pending.forEach((instance, at) => {

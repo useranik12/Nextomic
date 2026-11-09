@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mapExpressions } from "./state-usage";
 
 // Authentication settings of the BUILT app (App Settings > Authentication, docs/app-auth.md).
 // Pages are referred to by id; an empty id means "not chosen".
@@ -52,3 +53,27 @@ export function tokenTags(auth: AppAuthSettings): { claims: boolean; raw: boolea
 /** "Requires Authentication" for a page being created now. */
 export const newPageRequiresAuth = (auth: AppAuthSettings): boolean =>
   auth.enabled && auth.requireByDefault;
+
+const RAW_TOKEN = /(?<![\w$.%])user\s*\??\.\s*accessToken(?![\w$])/;
+
+/** True when any {{ }} expression in `value` (any JSON) reads the raw access token. */
+export function usesRawToken(value: unknown): boolean {
+  let found = false;
+  mapExpressions(value, (expr) => {
+    if (RAW_TOKEN.test(expr)) found = true;
+    return expr;
+  });
+  return found;
+}
+
+/** Why an element may not read the raw token (outside its query settings), or null. */
+export function rawTokenProblem(
+  node: { query?: unknown; children?: unknown },
+  auth: AppAuthSettings
+): string | null {
+  if (tokenTags(auth).raw) return null;
+  const { query: _query, children: _children, ...own } = node;
+  return usesRawToken(own)
+    ? "{{ user.accessToken }} reaches the page only with App Settings > Authentication > Expose the raw access token. Query settings and API calls get it from the server."
+    : null;
+}

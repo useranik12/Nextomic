@@ -161,7 +161,7 @@ const ACCESS_TOKEN_TAG: DynamicTag = {
   token: "user.accessToken",
   label: "Access token (raw)",
   hint: "text",
-  help: "The raw signed-in token. Any script on the page can read it, so prefer [jwt] in API calls, which the server fills. Never available to custom code elements. Empty in the editor."
+  help: "The raw signed-in token. In query settings and API calls the server fills it and the browser never sees it. Elsewhere it needs App Settings > Authentication > Expose the raw access token (development only; turn it off before production). Never available to custom code elements. Empty in the editor."
 };
 
 /** The User group with the token tags App Settings > Authentication turns on. */

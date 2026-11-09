@@ -120,9 +120,10 @@ export function AppAuthSettingsGroup({
           </Checkbox>
           {auth.exposeAccessToken ? (
             <p role="note" className="pl-7 text-tiny text-warning">
-              Any script on the page can read {"{{user.accessToken}}"} and act as the user until it
-              expires. Prefer [jwt] in API calls: the server fills it and the browser never sees the
-              token. Custom code elements never get it.
+              For debugging during development only: turn this off before releasing to production.
+              Any script on the page can read {"{{ user.accessToken }}"} and act as the user until
+              it expires. Query settings and API calls ([jwt]) get the token from the server even
+              when this is off. Custom code elements never get it.
             </p>
           ) : null}
         </div>

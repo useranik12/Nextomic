@@ -49,6 +49,7 @@ function ValueField({
   if (!fixed || filter.value.includes("{{")) {
     return (
       <BoltInput
+        serverRun
         label="Value"
         placeholder={column ? placeholderFor(column, filter.operator) : "Value"}
         value={filter.value}
@@ -68,7 +69,7 @@ function ValueField({
         onValueChange={onChange}
       />
       <span className="flex h-8 items-center">
-        <DynamicBolt label="Value" onInsert={(token) => onChange(`${tagText(token)}`)} />
+        <DynamicBolt serverRun label="Value" onInsert={(token) => onChange(`${tagText(token)}`)} />
       </span>
     </div>
   );
