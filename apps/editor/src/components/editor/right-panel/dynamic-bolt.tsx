@@ -23,7 +23,8 @@ export function DynamicBolt({
   label,
   onInsert,
   disabledReason,
-  exclude
+  exclude,
+  serverRun = false
 }: {
   label: string;
   onInsert: (token: string) => void;
@@ -31,6 +32,8 @@ export function DynamicBolt({
   disabledReason?: string;
   /** Page groups this field must not reference (its own parameters or state variables). */
   exclude?: Exclude;
+  /** A field filled and used only on the server (query settings): it may read the raw token. */
+  serverRun?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const button =
@@ -69,6 +72,7 @@ export function DynamicBolt({
         <DynamicDataModal
           title={label}
           exclude={exclude}
+          serverRun={serverRun}
           onClose={() => setOpen(false)}
           onPick={(token) => {
             onInsert(token);
@@ -83,11 +87,13 @@ export function DynamicBolt({
 function DynamicDataModal({
   title,
   exclude,
+  serverRun = false,
   onClose,
   onPick
 }: {
   title: string;
   exclude?: Exclude;
+  serverRun?: boolean;
   onClose: () => void;
   onPick: (token: string) => void;
 }) {
@@ -122,9 +128,9 @@ function DynamicDataModal({
       dynamicGroups(settings, excludeKey ? (excludeKey.split(",") as Exclude) : [], {
         appState,
         constants,
-        auth: tokenTags(appAuth)
+        auth: serverRun ? { ...tokenTags(appAuth), raw: appAuth.enabled } : tokenTags(appAuth)
       }),
-    [settings, excludeKey, appState, constants, appAuth]
+    [settings, excludeKey, appState, constants, appAuth, serverRun]
   );
   const allGroups = useMemo(() => [...loops, ...groups], [loops, groups]);
   const q = query.trim().toLowerCase();

@@ -54,6 +54,7 @@ export function RestQueryForm({
           <legend className="mb-2 text-tiny font-medium text-default-600">Variables</legend>
           {variables.map((variable) => (
             <BoltInput
+              serverRun
               key={variable.name}
               label={variable.name}
               placeholder={variable.defaultValue || "Default (empty)"}

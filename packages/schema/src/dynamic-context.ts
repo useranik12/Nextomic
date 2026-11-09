@@ -1,3 +1,4 @@
+import { tokenTags, type AppAuthSettings } from "./app-auth";
 import { withLoopScope, type LoopFrame } from "./query-scope";
 import { z } from "zod";
 import { walkElements, type ElementNode } from "./element";
@@ -119,7 +120,12 @@ export const dynamicContextSchema = z.object({
     })
     .nullable(),
   /** The builder user (Nextomic account) viewing the editor or preview; null on live sites. */
-  nextomicUser: nextomicUserSchema.nullable().default(null)
+  nextomicUser: nextomicUserSchema.nullable().default(null),
+  /**
+   * App Settings > Authentication "Expose the raw access token": only then does the page itself
+   * read {{ user.accessToken }}. Server-run fields (query settings, API calls) always get it.
+   */
+  exposeAccessToken: z.boolean().default(false)
 });
 export type DynamicContext = z.infer<typeof dynamicContextSchema>;
 
@@ -169,6 +175,7 @@ export interface DynamicContextInput {
   globals?: {
     appState: readonly Typed<{ defaultValue: string }>[];
     constants: readonly Typed<{ value: string }>[];
+    appAuth?: AppAuthSettings;
   };
   origin?: string;
   nowIso?: string;
@@ -252,7 +259,8 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
     },
     elements: input.tree ? elementValues(input.tree) : {},
     user: input.user ?? null,
-    nextomicUser: input.nextomicUser ?? null
+    nextomicUser: input.nextomicUser ?? null,
+    exposeAccessToken: input.globals?.appAuth ? tokenTags(input.globals.appAuth).raw : false
   };
 }
 
@@ -292,13 +300,25 @@ function fromElement(context: DynamicContext, match: RegExpExecArray): string {
 }
 
 /** The names an expression can use for this context. */
-export function expressionScope(context: DynamicContext): Record<string, unknown> {
+export function expressionScope(
+  context: DynamicContext,
+  /** True for values filled and used on the server only (query settings, API calls). */
+  options: { server?: boolean } = {}
+): Record<string, unknown> {
   const when = nowParts(context.nowIso, context.timeZone);
+  // The raw token never reaches the page unless the project opted in (docs/app-auth.md).
+  const token =
+    options.server || context.exposeAccessToken ? (context.user?.accessToken ?? "") : "";
   return {
     page: context.page,
     template: context.template ?? {},
     request: context.request,
-    user: { ...EMPTY_APP_USER, ...context.user, loggedIn: context.user !== null },
+    user: {
+      ...EMPTY_APP_USER,
+      ...context.user,
+      accessToken: token,
+      loggedIn: context.user !== null
+    },
     nextomic: { user: context.nextomicUser ?? EMPTY_NEXTOMIC_USER },
     env: { mode: context.mode },
     now: { iso: context.nowIso, date: when.date, time: when.time, year: when.year },

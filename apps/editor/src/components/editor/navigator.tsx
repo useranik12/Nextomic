@@ -8,6 +8,7 @@ import {
   firstExpressionProblem,
   loopFrame,
   QUERY_SOURCE_LABELS,
+  rawTokenProblem,
   withLoopScope,
   type ElementNode,
   type LoopFrame
@@ -216,19 +217,22 @@ export function Navigator({
   // Elements whose {{tags}} would give nothing on the page: a red dot says so. Loop values
   // (%name.item, %name.index) exist only inside that loop's descendants; a tag outside is marked.
   const dynamic = useEditorDynamicContext();
+  const appAuth = useEditorStore((s) => s.project.appAuth);
   const problems = useMemo(() => {
     const found = new Map<string, string>();
     if (!tree || !dynamic) return found;
     const base = expressionScope(dynamic);
     const visit = (node: ElementNode, frames: LoopFrame[]) => {
-      const problem = firstExpressionProblem(node, withLoopScope(base, frames), NOT_OWN);
+      const problem =
+        firstExpressionProblem(node, withLoopScope(base, frames), NOT_OWN) ??
+        rawTokenProblem(node, appAuth);
       if (problem) found.set(node.id, problem);
       const inner = activeQuery(node) ? [loopFrame(node, {}, 0), ...frames] : frames;
       node.children.forEach((child) => visit(child, inner));
     };
     visit(tree, []);
     return found;
-  }, [tree, dynamic]);
+  }, [tree, dynamic, appAuth]);
 
   function toggle(id: string) {
     setCollapsed((current) => {

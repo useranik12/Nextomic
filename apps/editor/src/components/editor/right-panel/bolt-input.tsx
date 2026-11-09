@@ -10,11 +10,14 @@ export function BoltInput({
   label,
   value,
   onValueChange,
+  serverRun,
   ...rest
 }: Omit<InputProps, "value" | "onValueChange" | "label" | "endContent"> & {
   label: string;
   value: string;
   onValueChange: (value: string) => void;
+  /** Filled and used only on the server (query settings): the raw token is offered. */
+  serverRun?: boolean;
 }) {
   return (
     <FormInput
@@ -25,6 +28,7 @@ export function BoltInput({
       endContent={
         <DynamicBolt
           label={label}
+          serverRun={serverRun}
           onInsert={(token) => onValueChange(`${value}${tagText(token)}`)}
         />
       }

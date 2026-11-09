@@ -13,6 +13,7 @@ export function useEditorDynamicContext(): DynamicContext | null {
   const doc = useEditorStore((s) => s.doc);
   const appState = useEditorStore((s) => s.project.appState);
   const constants = useEditorStore((s) => s.project.constants);
+  const appAuth = useEditorStore((s) => s.project.appAuth);
   const nextomicUser = useNextomicUser((s) => s.user);
   return useMemo(
     () =>
@@ -22,10 +23,10 @@ export function useEditorDynamicContext(): DynamicContext | null {
             tree: doc.tree,
             mode: "editor",
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            globals: { appState, constants },
+            globals: { appState, constants, appAuth },
             nextomicUser
           })
         : null,
-    [doc, appState, constants, nextomicUser]
+    [doc, appState, constants, appAuth, nextomicUser]
   );
 }

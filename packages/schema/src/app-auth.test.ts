@@ -4,8 +4,13 @@ import {
   defaultAppAuthSettings,
   newPageRequiresAuth,
   pageRequiresAuth,
-  tokenTags
+  rawTokenProblem,
+  tokenTags,
+  usesRawToken
 } from "./app-auth";
+import type { ElementNode } from "./element";
+import { elementQuerySchema, type ElementQuery } from "./query";
+import { collectLoopRows } from "./query-loop-rows";
 import { buildDynamicContext, dynamicContextSchema, expressionScope } from "./dynamic-context";
 import { runExpression } from "./expression/evaluate";
 import { defaultPageSettings } from "./page";
@@ -88,5 +93,88 @@ describe("token tags", () => {
     const empty = expressionScope(buildDynamicContext({ ...base, mode: "live" }));
     expect(runExpression("user.jwt.role", empty)).toBeUndefined();
     expect(runExpression("user.accessToken", empty)).toBe("");
+  });
+});
+
+describe("raw token reach", () => {
+  const page = { name: "Home", route: "/", settings: defaultPageSettings() };
+  const user = {
+    id: "u",
+    email: "",
+    phone: "",
+    emailVerified: false,
+    name: "",
+    role: "",
+    jwt: {},
+    accessToken: "secret-token"
+  };
+  const context = (expose: boolean) =>
+    buildDynamicContext({
+      page,
+      mode: "live",
+      user,
+      globals: {
+        appState: [],
+        constants: [],
+        appAuth: { ...defaultAppAuthSettings(), enabled: true, exposeAccessToken: expose }
+      }
+    });
+
+  it("hides the token from the page unless exposed; server fields always get it", () => {
+    const read = (scope: Record<string, unknown>) => runExpression("user.accessToken", scope);
+    expect(read(expressionScope(context(false)))).toBe("");
+    expect(read(expressionScope(context(false), { server: true }))).toBe("secret-token");
+    expect(read(expressionScope(context(true)))).toBe("secret-token");
+  });
+
+  it("fills query settings from the server scope but builds local rows from the page scope", async () => {
+    const node = (id: string, query?: ElementQuery): ElementNode => ({
+      id,
+      type: "container",
+      classIds: [],
+      props: {},
+      styles: { breakpoints: {} },
+      actions: {},
+      children: [],
+      ...(query ? { query } : {})
+    });
+    const rest = elementQuerySchema.parse({
+      enabled: true,
+      name: "r",
+      source: "rest",
+      rest: { values: { auth: "{{ user.accessToken }}" } }
+    });
+    const local = elementQuerySchema.parse({
+      enabled: true,
+      name: "l",
+      source: "local",
+      local: { kind: "expression", expression: "{{ [user.accessToken] }}" }
+    });
+    const tree = { ...node("root"), children: [node("a", rest), node("b", local)] };
+    const filled: string[] = [];
+    const rows = await collectLoopRows(
+      tree,
+      expressionScope(context(false)),
+      async (_instance, fill) => {
+        filled.push(fill("{{ user.accessToken }}"));
+        return { rows: [], hasMore: false };
+      },
+      10,
+      undefined,
+      undefined,
+      expressionScope(context(false), { server: true })
+    );
+    expect(filled).toEqual(["secret-token"]);
+    expect(rows.b?.rows).toEqual([""]);
+  });
+
+  it("flags the token outside query settings unless exposed", () => {
+    const auth = { ...defaultAppAuthSettings(), enabled: true };
+    const used = { props: { text: "{{ user.accessToken }}" }, children: [] };
+    expect(rawTokenProblem(used, auth)).toMatch(/Expose the raw access token/);
+    expect(rawTokenProblem(used, { ...auth, exposeAccessToken: true })).toBeNull();
+    const inQuery = { props: {}, query: { rest: { values: { a: "{{ user.accessToken }}" } } } };
+    expect(rawTokenProblem(inQuery, auth)).toBeNull();
+    expect(usesRawToken({ t: "{{ user.accessTokenX }}" })).toBe(false);
   });
 });
