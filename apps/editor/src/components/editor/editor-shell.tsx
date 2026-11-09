@@ -34,6 +34,7 @@ import { ApiDataPage } from "./api-data/api-data-page";
 import { useSupabaseTables } from "./supabase/supabase-store";
 import { ExpressionAssist } from "./expression/expression-assist";
 import { ExpressionHighlights } from "./expression/expression-highlights";
+import { TagFixPrompt } from "./expression/tag-fix-prompt";
 
 function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -193,6 +194,7 @@ export function EditorShell({
       <div data-editor-root className="flex h-screen flex-col bg-background text-foreground">
         <ExpressionAssist />
         <ExpressionHighlights />
+        <TagFixPrompt />
         <TopBar
           projectId={projectId}
           pages={pages}

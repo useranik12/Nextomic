@@ -5,7 +5,8 @@ import {
   SUPABASE_OPERATOR_LABELS,
   type QueryFilter,
   type SupabaseColumn,
-  type SupabaseOperator
+  type SupabaseOperator,
+  tagText
 } from "@nextomic/schema";
 import { SelectField, type SelectOption } from "@/components/ui/controls";
 import { BoltInput } from "../right-panel/bolt-input";
@@ -67,7 +68,7 @@ function ValueField({
         onValueChange={onChange}
       />
       <span className="flex h-8 items-center">
-        <DynamicBolt label="Value" onInsert={(token) => onChange(`{{${token}}}`)} />
+        <DynamicBolt label="Value" onInsert={(token) => onChange(`${tagText(token)}`)} />
       </span>
     </div>
   );

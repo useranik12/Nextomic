@@ -298,6 +298,9 @@ Built (Phase 4a fixes): `components/editor/data-types/*`; stored in project sett
 
 ### 4.15 Expression suggestions
 
+- After `%name.item.` the panel lists the loop row's fields under their own heading, "Loop row fields", shaped from the saved structure (Supabase columns, or the data type a REST call's list is read as; `loopRowSample`).
+- Dynamic data modal (bolt): each tag row shows its name on top (white, larger) and the tag below (small, gray, `{{ tag }}`); the description shows only as the hover tooltip.
+
 Every field that has the dynamic bolt accepts n8n-style expressions inside `{{ }}`; text outside the braces stays text. While the caret is inside `{{ }}`, a panel opens beside the field, on the left or right, whichever side has more room; it is clamped to the screen and falls back to below the field only when neither side fits (`placeBeside` in `lib/place-floating.ts`):
 
 - Left: the names, fields and methods that fit at the caret. After `.` it lists the fields of the value and the methods for its type (text, number, list, object, timestamp), using the declared type when the preview value is empty.

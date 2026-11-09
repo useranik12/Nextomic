@@ -198,6 +198,11 @@ test("a Container runs a REST query loop with a group variable set in the loop",
   await page.getByRole("option", { name: "Supabase REST / Rows" }).click();
   await settings.getByLabel("page_size", { exact: true }).fill("4");
   await expect(settings.getByLabel("List", { exact: true })).toBeVisible();
+  // REST loops have no infinite scroll, and fetch on the canvas only after Fetch preview.
+  await expect(page.getByRole("switch", { name: "Infinite scroll" })).toHaveCount(0);
+  await expect(settings.getByText(/shows a placeholder until you fetch/)).toBeVisible();
+  await settings.getByRole("button", { name: "Fetch preview", exact: true }).click();
+  await expect(settings.getByRole("button", { name: "Fetch preview again" })).toBeVisible();
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   const canvas = page.frameLocator('iframe[title="Page canvas"]');

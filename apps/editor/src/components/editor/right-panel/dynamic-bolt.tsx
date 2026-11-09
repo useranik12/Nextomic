@@ -2,7 +2,7 @@
 
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { getElementDefinition } from "@nextomic/renderer";
-import { loopAncestors, tokenTags } from "@nextomic/schema";
+import { loopAncestors, tokenTags, tagText } from "@nextomic/schema";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
@@ -205,17 +205,12 @@ function DynamicDataModal({
                       className="group flex min-h-11 w-full items-center justify-between gap-3 rounded-large bg-default-100 px-4 py-2 text-left transition-colors duration-300 hover:bg-default-200"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-mono text-small text-foreground">
-                          {`{{${tag.token}}}`}
-                        </span>
-                        <span className="block truncate text-tiny text-default-500">
+                        <span className="block truncate text-small font-medium text-foreground">
                           {tag.label}
                         </span>
-                        {tag.help ? (
-                          <span className="mt-1 hidden whitespace-normal text-tiny text-default-600 group-hover:block group-focus-visible:block">
-                            {tag.help}
-                          </span>
-                        ) : null}
+                        <span className="block truncate font-mono text-tiny text-default-500">
+                          {tagText(tag.token)}
+                        </span>
                       </span>
                       <span className="shrink-0 text-tiny text-default-500">{tag.hint}</span>
                     </button>

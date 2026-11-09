@@ -1,5 +1,6 @@
 "use client";
 
+import { tagText } from "@nextomic/schema";
 import type { InputProps } from "@heroui/react";
 import { FormInput } from "@/components/ui/controls";
 import { DynamicBolt } from "./dynamic-bolt";
@@ -22,7 +23,10 @@ export function BoltInput({
       value={value}
       onValueChange={onValueChange}
       endContent={
-        <DynamicBolt label={label} onInsert={(token) => onValueChange(`${value}{{${token}}}`)} />
+        <DynamicBolt
+          label={label}
+          onInsert={(token) => onValueChange(`${value}${tagText(token)}`)}
+        />
       }
       {...rest}
     />

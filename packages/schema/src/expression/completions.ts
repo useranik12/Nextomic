@@ -34,6 +34,9 @@ const WORD = /%?[\w$]*$/;
 /** Root names that still work but are not suggested (`now` was replaced by `$now`). */
 const HIDDEN_ROOTS = new Set(["now"]);
 
+/** The row of a query loop: `%posts.item`. */
+const LOOP_ROW = /^%[A-Za-z_]\w*\s*\??\.\s*item$/;
+
 /** Variable groups are listed by their variables, under these headings, in this order. */
 const VARIABLE_GROUPS: [string, string][] = [
   ["state", "Page state"],
@@ -46,6 +49,7 @@ const DATE_ROOTS = new Set(["$now", "$today", "DateTime"]);
 
 /** Headings in display order; anything else comes after them. */
 export const COMPLETION_GROUP_ORDER = [
+  "Loop row fields",
   "Fields",
   "Query loops",
   "Page state",
@@ -131,13 +135,13 @@ function methodItems(kind: ValueKind): Completion[] {
   });
 }
 
-function fieldItems(value: Record<string, unknown>): Completion[] {
+function fieldItems(value: Record<string, unknown>, group = "Fields"): Completion[] {
   return Object.keys(value).map((key) => ({
     label: key,
     insert: /^[A-Za-z_$][\w$]*$/.test(key) ? key : `["${key}"]`,
     caret: key.length,
     kind: "field" as const,
-    group: "Fields",
+    group,
     detail: kindOf(value[key]),
     description: `Field of this object. Current value: ${preview(value[key]) || "(empty)"}`,
     example: ""
@@ -316,6 +320,8 @@ export function completeExpression(
     const fields = declaredFields(spec, options.registry);
     return { from, items: filter([...fields, ...(declaredKind ? methodItems(declaredKind) : [])]) };
   }
-  const fields = kind === "object" ? fieldItems(value as Record<string, unknown>) : [];
+  // A query loop's row (%posts.item) lists its fields under their own heading.
+  const group = LOOP_ROW.test(objectSource) ? "Loop row fields" : "Fields";
+  const fields = kind === "object" ? fieldItems(value as Record<string, unknown>, group) : [];
   return { from, items: filter([...fields, ...methodItems(kind)]) };
 }

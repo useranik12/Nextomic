@@ -3,8 +3,8 @@
 import { FormInput, SelectField } from "@/components/ui/controls";
 import { SwitchRow } from "@/components/ui/switch-row";
 
-// Settings both query types share: Single Row or List of Rows, the list's limit, and infinite
-// scroll (lists only).
+// Settings both query types share: Single Row or List of Rows and the list's limit. Infinite scroll
+// (lists only) shows only for types that support it (Supabase; REST waits for paged APIs).
 
 const SHAPES = [
   { value: "list", label: "List of Rows" },
@@ -14,7 +14,7 @@ const SHAPES = [
 export interface RowSettingsValue {
   single: boolean;
   limit: number;
-  infiniteScroll: boolean;
+  infiniteScroll?: boolean;
 }
 
 export function RowSettings({
@@ -48,12 +48,14 @@ export function RowSettings({
               if (Number.isFinite(limit)) onChange({ limit: Math.min(1000, Math.max(1, limit)) });
             }}
           />
-          <SwitchRow
-            label="Infinite scroll"
-            tip="Loads the next rows when 90% of the loaded rows have been viewed."
-            selected={value.infiniteScroll}
-            onChange={(infiniteScroll) => onChange({ infiniteScroll })}
-          />
+          {value.infiniteScroll === undefined ? null : (
+            <SwitchRow
+              label="Infinite scroll"
+              tip="Loads the next rows when 90% of the loaded rows have been viewed."
+              selected={value.infiniteScroll}
+              onChange={(infiniteScroll) => onChange({ infiniteScroll })}
+            />
+          )}
         </>
       )}
     </>

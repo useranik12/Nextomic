@@ -300,7 +300,7 @@ function zoned(iso: string, timeZone: string) {
   };
 }
 
-const TAG = /\{\{\s*([^{}]+?)\s*\}\}/g;
+const TAG = /\{\{\s+([^{}]+?)\s+\}\}/g;
 
 /** Replaces each {{tag}} in the text with its value. */
 export function resolveTagText(text: string, ctx: RuleContext): string {

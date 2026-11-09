@@ -5,7 +5,8 @@ import {
   dynamicTextOf,
   isAllowedAttribute,
   parseDynamicText,
-  type ElementNode
+  type ElementNode,
+  tagText
 } from "@nextomic/schema";
 import { useId, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -51,7 +52,7 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
         {node.htmlId ? (
           <>
             Read an attribute elsewhere with{" "}
-            <code className="font-mono">{`{{attr @ ${node.htmlId}:name}}`}</code>.
+            <code className="font-mono">{`{{ attr @ ${node.htmlId}:name }}`}</code>.
           </>
         ) : (
           "Adding an attribute gives this element an ID, so other settings can read it."
@@ -108,7 +109,7 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
           <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
             <DynamicBolt
               label="New attribute value"
-              onInsert={(t) => setDraftValue(`${draftValue}{{${t}}}`)}
+              onInsert={(t) => setDraftValue(`${draftValue}${tagText(t)}`)}
             />
           </div>
         </div>
@@ -182,7 +183,10 @@ function AttributeRow({
           className={compactFieldClass + " pr-9"}
         />
         <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
-          <DynamicBolt label={`Value of ${name}`} onInsert={(t) => onValue(`${value}{{${t}}}`)} />
+          <DynamicBolt
+            label={`Value of ${name}`}
+            onInsert={(t) => onValue(`${value}${tagText(t)}`)}
+          />
         </div>
       </div>
     </li>

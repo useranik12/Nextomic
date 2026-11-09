@@ -114,8 +114,7 @@ export const restLoopQuerySchema = z.object({
   /** The id of a saved JSON path whose value is the list, or "" for the whole response. */
   listPath: z.string().max(64).default(""),
   single: z.boolean().default(false),
-  limit,
-  infiniteScroll: z.boolean().default(false)
+  limit
 });
 
 /** A loop name: an identifier, read in expressions as `%name` (empty only on pages saved before names). */

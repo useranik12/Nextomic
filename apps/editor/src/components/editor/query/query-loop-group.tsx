@@ -16,6 +16,7 @@ import { SwitchRow } from "@/components/ui/switch-row";
 import { useLoopPreview } from "../canvas/use-canvas-loop-rows";
 import { useEditorStore } from "../store/editor-store";
 import { LoopNameField } from "./loop-name-field";
+import { RestPreview } from "./rest-preview";
 import { RestQueryForm } from "./rest-query-form";
 import { SupabaseQueryForm } from "./supabase-query-form";
 import { useQuerySources } from "./use-query-sources";
@@ -145,6 +146,9 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
                 <li key={problem}>{problem}</li>
               ))}
             </ul>
+          ) : null}
+          {enabled && query.source === "rest" ? (
+            <RestPreview id={node.id} query={query} disabled={problems.length > 0} />
           ) : null}
         </div>
       ) : null}

@@ -45,6 +45,7 @@ export * from "./query-scope";
 export * from "./query-run";
 export * from "./query-loop-rows";
 export * from "./loop-names";
+export * from "./query-sample";
 export * from "./rest";
 export * from "./rest-request";
 export * from "./json-path";

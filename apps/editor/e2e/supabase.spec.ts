@@ -147,8 +147,8 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
   const loopGroup = "%posts · Container (Supabase Query)";
   await expect(tags.getByRole("button", { name: loopGroup })).toBeVisible();
   const loopTags = tags.getByRole("region", { name: loopGroup });
-  await expect(loopTags.getByText("{{%posts.item}}", { exact: true })).toBeVisible();
-  await expect(loopTags.getByText("{{%posts.index}}", { exact: true })).toBeVisible();
+  await expect(loopTags.getByText("{{ %posts.item }}", { exact: true })).toBeVisible();
+  await expect(loopTags.getByText("{{ %posts.index }}", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
 
   // The preview renders the loop on the server with the same rows.

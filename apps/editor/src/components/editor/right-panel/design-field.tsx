@@ -1,5 +1,6 @@
 "use client";
 
+import { tagText } from "@nextomic/schema";
 import { builtinStyle } from "@nextomic/renderer";
 import type { ElementNode } from "@nextomic/schema";
 import { useId, useState } from "react";
@@ -219,7 +220,7 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
             ) : null}
             <DynamicBolt
               label={property.label}
-              onInsert={(token) => set(`${own ?? ""}{{${token}}}`)}
+              onInsert={(token) => set(`${own ?? ""}${tagText(token)}`)}
             />
           </div>
         </div>

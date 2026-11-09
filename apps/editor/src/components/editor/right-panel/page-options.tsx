@@ -1,7 +1,13 @@
 "use client";
 
 import { Checkbox } from "@heroui/react";
-import { PARAM_TYPES, ROUTE_PATTERN, STATE_TYPE_LABELS, type PageSettings } from "@nextomic/schema";
+import {
+  PARAM_TYPES,
+  ROUTE_PATTERN,
+  STATE_TYPE_LABELS,
+  type PageSettings,
+  tagText
+} from "@nextomic/schema";
 import { TypePicker } from "../data-types/type-picker";
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
@@ -177,7 +183,7 @@ function BoltInput({
         <DynamicBolt
           label={label}
           exclude={exclude}
-          onInsert={(token) => onChange(`${value}{{${token}}}`)}
+          onInsert={(token) => onChange(`${value}${tagText(token)}`)}
         />
       </div>
     </div>

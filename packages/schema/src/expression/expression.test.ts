@@ -174,3 +174,12 @@ describe("completions", () => {
     expect(item).toMatchObject({ insert: "replace()", caret: 8 });
   });
 });
+
+describe("loop row fields", () => {
+  it("lists a loop row's fields under their own heading", () => {
+    const inLoop = { "%posts": { item: { title: "", views: 0 }, index: 0 } };
+    const items = completeExpression(" %posts.item.", inLoop).items;
+    expect(items.find((i) => i.label === "title")?.group).toBe("Loop row fields");
+    expect(items.find((i) => i.label === "views")?.detail).toBe("number");
+  });
+});

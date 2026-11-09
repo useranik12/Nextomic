@@ -55,7 +55,7 @@ export function elementSelector(nodeId: string): string {
   return `[data-nid="${nodeId.replace(/[^A-Za-z0-9_-]/g, "")}"]`;
 }
 
-const STYLE_TOKEN = /\{\{\s*([^{}]+?)\s*\}\}/g;
+const STYLE_TOKEN = /\{\{\s+([^{}]+?)\s+\}\}/g;
 
 /** Replaces {{tokens}} in a style value with their text. Without a resolver a tokened value is dropped. */
 function resolveStyleValue(value: string, resolve: TokenResolver | undefined): string {

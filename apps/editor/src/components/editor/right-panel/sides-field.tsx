@@ -8,7 +8,8 @@ import {
   sidesPatch,
   sidesRelation,
   type ElementNode,
-  type FourValues
+  type FourValues,
+  tagText
 } from "@nextomic/schema";
 import { useState, type ReactNode } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -218,7 +219,7 @@ export function SidesField({
               />
               <DynamicBolt
                 label={`${label} ${names[i]}`}
-                onInsert={(token) => edit(i, `${own[i] ?? ""}{{${token}}}`)}
+                onInsert={(token) => edit(i, `${own[i] ?? ""}${tagText(token)}`)}
               />
             </div>
           </div>
