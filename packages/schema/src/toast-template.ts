@@ -1,5 +1,6 @@
 import type { ElementNode } from "./element";
 import { emptyPageTree } from "./page";
+import { parseDynamicText } from "./value";
 
 // The design a new toast template starts with, modeled on the HeroUI toast (a card with a colored
 // dot, title, message and close button) and built from ordinary Nextomic elements and styles, so
@@ -68,13 +69,13 @@ export function defaultToastTree(): ElementNode {
     "text",
     "Title",
     { "font-size": "14px", "font-weight": "600", "line-height": "20px", margin: "0" },
-    { props: { text: "{{ toast.title }}" } }
+    { props: { text: parseDynamicText("{{ toast.title }}") } }
   );
   const message = node(
     "text",
     "Message",
     { "font-size": "13px", "line-height": "18px", color: "#71717a", margin: "0" },
-    { props: { text: "{{ toast.message }}" } }
+    { props: { text: parseDynamicText("{{ toast.message }}") } }
   );
   const close = node(
     "button",

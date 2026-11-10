@@ -5,7 +5,8 @@ import {
   customCssFor,
   elementAnimationCss,
   resolveTheme,
-  timelinesForPage
+  timelinesForPage,
+  usedClassNames
 } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -13,7 +14,9 @@ import { headers } from "next/headers";
 import { cache } from "react";
 import { publishedLayout } from "@/server/published-layout";
 import { getPublishedView } from "@/server/publish";
+import { ActionRuntime } from "@/components/runtime/action-runtime";
 import { LoopRuntime } from "@/components/runtime/loop-runtime";
+import { livePayload } from "@/server/runtime/page-runtime";
 import {
   pageLoopRows,
   projectWorkspaceId,
@@ -98,7 +101,9 @@ export default async function PublishedPage({
   }
   const view = await resolve(id, path);
   const { page, pageId, settings, publishedAt } = view;
-  const { tree, dynamic, rules } = await publishedLayout(id, view, values, await headers());
+  const laid = await publishedLayout(id, view, values, await headers());
+  const { tree, dynamic, rules } = laid;
+  const actions = await livePayload(id, view, laid, new URLSearchParams(values).toString());
   const workspaceId = await projectWorkspaceId(id);
   const loopRows = workspaceId
     ? await pageLoopRows({ projectId: id, tree, dynamic, execute: siteExecutor(id, workspaceId) })
@@ -135,7 +140,10 @@ export default async function PublishedPage({
         loopMarkers
         bootScript
         pruneUnusedClasses
+        liveSlots={actions !== null}
+        keepClasses={actions && laid.toast ? [...usedClassNames(laid.toast.tree)] : undefined}
       />
+      {actions ? <ActionRuntime payload={actions} /> : null}
       {hasLoops ? <LoopRuntime projectId={id} route={page.route} realtime={realtime} /> : null}
     </>
   );

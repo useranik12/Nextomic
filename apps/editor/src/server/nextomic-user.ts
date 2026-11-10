@@ -9,8 +9,13 @@ import { getServerSession } from "@/lib/session";
 
 export async function currentNextomicUser(): Promise<NextomicUser | null> {
   const session = await getServerSession();
-  if (!session) return null;
-  const { user } = session;
+  return session ? nextomicUserOf(session.user) : null;
+}
+
+type SessionUser = NonNullable<Awaited<ReturnType<typeof getServerSession>>>["user"];
+
+/** The profile facts of a signed-in builder account (API routes pass their own session). */
+export async function nextomicUserOf(user: SessionUser): Promise<NextomicUser> {
   const [membership, keys] = await Promise.all([
     getUserWorkspace(user.id),
     getDb().select({ n: count() }).from(passkey).where(eq(passkey.userId, user.id))

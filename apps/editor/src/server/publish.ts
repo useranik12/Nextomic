@@ -1,4 +1,5 @@
 import {
+  flowsByNodeSchema,
   pageTreeSchema,
   isLive,
   pageRequiresAuth,
@@ -234,6 +235,8 @@ export interface PublishedView {
   /** Facts about the page for {{page.*}} tags and rules. */
   meta: { createdBy: string; createdAt: string; updatedAt: string; publishedAt: string };
   settings: ProjectSettings;
+  /** Page id to route of every live page (Navigate To). */
+  routes: Record<string, string>;
 }
 
 /**
@@ -306,9 +309,11 @@ export async function getPublishedView(
       name: found.name,
       route: found.route,
       settings: pageSettingsSchema.parse(found.settings),
-      tree: pageTreeSchema.parse(found.tree)
+      tree: pageTreeSchema.parse(found.tree),
+      flows: flowsByNodeSchema.safeParse(found.flows ?? {}).data ?? {}
     },
-    settings: settings.data
+    settings: settings.data,
+    routes: Object.fromEntries(snapshots.map((p) => [p.id, p.route]))
   };
 }
 
@@ -341,6 +346,14 @@ export async function getPublishedThemeCss(
     if (!row.snapshot) continue;
     const tree = pageTreeSchema.safeParse(row.snapshot.tree);
     if (tree.success) for (const name of usedClassNames(tree.data)) used.add(name);
+  }
+  // Templates (header, footer, 404, toast) are part of the pages they are shown on.
+  const templateRows = await db
+    .select({ snapshot: templates.publishedSnapshot })
+    .from(templates)
+    .where(eq(templates.projectId, projectId));
+  for (const row of templateRows) {
+    if (row.snapshot) for (const name of usedClassNames(row.snapshot.tree)) used.add(name);
   }
   return { css: themeCss(theme, used), publishedAt: project.publishedAt };
 }

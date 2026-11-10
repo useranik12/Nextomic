@@ -1281,3 +1281,60 @@ test("action flows: add a trigger and an action, save, and see it after reload",
     page.getByRole("list", { name: "Action flows" }).getByText("1 action")
   ).toBeVisible();
 });
+
+test("action runtime: a click runs Show Toast through the published toast template", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+
+  // On Click > Show Toast with a message.
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("toast");
+  await modal.getByRole("button", { name: "Show Toast" }).click();
+  await modal.getByLabel("Message *", { exact: true }).fill("Saved from a flow");
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  // A published toast template (the default design).
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  await page.getByRole("button", { name: "Column layout" }).click();
+  await page.getByRole("tab", { name: /Templates/ }).click();
+  await page.getByRole("button", { name: "New template" }).click();
+  const create = page.getByRole("dialog");
+  await create.getByLabel("Name").fill("Main toast");
+  await create.getByRole("button", { name: /^Type/ }).click();
+  await page.locator("[role=option]", { hasText: "Toast" }).click();
+  await page.getByRole("button", { name: "Create template" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "More actions for Main toast" }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  await page.getByRole("button", { name: "Template settings" }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /^Status/ })
+    .click();
+  await page.locator("[role=option]", { hasText: "Published" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
+
+  // The preview runs the saved flow: the toast shows the message, then closes on its button.
+  await page.goto(`/preview/${projectId}`);
+  await page.locator("main button, body button").first().click();
+  const toast = page.locator("[data-nx-toasts] [role=status]");
+  await expect(toast).toContainText("Saved from a flow");
+  await toast.locator("[data-nx-toast-close]").click();
+  await expect(toast).toHaveCount(0);
+});
