@@ -25,6 +25,7 @@ import { RightPanel } from "./right-panel";
 import { useEditorStore } from "./store/editor-store";
 import { TopBar } from "./top-bar";
 import { useAutosave } from "./use-autosave";
+import { useFlowSync } from "./actions/use-flow-sync";
 import { VersionHistory } from "./version-history";
 import { StateManager } from "./state/state-manager";
 import { DataTypesManager } from "./data-types/data-types-manager";
@@ -111,6 +112,7 @@ export function EditorShell({
   const [flyout, setFlyout] = useState(false);
   const [mode, setMode] = useState<string>("light");
   const { saveNow } = useAutosave();
+  useFlowSync();
 
   // The font picker in Design asks for the Design System on its Fonts tab.
   useEffect(() => {

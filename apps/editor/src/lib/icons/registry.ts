@@ -87,6 +87,8 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:cursor-click" },
   { id: "ph:image" },
   { id: "ph:copy" },
+  { id: "ph:scissors" },
+  { id: "ph:prohibit" },
   { id: "ph:clipboard" },
   { id: "ph:arrow-counter-clockwise" },
   { id: "ph:arrow-clockwise" },
