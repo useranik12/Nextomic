@@ -1259,6 +1259,15 @@ test("action flows: add a trigger and an action, save, and see it after reload",
   await expect(flows.getByText("On Click")).toBeVisible();
   await expect(flows.getByText("1 action")).toBeVisible();
 
+  // The Navigator shows the element's actions and opens them.
+  await page.getByRole("button", { name: /^Open the actions of/ }).click();
+  await expect(modal.getByText("Show Toast")).toBeVisible();
+  await page.mouse.move(640, 400);
+  await page.mouse.wheel(0, -300);
+  // The wheel zooms the canvas.
+  await expect(modal.getByText("100%")).toBeHidden();
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
   await page.reload();
   await page.getByRole("treeitem").first().click();
   await page.getByRole("tab", { name: /action/i }).click();

@@ -15,6 +15,8 @@ import { useFlowDraft } from "./flow-draft";
 import { NodeCard } from "./node-card";
 import { NODE_KIND_LABELS } from "./node-menu";
 import { TriggerPicker } from "./trigger-picker";
+import { useCanvasView } from "./use-canvas-view";
+import { Icon } from "@/lib/icons/Icon";
 
 interface ListContext {
   numbers: ReadonlyMap<string, number>;
@@ -146,7 +148,7 @@ export function FlowCanvas({ errors }: { errors: ReadonlySet<string> }) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <p className="text-medium font-semibold">No Actions Created</p>
-        <div className="flex max-w-md flex-wrap justify-center gap-2">
+        <div className="flex w-56 flex-col gap-2">
           {START_KINDS.map((kind) => (
             <ActionButton
               key={kind}
@@ -163,8 +165,57 @@ export function FlowCanvas({ errors }: { errors: ReadonlySet<string> }) {
     );
   }
   return (
-    <div className="flex min-h-full justify-center p-6">
+    <Viewport resetKey={trigger}>
       <NodeList nodes={nodes} slot={TOP_SLOT} inLoop={false} ctx={{ numbers, errors }} />
+    </Viewport>
+  );
+}
+
+const ZOOM_BUTTON =
+  "flex h-7 w-7 items-center justify-center rounded-full text-default-600 hover:bg-default-100";
+
+/** The movable, zoomable area around the flow (right-drag to move, wheel to zoom). */
+function Viewport({ resetKey, children }: { resetKey: unknown; children: React.ReactNode }) {
+  const { ref, view, panning, reset, zoomBy, handlers } = useCanvasView(resetKey);
+  return (
+    <div
+      ref={ref}
+      {...handlers}
+      className={`relative h-full w-full touch-none overflow-hidden ${panning ? "cursor-grabbing" : ""}`}
+    >
+      <div
+        className="flex w-full justify-center p-6"
+        style={{
+          transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale})`,
+          transformOrigin: "0 0"
+        }}
+      >
+        {children}
+      </div>
+      <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full border border-divider bg-content1 px-1 shadow-small">
+        <button
+          type="button"
+          aria-label="Zoom out"
+          className={ZOOM_BUTTON}
+          onClick={() => zoomBy(1 / 1.2)}
+        >
+          <Icon name="ph:minus" width={14} height={14} />
+        </button>
+        <span className="w-10 text-center text-tiny tabular-nums text-default-600">
+          {Math.round(view.scale * 100)}%
+        </span>
+        <button
+          type="button"
+          aria-label="Zoom in"
+          className={ZOOM_BUTTON}
+          onClick={() => zoomBy(1.2)}
+        >
+          <Icon name="ph:plus" width={14} height={14} />
+        </button>
+        <button type="button" aria-label="Reset the view" className={ZOOM_BUTTON} onClick={reset}>
+          <Icon name="ph:frame-corners" width={14} height={14} />
+        </button>
+      </div>
     </div>
   );
 }

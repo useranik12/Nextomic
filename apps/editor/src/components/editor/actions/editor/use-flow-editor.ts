@@ -10,6 +10,7 @@ import {
 } from "@nextomic/schema";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { listBlocksAction, saveBlockAction } from "@/app/(builder)/editor/[id]/action-flow-actions";
+import { useQuerySourcesStore } from "../../query/use-query-sources";
 import { useEditorStore } from "../../store/editor-store";
 import { flowOwnerOf } from "../actions-list";
 import { useFlowStore } from "../flow-store";
@@ -99,9 +100,10 @@ function useIssues(): EditorIssue[] {
   const flows = useFlowDraft((s) => s.flows);
   const block = useFlowDraft((s) => s.block);
   const blocks = useFlowDraft((s) => s.blocks);
+  const supabase = useQuerySourcesStore((s) => s.data?.supabase?.structure ?? null);
   return useMemo(() => {
     if (target?.mode === "flows") {
-      const ctx = { owner: target.owner, elementType: target.elementType, blocks };
+      const ctx = { owner: target.owner, elementType: target.elementType, blocks, supabase };
       return flows.flatMap((flow) =>
         flowIssues(flow, ctx).map((i) => ({ ...i, trigger: flow.trigger }))
       );
@@ -118,8 +120,11 @@ function useIssues(): EditorIssue[] {
         severity: "error"
       });
     }
-    return [...own, ...nodesIssues(block.nodes, all)].map((i) => ({ ...i, trigger: null }));
-  }, [target, flows, block, blocks]);
+    return [...own, ...nodesIssues(block.nodes, all, supabase)].map((i) => ({
+      ...i,
+      trigger: null
+    }));
+  }, [target, flows, block, blocks, supabase]);
 }
 
 /** Saves the draft: an element's flows, or one Action Block. Returns true when saved. */

@@ -9,6 +9,7 @@ import {
 } from "@heroui/react";
 import { defaultParams, triggerLabel, triggersFor, type TriggerDef } from "@nextomic/schema";
 import { ActionButton } from "@/components/ui/controls";
+import { InfoTip } from "@/components/ui/info-tip";
 import { Icon } from "@/lib/icons/Icon";
 import { useFlowDraft } from "./flow-draft";
 
@@ -37,7 +38,8 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
   const groups = [...new Set(triggers.map((t) => t.group))];
   const disabledKeys = triggers.filter((t) => t.disabled || used.includes(t.id)).map((t) => t.id);
   return (
-    <Dropdown placement="bottom">
+    // As wide as the longest trigger name, not a fixed width.
+    <Dropdown placement="bottom" classNames={{ content: "w-max min-w-0 p-1" }}>
       <DropdownTrigger>
         {variant === "large" ? (
           <ActionButton size="sm" endContent={<Icon name="ph:caret-down" />}>
@@ -70,8 +72,17 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
               .map((t) => (
                 <DropdownItem
                   key={t.id}
-                  description={
-                    t.disabled ?? (used.includes(t.id) ? "Already added." : t.description)
+                  textValue={triggerLabel(t, target.owner)}
+                  endContent={
+                    used.includes(t.id) ? (
+                      <span className="text-tiny text-default-400">Added</span>
+                    ) : t.description && !t.disabled ? (
+                      <InfoTip
+                        text={t.description}
+                        label={`About ${triggerLabel(t, target.owner)}`}
+                        placement="right"
+                      />
+                    ) : null
                   }
                 >
                   {triggerLabel(t, target.owner)}

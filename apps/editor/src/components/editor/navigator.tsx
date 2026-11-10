@@ -16,6 +16,7 @@ import {
 } from "@nextomic/schema";
 import { memo, useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
+import { useFlowStore } from "./actions/flow-store";
 import { ROOT_END_ID, useDropTarget } from "./dnd";
 import { ElementIcon } from "./icons";
 import { RenameField } from "./rename-field";
@@ -73,6 +74,10 @@ const NavigatorRow = memo(function NavigatorRow({
   const dropZone = drop?.id === node.id ? drop.zone : null;
   const label = node.name ?? getElementDefinition(node.type)?.label ?? node.type;
   const query = activeQuery(node);
+  // A boolean, so the row re-renders only when it changes.
+  const hasActions = useFlowStore((s) =>
+    (s.pending[node.id] ?? s.byNode[node.id]?.flows ?? []).some((f) => f.nodes.length > 0)
+  );
 
   return (
     <div
@@ -174,6 +179,21 @@ const NavigatorRow = memo(function NavigatorRow({
           ) : null}
         </button>
       )}
+      {hasActions && !renaming ? (
+        <button
+          type="button"
+          aria-label={`Open the actions of ${label}`}
+          title="Actions"
+          onClick={() => {
+            const store = useFlowStore.getState();
+            const first = store.flowsOf(node.id)[0];
+            store.openEditor({ nodeId: node.id, trigger: first?.trigger ?? null });
+          }}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sky-500 hover:bg-default-100 dark:text-sky-400"
+        >
+          <Icon name="ph:lightning" width={14} height={14} />
+        </button>
+      ) : null}
       <span className="hidden items-center group-focus-within:flex group-hover:flex">
         <button
           type="button"

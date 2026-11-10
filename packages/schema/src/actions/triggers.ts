@@ -111,28 +111,58 @@ const common = (id: string, label: string, extra: Partial<TriggerDef> = {}): Tri
 });
 
 const COMMON_TRIGGERS: readonly TriggerDef[] = [
-  common("click", "On Click"),
-  common("doubleClick", "On Double Click"),
-  common("clickHold", "On Click And Hold", { fields: HOLD_FIELDS }),
+  common("click", "On Click", {
+    description: "A left click, a tap, or Enter/Space when the element has focus."
+  }),
+  common("doubleClick", "On Double Click", {
+    description: "Two quick clicks or taps on the element."
+  }),
+  common("clickHold", "On Click And Hold", {
+    fields: HOLD_FIELDS,
+    description: "The pointer is held down on the element for the hold time."
+  }),
   common("secondaryClick", "On Secondary Click", {
     description: "Right mouse button or a two-finger trackpad click."
   }),
-  common("secondaryDoubleClick", "On Secondary Double Click"),
-  common("secondaryClickHold", "On Secondary Click And Hold", { fields: HOLD_FIELDS }),
-  common("pinchStart", "On Pinch Zoom Start"),
-  common("pinchUpdate", "On Pinch Zoom Update"),
-  common("pinchEnd", "On Pinch Zoom End"),
-  common("hoverStart", "On Hover Start"),
-  common("hoverEnd", "On Hover End"),
-  common("focus", "On Focus"),
-  common("blur", "On Blur"),
+  common("secondaryDoubleClick", "On Secondary Double Click", {
+    description: "Two quick right clicks on the element."
+  }),
+  common("secondaryClickHold", "On Secondary Click And Hold", {
+    fields: HOLD_FIELDS,
+    description: "The right mouse button is held down on the element for the hold time."
+  }),
+  common("pinchStart", "On Pinch Zoom Start", {
+    description: "Two fingers start pinching on the element (touch screens)."
+  }),
+  common("pinchUpdate", "On Pinch Zoom Update", {
+    description: "Runs while the pinch changes; the scale is in the trigger data."
+  }),
+  common("pinchEnd", "On Pinch Zoom End", {
+    description: "The fingers leave the screen after a pinch."
+  }),
+  common("hoverStart", "On Hover Start", {
+    description: "The mouse pointer moves onto the element. Never fires on touch screens."
+  }),
+  common("hoverEnd", "On Hover End", { description: "The mouse pointer leaves the element." }),
+  common("focus", "On Focus", {
+    description: "The element or a field inside it gets keyboard focus."
+  }),
+  common("blur", "On Blur", {
+    description: "Keyboard focus leaves the element and everything inside it."
+  }),
   common("load", "When Content Loaded", {
     rootLabel: "When Loaded",
     description:
       "When the element is in the page: on load, when re-inserted by a condition and for new loop rows."
   }),
-  common("enterViewport", "When Comes To Viewport", { fields: VIEWPORT_FIELDS }),
-  common("leaveViewport", "When Leaves Viewport", { fields: VIEWPORT_FIELDS }),
+  common("enterViewport", "When Comes To Viewport", {
+    fields: VIEWPORT_FIELDS,
+    description: "The visible amount of the element scrolls into the screen."
+  }),
+  common("leaveViewport", "When Leaves Viewport", {
+    fields: VIEWPORT_FIELDS,
+    description: "The element scrolls out of the screen."
+  }),
   common("positionUpdated", "When Position Updated", {
     fields: POSITION_FIELDS,
     description: "When an edge of the element crosses a line of the viewport."
@@ -140,7 +170,9 @@ const COMMON_TRIGGERS: readonly TriggerDef[] = [
   common("scrollProgress", "On Scroll Progress", {
     description: "While the element scrolls through the viewport (progress from 0 to 1)."
   }),
-  common("resized", "When Resized")
+  common("resized", "When Resized", {
+    description: "The element's width or height changes, for example when the window resizes."
+  })
 ];
 
 const root = (id: string, label: string, extra: Partial<TriggerDef> = {}): TriggerDef => ({
@@ -153,6 +185,7 @@ const root = (id: string, label: string, extra: Partial<TriggerDef> = {}): Trigg
 
 const ROOT_TRIGGERS: readonly TriggerDef[] = [
   root("keyPress", "On Key Press", {
+    description: "A key is pressed anywhere on the page, unless a text field has focus.",
     fields: [
       {
         key: "key",
@@ -165,6 +198,7 @@ const ROOT_TRIGGERS: readonly TriggerDef[] = [
     ]
   }),
   root("timer", "Timer / Interval", {
+    description: "Runs after the time set, and again every interval when Repeat is on.",
     fields: [
       {
         key: "intervalMs",
@@ -177,9 +211,11 @@ const ROOT_TRIGGERS: readonly TriggerDef[] = [
       { key: "repeat", label: "Repeat", kind: "boolean", default: "true" }
     ]
   }),
-  root("pageLeave", "On Page Leave"),
-  root("online", "On Online"),
-  root("offline", "On Offline")
+  root("pageLeave", "On Page Leave", {
+    description: "The visitor navigates away or closes the tab. Keep these actions short."
+  }),
+  root("online", "On Online", { description: "The browser gets its internet connection back." }),
+  root("offline", "On Offline", { description: "The browser loses its internet connection." })
 ];
 
 interface ElementGroup {
@@ -218,8 +254,8 @@ const ELEMENT_GROUPS: readonly ElementGroup[] = [
     group: "Image",
     types: ["image"],
     triggers: [
-      ["loaded", "On Image Loaded"],
-      ["loadError", "On Image Load Error"]
+      ["loaded", "On Image Loaded", { description: "The image file finished loading." }],
+      ["loadError", "On Image Load Error", { description: "The image file could not be loaded." }]
     ]
   },
   {

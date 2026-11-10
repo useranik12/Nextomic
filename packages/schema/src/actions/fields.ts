@@ -17,6 +17,8 @@ export const FIELD_KINDS = [
   "pageState",
   "query",
   "supabaseTable",
+  "supabaseColumn",
+  "supabaseColumns",
   "restCall",
   "timeline",
   "theme",
@@ -45,10 +47,14 @@ export interface ParamField {
   showIf?: { key: string; in: readonly string[] };
   /** `element` only: element types that may be picked (all when absent). */
   elementTypes?: readonly string[];
+  /** `page` only: the page being edited is left out of the list. */
+  excludeCurrent?: boolean;
   /** `element` only: empty means the element that owns the flow. */
   selfWhenEmpty?: boolean;
   min?: number;
   max?: number;
+  /** `supabaseColumn(s)` only: the key of the action's table field the columns come from. */
+  tableParam?: string;
 }
 
 /**
@@ -63,6 +69,8 @@ export const UNBINDABLE_FIELD_REASONS: Partial<Record<FieldKind, string>> = {
   query: "Picks a query loop of this page; its parameters take dynamic data.",
   supabaseTable:
     "Picks a table from the saved Supabase structure; filters and values take dynamic data.",
+  supabaseColumn: "Picks a column of the chosen table so the flow can be checked when it is saved.",
+  supabaseColumns: "Picks columns of the chosen table so the flow can be checked when it is saved.",
   restCall: "Picks a saved API Data call; its variables take dynamic data.",
   timeline: "Picks a saved GSAP timeline.",
   rows: "A list of rows; each column says whether it takes dynamic data."

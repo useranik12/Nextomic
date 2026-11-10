@@ -1,5 +1,5 @@
 import type { ConditionGroup } from "../condition";
-import type { FlowNode, FlowNodeKind } from "./flow";
+import { walkFlow, type FlowNode, type FlowNodeKind } from "./flow";
 
 // Pure edits of a node list for the flow editor. Every function returns a new list; the input is
 // never changed. A slot names one child list: the top list (parent null, "nodes"), or a list of a
@@ -145,6 +145,24 @@ export function moveFlowNode(nodes: readonly FlowNode[], id: string, step: -1 | 
 }
 
 const uid = () => crypto.randomUUID();
+
+/** The last name inside a list's {{ tag }}, made safe for a loop item name. */
+function listNameOf(list: string): string {
+  const names = list.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [];
+  return (names.at(-1) ?? "list").slice(0, 40);
+}
+
+/**
+ * A For Each loop's item name: `loop_<6 chars>_<list name>`. Generated, never typed, so it is
+ * unique in the flow. Underscores, not dashes: a dash in an expression is a minus sign.
+ */
+export function loopItemName(list: string, code = uid().replace(/-/g, "").slice(0, 6)): string {
+  return `loop_${code}_${listNameOf(list)}`;
+}
+
+/** The 6-character code of a generated item name, kept when the list changes. */
+export const loopNameCode = (itemName: string): string | undefined =>
+  /^loop_([a-z0-9]{6})_/.exec(itemName)?.[1];
 const emptyGroup = (): ConditionGroup => ({ id: uid(), match: "all", items: [] });
 
 /** A new node of a kind, with empty settings. */
@@ -161,7 +179,10 @@ export function newFlowNode(kind: FlowNodeKind, blockId = ""): FlowNode {
         kind,
         mode: "forEach",
         list: "",
-        itemName: "item",
+        itemName: loopItemName(""),
+        start: "",
+        end: "",
+        step: "",
         maxIterations: 1000,
         nodes: []
       };
@@ -185,7 +206,18 @@ export function newFlowNode(kind: FlowNodeKind, blockId = ""): FlowNode {
 
 /** A copy with new ids for the node and everything inside it (paste, duplicate). */
 export function withFreshIds(node: FlowNode): FlowNode {
-  const copy = structuredClone(node);
+  let copy = structuredClone(node);
+  // Copied loops get new item names, and tags inside them follow.
+  const renames: [string, string][] = [];
+  walkFlow([copy], (n) => {
+    if (n.kind === "loop" && n.mode === "forEach" && loopNameCode(n.itemName))
+      renames.push([n.itemName, loopItemName(n.list)]);
+  });
+  if (renames.length > 0) {
+    let json = JSON.stringify(copy);
+    for (const [from, to] of renames) json = json.split(from).join(to);
+    copy = JSON.parse(json) as FlowNode;
+  }
   const visit = (n: FlowNode) => {
     n.id = uid();
     if (n.kind === "condition") n.branches.forEach((b) => (b.id = uid()));

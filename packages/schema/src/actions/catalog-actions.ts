@@ -198,13 +198,21 @@ const TABLE: ParamField = {
   required: true
 };
 
+const COLUMN: ParamField = {
+  key: "column",
+  label: "Column",
+  kind: "supabaseColumn",
+  tableParam: "table",
+  required: true
+};
+
 const FILTERS = (required: boolean): ParamField => ({
   key: "filters",
   label: "Filters",
   kind: "rows",
   required,
   columns: [
-    text("column", "Column", { required: true }),
+    COLUMN,
     {
       key: "operator",
       label: "Operator",
@@ -222,7 +230,7 @@ const VALUES: ParamField = {
   label: "Values",
   kind: "rows",
   required: true,
-  columns: [text("column", "Column", { required: true }), text("value", "Value")]
+  columns: [COLUMN, text("value", "Value")]
 };
 
 const ROWS_OUT = { type: "supabaseRow" as const, list: true, refParam: "table" };
@@ -247,15 +255,22 @@ const supabase = (
 const SUPABASE_ACTIONS: ActionDef[] = [
   {
     ...supabase("query", "Query Row(s)", "Reads rows from a table.", [
+      { key: "single", label: "Single row", kind: "boolean", default: "false" },
       TABLE,
-      text("select", "Columns", { default: "*" }),
+      {
+        key: "select",
+        label: "Columns",
+        kind: "supabaseColumns",
+        tableParam: "table",
+        help: "None picked means every column."
+      },
       FILTERS(false),
       {
         key: "order",
         label: "Order",
         kind: "rows",
         columns: [
-          text("column", "Column", { required: true }),
+          COLUMN,
           {
             key: "direction",
             label: "Direction",
@@ -268,8 +283,14 @@ const SUPABASE_ACTIONS: ActionDef[] = [
           }
         ]
       },
-      { key: "limit", label: "Limit", kind: "number", min: 1, max: 1000 },
-      { key: "single", label: "Single row", kind: "boolean", default: "false" }
+      {
+        key: "limit",
+        label: "Limit",
+        kind: "number",
+        min: 1,
+        max: 1000,
+        showIf: { key: "single", in: ["false"] }
+      }
     ]),
     output: { ...ROWS_OUT, list: { param: "single", when: "false" } }
   },
@@ -277,7 +298,13 @@ const SUPABASE_ACTIONS: ActionDef[] = [
   supabase("upsert", "Upsert Row(s)", "Adds a row or updates the one with the same key.", [
     TABLE,
     VALUES,
-    text("onConflict", "Conflict columns", { placeholder: "id" })
+    {
+      key: "onConflict",
+      label: "Conflict columns",
+      kind: "supabaseColumns",
+      tableParam: "table",
+      help: "None picked means the primary key."
+    }
   ]),
   supabase("update", "Update Row(s)", "Changes the rows that match every filter.", [
     TABLE,
@@ -437,7 +464,8 @@ const STATE_ACTIONS: ActionDef[] = [
     label: "Rebuild Page",
     category: "state",
     runs: "browser",
-    description: "Checks every condition and loop of the page again with the current state.",
+    description:
+      "Runs the page's queries again and redraws the page with its header and footer templates.",
     fields: []
   },
   ...later("state", "Form", FORMS_LATER, [
@@ -950,7 +978,7 @@ export const ACTIONS: readonly ActionDef[] = [
     runs: "browser",
     description: "Opens a page of this site.",
     fields: [
-      { key: "page", label: "Page", kind: "page", required: true },
+      { key: "page", label: "Page", kind: "page", required: true, excludeCurrent: true },
       pairs("routeParams", "Route parameters"),
       pairs("query", "Query string"),
       { key: "replace", label: "Replace history entry", kind: "boolean", default: "false" }
@@ -964,6 +992,25 @@ export const ACTIONS: readonly ActionDef[] = [
     runs: "browser",
     description: "Goes back one page in the browser history.",
     fields: []
+  },
+  {
+    type: "page.reload",
+    label: "Reload Page",
+    category: "navigation",
+    runs: "browser",
+    description: "Loads the current page again, after an optional delay.",
+    fields: [
+      {
+        key: "delay",
+        label: "Delay (ms)",
+        kind: "number",
+        default: "0",
+        min: 0,
+        max: 60000,
+        help: "Waits this long before reloading."
+      }
+    ],
+    summary: ["delay"]
   },
   ...BACKEND_ACTIONS,
   ...STATE_ACTIONS,

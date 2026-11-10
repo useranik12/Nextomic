@@ -18,6 +18,8 @@ import {
   type FlowNode,
   type TriggerFlow
 } from "./flow";
+import type { SupabaseStructure } from "../supabase";
+import { supabaseActionProblems } from "./supabase-check";
 import { getTrigger, triggerProblem, type FlowOwner } from "./triggers";
 
 // Problems listed by the issues badge of the flow editor. Errors block publishing; warnings do not.
@@ -34,6 +36,8 @@ export interface FlowCheckContext {
   owner: FlowOwner;
   elementType: string;
   blocks: readonly ActionBlock[];
+  /** The saved Supabase structure, for column checks; absent when not connected. */
+  supabase?: SupabaseStructure | null;
 }
 
 const error = (nodeId: string | null, message: string): FlowIssue => ({
@@ -57,13 +61,19 @@ function fieldIssues(nodeId: string | null, fields: readonly ParamField[], param
   ];
 }
 
-function actionIssues(node: Extract<FlowNode, { kind: "action" }>): FlowIssue[] {
+function actionIssues(
+  node: Extract<FlowNode, { kind: "action" }>,
+  supabase: SupabaseStructure | null | undefined
+): FlowIssue[] {
   if (node.type === "") return [error(node.id, "Not defined: choose an action.")];
   const action = getAction(node.type);
   if (!action) return [error(node.id, `Unknown action "${node.type}".`)];
   const reason = actionDisabledReason(action);
   if (reason) return [error(node.id, `${action.label} is not available yet. ${reason}`)];
-  const issues = fieldIssues(node.id, action.fields, node.params);
+  const issues = [
+    ...fieldIssues(node.id, action.fields, node.params),
+    ...supabaseActionProblems(node.type, node.params, supabase).map((m) => error(node.id, m))
+  ];
   if (node.outputName && !action.output) {
     issues.push(warning(node.id, `${action.label} returns nothing; the output name is not used.`));
   }
@@ -98,11 +108,12 @@ function insideLoop(ancestors: readonly FlowNode[]): boolean {
 function nodeIssues(
   node: FlowNode,
   ancestors: readonly FlowNode[],
-  blocks: readonly ActionBlock[]
+  blocks: readonly ActionBlock[],
+  supabase: SupabaseStructure | null | undefined
 ): FlowIssue[] {
   switch (node.kind) {
     case "action":
-      return actionIssues(node);
+      return actionIssues(node, supabase);
     case "block":
       return blockIssues(node, blocks);
     case "condition":
@@ -167,7 +178,8 @@ function nameIssues(nodes: readonly FlowNode[]): FlowIssue[] {
 /** Problems of a node list (a trigger flow or an Action Block). */
 export function nodesIssues(
   nodes: readonly FlowNode[],
-  blocks: readonly ActionBlock[]
+  blocks: readonly ActionBlock[],
+  supabase?: SupabaseStructure | null
 ): FlowIssue[] {
   if (countNodes(nodes) > MAX_FLOW_NODES) {
     return [error(null, `A flow can have at most ${MAX_FLOW_NODES} nodes.`)];
@@ -179,7 +191,7 @@ export function nodesIssues(
   const visit = (list: readonly FlowNode[], ancestors: readonly FlowNode[]) => {
     for (const node of list) {
       if (node.disabled) continue;
-      issues.push(...nodeIssues(node, ancestors, blocks));
+      issues.push(...nodeIssues(node, ancestors, blocks, supabase));
       for (const child of childLists(node)) visit(child, [...ancestors, node]);
     }
   };
@@ -195,7 +207,7 @@ export function flowIssues(flow: TriggerFlow, ctx: FlowCheckContext): FlowIssue[
   const trigger = getTrigger(flow.trigger);
   return [
     ...fieldIssues(null, trigger?.fields ?? [], flow.settings),
-    ...nodesIssues(flow.nodes, ctx.blocks)
+    ...nodesIssues(flow.nodes, ctx.blocks, ctx.supabase)
   ];
 }
 
