@@ -102,7 +102,7 @@ Planned: `User.isLoggedIn`, `User.id`, `User.email`, `User.phone`, `User.name`, 
 | Get current user       | none                                    | user             |
 | Resend verification    | email                                   | none             |
 
-- Every action has onSuccess and onError branches. Outputs are available to later steps as dynamic data "Action outputs".
+- Failures are caught with a Try/Catch node around the action (the catch part reads the error); there are no per-action onSuccess/onError branches. Outputs reach later nodes through their output name (bolt: Actions group). The catalog lists these actions under Backend/CMS > Supabase Authentication; "Sign in", "Sign in with OAuth", "Send magic link" and "Send OTP" are the methods of one Login action (`packages/schema/src/actions/catalog-actions.ts`).
 - Standard error codes: `invalid_credentials`, `user_exists`, `weak_password`, `email_not_verified`, `otp_invalid`, `otp_expired`, `rate_limited`, `network`, `unknown`. Messages are customizable per project and per action; the error object is available as dynamic data in onError.
 - Prevent user enumeration is ON by default for password reset and magic link: the UI result is the same whether or not the account exists.
 - When "Require captcha on auth" is on, the flow runs the Captcha validate step before sign in, sign up, reset, and OTP send.
