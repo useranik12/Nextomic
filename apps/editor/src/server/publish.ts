@@ -10,7 +10,8 @@ import {
   type FlowsByNode,
   type ProjectSettings,
   type PublishedPage,
-  type PublishedTemplate
+  type PublishedTemplate,
+  type TemplateType
 } from "@nextomic/schema";
 import { getDb, pages, projects, templates, user } from "@nextomic/db";
 import { and, asc, eq, lte } from "drizzle-orm";
@@ -96,7 +97,7 @@ const withFlows = (flows: FlowsByNode | undefined) =>
 export function templateSnapshotOf(
   row: {
     id: string;
-    type: "header" | "footer" | "error-404";
+    type: TemplateType;
     name: string;
     settings: unknown;
     tree: unknown;

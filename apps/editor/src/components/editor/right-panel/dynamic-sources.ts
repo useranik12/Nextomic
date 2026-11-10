@@ -50,11 +50,28 @@ const BUILT_IN: DynamicGroup[] = [
     ]
   },
   {
+    id: "toast",
+    label: "Toast",
+    tags: [
+      { token: "toast.title", label: "Toast title", hint: "text (toast templates)" },
+      { token: "toast.message", label: "Toast message", hint: "text (toast templates)" },
+      {
+        token: "toast.type",
+        label: "Toast type",
+        hint: "default, success, warning or danger (toast templates)"
+      }
+    ]
+  },
+  {
     id: "template-properties",
     label: "Template properties",
     tags: [
       { token: "template.name", label: "Template name", hint: "text" },
-      { token: "template.type", label: "Template type", hint: "header, footer or error-404" },
+      {
+        token: "template.type",
+        label: "Template type",
+        hint: "header, footer, error-404 or toast"
+      },
       { token: "template.id", label: "Template ID", hint: "text" },
       {
         token: "template.status",

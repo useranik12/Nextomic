@@ -311,14 +311,14 @@ describe("flow issues", () => {
       flow([
         action("a", ""),
         action("b", "auth.login", { params: { method: "password", email: "x@y.z" } }),
-        action("c", "toast", { params: { message: "Hi", tone: "loud" } })
+        action("c", "toast", { params: { message: "Hi", type: "loud" } })
       ]),
       ctx
     );
     expect(issues.map((i) => [i.nodeId, i.message])).toEqual([
       ["a", "Not defined: choose an action."],
       ["b", "Password is required."],
-      ["c", "Tone has an unknown value."]
+      ["c", "Type has an unknown value."]
     ]);
   });
 
@@ -458,7 +458,11 @@ describe("Action Blocks", () => {
   });
 
   it("starts actions with field defaults", () => {
-    expect(defaultParams(getAction("toast")!.fields)).toEqual({ tone: "info", durationMs: "4000" });
+    expect(defaultParams(getAction("toast")!.fields)).toEqual({
+      type: "default",
+      position: "bottom-right",
+      durationMs: "4000"
+    });
     expect(defaultParams(getAction("state.updateApp")!.fields)).toEqual({ updates: [] });
   });
 });

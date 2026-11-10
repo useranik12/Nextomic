@@ -115,7 +115,7 @@ export const templates = pgTable(
     projectId: text("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    type: text("type").$type<"header" | "footer" | "error-404">().notNull(),
+    type: text("type").$type<"header" | "footer" | "error-404" | "toast">().notNull(),
     name: text("name").notNull(),
     settings: jsonb("settings").$type<TemplateSettings>().notNull(),
     tree: jsonb("tree").$type<ElementNode>().notNull(),

@@ -740,22 +740,46 @@ const ALERT_ACTIONS: ActionDef[] = [
     label: "Show Toast",
     category: "alerts",
     runs: "browser",
-    description: "Shows a short message that closes by itself.",
+    description:
+      "Shows the published toast template with a title and message; it closes by itself.",
     fields: [
+      text("title", "Title"),
       text("message", "Message", { required: true }),
       {
-        key: "tone",
-        label: "Tone",
+        key: "type",
+        label: "Type",
         kind: "select",
-        default: "info",
+        default: "default",
+        help: "The template reads it as {{ toast.type }}.",
         options: opts([
-          ["info", "Info"],
+          ["default", "Default"],
           ["success", "Success"],
           ["warning", "Warning"],
-          ["error", "Error"]
+          ["danger", "Danger"]
         ])
       },
-      { key: "durationMs", label: "Duration (ms)", kind: "number", default: "4000", min: 1000 }
+      {
+        key: "position",
+        label: "Position",
+        kind: "select",
+        default: "bottom-right",
+        options: opts([
+          ["top-left", "Top left"],
+          ["top-center", "Top center"],
+          ["top-right", "Top right"],
+          ["bottom-left", "Bottom left"],
+          ["bottom-center", "Bottom center"],
+          ["bottom-right", "Bottom right"]
+        ])
+      },
+      {
+        key: "durationMs",
+        label: "Duration (ms)",
+        kind: "number",
+        default: "4000",
+        min: 1000,
+        max: 60000
+      }
     ],
     summary: ["message"]
   },

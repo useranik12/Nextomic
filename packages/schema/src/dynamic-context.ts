@@ -33,7 +33,7 @@ function pageMetaShape() {
 
 export const templateMetaSchema = z.object({
   name: z.string().max(200),
-  /** header, footer or error-404 */
+  /** header, footer, error-404 or toast */
   type: text(20),
   ...pageMetaShape()
 });
@@ -63,6 +63,11 @@ export const dynamicContextSchema = z.object({
   }),
   /** The template being shown, when a template is. */
   template: templateMetaSchema.nullable().default(null),
+  /** The toast a toast template shows ({{ toast.title }}, message, type); null elsewhere. */
+  toast: z
+    .object({ title: z.string().max(500), message: z.string().max(5000), type: z.string().max(20) })
+    .nullable()
+    .default(null),
   /** Page parameter values by name (the route or query value, else the default). */
   params: z.record(z.string(), z.string().max(2000)),
   /** Page state variables by name: their starting value as text (json stays JSON text). */
@@ -167,6 +172,7 @@ export interface DynamicContextInput {
     meta?: Partial<DynamicContext["page"]>;
   };
   template?: DynamicContext["template"];
+  toast?: DynamicContext["toast"];
   mode: DynamicContext["mode"];
   /** Parameter values from the address (route segments and query string), by name. */
   paramValues?: Readonly<Record<string, string>>;
@@ -244,6 +250,7 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
       route: page.route
     },
     template: input.template ?? null,
+    toast: input.toast ?? null,
     params,
     state,
     app,
@@ -312,6 +319,7 @@ export function expressionScope(
   return {
     page: context.page,
     template: context.template ?? {},
+    toast: context.toast ?? { title: "", message: "", type: "" },
     request: context.request,
     user: {
       ...EMPTY_APP_USER,

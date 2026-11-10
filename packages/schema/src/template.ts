@@ -7,12 +7,13 @@ import { evaluateRules, ruleSetSchema, ruleSpecificity, type RuleContext } from 
 // Templates (docs/templates-and-themes.md section 4): a header, a footer and a 404 page in v1.
 // They are edited on the same canvas as pages and applied to pages by rules.
 
-export const TEMPLATE_TYPES = ["header", "footer", "error-404"] as const;
+export const TEMPLATE_TYPES = ["header", "footer", "error-404", "toast"] as const;
 export type TemplateType = (typeof TEMPLATE_TYPES)[number];
 export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
   header: "Header",
   footer: "Footer",
-  "error-404": "404 page"
+  "error-404": "404 page",
+  toast: "Toast"
 };
 export const templateTypeSchema = z.enum(TEMPLATE_TYPES);
 
@@ -201,6 +202,20 @@ export function resolveNotFound<T extends LayoutCandidate>(
     templates.filter((t) => t.type === "error-404"),
     ctx
   ).best;
+}
+
+/**
+ * The toast template Show Toast uses: the one it names when that one is live, else the best
+ * published toast template for the page (priority, then rules). Null means Show Toast fails.
+ */
+export function resolveToast<T extends LayoutCandidate>(
+  templates: readonly T[],
+  ctx: RuleContext,
+  chosenId = ""
+): T | null {
+  const toasts = templates.filter((t) => t.type === "toast");
+  const chosen = chosenId ? toasts.find((t) => t.id === chosenId && liveAt(t, ctx)) : undefined;
+  return chosen ?? pickBest(toasts, ctx).best;
 }
 
 /** Plain-language lines for "Why is this applied?". */

@@ -57,7 +57,7 @@ export async function loadLayoutTemplatesAction(
   try {
     await authorize(projectId);
     const all = await getDraftTemplates(projectId);
-    return { data: all.filter((t) => t.type !== "error-404"), error: null };
+    return { data: all.filter((t) => t.type === "header" || t.type === "footer"), error: null };
   } catch (error) {
     return fail(error, "Could not load the header and footer.");
   }
