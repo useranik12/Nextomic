@@ -1,6 +1,7 @@
 import { pageCss, renderNode } from "@nextomic/renderer";
 import {
   errorValue,
+  FlowError,
   LiveState,
   runFlow,
   showToastHtml,
@@ -8,7 +9,7 @@ import {
   type RunLogEntry,
   type RuntimePayload
 } from "@nextomic/runtime";
-import { createTokenResolver, type DynamicContext } from "@nextomic/schema";
+import { createTokenResolver, withTemplateParams, type DynamicContext } from "@nextomic/schema";
 import { createElement, Fragment } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
@@ -37,28 +38,37 @@ function plain(value: unknown): unknown {
   }
 }
 
-/** The toast template's content as HTML and CSS, rendered here like the server would. */
-function toastMarkup(run: TestRun, render: RenderMessage, dynamic: DynamicContext) {
-  const template = run.toast;
-  if (!template) return null;
-  const resolveToken = createTokenResolver(dynamic);
+/** A toast template's content as HTML and CSS, rendered here like the server would. */
+function toastMarkup(
+  toast: TestRun["toasts"][string],
+  render: RenderMessage,
+  dynamic: DynamicContext,
+  values: Readonly<Record<string, string>>
+) {
+  const filled = withTemplateParams(dynamic, toast.params, values);
+  const resolveToken = createTokenResolver(filled);
   const options = {
     breakpoints: render.breakpoints,
     classes: render.classes,
-    dynamic,
+    dynamic: filled,
     resolveToken,
-    tree: template
+    tree: toast.tree
   };
   const host = document.createElement("div");
   const root = createRoot(host);
   flushSync(() =>
     root.render(
-      createElement(Fragment, null, ...template.children.map((child) => renderNode(child, options)))
+      createElement(
+        Fragment,
+        null,
+        ...toast.tree.children.map((child) => renderNode(child, options))
+      )
     )
   );
   const html = host.innerHTML;
   root.unmount();
-  return { html, css: pageCss(template, render.breakpoints, {}, resolveToken) };
+  const css = pageCss(toast.tree, render.breakpoints, render.classes, resolveToken);
+  return { html, css, closeAfterMs: toast.closeAfterMs };
 }
 
 export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
@@ -93,8 +103,7 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
       rootIds: [],
       dynamic: render.dynamic,
       appState: message.appState,
-      routes: message.routes,
-      hasToast: message.toast !== null
+      routes: message.routes
     };
     const live = new LiveState(payload, {}, null, () => {
       if (controller === own) setOverride({ app: { ...live.app }, state: { ...live.state } });
@@ -113,9 +122,15 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
       },
       // The canvas re-renders from state on its own.
       rebuild: async () => {},
-      toast: async (values, position, durationMs) => {
-        const markup = toastMarkup(message, render, { ...live.context(), toast: values });
-        if (markup) showToastHtml(markup.html, markup.css, position, durationMs);
+      toast: async (templateId, values) => {
+        const toast = message.toasts[templateId];
+        if (!toast) {
+          throw new FlowError(
+            "no-template",
+            "The toast template is not published or has no conditions that hold."
+          );
+        }
+        showToastHtml(toastMarkup(toast, render, live.context(), values));
       }
     });
     let error: string | null = null;

@@ -14,6 +14,7 @@ import { RuleBuilder } from "../rules/rule-builder";
 import { useEditorStore } from "../store/editor-store";
 import { BoltInput } from "./bolt-input";
 import { MarkingGroup } from "./marking-group";
+import { PageParameters } from "./page-options";
 import { StatusField } from "./status-field";
 import { StickyHeaderGroup } from "./sticky-header-group";
 import { compactFieldClass } from "./setting-row";
@@ -145,8 +146,40 @@ export function TemplateSettingsFields() {
           />
         </section>
       ) : (
-        <RuleBuilder value={settings.rules} onChange={(rules) => set({ rules })} />
+        <div className="flex flex-col gap-2">
+          {settings.rules.items.length === 0 ? (
+            <p role="note" className="text-tiny text-warning">
+              No conditions: this template never shows. Add Whole site to use it everywhere.
+            </p>
+          ) : null}
+          <RuleBuilder value={settings.rules} onChange={(rules) => set({ rules })} />
+        </div>
       )}
+      {type === "toast" ? (
+        <label className="flex flex-col gap-1 text-tiny text-default-600">
+          Close after (ms)
+          <input
+            type="number"
+            min={1000}
+            max={60000}
+            step={500}
+            value={settings.closeAfterMs}
+            onChange={(e) =>
+              set({
+                closeAfterMs: Math.min(
+                  60_000,
+                  Math.max(1000, Math.round(Number(e.target.value) || 5000))
+                )
+              })
+            }
+            className={compactFieldClass}
+          />
+          <span className="text-tiny text-default-500">
+            The toast closes by itself after this time, or when an element with the attribute
+            data-nx-toast-close is clicked. Design its position in the template.
+          </span>
+        </label>
+      ) : null}
       {type === "header" ? (
         <StickyHeaderGroup value={settings.sticky} onChange={(sticky) => set({ sticky })} />
       ) : null}
@@ -162,6 +195,7 @@ export function TemplateOptions() {
   if (!settings) return null;
   return (
     <div key={id} className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4">
+      <PageParameters title="Template Parameters" />
       <MarkingGroup
         scope="template"
         categoryIds={settings.categoryIds}

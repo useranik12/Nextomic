@@ -18,8 +18,6 @@ export interface RuntimePayload {
   appState: AppStateVariable[];
   /** Page id to route, for Navigate To. */
   routes: Record<string, string>;
-  /** Whether a toast template is published for this page. */
-  hasToast: boolean;
 }
 
 /** One redrawn element from the fragment endpoint. */
@@ -34,10 +32,11 @@ export interface FragmentRequest {
   ids?: string[];
   app: Record<string, string>;
   state: Record<string, string>;
-  toast?: { title: string; message: string; type: string };
+  /** Show Toast: the template and its parameter values. */
+  toast?: { templateId: string; params: Record<string, string> };
 }
 
 export interface FragmentResponse {
   parts: FragmentPart[];
-  toast: { html: string; css: string } | null;
+  toast: { html: string; css: string; closeAfterMs: number } | null;
 }

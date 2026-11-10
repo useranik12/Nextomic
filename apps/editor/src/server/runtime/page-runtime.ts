@@ -61,7 +61,6 @@ interface PayloadInput {
   blocks: readonly ActionBlock[];
   rootIds: string[];
   routes: Record<string, string>;
-  hasToast: boolean;
 }
 
 /** Which state each element reads; elements inside query loops redraw with their loop. */
@@ -85,8 +84,7 @@ export function runtimePayload(input: PayloadInput): RuntimePayload | null {
     rootIds: input.rootIds,
     dynamic: { ...input.dynamic, user, exposeAccessToken: false },
     appState: input.settings.appState,
-    routes: input.routes,
-    hasToast: input.hasToast
+    routes: input.routes
   };
 }
 
@@ -96,7 +94,6 @@ interface LaidPage {
   dynamic: DynamicContext;
   templateIds: string[];
   rootIds: string[];
-  toast: unknown;
 }
 
 /** The payload of a live page; flows and blocks come from the published snapshot. */
@@ -124,8 +121,7 @@ export async function livePayload(
     settings: view.settings,
     flows,
     blocks: row?.blocks ?? [],
-    routes: view.routes,
-    hasToast: laid.toast !== null
+    routes: view.routes
   });
 }
 
@@ -153,7 +149,6 @@ export async function previewPayload(
     settings,
     flows,
     blocks: blocks.map((b) => b.block),
-    routes: Object.fromEntries(pages.map((p) => [p.id, p.route])),
-    hasToast: laid.toast !== null
+    routes: Object.fromEntries(pages.map((p) => [p.id, p.route]))
   });
 }

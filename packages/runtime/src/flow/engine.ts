@@ -1,6 +1,8 @@
 import {
   getAction,
   groupHolds,
+  isRowsField,
+  rowColumns,
   MAX_LOOP_ITERATIONS,
   operandValue,
   toText,
@@ -76,9 +78,9 @@ interface Frame {
 const scopeOf = (f: Frame) => ({ ...f.env.baseScope(), ...f.env.extra, ...f.names });
 
 function resolveField(field: ParamField, value: unknown, scope: Record<string, unknown>) {
-  if (field.kind === "rows") {
+  if (isRowsField(field)) {
     const rows = Array.isArray(value) ? (value as Record<string, string>[]) : [];
-    const columns = field.columns ?? [];
+    const columns = rowColumns(field);
     return rows.map((row) =>
       Object.fromEntries(columns.map((c) => [c.key, operandValue(row[c.key] ?? "", scope)]))
     );

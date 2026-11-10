@@ -71,17 +71,17 @@ Design System page, Themes tab: list (name, condition summary, priority, default
 
 ### 4.1 Types
 
-| Type           | Purpose                                                                                                                                                                   | Applied by                                                | Phase |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----- |
-| header         | Top of page                                                                                                                                                               | conditions                                                | 3     |
-| footer         | Bottom of page                                                                                                                                                            | conditions                                                | 3     |
-| error-404      | Not found page                                                                                                                                                            | one default, optional per-route override                  | 3     |
-| toast          | The card Show Toast displays (`{{ toast.title }}`, `{{ toast.message }}`, `{{ toast.type }}`); starts from a HeroUI-like design; must be published for Show Toast to work | Show Toast: highest priority, then rules (`resolveToast`) | 5     |
-| popup          | Overlay (modal, drawer, banner)                                                                                                                                           | triggers + conditions                                     | 9     |
-| archive        | List page for a collection (loop, filter, search, pagination)                                                                                                             | route                                                     | 9     |
-| single         | Detail page for one record, route param driven                                                                                                                            | route                                                     | 9     |
-| search-results | Results for `/search?q=`                                                                                                                                                  | route                                                     | 9     |
-| error-500      | Server error page                                                                                                                                                         | one default                                               | 9     |
+| Type           | Purpose                                                                                                                                                                                                                                        | Applied by                                                                                | Phase |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----- |
+| header         | Top of page                                                                                                                                                                                                                                    | conditions                                                                                | 3     |
+| footer         | Bottom of page                                                                                                                                                                                                                                 | conditions                                                                                | 3     |
+| error-404      | Not found page                                                                                                                                                                                                                                 | one default, optional per-route override                                                  | 3     |
+| toast          | The card Show Toast displays. A new toast template is a blank canvas; its position, size and look are designed in the template. Template parameters (`{{ param.<name> }}`) carry the values Show Toast passes. Toast setting: Close after (ms) | Show Toast picks it by id; it shows only if live and its conditions hold (`resolveToast`) | 5     |
+| popup          | Overlay (modal, drawer, banner)                                                                                                                                                                                                                | triggers + conditions                                                                     | 9     |
+| archive        | List page for a collection (loop, filter, search, pagination)                                                                                                                                                                                  | route                                                                                     | 9     |
+| single         | Detail page for one record, route param driven                                                                                                                                                                                                 | route                                                                                     | 9     |
+| search-results | Results for `/search?q=`                                                                                                                                                                                                                       | route                                                                                     | 9     |
+| error-500      | Server error page                                                                                                                                                                                                                              | one default                                                                               | 9     |
 
 Header, footer, and 404 are required in v1. Others follow the same model; do not build them before their phase.
 
@@ -108,6 +108,17 @@ interface Template {
 
 - Templates are edited in the same editor canvas. The page select in the top bar lists Pages and Templates in separate groups, and its "+" offers New page and New template. The editing chip shows "Template" in the secondary color so a template is never mistaken for a page (see `ui-reference.md` 4.3). The Navigator panel only holds the elements of whatever is being edited.
 - In template mode the editing chip's menu has "Preview as...": choose a page (or a sample record for archive/single) to see the template in context. Preview data is fetched live or comes from user-authored sample JSON; it is never stored from the connected source.
+
+### 4.2.1 Conditions are required
+
+- A template shows only when it is live (published, or scheduled and due) AND has at least one condition AND its conditions hold (`templateApplies`). A template with no conditions never shows, even when something picks it by id (a Show Toast action, a page's header choice). To use a template on the whole site, give it the **Whole site** rule. Template settings warn: "No conditions: this template never shows. Add Whole site to use it everywhere."
+- Exception: the default 404 picks the best live 404 template by priority, conditions or not.
+
+### 4.2.2 Template parameters
+
+- Every template has typed parameters (`TemplateSettings.params`, same shape as Page Parameters: name, type, Required, default value), edited in the right panel as "Template Parameters" when nothing is selected. Elements bind them with `{{ param.<name> }}`.
+- **Required:** a required parameter must have a default value (save is blocked: "A required parameter needs a default value."), and every action that opens the template (Show Toast) must pass a value; the flow checks report it as an error. The read view and the action's parameter input mark it with a red asterisk.
+- Header, footer and 404 templates get their parameters' default values (nothing passes them); they sit beside the page's parameters and the page wins on a name clash. A toast gets only its own parameters: the passed value, else the default.
 
 ### 4.3 Header and footer
 

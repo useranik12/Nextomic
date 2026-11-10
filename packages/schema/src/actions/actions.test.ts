@@ -311,14 +311,48 @@ describe("flow issues", () => {
       flow([
         action("a", ""),
         action("b", "auth.login", { params: { method: "password", email: "x@y.z" } }),
-        action("c", "toast", { params: { message: "Hi", type: "loud" } })
+        action("c", "toast", { params: {} })
       ]),
       ctx
     );
     expect(issues.map((i) => [i.nodeId, i.message])).toEqual([
       ["a", "Not defined: choose an action."],
       ["b", "Password is required."],
-      ["c", "Type has an unknown value."]
+      ["c", "Toast template is required."]
+    ]);
+  });
+
+  it("checks the parameters a page or template needs", () => {
+    const param = (name: string, required: boolean) => ({
+      name,
+      type: "string" as const,
+      required,
+      defaultValue: "x"
+    });
+    const targets = {
+      pages: { p1: [param("id", true), param("tab", false)] },
+      templates: {
+        t1: { params: [param("title", true)], published: true, hasConditions: false }
+      }
+    };
+    const issues = flowIssues(
+      flow([
+        action("n", "navigate", { params: { page: "p1", params: [] } }),
+        action("ok", "navigate", { params: { page: "p1", params: [{ name: "id", value: "7" }] } }),
+        action("t", "toast", { params: { template: "t1", params: [] } }),
+        action("g", "toast", { params: { template: "gone" } })
+      ]),
+      { ...ctx, targets }
+    );
+    expect(issues.map((i) => [i.nodeId, i.severity, i.message])).toEqual([
+      ["n", "error", "Parameters: id is required."],
+      ["t", "error", "Parameters: title is required."],
+      [
+        "t",
+        "warning",
+        "The template has no conditions, so it never shows. Add Whole site to show it everywhere."
+      ],
+      ["g", "error", "The template no longer exists."]
     ]);
   });
 
@@ -458,11 +492,7 @@ describe("Action Blocks", () => {
   });
 
   it("starts actions with field defaults", () => {
-    expect(defaultParams(getAction("toast")!.fields)).toEqual({
-      type: "default",
-      position: "bottom-right",
-      durationMs: "4000"
-    });
+    expect(defaultParams(getAction("toast")!.fields)).toEqual({ params: [] });
     expect(defaultParams(getAction("state.updateApp")!.fields)).toEqual({ updates: [] });
   });
 });

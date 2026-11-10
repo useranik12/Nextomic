@@ -50,52 +50,29 @@ export function swapParts(parts: readonly FragmentPart[]): Element[] {
   return inserted;
 }
 
-const POSITIONS: Record<string, string> = {
-  "top-left": "top:16px;left:16px;align-items:flex-start",
-  "top-center": "top:16px;left:50%;transform:translateX(-50%);align-items:center",
-  "top-right": "top:16px;right:16px;align-items:flex-end",
-  "bottom-left": "bottom:16px;left:16px;align-items:flex-start",
-  "bottom-center": "bottom:16px;left:50%;transform:translateX(-50%);align-items:center",
-  "bottom-right": "bottom:16px;right:16px;align-items:flex-end"
-};
-
-function toastStack(position: string): HTMLElement {
-  const key = POSITIONS[position] ? position : "bottom-right";
-  const sel = `[data-nx-toasts="${key}"]`;
-  const found = document.querySelector<HTMLElement>(sel);
-  if (found) return found;
-  const stack = document.createElement("div");
-  stack.dataset.nxToasts = key;
-  stack.setAttribute("aria-live", "polite");
-  stack.style.cssText = `position:fixed;z-index:2147483000;display:flex;flex-direction:column;gap:8px;pointer-events:none;${POSITIONS[key]}`;
-  document.body.append(stack);
-  return stack;
+/**
+ * Shows a rendered toast template. Its design (position, size, look) comes from the template; it
+ * closes after `closeAfterMs` or when an element with `data-nx-toast-close` is clicked.
+ */
+export function showToastHtml(toast: { html: string; css: string; closeAfterMs: number }) {
+  const item = document.createElement("div");
+  // Each toast keeps its own styles: two toasts of one template share element ids.
+  const key = String((toastCount += 1));
+  item.dataset.nxToast = key;
+  item.setAttribute("role", "status");
+  item.setAttribute("aria-live", "polite");
+  const style = document.createElement("style");
+  style.textContent = `[data-nx-toast="${key}"]{${toast.css}}`;
+  item.append(style, document.createRange().createContextualFragment(toast.html));
+  document.body.append(item);
+  const close = () => {
+    window.clearTimeout(timer);
+    item.remove();
+  };
+  const timer = window.setTimeout(close, toast.closeAfterMs);
+  item.addEventListener("click", (e) => {
+    if (e.target instanceof Element && e.target.closest("[data-nx-toast-close]")) close();
+  });
 }
 
 let toastCount = 0;
-
-/** Shows a rendered toast; it closes after `durationMs` or on its close button. */
-export function showToastHtml(html: string, css: string, position: string, durationMs: number) {
-  const item = document.createElement("div");
-  // Each toast keeps its own styles: two toasts of different types share element ids.
-  const key = String((toastCount += 1));
-  item.dataset.nxToastItem = key;
-  item.style.cssText =
-    "pointer-events:auto;transition:opacity .2s ease,transform .2s ease;opacity:0;transform:translateY(6px)";
-  const style = document.createElement("style");
-  style.textContent = `[data-nx-toast-item="${key}"]{${css}}`;
-  item.append(style, document.createRange().createContextualFragment(html));
-  toastStack(position).append(item);
-  requestAnimationFrame(() => {
-    item.style.opacity = "1";
-    item.style.transform = "none";
-  });
-  let timer = 0;
-  const close = () => {
-    window.clearTimeout(timer);
-    item.style.opacity = "0";
-    window.setTimeout(() => item.remove(), 200);
-  };
-  timer = window.setTimeout(close, durationMs);
-  item.querySelector("[data-nx-toast-close]")?.addEventListener("click", close);
-}

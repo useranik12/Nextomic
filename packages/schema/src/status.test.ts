@@ -87,7 +87,11 @@ describe("status and scheduling", () => {
       id: "h",
       type: "header" as const,
       name: "h",
-      settings: templateSettingsSchema.parse({ status: "scheduled", scheduledAt: at })
+      settings: templateSettingsSchema.parse({
+        status: "scheduled",
+        scheduledAt: at,
+        rules: group([rule({ field: "site.whole", op: "isTrue" })])
+      })
     });
     const choices = { header: "auto", footer: "auto" };
     const early = resolveLayout([tpl("2026-11-07T11:00:00Z")], choices, ctx);

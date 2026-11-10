@@ -47,8 +47,9 @@ export async function openTemplate(templateId: string): Promise<string | null> {
     {
       name: t.name,
       route: "",
-      // Templates have no route, parameters or state; the page settings are only a placeholder.
-      settings: defaultPageSettings(),
+      // Templates have no route or state; their parameters ride in the page-settings slot so the
+      // parameter editor and {{ param.* }} work as on a page (saved back into template settings).
+      settings: { ...defaultPageSettings(), params: t.settings.params },
       tree: t.tree,
       template: t.settings
     }

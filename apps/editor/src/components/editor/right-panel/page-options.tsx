@@ -5,6 +5,7 @@ import {
   PARAM_TYPES,
   ROUTE_PATTERN,
   STATE_TYPE_LABELS,
+  paramProblems,
   type PageSettings,
   tagText
 } from "@nextomic/schema";
@@ -203,7 +204,8 @@ function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }
   );
 }
 
-function PageParameters() {
+/** Parameters of the page, or of the template being edited. */
+export function PageParameters({ title = "Page Parameters" }: { title?: string }) {
   const saved = useEditorStore((s) => s.doc?.settings.params ?? []);
   const draft = useEditorStore((s) => s.pageDrafts.params);
   const setDraft = useEditorStore((s) => s.setPageDraft);
@@ -212,21 +214,24 @@ function PageParameters() {
   const params = draft ?? saved;
   const set = (next: Params) => setDraft("params", next);
   const dirty = editing && JSON.stringify(draft) !== JSON.stringify(saved);
+  const problems = paramProblems(params);
   const save = () => {
+    // A required parameter without a default value cannot be saved.
+    if (Object.keys(problems).length > 0) return false;
     if (draft) update({ params: draft });
     setDraft("params", null);
     return true;
   };
   return (
     <DraftScope
-      label="Page Parameters"
+      label={title}
       dirty={dirty}
       onSave={save}
       onDiscard={() => setDraft("params", null)}
     >
-      <section aria-label="Page parameters" className="flex flex-col gap-2">
+      <section aria-label={title} className="flex flex-col gap-2">
         <DraftHeader
-          title="Page Parameters"
+          title={title}
           editing={editing}
           dirty={dirty}
           onEdit={() => setDraft("params", structuredClone(saved))}
@@ -266,8 +271,8 @@ function PageParameters() {
                     }
                   />
                   <BoltInput
-                    label={`Value for ${param.name}`}
-                    placeholder="Value"
+                    label={`Default value for ${param.name}`}
+                    placeholder="Default value"
                     value={param.defaultValue}
                     exclude={["params", "state"]}
                     className="flex-1"
@@ -276,10 +281,30 @@ function PageParameters() {
                     }
                   />
                 </div>
+                <Checkbox
+                  size="sm"
+                  isSelected={param.required}
+                  onValueChange={(required) =>
+                    set(params.map((p, i) => (i === index ? { ...p, required } : p)))
+                  }
+                >
+                  <span className="text-tiny">Required</span>
+                </Checkbox>
+                {problems[param.name] ? (
+                  <p role="alert" className="text-tiny text-danger">
+                    <span aria-hidden="true">* </span>
+                    {problems[param.name]}
+                  </p>
+                ) : null}
               </>
             ) : (
               <p className="min-w-0 truncate text-small text-foreground">
                 {param.name}
+                {param.required ? (
+                  <span className="text-danger" aria-label="required">
+                    *
+                  </span>
+                ) : null}
                 <span className="text-tiny text-default-500"> {param.type}</span>
                 {param.defaultValue ? (
                   <span className="text-tiny text-default-500"> = {param.defaultValue}</span>

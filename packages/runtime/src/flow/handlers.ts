@@ -22,12 +22,8 @@ export const browserNavigation: Navigation = {
 export interface HandlerDeps {
   payload: RuntimePayload;
   state: LiveState;
-  /** Renders and shows the toast template with these values. */
-  toast: (
-    values: { title: string; message: string; type: string },
-    position: string,
-    durationMs: number
-  ) => Promise<void>;
+  /** Renders the toast template with these parameter values and shows it. */
+  toast: (templateId: string, params: Record<string, string>) => Promise<void>;
   /** Redraws every element that reads state, and every slot. */
   rebuild: () => Promise<void>;
   /** A page URL of this site (live or preview). */
@@ -80,14 +76,9 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
     },
     wait: (p, ctx) => sleep(Math.max(0, numberParam(p.durationMs, 0)), ctx.signal),
     toast: async (p) => {
-      if (!deps.payload.hasToast) {
-        throw new FlowError("no-toast-template", "Publish a toast template to show toasts.");
-      }
-      await deps.toast(
-        { title: toText(p.title), message: toText(p.message), type: toText(p.type) || "default" },
-        toText(p.position),
-        Math.min(60_000, Math.max(1000, numberParam(p.durationMs, 4000)))
-      );
+      const templateId = toText(p.template);
+      if (!templateId) throw new FlowError("no-template", "Choose the toast template to show.");
+      await deps.toast(templateId, Object.fromEntries(query(p.params)));
     },
     "state.updateApp": (p) => deps.state.update("app", updatesOf(p.updates)),
     "state.updatePage": (p) => deps.state.update("state", updatesOf(p.updates)),
@@ -102,7 +93,7 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
     navigate: (p) => {
       const route = deps.payload.routes[toText(p.page)];
       if (!route) throw new FlowError("no-page", "The page no longer exists.");
-      const params = query(p.routeParams);
+      const params = query(p.params);
       for (const [k, v] of query(p.query)) params.append(k, v);
       const href = deps.hrefFor(route, params);
       deps.navigation.open(href, toText(p.replace) === "true");
