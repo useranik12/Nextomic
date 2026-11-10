@@ -46,8 +46,14 @@ export interface LoopNode extends NodeBase {
   mode: "forEach" | "while";
   /** forEach: the list, usually one {{ tag }}. */
   list: string;
-  /** forEach: the name later nodes in the body read the current item and index by. */
+  /** forEach: the name nodes in the body read the current item and index by (generated). */
   itemName: string;
+  /** forEach: first index (text, may hold a tag); empty means 0. */
+  start: string;
+  /** forEach: last index, inclusive; empty means the end of the list. */
+  end: string;
+  /** forEach: index step; empty means 1. */
+  step: string;
   /** while: repeats while this holds. */
   condition?: ConditionGroup | undefined;
   /** Safety cap on the number of rounds. */
@@ -134,6 +140,9 @@ export const flowNodeSchema: z.ZodType<FlowNode, z.ZodTypeDef, unknown> = z.lazy
       mode: z.enum(["forEach", "while"]),
       list: z.string().max(2000).default(""),
       itemName: z.string().max(64).default("item"),
+      start: z.string().max(2000).default(""),
+      end: z.string().max(2000).default(""),
+      step: z.string().max(2000).default(""),
       condition: conditionGroupSchema.optional(),
       maxIterations: z.number().int().min(1).max(MAX_LOOP_ITERATIONS).default(1000),
       nodes

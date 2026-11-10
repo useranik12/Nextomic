@@ -53,6 +53,7 @@ export function ActionPicker({
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState<string | null>(null);
+  const [openSub, setOpenSub] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
   const matches = (label: string) => !q || label.toLowerCase().includes(q);
 
@@ -110,23 +111,41 @@ export function ActionPicker({
                       </button>
                     </li>
                   ))}
-                  {groups.map((g) =>
-                    g.subcategory ? (
+                  {groups.map((g) => {
+                    if (!g.subcategory) return null;
+                    const key = `${category.id}:${g.subcategory}`;
+                    const subOpen = Boolean(q) || openSub === key;
+                    return (
                       <li key={g.subcategory}>
-                        <p className="px-2 pb-0.5 pt-2 text-tiny font-semibold uppercase tracking-wide text-default-500">
+                        <button
+                          type="button"
+                          aria-expanded={subOpen}
+                          onClick={() => setOpenSub(subOpen ? null : key)}
+                          className="flex w-full items-center gap-2 rounded-small px-2 py-1.5 text-left text-small font-medium text-default-700 hover:bg-default-100"
+                        >
+                          {subOpen ? (
+                            <Icon name="ph:caret-down" width={12} height={12} />
+                          ) : (
+                            <Icon name="ph:caret-right" width={12} height={12} />
+                          )}
                           {g.subcategory}
-                        </p>
-                        <ul>
-                          {g.actions.map((a) => (
-                            <ActionItem key={a.type} action={a} onPick={() => onPick(a.type)} />
-                          ))}
-                        </ul>
+                        </button>
+                        {subOpen ? (
+                          <ul className="ml-3 border-l border-divider pl-2">
+                            {g.actions.map((a) => (
+                              <ActionItem key={a.type} action={a} onPick={() => onPick(a.type)} />
+                            ))}
+                          </ul>
+                        ) : null}
                       </li>
-                    ) : (
-                      g.actions.map((a) => (
-                        <ActionItem key={a.type} action={a} onPick={() => onPick(a.type)} />
-                      ))
-                    )
+                    );
+                  })}
+                  {groups.map((g) =>
+                    g.subcategory
+                      ? null
+                      : g.actions.map((a) => (
+                          <ActionItem key={a.type} action={a} onPick={() => onPick(a.type)} />
+                        ))
                   )}
                 </ul>
               ) : null}

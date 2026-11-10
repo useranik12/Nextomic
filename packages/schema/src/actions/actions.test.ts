@@ -284,7 +284,7 @@ describe("flow schema", () => {
         { id: "b", kind: "break" }
       ]
     });
-    expect(node).toMatchObject({ itemName: "item", maxIterations: 1000 });
+    expect(node).toMatchObject({ itemName: "item", maxIterations: 1000, start: "", step: "" });
     expect(node.kind === "loop" && node.nodes[0]).toMatchObject({ params: {} });
   });
 
@@ -339,6 +339,9 @@ describe("flow issues", () => {
           list: "",
           itemName: "x",
           maxIterations: 5,
+          start: "",
+          end: "",
+          step: "",
           nodes: []
         },
         action("t1", "confirm", {
@@ -406,6 +409,9 @@ describe("visible names", () => {
       list: "{{ app.items }}",
       itemName: "row",
       maxIterations: 10,
+      start: "",
+      end: "",
+      step: "",
       nodes: [
         {
           id: "t",
@@ -513,5 +519,86 @@ describe("flow edits", () => {
     expect(copy.id).not.toBe(cond.id);
     expect(m.findFlowNode([copy], "x")).toBeNull();
     expect(m.countEnabledActions([copy])).toBe(1);
+  });
+
+  it("generates loop item names and renames them in copies", async () => {
+    const m = await import("../index");
+    expect(m.loopItemName("{{ app.products }}", "abc123")).toBe("loop_abc123_products");
+    const loop = m.newFlowNode("loop");
+    if (loop.kind !== "loop") throw new Error("not a loop");
+    expect(m.loopNameCode(loop.itemName)).toMatch(/^[a-z0-9]{6}$/);
+    loop.nodes = [
+      { id: "t", kind: "action", type: "toast", params: { message: `{{ ${loop.itemName}.item }}` } }
+    ];
+    const copy = m.withFreshIds(loop);
+    if (copy.kind !== "loop") throw new Error("not a loop");
+    expect(copy.itemName).not.toBe(loop.itemName);
+    expect(JSON.stringify(copy.nodes)).toContain(copy.itemName);
+  });
+
+  it("checks Supabase values against the saved columns", async () => {
+    const m = await import("../index");
+    const col = (name: string, nullable: boolean, hasDefault: boolean) => ({
+      name,
+      pgType: "text",
+      type: "string" as const,
+      isList: false,
+      nullable,
+      primaryKey: false,
+      references: null,
+      enumValues: null,
+      hasDefault,
+      description: null
+    });
+    const structure = {
+      schemas: [
+        {
+          schema: "public",
+          functions: [],
+          tables: [
+            {
+              name: "todos",
+              kind: "table" as const,
+              description: null,
+              operations: ["select", "insert", "update", "delete"] as (
+                | "select"
+                | "insert"
+                | "update"
+                | "delete"
+              )[],
+              columns: [
+                col("id", false, true),
+                col("title", false, false),
+                col("note", true, false)
+              ]
+            }
+          ]
+        }
+      ],
+      buckets: []
+    };
+    const insert = (values: { column: string; value: string }[]) =>
+      m.supabaseActionProblems("supabase.insert", { table: "todos", values }, structure);
+    expect(insert([])).toEqual([expect.stringContaining('"title" is required')]);
+    expect(insert([{ column: "title", value: "{{ x }}" }])).toEqual([]);
+    expect(insert([{ column: "title", value: "" }])[0]).toContain("cannot be empty");
+    expect(
+      insert([
+        { column: "title", value: "a" },
+        { column: "nope", value: "b" }
+      ])[0]
+    ).toContain("not a column");
+    expect(
+      m.supabaseActionProblems("supabase.update", { table: "todos", values: [] }, structure)
+    ).toEqual([]);
+    expect(m.supabaseActionProblems("supabase.insert", { table: "gone" }, structure)[0]).toContain(
+      "not in the saved"
+    );
+  });
+
+  it("explains every available trigger", async () => {
+    const m = await import("../index");
+    const missing = m.TRIGGERS.filter((t) => !t.disabled && !t.description).map((t) => t.id);
+    expect(missing).toEqual([]);
   });
 });

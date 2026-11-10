@@ -180,6 +180,52 @@ export function SelectField({
   );
 }
 
+/** A select that picks any number of options; an empty pick is allowed. */
+export function MultiSelectField({
+  label,
+  options,
+  values,
+  onValuesChange,
+  compact = false,
+  isDisabled,
+  description,
+  placeholder
+}: Omit<SelectFieldProps, "value" | "onValueChange" | "hideLabel" | "className"> & {
+  values: string[];
+  onValuesChange: (values: string[]) => void;
+  placeholder?: string;
+}) {
+  const markOpened = useIgnoreOpeningScroll();
+  // Picked values missing from the options (a renamed column) stay visible so they can be removed.
+  const missing = values.filter((v) => !options.some((o) => o.value === v));
+  const items = [...missing.map((v) => ({ value: v, label: v })), ...options];
+  return (
+    <Select
+      aria-label={label}
+      label={label}
+      labelPlacement="outside"
+      variant="bordered"
+      selectionMode="multiple"
+      placeholder={placeholder}
+      isDisabled={isDisabled}
+      description={description}
+      onOpenChange={markOpened}
+      selectedKeys={values}
+      onSelectionChange={(keys) => onValuesChange(Array.from(keys, String))}
+      classNames={SELECT_CLASSES(compact)}
+      popoverProps={{ offset: 6, placement: "bottom-start" }}
+      listboxProps={{ itemClasses: ITEM_CLASSES }}
+      selectorIcon={<Icon name="ph:caret-down" width={14} height={14} />}
+    >
+      {items.map((option) => (
+        <SelectItem key={option.value} textValue={option.label}>
+          {option.label}
+        </SelectItem>
+      ))}
+    </Select>
+  );
+}
+
 export function PasswordInput(props: InputProps & { compact?: boolean }) {
   const [visible, setVisible] = useState(false);
   const iconSize = props.compact ? 16 : 20;

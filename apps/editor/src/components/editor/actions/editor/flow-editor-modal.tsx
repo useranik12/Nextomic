@@ -94,7 +94,12 @@ export function FlowEditorModal() {
       isDismissable={false}
       hideCloseButton
       size="full"
-      classNames={{ base: "m-0 rounded-none sm:m-4 sm:rounded-large", body: "p-0" }}
+      // Same 16px gap on every side; "full" alone fills the screen top to bottom.
+      classNames={{
+        wrapper: "items-center",
+        base: "!m-4 h-[calc(100dvh-2rem)] min-h-0 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-none !rounded-large",
+        body: "p-0"
+      }}
     >
       <ModalContent>
         <div className="flex h-full min-h-0 flex-col" onKeyDown={onHistoryKey}>
@@ -153,7 +158,7 @@ export function FlowEditorModal() {
               >
                 {target?.mode === "block" ? <BlockSidebar /> : <TriggerSidebar />}
               </aside>
-              <main className="min-w-0 flex-1 overflow-auto bg-default-50/50">
+              <main className="min-w-0 flex-1 overflow-hidden bg-default-50/50">
                 <FlowCanvas errors={errors} />
               </main>
               <aside

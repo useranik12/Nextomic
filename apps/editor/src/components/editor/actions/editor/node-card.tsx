@@ -67,6 +67,7 @@ export function NodeCard({
   };
   return (
     <div
+      data-flow-node
       onContextMenu={(e) => {
         e.preventDefault();
         useFlowDraft.getState().select(node.id);

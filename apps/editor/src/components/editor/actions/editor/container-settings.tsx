@@ -2,6 +2,8 @@
 
 import {
   countConditions,
+  loopItemName,
+  loopNameCode,
   MAX_LOOP_ITERATIONS,
   type ConditionGroup,
   type FlowNode
@@ -95,6 +97,16 @@ function ConditionSettings({
   );
 }
 
+/** A new list renames the generated item name, and tags inside the loop follow it. */
+function withList(node: Of<"loop">, list: string): Of<"loop"> {
+  const itemName = loopItemName(list, loopNameCode(node.itemName));
+  // Only generated names are renamed in tags: an old name like "item" is too common to replace.
+  const nodes = loopNameCode(node.itemName)
+    ? (JSON.parse(JSON.stringify(node.nodes).split(node.itemName).join(itemName)) as FlowNode[])
+    : node.nodes;
+  return { ...node, list, itemName, nodes };
+}
+
 function LoopSettings({ node, update }: { node: Of<"loop">; update: (n: FlowNode) => void }) {
   return (
     <div className="flex flex-col gap-3">
@@ -113,14 +125,35 @@ function LoopSettings({ node, update }: { node: Of<"loop">; update: (n: FlowNode
           <BoltInput
             label="List *"
             value={node.list}
-            onValueChange={(list) => update({ ...node, list })}
+            onValueChange={(list) => update(withList(node, list))}
           />
           <FormInput
             compact
+            isReadOnly
             label="Item name"
             value={node.itemName}
-            onValueChange={(itemName) => update({ ...node, itemName })}
-            description="Nodes inside the loop read the current item and its index by this name."
+            description={`Nodes inside read {{ ${node.itemName}.item }} and {{ ${node.itemName}.index }}. Set from the list.`}
+          />
+          <BoltInput
+            label="Start index"
+            value={node.start}
+            placeholder="0"
+            inputMode="numeric"
+            onValueChange={(start) => update({ ...node, start })}
+          />
+          <BoltInput
+            label="End index"
+            value={node.end}
+            placeholder="Last item"
+            inputMode="numeric"
+            onValueChange={(end) => update({ ...node, end })}
+          />
+          <BoltInput
+            label="Step size"
+            value={node.step}
+            placeholder="1"
+            inputMode="numeric"
+            onValueChange={(step) => update({ ...node, step })}
           />
         </>
       ) : (

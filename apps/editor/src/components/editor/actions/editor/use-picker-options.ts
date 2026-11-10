@@ -1,6 +1,13 @@
 "use client";
 
-import { activeQuery, walkElements, type FieldKind, type ParamField } from "@nextomic/schema";
+import {
+  activeQuery,
+  tableByRef,
+  walkElements,
+  type FieldKind,
+  type ParamField,
+  type Params
+} from "@nextomic/schema";
 import { useEffect, useMemo, useState } from "react";
 import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
 import type { SelectOption } from "@/components/ui/controls";
@@ -15,6 +22,8 @@ export type PickerKind = Extract<
   | "pageState"
   | "query"
   | "supabaseTable"
+  | "supabaseColumn"
+  | "supabaseColumns"
   | "restCall"
   | "timeline"
   | "theme"
@@ -27,6 +36,8 @@ export const PICKER_KINDS: ReadonlySet<FieldKind> = new Set<PickerKind>([
   "pageState",
   "query",
   "supabaseTable",
+  "supabaseColumn",
+  "supabaseColumns",
   "restCall",
   "timeline",
   "theme"
@@ -39,6 +50,8 @@ const EMPTY_HINT: Record<PickerKind, string> = {
   pageState: "Add page state variables in Page Settings first.",
   query: "No query loop on this page.",
   supabaseTable: "Connect Supabase and fetch its schema first.",
+  supabaseColumn: "Choose a table first.",
+  supabaseColumns: "Choose a table first.",
   restCall: "Add a call in API Data first.",
   timeline: "Create a GSAP timeline in Animations first.",
   theme: "No themes."
@@ -46,12 +59,13 @@ const EMPTY_HINT: Record<PickerKind, string> = {
 
 /** Options for every structure picker, read from the editor and the project. */
 export function usePickerOptions(): {
-  optionsFor: (field: ParamField) => SelectOption[];
+  optionsFor: (field: ParamField, params?: Params) => SelectOption[];
   emptyHint: (kind: PickerKind) => string;
 } {
   const projectId = useEditorStore((s) => s.projectId);
   const doc = useEditorStore((s) => s.doc);
   const project = useEditorStore((s) => s.project);
+  const currentPageId = useEditorStore((s) => (s.page?.kind === "template" ? null : s.page?.id));
   const sources = useQuerySources(projectId);
   const [pages, setPages] = useState<SelectOption[]>([]);
 
@@ -97,7 +111,13 @@ export function usePickerOptions(): {
     };
   }, [doc, project, sources.data]);
 
-  const optionsFor = (field: ParamField): SelectOption[] => {
+  const columnsOf = (ref: string): SelectOption[] => {
+    const structure = sources.data?.supabase?.structure;
+    const table = structure && ref ? tableByRef(structure, ref) : null;
+    return (table?.columns ?? []).map((c) => ({ value: c.name, label: c.name }));
+  };
+
+  const optionsFor = (field: ParamField, params: Params = {}): SelectOption[] => {
     switch (field.kind as PickerKind) {
       case "element": {
         const allowed = field.elementTypes;
@@ -107,7 +127,7 @@ export function usePickerOptions(): {
         return field.selfWhenEmpty ? [{ value: "", label: "This element" }, ...items] : items;
       }
       case "page":
-        return pages;
+        return field.excludeCurrent ? pages.filter((p) => p.value !== currentPageId) : pages;
       case "appState":
         return lists.appState;
       case "pageState":
@@ -116,6 +136,11 @@ export function usePickerOptions(): {
         return lists.queries;
       case "supabaseTable":
         return lists.tables;
+      case "supabaseColumn":
+      case "supabaseColumns": {
+        const ref = params[field.tableParam ?? "table"];
+        return columnsOf(typeof ref === "string" ? ref : "");
+      }
       case "restCall":
         return lists.calls;
       case "timeline":

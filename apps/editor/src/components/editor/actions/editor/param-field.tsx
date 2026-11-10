@@ -10,7 +10,12 @@ import {
   type ParamValue
 } from "@nextomic/schema";
 import { useState } from "react";
-import { ActionButton, SelectField, type SelectOption } from "@/components/ui/controls";
+import {
+  ActionButton,
+  MultiSelectField,
+  SelectField,
+  type SelectOption
+} from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { BoltInput } from "../../right-panel/bolt-input";
 import { PICKER_KINDS, usePickerOptions, type PickerKind } from "./use-picker-options";
@@ -74,16 +79,36 @@ function SingleInput({
   field,
   value,
   onChange,
-  options
+  options,
+  params
 }: {
   field: ParamField;
   value: string;
   onChange: (value: string) => void;
   options: Options;
+  /** The action's params, for pickers that depend on another field (columns of a table). */
+  params: Params;
 }) {
   if (PICKER_KINDS.has(field.kind)) {
-    const items: SelectOption[] = options.optionsFor(field);
+    const items: SelectOption[] = options.optionsFor(field, params);
     const reason = UNBINDABLE_FIELD_REASONS[field.kind];
+    if (field.kind === "supabaseColumns") {
+      return (
+        <MultiSelectField
+          compact
+          label={labelOf(field)}
+          options={items}
+          values={value
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean)}
+          onValuesChange={(values) => onChange(values.join(","))}
+          isDisabled={items.length === 0}
+          placeholder="All columns"
+          description={items.length === 0 ? options.emptyHint(field.kind) : undefined}
+        />
+      );
+    }
     return (
       <SelectField
         compact
@@ -137,12 +162,14 @@ function RowsInput({
   field,
   rows,
   onChange,
-  options
+  options,
+  params
 }: {
   field: ParamField;
   rows: ParamRow[];
   onChange: (rows: ParamRow[]) => void;
   options: Options;
+  params: Params;
 }) {
   const columns = field.columns ?? [];
   const blank = () => Object.fromEntries(columns.map((c) => [c.key, c.default ?? ""])) as ParamRow;
@@ -158,6 +185,7 @@ function RowsInput({
                 field={column}
                 value={row[column.key] ?? ""}
                 options={options}
+                params={params}
                 onChange={(v) =>
                   onChange(rows.map((r, j) => (j === i ? { ...r, [column.key]: v } : r)))
                 }
@@ -211,6 +239,7 @@ export function ParamFields({
                   field={field}
                   rows={Array.isArray(value) ? value : []}
                   options={options}
+                  params={params}
                   onChange={(rows) => set(field.key, rows)}
                 />
               ) : (
@@ -218,6 +247,7 @@ export function ParamFields({
                   field={field}
                   value={typeof value === "string" ? value : ""}
                   options={options}
+                  params={params}
                   onChange={(v) => set(field.key, v)}
                 />
               )}
