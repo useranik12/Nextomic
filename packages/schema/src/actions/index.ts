@@ -5,3 +5,4 @@ export * from "./flow";
 export * from "./flow-check";
 export * from "./blocks";
 export * from "./storage";
+export * from "./flow-edit";

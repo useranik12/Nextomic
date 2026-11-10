@@ -482,3 +482,36 @@ describe("flow storage inputs", () => {
     expect(page.flows?.n1).toHaveLength(1);
   });
 });
+
+describe("flow edits", () => {
+  it("inserts, finds, moves, replaces and removes nodes in nested lists", async () => {
+    const m = await import("../index");
+    const loop = m.newFlowNode("loop");
+    let nodes = m.insertFlowNode([], m.TOP_SLOT, 0, loop);
+    nodes = m.insertFlowNode(nodes, { parent: loop.id, list: "nodes" }, 0, action("a", "wait"));
+    nodes = m.insertFlowNode(nodes, { parent: loop.id, list: "nodes" }, 1, action("b", "wait"));
+    expect(m.findFlowNode(nodes, "b")).toMatchObject({ index: 1, slot: { parent: loop.id } });
+    nodes = m.moveFlowNode(nodes, "b", -1);
+    expect(m.findFlowNode(nodes, "b")?.index).toBe(0);
+    nodes = m.replaceFlowNode(nodes, action("b", "toast"));
+    expect((m.findFlowNode(nodes, "b")?.node as { type: string }).type).toBe("toast");
+    nodes = m.removeFlowNode(nodes, "a");
+    expect(m.findFlowNode(nodes, "a")).toBeNull();
+    expect(m.findFlowNode(nodes, "b")?.ancestors.map((n) => n.id)).toEqual([loop.id]);
+  });
+
+  it("gives copies new ids throughout", async () => {
+    const m = await import("../index");
+    const cond = m.newFlowNode("condition");
+    const filled = m.insertFlowNode(
+      [cond],
+      { parent: cond.id, list: m.slotLists(cond)[0]!.list },
+      0,
+      action("x", "wait")
+    );
+    const copy = m.withFreshIds(filled[0]!);
+    expect(copy.id).not.toBe(cond.id);
+    expect(m.findFlowNode([copy], "x")).toBeNull();
+    expect(m.countEnabledActions([copy])).toBe(1);
+  });
+});
