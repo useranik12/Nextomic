@@ -3,6 +3,7 @@ import { layoutChoiceSchema } from "./template";
 import { z } from "zod";
 import type { ElementNode } from "./element";
 import { pageTreeSchema } from "./loop-names";
+import { flowsByNodeSchema, type FlowsByNode } from "./actions/storage";
 import { propValueSchema } from "./value";
 import { stateTypeSchema } from "./state";
 
@@ -114,7 +115,9 @@ export const savePageInputSchema = z.object({
   name: pageNameSchema.optional(),
   route: pageRouteSchema.optional(),
   settings: pageSettingsSchema.optional(),
-  tree: pageTreeSchema.optional()
+  tree: pageTreeSchema.optional(),
+  /** Flows of pasted or duplicated elements, written for elements that have none yet. */
+  flows: flowsByNodeSchema.optional()
 });
 export type SavePageInput = z.infer<typeof savePageInputSchema>;
 
@@ -136,4 +139,7 @@ export function defaultPageSettings(): PageSettings {
 }
 
 /** What a visitor sees: the page as it was when the project was published. */
-export type PublishedPage = Pick<Page, "name" | "route" | "settings" | "tree">;
+export type PublishedPage = Pick<Page, "name" | "route" | "settings" | "tree"> & {
+  /** Action flows by element id (absent in snapshots published before Phase 5). */
+  flows?: FlowsByNode;
+};

@@ -456,3 +456,29 @@ describe("Action Blocks", () => {
     expect(defaultParams(getAction("state.updateApp")!.fields)).toEqual({ updates: [] });
   });
 });
+
+describe("flow storage inputs", () => {
+  it("validates a flow save and drops elements without flows", async () => {
+    const { saveFlowsInputSchema, compactFlows, savePageInputSchema } = await import("../index");
+    const ok = saveFlowsInputSchema.safeParse({
+      ownerKind: "page",
+      ownerId: "p1",
+      nodeId: "n1",
+      baseVersion: null,
+      flows: [flow([action("a", "wait")])]
+    });
+    expect(ok.success).toBe(true);
+    expect(
+      saveFlowsInputSchema.safeParse({
+        ownerKind: "site",
+        ownerId: "p",
+        nodeId: "n",
+        baseVersion: null,
+        flows: []
+      }).success
+    ).toBe(false);
+    expect(compactFlows({ a: [], b: [flow([])] })).toEqual({ b: [flow([])] });
+    const page = savePageInputSchema.parse({ baseVersion: 1, flows: { n1: [flow([])] } });
+    expect(page.flows?.n1).toHaveLength(1);
+  });
+});

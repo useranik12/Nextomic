@@ -1,6 +1,7 @@
 import { pageSettingsSchema, templateSettingsSchema, type TemplateType } from "@nextomic/schema";
 import { getDb, pages, templates, user } from "@nextomic/db";
 import { asc, eq } from "drizzle-orm";
+import { projectFlows } from "./action-flows";
 import { snapshotOfPage, templateSnapshotOf } from "./publish";
 
 // The Pages & Templates manager reads one flat list of both kinds.
@@ -37,6 +38,7 @@ function statusOf(live: unknown, current: unknown): LibraryStatus {
 
 export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
   const db = getDb();
+  const flows = await projectFlows(db, projectId);
   const pageRows = await db
     .select({ page: pages, creator: user.name })
     .from(pages)
@@ -66,7 +68,7 @@ export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
       status:
         settings.status === "scheduled"
           ? "scheduled"
-          : statusOf(page.publishedSnapshot, snapshotOfPage(page)),
+          : statusOf(page.publishedSnapshot, snapshotOfPage(page, flows.pages.get(page.id))),
       live: settings.status !== "draft",
       categoryIds: settings.categoryIds,
       tagIds: settings.tagIds,
@@ -88,7 +90,10 @@ export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
       status:
         settings.status === "scheduled"
           ? "scheduled"
-          : statusOf(template.publishedSnapshot, templateSnapshotOf(template)),
+          : statusOf(
+              template.publishedSnapshot,
+              templateSnapshotOf(template, flows.templates.get(template.id))
+            ),
       live: settings.status !== "draft",
       categoryIds: settings.categoryIds,
       tagIds: settings.tagIds,

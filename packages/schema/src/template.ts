@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { pageTreeSchema } from "./loop-names";
+import { flowsByNodeSchema, type FlowsByNode } from "./actions/storage";
 import { ITEM_STATUSES, isLive, scheduledAtSchema } from "./status";
 import { evaluateRules, ruleSetSchema, ruleSpecificity, type RuleContext } from "./rules";
 
@@ -92,7 +93,9 @@ export const saveTemplateInputSchema = z.object({
   baseVersion: z.number().int().min(1),
   name: templateNameSchema.optional(),
   settings: templateSettingsSchema.optional(),
-  tree: pageTreeSchema.optional()
+  tree: pageTreeSchema.optional(),
+  /** Flows of pasted or duplicated elements, written for elements that have none yet. */
+  flows: flowsByNodeSchema.optional()
 });
 export type SaveTemplateInput = z.infer<typeof saveTemplateInputSchema>;
 
@@ -101,7 +104,10 @@ export function defaultTemplateSettings(): TemplateSettings {
 }
 
 /** What a visitor sees: the template as it was when the project was published. */
-export type PublishedTemplate = Pick<Template, "id" | "type" | "name" | "settings" | "tree">;
+export type PublishedTemplate = Pick<Template, "id" | "type" | "name" | "settings" | "tree"> & {
+  /** Action flows by element id (absent in snapshots published before Phase 5). */
+  flows?: FlowsByNode;
+};
 
 export interface LayoutCandidate {
   id: string;

@@ -20,6 +20,7 @@ import {
   type SavePageInput
 } from "@nextomic/schema";
 import { getDb, pages, pageVersions, projects } from "@nextomic/db";
+import { copyOwnerFlows, syncFlowsWithTree } from "./action-flows";
 import { and, asc, desc, eq, ne, notInArray, sql } from "drizzle-orm";
 
 // Page persistence. Callers MUST have passed requireProjectAccess for the project first;
@@ -210,6 +211,15 @@ export async function savePage(
         .where(eq(pages.id, pageId))
         .returning();
       if (!row) throw new Error("Page update returned no row");
+      if (input.tree) {
+        await syncFlowsWithTree(
+          tx,
+          projectId,
+          { kind: "page", id: pageId },
+          input.tree,
+          input.flows
+        );
+      }
       const [projectRow] = await tx
         .select({ settings: projects.settings })
         .from(projects)
@@ -278,7 +288,9 @@ export async function duplicatePage(
       settings,
       tree: source.tree
     });
-    return saved.ok ? saved.page : null;
+    if (!saved.ok) return null;
+    await copyOwnerFlows(projectId, { kind: "page", id: pageId }, { kind: "page", id: created.id });
+    return saved.page;
   }
   return null;
 }

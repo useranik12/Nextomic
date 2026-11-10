@@ -7,12 +7,14 @@ import {
   pageSettingsSchema,
   projectSettingsSchema,
   templateSettingsSchema,
+  type FlowsByNode,
   type ProjectSettings,
   type PublishedPage,
   type PublishedTemplate
 } from "@nextomic/schema";
 import { getDb, pages, projects, templates, user } from "@nextomic/db";
 import { and, asc, eq, lte } from "drizzle-orm";
+import { projectBlocks, projectFlows } from "./action-flows";
 import { getProjectSettings } from "./pages";
 
 // Publishing copies the saved draft of every included page into a snapshot that visitors read.
@@ -66,25 +68,41 @@ function stable(value: unknown): string {
 }
 
 /** What publishing would write for a page row, or null when the page is left out. */
-export function snapshotOfPage(row: {
-  name: string;
-  route: string;
-  settings: unknown;
-  tree: unknown;
-}) {
+export function snapshotOfPage(
+  row: {
+    name: string;
+    route: string;
+    settings: unknown;
+    tree: unknown;
+  },
+  flows?: FlowsByNode
+) {
   const settings = pageSettingsSchema.parse(row.settings);
   if (settings.status === "draft") return null;
-  return { name: row.name, route: row.route, settings, tree: pageTreeSchema.parse(row.tree) };
+  return {
+    name: row.name,
+    route: row.route,
+    settings,
+    tree: pageTreeSchema.parse(row.tree),
+    ...withFlows(flows)
+  };
 }
 
+/** Snapshots carry `flows` only when there are some, so older snapshots still compare equal. */
+const withFlows = (flows: FlowsByNode | undefined) =>
+  flows && Object.keys(flows).length > 0 ? { flows } : {};
+
 /** What publishing would write for a template row: only published templates go out. */
-export function templateSnapshotOf(row: {
-  id: string;
-  type: "header" | "footer" | "error-404";
-  name: string;
-  settings: unknown;
-  tree: unknown;
-}): PublishedTemplate | null {
+export function templateSnapshotOf(
+  row: {
+    id: string;
+    type: "header" | "footer" | "error-404";
+    name: string;
+    settings: unknown;
+    tree: unknown;
+  },
+  flows?: FlowsByNode
+): PublishedTemplate | null {
   const settings = templateSettingsSchema.parse(row.settings);
   if (settings.status !== "published") return null;
   return {
@@ -92,7 +110,8 @@ export function templateSnapshotOf(row: {
     type: row.type,
     name: row.name,
     settings,
-    tree: pageTreeSchema.parse(row.tree)
+    tree: pageTreeSchema.parse(row.tree),
+    ...withFlows(flows)
   };
 }
 
@@ -103,6 +122,7 @@ export async function getPublishState(projectId: string): Promise<PublishState> 
     .select({
       publishedAt: projects.publishedAt,
       publishedSettings: projects.publishedSettings,
+      publishedBlocks: projects.publishedActionBlocks,
       scheduledPublishAt: projects.scheduledPublishAt
     })
     .from(projects)
@@ -115,11 +135,21 @@ export async function getPublishState(projectId: string): Promise<PublishState> 
   if (publishedAt !== null) {
     const live = projectSettingsSchema.safeParse(project?.publishedSettings);
     const current = await getProjectSettings(projectId);
+    const flows = await projectFlows(db, projectId);
+    const blocks = await projectBlocks(db, projectId);
     hasUnpublishedChanges =
       !live.success ||
       stable(live.data) !== stable(current) ||
-      rows.some((row) => stable(row.publishedSnapshot) !== stable(snapshotOfPage(row))) ||
-      templateRows.some((row) => stable(row.publishedSnapshot) !== stable(templateSnapshotOf(row)));
+      stable(project?.publishedBlocks ?? []) !== stable(blocks) ||
+      rows.some(
+        (row) =>
+          stable(row.publishedSnapshot) !== stable(snapshotOfPage(row, flows.pages.get(row.id)))
+      ) ||
+      templateRows.some(
+        (row) =>
+          stable(row.publishedSnapshot) !==
+          stable(templateSnapshotOf(row, flows.templates.get(row.id)))
+      );
   }
   return {
     publishedAt,
@@ -136,9 +166,11 @@ export async function publishProject(
   const settings = await getProjectSettings(projectId);
   const publishedAt = at;
   await getDb().transaction(async (tx) => {
+    const flows = await projectFlows(tx, projectId);
+    const blocks = await projectBlocks(tx, projectId);
     const rows = await tx.select().from(pages).where(eq(pages.projectId, projectId));
     for (const row of rows) {
-      const snapshot: PublishedPage | null = snapshotOfPage(row);
+      const snapshot: PublishedPage | null = snapshotOfPage(row, flows.pages.get(row.id));
       await tx
         .update(pages)
         .set({ publishedSnapshot: snapshot, publishedAt: snapshot ? publishedAt : null })
@@ -149,7 +181,7 @@ export async function publishProject(
       .from(templates)
       .where(eq(templates.projectId, projectId));
     for (const row of templateRows) {
-      const snapshot = templateSnapshotOf(row);
+      const snapshot = templateSnapshotOf(row, flows.templates.get(row.id));
       await tx
         .update(templates)
         .set({ publishedSnapshot: snapshot, publishedAt: snapshot ? publishedAt : null })
@@ -158,7 +190,12 @@ export async function publishProject(
     await tx
       .update(projects)
       // A project has one publish state: publishing now also ends any schedule.
-      .set({ publishedAt, publishedSettings: settings, scheduledPublishAt: null })
+      .set({
+        publishedAt,
+        publishedSettings: settings,
+        publishedActionBlocks: blocks,
+        scheduledPublishAt: null
+      })
       .where(eq(projects.id, projectId));
   });
   return getPublishState(projectId);
@@ -176,7 +213,12 @@ export async function unpublishProject(projectId: string): Promise<PublishState>
       .where(eq(templates.projectId, projectId));
     await tx
       .update(projects)
-      .set({ publishedAt: null, publishedSettings: null, scheduledPublishAt: null })
+      .set({
+        publishedAt: null,
+        publishedSettings: null,
+        publishedActionBlocks: null,
+        scheduledPublishAt: null
+      })
       .where(eq(projects.id, projectId));
   });
   return getPublishState(projectId);

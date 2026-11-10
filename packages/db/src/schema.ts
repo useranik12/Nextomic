@@ -1,13 +1,17 @@
 import type {
+  ActionBlock,
   ElementNode,
   PageSettings,
   ProjectSettings,
   PublishedPage,
   PublishedTemplate,
-  TemplateSettings
+  TemplateSettings,
+  TriggerFlow
 } from "@nextomic/schema";
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -70,7 +74,9 @@ export const projects = pgTable("projects", {
   publishedAt: timestamp("published_at", { withTimezone: true }),
   publishedSettings: jsonb("published_settings").$type<ProjectSettings>(),
   // A publish set to run later. The first read after this moment publishes the saved draft.
-  scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true })
+  scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true }),
+  // Action Blocks as they were at the last publish.
+  publishedActionBlocks: jsonb("published_action_blocks").$type<ActionBlock[]>()
 });
 
 export const pages = pgTable(
@@ -146,6 +152,50 @@ export const pageVersions = pgTable(
     uniqueIndex("page_versions_page_version_idx").on(table.pageId, table.version),
     index("page_versions_page_created_idx").on(table.pageId, table.createdAt)
   ]
+);
+
+// Action flows of one element, saved apart from the page tree (the flow editor saves on its own).
+// Exactly one of pageId / templateId is set; rows go with their page or template.
+export const actionFlows = pgTable(
+  "action_flows",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    pageId: text("page_id").references(() => pages.id, { onDelete: "cascade" }),
+    templateId: text("template_id").references(() => templates.id, { onDelete: "cascade" }),
+    nodeId: text("node_id").notNull(),
+    flows: jsonb("flows").$type<TriggerFlow[]>().notNull(),
+    // Incremented on every save; a save with an older base version is a conflict.
+    version: integer("version").notNull().default(1),
+    updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("action_flows_page_node_idx").on(table.pageId, table.nodeId),
+    uniqueIndex("action_flows_template_node_idx").on(table.templateId, table.nodeId),
+    check("action_flows_one_owner", sql`(${table.pageId} is null) <> (${table.templateId} is null)`)
+  ]
+);
+
+// Reusable flows of a project. Editing one changes every call.
+export const actionBlocks = pgTable(
+  "action_blocks",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    block: jsonb("block").$type<ActionBlock>().notNull(),
+    version: integer("version").notNull().default(1),
+    updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [index("action_blocks_project_idx").on(table.projectId)]
 );
 
 export const userPreferences = pgTable("user_preferences", {
