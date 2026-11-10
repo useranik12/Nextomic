@@ -225,14 +225,14 @@ Built (4c). Small inputs and buttons throughout (owner rule).
 - Bottom: "Search settings" input that filters all settings across tabs, plus a settings gear.
 - Navigator panel (left rail): holds all elements of the page or template. Filter dropdown ("All", or by element type/class), search, tree with expand/collapse, drag to reorder, and per-row indicators for classes, loop, condition, and actions.
 
-### 4.8 Action flow editor (replicate `inspiration/flutterflow-action-flow-editor.png`)
+### 4.8 Action flow editor (inspiration: `inspiration/flutterflow-action-flow-editor-*.png`, Nextomic styling)
 
-Large modal with three columns:
+Opened from the element's Action tab (a trigger card, or "Add action"), from an Action Block in the Action Blocks tab, or from the sky-blue lightning icon of an element row in the Navigator. Large modal with a 16px gap on every side and three columns:
 
-- Left: title "Action Flow Editor" and the name of the page, template, or element. Search triggers, "+" to add a trigger, list of triggers (for example "On Page Load") each with a count badge of actions and a delete icon.
-- Center: flow canvas. Actions are cards ("Action 1", action name, short summary). A "+" appears above and below the selected card to insert before or after. Conditions create True and False branches that render side by side. An unconfigured card shows "Not defined" and counts as an error.
-- Right: "Define Action". Editable action name, kebab menu (disable, duplicate, delete), action type selector with search and a categorized menu, then the selected action's parameters (each with a bolt), then output name.
-- Top right: error count badge (clicking jumps to the first invalid action), and "Close".
+- Header: "Action Flow Editor" and the element name (or "Action Block"); issues badge (count; the list jumps to the trigger and node), "Unsaved changes" mark, Test (disabled until Phase 5b), Save, Close. Closing with unsaved changes asks Keep editing / Discard / Save. Ctrl+Z and Ctrl+Shift+Z (or Ctrl+Y) undo and redo outside text fields.
+- Left: search triggers, "+" opens the trigger menu (grouped, as wide as the names, an (i) tip per trigger, used ones marked Added, unavailable ones disabled), list of triggers with a count of enabled actions and a delete icon. In block mode: block name, description, parameters (name, type including Element, list, required) and return value.
+- Center: flow canvas, top to bottom. Empty states: "Select Action Trigger" with the trigger menu; "No Actions Created" with stacked start buttons (Add Action, Condition, Loop, Parallel, Try/Catch, Action Block). Cards show "Action N", title, summary, up/down arrows, and a right-click menu (Test disabled, copy, paste after, cut, duplicate, disable, delete). "+" between cards inserts a node. Conditions, parallel lanes and try/catch sit side by side; a loop body sits under its header. Cards with errors have a red border. Hold the right mouse button on free space and drag to move the canvas (grabbing cursor); the wheel zooms around the pointer (25% to 200%); zoom out, zoom in and reset buttons sit bottom right. The view resets when another trigger opens.
+- Right: "Define". With no node selected, the trigger's settings. Otherwise the node name and menu, then the action picker (search, categories as accordions, sub-groups such as Supabase Authentication as nested accordions, disabled items with an (i) reason), the action's fields (bolt on every bindable field; selects and switches turn into a bolt field), and the output name. Container nodes show their own settings (branches, loop list and range, lanes, error name).
   Action categories and behavior are in `dynamic-data-and-actions.md`.
 
 ### 4.9 App Settings (replicate `inspiration/flutterflow-app-settings.png`)

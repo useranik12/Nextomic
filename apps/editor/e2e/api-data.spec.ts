@@ -207,7 +207,9 @@ test("a Container runs a REST query loop with a group variable set in the loop",
   await page.getByRole("button", { name: "Heading", exact: true }).click();
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.getByRole("heading")).toHaveCount(4, { timeout: 30_000 });
-  await expect(page.getByRole("img", { name: "Query loop: REST API" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /^Open the query loop of .*: REST API$/ })
+  ).toBeVisible();
 
   // The preview's server render runs the same call with the same value.
   await page.keyboard.press("Control+s");

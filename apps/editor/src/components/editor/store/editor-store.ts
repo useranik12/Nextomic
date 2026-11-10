@@ -146,6 +146,10 @@ interface EditorState {
   toggleElementHidden: (id: string) => void;
   /** Right-click menu position (viewport pixels) and its target element. */
   contextMenu: { x: number; y: number; id: string } | null;
+  /** Asks the element panel to open a section of an element (Navigator icons). */
+  sectionRequest: { id: string; section: string } | null;
+  openSection: (id: string, section: string) => void;
+  clearSectionRequest: () => void;
   openContextMenu: (x: number, y: number, id: string) => void;
   closeContextMenu: () => void;
   duplicateElement: (id: string) => void;
@@ -540,6 +544,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
       }),
 
     contextMenu: null,
+    sectionRequest: null,
+    openSection: (id, section) => set({ selectedId: id, sectionRequest: { id, section } }),
+    clearSectionRequest: () => set({ sectionRequest: null }),
     openContextMenu: (x, y, id) => set({ contextMenu: { x, y, id }, selectedId: id }),
     closeContextMenu: () => set({ contextMenu: null }),
 

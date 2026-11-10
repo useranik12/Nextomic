@@ -96,6 +96,13 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const definition = getElementDefinition(node.type);
   const [tab, setTab] = useState<Tab>("element");
   const [elementSection, setElementSection] = useState("general");
+  const sectionRequest = useEditorStore((s) => s.sectionRequest);
+  useEffect(() => {
+    if (sectionRequest?.id !== node.id) return;
+    setTab("element");
+    setElementSection(sectionRequest.section);
+    useEditorStore.getState().clearSectionRequest();
+  }, [sectionRequest, node.id]);
   const [query, setQuery] = useState("");
   const scroller = useRef<HTMLDivElement>(null);
   const bp = useEditorStore((s) => s.activeBreakpointId);

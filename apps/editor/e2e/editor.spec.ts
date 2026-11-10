@@ -1096,6 +1096,12 @@ test("an Other Loops query loop repeats static JSON on the canvas and the previe
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.getByRole("heading")).toHaveText(["Item A", "Item B", "Item C"]);
 
+  // The Navigator's query icon selects the container and opens its Query Loop settings.
+  await page.getByRole("button", { name: /^Open the query loop of .*: Other Loops/ }).click();
+  await expect(
+    page.getByRole("region", { name: "Query Loop" }).getByLabel("Loop name", { exact: true })
+  ).toHaveValue("jsonLoop");
+
   await page.keyboard.press("Control+s");
   await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
     timeout: 15_000

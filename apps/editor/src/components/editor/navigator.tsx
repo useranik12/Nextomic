@@ -167,18 +167,19 @@ const NavigatorRow = memo(function NavigatorRow({
           {node.hidden ? (
             <Icon name="ph:eye-slash" width={12} height={12} className="shrink-0" />
           ) : null}
-          {query ? (
-            <span
-              role="img"
-              aria-label={`Query loop: ${QUERY_SOURCE_LABELS[query.source]}`}
-              title={`Query loop: ${QUERY_SOURCE_LABELS[query.source]}`}
-              className="ml-auto shrink-0 text-orange-500 dark:text-orange-400"
-            >
-              <Icon name="ph:database" width={14} height={14} />
-            </span>
-          ) : null}
         </button>
       )}
+      {query && !renaming ? (
+        <button
+          type="button"
+          aria-label={`Open the query loop of ${label}: ${QUERY_SOURCE_LABELS[query.source]}`}
+          title={`Query loop: ${QUERY_SOURCE_LABELS[query.source]}`}
+          onClick={() => useEditorStore.getState().openSection(node.id, "query")}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-orange-500 hover:bg-default-100 dark:text-orange-400"
+        >
+          <Icon name="ph:database" width={14} height={14} />
+        </button>
+      ) : null}
       {hasActions && !renaming ? (
         <button
           type="button"
