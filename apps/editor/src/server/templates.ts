@@ -11,6 +11,7 @@ import {
   type TemplateType
 } from "@nextomic/schema";
 import { getDb, projects, templates } from "@nextomic/db";
+import { copyOwnerFlows, syncFlowsWithTree } from "./action-flows";
 import { and, asc, eq } from "drizzle-orm";
 
 // Template persistence. Callers MUST have passed requireProjectAccess for the project first; every
@@ -129,6 +130,10 @@ export async function saveTemplate(
       .where(eq(templates.id, templateId))
       .returning();
     if (!row) return { ok: false, reason: "not-found" } as const;
+    if (input.tree) {
+      const owner = { kind: "template" as const, id: templateId };
+      await syncFlowsWithTree(tx, projectId, owner, input.tree, input.flows);
+    }
     return { ok: true, template: toStored(row) } as const;
   });
 }
@@ -151,7 +156,13 @@ export async function duplicateTemplate(
       createdBy: userId
     })
     .returning();
-  return row ? toStored(row) : null;
+  if (!row) return null;
+  await copyOwnerFlows(
+    projectId,
+    { kind: "template", id: templateId },
+    { kind: "template", id: row.id }
+  );
+  return toStored(row);
 }
 
 export async function deleteTemplate(projectId: string, templateId: string): Promise<boolean> {
