@@ -2,7 +2,7 @@ import type { FlowNode, Params, TriggerFlow } from "@nextomic/schema";
 import { restorePersisted, type PersistEnv } from "../persisted-state";
 import { outermost, showToastHtml, swapParts } from "./dom";
 import { runFlow, type ActionHandler, type RunLogEntry } from "./engine";
-import { starterHandlers } from "./handlers";
+import { browserNavigation, starterHandlers } from "./handlers";
 import { LiveState } from "./live-state";
 import type { FragmentRequest, FragmentResponse, RuntimePayload } from "./payload";
 
@@ -103,6 +103,7 @@ export function startActionRuntime(
     state: live,
     log: options.log,
     hrefFor: options.hrefFor,
+    navigation: browserNavigation,
     rebuild: () => {
       const slots = [...document.querySelectorAll("template[data-nx-slot]")].map(
         (t) => t.getAttribute("data-nx-slot") ?? ""

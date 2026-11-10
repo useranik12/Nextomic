@@ -1338,3 +1338,69 @@ test("action runtime: a click runs Show Toast through the published toast templa
   await toast.locator("[data-nx-toast-close]").click();
   await expect(toast).toHaveCount(0);
 });
+
+test("flow editor Test runs the unsaved trigger on the canvas and lists each step", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("toast");
+  await modal.getByRole("button", { name: "Show Toast" }).click();
+  await modal.getByLabel("Message *", { exact: true }).fill("Hello");
+
+  // No toast template yet: Test runs the unsaved flow and reports the failing step.
+  await modal.getByRole("button", { name: "Test", exact: true }).click();
+  const panel = page.getByRole("region", { name: "Test run" });
+  await expect(panel.getByRole("list", { name: "Test steps" })).toContainText("Show Toast");
+  await expect(panel.getByRole("alert")).toHaveText("Publish a toast template to show toasts.");
+  await panel.getByRole("button", { name: "Back to editor" }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(modal.getByText("Unsaved changes")).toBeVisible();
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  // With a published toast template the toast shows on the canvas.
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  await page.getByRole("button", { name: "Column layout" }).click();
+  await page.getByRole("tab", { name: /Templates/ }).click();
+  await page.getByRole("button", { name: "New template" }).click();
+  const create = page.getByRole("dialog");
+  await create.getByLabel("Name").fill("Main toast");
+  await create.getByRole("button", { name: /^Type/ }).click();
+  await page.locator("[role=option]", { hasText: "Toast" }).click();
+  await page.getByRole("button", { name: "Create template" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "More actions for Main toast" }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  await page.getByRole("button", { name: "Template settings" }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /^Status/ })
+    .click();
+  await page.locator("[role=option]", { hasText: "Published" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: "Saved" })).toBeVisible();
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  await page.getByRole("tab", { name: /Pages/ }).click();
+  await page.getByRole("button", { name: "More actions for Home" }).click();
+  await page.getByRole("menuitem", { name: "Edit" }).click();
+  await page.getByRole("button", { name: /^Open the actions of/ }).click();
+  await modal.getByRole("button", { name: "Test", exact: true }).click();
+  await expect(panel.getByRole("status")).toHaveText("Finished");
+  await expect(panel.getByRole("alert")).toHaveCount(0);
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nx-toasts]")).toContainText("Hello");
+});

@@ -11,6 +11,7 @@ import {
 } from "@nextomic/schema";
 import { Icon } from "@/lib/icons/Icon";
 import { useFlowDraft } from "./flow-draft";
+import { useFlowTest } from "./flow-test";
 
 export const NODE_KIND_LABELS: Record<FlowNodeKind, string> = {
   action: "Action",
@@ -32,6 +33,9 @@ function runCommand(nodeId: string, command: Command): void {
   if (!found) return;
   const { node, slot, index } = found;
   switch (command) {
+    case "test":
+      void useFlowTest.getState().start(nodeId);
+      return;
     case "copy":
       draft.setClip(node);
       return;
@@ -60,8 +64,6 @@ function runCommand(nodeId: string, command: Command): void {
       draft.setNodes(removeFlowNode(nodes, nodeId));
       draft.select(null);
       return;
-    case "test":
-      return;
   }
 }
 
@@ -77,7 +79,8 @@ export function NodeMenu({
 }) {
   const hasClip = useFlowDraft((s) => s.clip !== null);
   const disabled = useFlowDraft((s) => findFlowNode(s.nodes(), nodeId)?.node.disabled ?? false);
-  const disabledKeys = ["test", ...(hasClip ? [] : ["paste"])];
+  const canTestNode = useFlowDraft((s) => s.target?.mode === "flows");
+  const disabledKeys = [...(canTestNode ? [] : ["test"]), ...(hasClip ? [] : ["paste"])];
   return (
     <Dropdown
       placement="bottom-end"
@@ -101,7 +104,11 @@ export function NodeMenu({
         <DropdownItem
           key="test"
           startContent={<Icon name="ph:play" />}
-          description="Test runs arrive with the runtime (Phase 5b)."
+          description={
+            canTestNode
+              ? "Runs this node on the canvas with the unsaved changes."
+              : "Test a block from a flow that calls it."
+          }
         >
           Test node action
         </DropdownItem>

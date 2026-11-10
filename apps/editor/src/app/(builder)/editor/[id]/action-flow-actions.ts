@@ -1,6 +1,9 @@
 "use server";
 
 import {
+  blankRuleContext,
+  resolveToast,
+  type ElementNode,
   FLOW_OWNER_KINDS,
   saveBlockInputSchema,
   saveFlowsInputSchema,
@@ -24,6 +27,8 @@ import {
   type StoredFlows
 } from "@/server/action-flows";
 import { getDb } from "@nextomic/db";
+import { listPages } from "@/server/pages";
+import { getDraftTemplates } from "@/server/templates";
 
 const idSchema = z.string().min(1).max(64);
 const kindSchema = z.enum(FLOW_OWNER_KINDS);
@@ -92,5 +97,33 @@ export async function deleteBlockAction(
     return { data: await deleteBlock(projectId, idSchema.parse(blockId)), error: null };
   } catch (error) {
     return fail(error, "Could not delete the Action Block.");
+  }
+}
+
+export interface TestContext {
+  /** Page id to route, for Navigate To. */
+  routes: Record<string, string>;
+  /** The toast template Show Toast uses (saved draft; it must be set to Published). */
+  toast: ElementNode | null;
+}
+
+/** What the flow editor's Test needs beyond the open page: page routes and the toast template. */
+export async function testContextAction(projectId: string): Promise<ActionResult<TestContext>> {
+  try {
+    await authorize(projectId);
+    const [pages, templates] = await Promise.all([
+      listPages(projectId),
+      getDraftTemplates(projectId)
+    ]);
+    const toast = resolveToast(templates, blankRuleContext());
+    return {
+      data: {
+        routes: Object.fromEntries(pages.map((p) => [p.id, p.route])),
+        toast: toast?.tree ?? null
+      },
+      error: null
+    };
+  } catch (error) {
+    return fail(error, "Could not prepare the test.");
   }
 }
