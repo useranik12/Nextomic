@@ -26,6 +26,7 @@ import { useEditorStore } from "./store/editor-store";
 import { TopBar } from "./top-bar";
 import { useAutosave } from "./use-autosave";
 import { useFlowSync } from "./actions/use-flow-sync";
+import { FlowEditorModal } from "./actions/editor/flow-editor-modal";
 import { VersionHistory } from "./version-history";
 import { StateManager } from "./state/state-manager";
 import { DataTypesManager } from "./data-types/data-types-manager";
@@ -336,6 +337,7 @@ export function EditorShell({
         <ConflictDialog />
         <ElementContextMenu />
         <Toast />
+        <FlowEditorModal />
         {designSystemOpen ? (
           <DesignSystemModal
             initialTab={designSystemTab}
