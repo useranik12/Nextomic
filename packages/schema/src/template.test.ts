@@ -113,8 +113,10 @@ describe("rules", () => {
 });
 
 describe("layout resolution", () => {
+  // Templates show only with conditions; Whole site is the "everywhere" condition.
+  const whole = () => group("all", rule("site.whole", "isTrue", ""));
   const settings = (over: Partial<LayoutCandidate["settings"]> = {}) =>
-    templateSettingsSchema.parse({ status: "published", ...over });
+    templateSettingsSchema.parse({ status: "published", rules: whole(), ...over });
   const t = (
     id: string,
     type: LayoutCandidate["type"],
@@ -164,6 +166,12 @@ describe("layout resolution", () => {
     expect(out.decisions[0]?.reason).toBe("none-matched");
   });
 
+  it("never shows a template without conditions, even when a page picks it", () => {
+    const bare = t("bare", "header", { rules: { id: "g", match: "all", items: [] } });
+    expect(resolveLayout([bare], auto, ctx).header).toBeNull();
+    expect(resolveLayout([bare], { header: "bare", footer: "auto" }, ctx).header).toBeNull();
+  });
+
   it("honours a page's own choice: none, or one template", () => {
     const list = [t("h1", "header"), t("h2", "header", { priority: 9 })];
     expect(resolveLayout(list, { header: "none", footer: "auto" }, ctx).header).toBeNull();
@@ -176,7 +184,7 @@ describe("layout resolution", () => {
     const list = [t("h1", "header", {}, "Main header")];
     const lines = explainLayout(resolveLayout(list, auto, ctx).decisions);
     expect(lines[0]).toContain("Main header");
-    expect(lines[1]).toContain("no published footer");
+    expect(lines[1]).toContain("no published footer template has conditions");
   });
 
   it("finds the 404 template, or none so a default is generated", () => {

@@ -5,22 +5,19 @@ import {
   flowIssues,
   nodesIssues,
   recursiveBlocks,
-  walkFlow,
   type ActionBlock,
-  type FlowIssue
+  type FlowIssue,
+  type TargetParams
 } from "@nextomic/schema";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  listBlocksAction,
-  saveBlockAction,
-  testContextAction
-} from "@/app/(builder)/editor/[id]/action-flow-actions";
+import { listBlocksAction, saveBlockAction } from "@/app/(builder)/editor/[id]/action-flow-actions";
 import { useQuerySourcesStore } from "../../query/use-query-sources";
 import { useEditorStore } from "../../store/editor-store";
 import { flowOwnerOf } from "../actions-list";
 import { useFlowStore } from "../flow-store";
 import { useSaveFlows } from "../use-save-flows";
 import { useFlowDraft } from "./flow-draft";
+import { targetParamsOf, useFlowTargets } from "./flow-targets";
 
 export interface EditorIssue extends FlowIssue {
   /** The trigger whose flow has the issue; null in block mode. */
@@ -99,24 +96,19 @@ function useOpenDraft(): Load {
   return load;
 }
 
-const NO_TOAST =
-  "No toast template applies: create one in Templates and set it to Published, or Show Toast fails.";
-
-/** Whether a toast template is set to Published (null while unknown); checked when the editor opens. */
-function useHasToast(open: boolean): boolean | null {
+/** Loads the pages and templates flows can target each time the editor opens. */
+function useTargets(open: boolean): TargetParams | undefined {
   const projectId = useEditorStore((s) => s.projectId);
-  const [hasToast, setHasToast] = useState<boolean | null>(null);
+  const status = useFlowTargets((s) => s.status);
+  const pages = useFlowTargets((s) => s.pages);
+  const templates = useFlowTargets((s) => s.templates);
   useEffect(() => {
-    if (!open || !projectId) return;
-    let live = true;
-    void testContextAction(projectId).then((result) => {
-      if (live) setHasToast(result.error === null ? result.data.toast !== null : null);
-    });
-    return () => {
-      live = false;
-    };
+    if (open && projectId) void useFlowTargets.getState().load(projectId);
   }, [open, projectId]);
-  return hasToast;
+  return useMemo(
+    () => (status === "ready" ? targetParamsOf(pages, templates) : undefined),
+    [status, pages, templates]
+  );
 }
 
 /** Every problem of the draft, each tagged with its trigger. */
@@ -126,28 +118,19 @@ function useIssues(): EditorIssue[] {
   const block = useFlowDraft((s) => s.block);
   const blocks = useFlowDraft((s) => s.blocks);
   const supabase = useQuerySourcesStore((s) => s.data?.supabase?.structure ?? null);
-  const hasToast = useHasToast(target !== null);
+  const targets = useTargets(target !== null);
   return useMemo(() => {
     if (target?.mode === "flows") {
-      const ctx = { owner: target.owner, elementType: target.elementType, blocks, supabase };
-      return flows.flatMap((flow) => {
-        const issues: EditorIssue[] = flowIssues(flow, ctx).map((i) => ({
-          ...i,
-          trigger: flow.trigger
-        }));
-        if (hasToast === false) {
-          walkFlow(flow.nodes, (n) => {
-            if (n.kind === "action" && n.type === "toast")
-              issues.push({
-                nodeId: n.id,
-                message: NO_TOAST,
-                severity: "warning",
-                trigger: flow.trigger
-              });
-          });
-        }
-        return issues;
-      });
+      const ctx = {
+        owner: target.owner,
+        elementType: target.elementType,
+        blocks,
+        supabase,
+        targets
+      };
+      return flows.flatMap((flow) =>
+        flowIssues(flow, ctx).map((i) => ({ ...i, trigger: flow.trigger }))
+      );
     }
     if (!block) return [];
     const all = [...blocks.filter((b) => b.id !== block.id), block];
@@ -161,11 +144,11 @@ function useIssues(): EditorIssue[] {
         severity: "error"
       });
     }
-    return [...own, ...nodesIssues(block.nodes, all, supabase)].map((i) => ({
+    return [...own, ...nodesIssues(block.nodes, all, { supabase, targets })].map((i) => ({
       ...i,
       trigger: null
     }));
-  }, [target, flows, block, blocks, supabase, hasToast]);
+  }, [target, flows, block, blocks, supabase, targets]);
 }
 
 /** Saves the draft: an element's flows, or one Action Block. Returns true when saved. */

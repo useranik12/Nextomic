@@ -4,7 +4,9 @@ import {
   findNode,
   type DynamicContext,
   type ElementNode,
-  type ProjectSettings
+  type ProjectSettings,
+  type PublishedTemplate,
+  withTemplateParams
 } from "@nextomic/schema";
 import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -63,28 +65,31 @@ export function renderParts(input: {
   return parts;
 }
 
-/** A toast from the toast template: its root's children with {{ toast.* }} filled. */
+/** A toast: the template's content with its parameters filled from the values Show Toast passed. */
 export function renderToast(input: {
-  template: ElementNode;
+  template: PublishedTemplate;
   dynamic: DynamicContext;
   settings: ProjectSettings;
-  toast: { title: string; message: string; type: string };
-}): { html: string; css: string } {
-  const dynamic = { ...input.dynamic, toast: input.toast };
+  params: Readonly<Record<string, string>>;
+}): { html: string; css: string; closeAfterMs: number } {
+  const { template, settings } = input;
+  const dynamic = withTemplateParams(input.dynamic, template.settings.params, input.params);
   const resolveToken = createTokenResolver(dynamic);
   const options = {
-    breakpoints: input.settings.breakpoints,
-    classes: input.settings.classes,
+    breakpoints: settings.breakpoints,
+    classes: settings.classes,
     dynamic,
     resolveToken,
-    tree: input.template
+    tree: template.tree
   };
   const html = renderToStaticMarkup(
     createElement(
       Fragment,
       null,
-      ...input.template.children.map((child) => renderNode(child, options))
+      ...template.tree.children.map((child) => renderNode(child, options))
     )
   );
-  return { html, css: pageCss(input.template, input.settings.breakpoints, {}, resolveToken) };
+  // Class styles come along: the page may not use the template's classes.
+  const css = pageCss(template.tree, settings.breakpoints, settings.classes, resolveToken);
+  return { html, css, closeAfterMs: template.settings.closeAfterMs };
 }

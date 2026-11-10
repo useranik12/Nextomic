@@ -741,47 +741,18 @@ const ALERT_ACTIONS: ActionDef[] = [
     category: "alerts",
     runs: "browser",
     description:
-      "Shows the published toast template with a title and message; it closes by itself.",
+      "Shows a toast template with the parameter values given; the template sets its design, position and how long it stays.",
     fields: [
-      text("title", "Title"),
-      text("message", "Message", { required: true }),
       {
-        key: "type",
-        label: "Type",
-        kind: "select",
-        default: "default",
-        help: "The template reads it as {{ toast.type }}.",
-        options: opts([
-          ["default", "Default"],
-          ["success", "Success"],
-          ["warning", "Warning"],
-          ["danger", "Danger"]
-        ])
+        key: "template",
+        label: "Toast template",
+        kind: "template",
+        templateType: "toast",
+        required: true
       },
-      {
-        key: "position",
-        label: "Position",
-        kind: "select",
-        default: "bottom-right",
-        options: opts([
-          ["top-left", "Top left"],
-          ["top-center", "Top center"],
-          ["top-right", "Top right"],
-          ["bottom-left", "Bottom left"],
-          ["bottom-center", "Bottom center"],
-          ["bottom-right", "Bottom right"]
-        ])
-      },
-      {
-        key: "durationMs",
-        label: "Duration (ms)",
-        kind: "number",
-        default: "4000",
-        min: 1000,
-        max: 60000
-      }
+      { key: "params", label: "Parameters", kind: "targetParams", targetParam: "template" }
     ],
-    summary: ["message"]
+    summary: ["template"]
   },
   {
     type: "confirm",
@@ -1003,7 +974,7 @@ export const ACTIONS: readonly ActionDef[] = [
     description: "Opens a page of this site.",
     fields: [
       { key: "page", label: "Page", kind: "page", required: true, excludeCurrent: true },
-      pairs("routeParams", "Route parameters"),
+      { key: "params", label: "Parameters", kind: "targetParams", targetParam: "page" },
       pairs("query", "Query string"),
       { key: "replace", label: "Replace history entry", kind: "boolean", default: "false" }
     ],

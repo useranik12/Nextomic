@@ -5,8 +5,7 @@ import {
   customCssFor,
   elementAnimationCss,
   resolveTheme,
-  timelinesForPage,
-  usedClassNames
+  timelinesForPage
 } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -141,7 +140,6 @@ export default async function PublishedPage({
         bootScript
         pruneUnusedClasses
         liveSlots={actions !== null}
-        keepClasses={actions && laid.toast ? [...usedClassNames(laid.toast.tree)] : undefined}
       />
       {actions ? <ActionRuntime payload={actions} /> : null}
       {hasLoops ? <LoopRuntime projectId={id} route={page.route} realtime={realtime} /> : null}

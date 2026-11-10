@@ -4,6 +4,7 @@ import { getAction, moveFlowNode, type FlowNode } from "@nextomic/schema";
 import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useFlowDraft } from "./flow-draft";
+import { useFlowTargets } from "./flow-targets";
 import { NODE_KIND_LABELS, NodeMenu } from "./node-menu";
 
 const clip = (text: string) => (text.length > 60 ? `${text.slice(0, 57)}…` : text);
@@ -11,13 +12,21 @@ const clip = (text: string) => (text.length > 60 ? `${text.slice(0, 57)}…` : t
 /** Title and one-line summary of a node. */
 export function describeNode(
   node: FlowNode,
-  blockName: (id: string) => string | undefined
+  blockName: (id: string) => string | undefined,
+  /** Names of picked pages and templates, so the summary shows a name instead of an id. */
+  targetName: (id: string) => string | undefined = () => undefined
 ): { title: string; summary: string } {
   if (node.kind === "action") {
     const action = getAction(node.type);
     if (!action) return { title: node.name ?? "Not defined", summary: "Choose an action" };
     const summary = (action.summary ?? [])
-      .map((key) => node.params[key])
+      .map((key) => {
+        const value = node.params[key];
+        const kind = action.fields.find((f) => f.key === key)?.kind;
+        return typeof value === "string" && (kind === "page" || kind === "template")
+          ? (targetName(value) ?? value)
+          : value;
+      })
       .filter((v): v is string => typeof v === "string" && v !== "")
       .join(" · ");
     return { title: node.name ?? action.label, summary: clip(summary || action.description) };
@@ -59,7 +68,13 @@ export function NodeCard({
   const selected = useFlowDraft((s) => s.selectedId === node.id);
   const blocks = useFlowDraft((s) => s.blocks);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { title, summary } = describeNode(node, (id) => blocks.find((b) => b.id === id)?.name);
+  const pages = useFlowTargets((s) => s.pages);
+  const templates = useFlowTargets((s) => s.templates);
+  const { title, summary } = describeNode(
+    node,
+    (id) => blocks.find((b) => b.id === id)?.name,
+    (id) => pages.find((p) => p.id === id)?.name ?? templates.find((t) => t.id === id)?.name
+  );
   const undefinedAction = node.kind === "action" && !getAction(node.type);
   const move = (step: -1 | 1) => {
     const draft = useFlowDraft.getState();

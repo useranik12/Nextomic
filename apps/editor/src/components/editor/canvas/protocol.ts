@@ -1,5 +1,6 @@
 import {
   actionBlockSchema,
+  pageParamSchema,
   appStateVariableSchema,
   flowNodeSchema,
   breakpointListSchema,
@@ -82,7 +83,17 @@ export const hostMessageSchema = z.discriminatedUnion("type", [
     blocks: z.array(actionBlockSchema).max(500),
     appState: z.array(appStateVariableSchema).max(500),
     routes: z.record(z.string().max(64), z.string().max(2000)),
-    toast: elementNodeSchema.nullable()
+    // Toast templates that can show, by id.
+    toasts: z
+      .record(
+        z.string().max(64),
+        z.object({
+          tree: elementNodeSchema,
+          params: z.array(pageParamSchema).max(20),
+          closeAfterMs: z.number().int().min(0).max(60_000)
+        })
+      )
+      .refine((m) => Object.keys(m).length <= 100)
   }),
   // Ends a test: stops the run and drops the state it changed.
   z.object({ type: z.literal("test-stop") })

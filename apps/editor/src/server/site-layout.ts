@@ -1,4 +1,5 @@
 import {
+  type PageParam,
   blankRuleContext,
   composePage,
   createTokenResolver,
@@ -8,7 +9,7 @@ import {
   fillTokens,
   isSafeUrl,
   resolveLayout,
-  resolveToast,
+  withTemplateParams,
   resolveNotFound,
   type DynamicContext,
   type NextomicUser,
@@ -143,6 +144,15 @@ export interface PageLayoutInput {
   nextomicUser?: NextomicUser | null;
 }
 
+/** Template parameters (their defaults: nothing passes them) next to the page's own. */
+function withLayoutParams(
+  dynamic: DynamicContext,
+  shown: readonly ({ settings: { params: PageParam[] } } | null)[]
+): DynamicContext {
+  const params = shown.flatMap((t) => t?.settings.params ?? []);
+  return params.length > 0 ? withTemplateParams(dynamic, params, {}, true) : dynamic;
+}
+
 /** The page tree inside its header and footer, and the dynamic context the renderer needs. */
 export function layoutForPage(input: PageLayoutInput): {
   tree: ElementNode;
@@ -153,8 +163,6 @@ export function layoutForPage(input: PageLayoutInput): {
   templateIds: string[];
   /** Ids of the page root and the header and footer roots: page-level triggers live on them. */
   rootIds: string[];
-  /** The toast template Show Toast uses on this page, if one is published. */
-  toast: PageLayoutInput["templates"][number] | null;
 } {
   const { settings, page } = input;
   const dynamic = buildDynamicContext({
@@ -197,13 +205,12 @@ export function layoutForPage(input: PageLayoutInput): {
       layout.footer?.tree ?? null,
       layout.header?.settings.sticky
     ),
-    dynamic,
+    dynamic: withLayoutParams(dynamic, [layout.header, layout.footer]),
     rules: ctx,
     templateIds: [layout.header?.id, layout.footer?.id].filter((id): id is string => !!id),
     rootIds: [input.tree.id, layout.header?.tree.id, layout.footer?.tree.id].filter(
       (id): id is string => !!id
-    ),
-    toast: resolveToast(input.templates, ctx)
+    )
   };
 }
 
@@ -286,7 +293,7 @@ export function layoutForNotFound(input: {
       layout.footer?.tree ?? null,
       layout.header?.settings.sticky
     ),
-    dynamic,
+    dynamic: withLayoutParams(dynamic, [found, layout.header, layout.footer]),
     themeId: found.settings.themeId,
     rules: ctx
   };

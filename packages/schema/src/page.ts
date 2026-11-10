@@ -6,18 +6,13 @@ import { pageTreeSchema } from "./loop-names";
 import { flowsByNodeSchema, type FlowsByNode } from "./actions/storage";
 import { propValueSchema } from "./value";
 import { stateTypeSchema } from "./state";
+import { pageParamSchema } from "./params";
+export { pageParamSchema, paramProblems, type PageParam } from "./params";
 
 /** Page parameters and page state use the same types as app state. */
 export const pageVariableTypeSchema = stateTypeSchema;
 
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
-
-export const pageParamSchema = z.object({
-  name: z.string().regex(IDENTIFIER).max(64),
-  type: pageVariableTypeSchema.default("string"),
-  required: z.boolean().default(false),
-  defaultValue: z.string().max(500).default("")
-});
 
 export const pageStateVariableSchema = z.object({
   name: z.string().regex(IDENTIFIER).max(64),

@@ -8,11 +8,11 @@ import {
   type ParamField,
   type Params
 } from "@nextomic/schema";
-import { useEffect, useMemo, useState } from "react";
-import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
+import { useEffect, useMemo } from "react";
 import type { SelectOption } from "@/components/ui/controls";
 import { useQuerySources } from "../../query/use-query-sources";
 import { useEditorStore } from "../../store/editor-store";
+import { useFlowTargets } from "./flow-targets";
 
 export type PickerKind = Extract<
   FieldKind,
@@ -27,6 +27,7 @@ export type PickerKind = Extract<
   | "restCall"
   | "timeline"
   | "theme"
+  | "template"
 >;
 
 export const PICKER_KINDS: ReadonlySet<FieldKind> = new Set<PickerKind>([
@@ -40,7 +41,8 @@ export const PICKER_KINDS: ReadonlySet<FieldKind> = new Set<PickerKind>([
   "supabaseColumns",
   "restCall",
   "timeline",
-  "theme"
+  "theme",
+  "template"
 ]);
 
 const EMPTY_HINT: Record<PickerKind, string> = {
@@ -54,7 +56,8 @@ const EMPTY_HINT: Record<PickerKind, string> = {
   supabaseColumns: "Choose a table first.",
   restCall: "Add a call in API Data first.",
   timeline: "Create a GSAP timeline in Animations first.",
-  theme: "No themes."
+  theme: "No themes.",
+  template: "No toast templates yet: create one in Pages & Templates, Templates tab."
 };
 
 /** Options for every structure picker, read from the editor and the project. */
@@ -67,20 +70,17 @@ export function usePickerOptions(): {
   const project = useEditorStore((s) => s.project);
   const currentPageId = useEditorStore((s) => (s.page?.kind === "template" ? null : s.page?.id));
   const sources = useQuerySources(projectId);
-  const [pages, setPages] = useState<SelectOption[]>([]);
+  const targetStatus = useFlowTargets((s) => s.status);
+  const pageList = useFlowTargets((s) => s.pages);
+  const templateList = useFlowTargets((s) => s.templates);
+  const pages = useMemo(
+    () => pageList.map((p) => ({ value: p.id, label: `${p.name} (${p.route})` })),
+    [pageList]
+  );
 
   useEffect(() => {
-    if (!projectId) return;
-    let live = true;
-    void listPagesAction(projectId).then((result) => {
-      if (live && result.error === null) {
-        setPages(result.data.map((p) => ({ value: p.id, label: `${p.name} (${p.route})` })));
-      }
-    });
-    return () => {
-      live = false;
-    };
-  }, [projectId]);
+    if (projectId && targetStatus === "idle") void useFlowTargets.getState().load(projectId);
+  }, [projectId, targetStatus]);
 
   const lists = useMemo(() => {
     const elements: { value: string; label: string; type: string }[] = [];
@@ -147,6 +147,13 @@ export function usePickerOptions(): {
         return lists.timelines;
       case "theme":
         return lists.themes;
+      case "template":
+        return templateList
+          .filter((t) => !field.templateType || t.type === field.templateType)
+          .map((t) => ({
+            value: t.id,
+            label: t.status === "draft" ? `${t.name} (draft)` : t.name
+          }));
       default:
         return [];
     }

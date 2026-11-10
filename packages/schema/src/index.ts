@@ -34,7 +34,6 @@ export * from "./theme";
 export * from "./taxonomy";
 export * from "./rules";
 export * from "./template";
-export * from "./toast-template";
 export * from "./state-deps";
 export * from "./compose";
 export * from "./fonts";

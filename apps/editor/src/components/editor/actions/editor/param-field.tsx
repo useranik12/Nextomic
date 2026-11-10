@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { BoltInput } from "../../right-panel/bolt-input";
+import { TargetParamsInput } from "./target-params-input";
 import { PICKER_KINDS, usePickerOptions, type PickerKind } from "./use-picker-options";
 
 type Options = ReturnType<typeof usePickerOptions>;
@@ -225,7 +226,13 @@ export function ParamFields({
   onChange: (params: Params) => void;
 }) {
   const options = usePickerOptions();
-  const set = (key: string, value: ParamValue) => onChange({ ...params, [key]: value });
+  const set = (key: string, value: ParamValue) => {
+    const next: Params = { ...params, [key]: value };
+    // A new page or template has other parameters: values for the old one are dropped.
+    for (const f of fields)
+      if (f.kind === "targetParams" && f.targetParam === key) next[f.key] = [];
+    onChange(next);
+  };
   return (
     <div className="flex flex-col gap-3">
       {fields
@@ -234,7 +241,19 @@ export function ParamFields({
           const value = params[field.key];
           return (
             <div key={field.key} className="flex flex-col gap-1">
-              {field.kind === "rows" ? (
+              {field.kind === "targetParams" ? (
+                <TargetParamsInput
+                  field={field}
+                  sourceKind={
+                    fields.find((f) => f.key === field.targetParam)?.kind === "page"
+                      ? "page"
+                      : "template"
+                  }
+                  params={params}
+                  rows={Array.isArray(value) ? value : []}
+                  onChange={(rows) => set(field.key, rows)}
+                />
+              ) : field.kind === "rows" ? (
                 <RowsInput
                   field={field}
                   rows={Array.isArray(value) ? value : []}

@@ -16,7 +16,9 @@ import { z } from "zod";
 
 const responseSchema = z.object({
   parts: z.array(z.object({ id: z.string(), html: z.string(), css: z.string() })),
-  toast: z.object({ html: z.string(), css: z.string() }).nullable()
+  toast: z
+    .object({ html: z.string(), css: z.string(), closeAfterMs: z.number().int().min(0) })
+    .nullable()
 });
 const errorSchema = z.object({ error: z.string() });
 

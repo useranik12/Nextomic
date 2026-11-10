@@ -2,6 +2,7 @@ import { z } from "zod";
 import { pageTreeSchema } from "./loop-names";
 import { flowsByNodeSchema, type FlowsByNode } from "./actions/storage";
 import { ITEM_STATUSES, isLive, scheduledAtSchema } from "./status";
+import { pageParamSchema } from "./params";
 import { evaluateRules, ruleSetSchema, ruleSpecificity, type RuleContext } from "./rules";
 
 // Templates (docs/templates-and-themes.md section 4): a header, a footer and a 404 page in v1.
@@ -50,7 +51,10 @@ export type StickyHeader = z.infer<typeof stickyHeaderSchema>;
 
 export const templateSettingsSchema = z.object({
   description: z.string().max(500).default(""),
-  /** Where it applies. An empty set means everywhere. Not used by the 404 template. */
+  /**
+   * Where it applies. A template with no conditions never shows (add Whole site to use it
+   * everywhere), even when a page or action picks it. Not used by the 404 template.
+   */
   rules: ruleSetSchema.default(emptyRules()),
   /** Higher wins when more than one template of a type matches. */
   priority: z.number().int().min(0).max(1000).default(0),
@@ -65,7 +69,11 @@ export const templateSettingsSchema = z.object({
   header: layoutChoiceSchema,
   footer: layoutChoiceSchema,
   categoryIds: z.array(z.string().max(64)).max(50).default([]),
-  tagIds: z.array(z.string().max(64)).max(50).default([])
+  tagIds: z.array(z.string().max(64)).max(50).default([]),
+  /** Values the template's elements read as {{ param.* }}; Show Toast passes them. */
+  params: z.array(pageParamSchema).max(20).default([]),
+  /** Toast templates only: how long a toast stays before it closes by itself. */
+  closeAfterMs: z.number().int().min(1000).max(60_000).default(5000)
 });
 export type TemplateSettings = z.infer<typeof templateSettingsSchema>;
 
@@ -126,8 +134,12 @@ const liveAt = (t: LayoutCandidate, ctx: RuleContext): boolean =>
     Date.parse(ctx.nowIso) || Date.now()
   );
 
+/** A template shows only when it is live and has conditions that hold (no conditions, no show). */
+export const templateApplies = (t: LayoutCandidate, ctx: RuleContext): boolean =>
+  liveAt(t, ctx) && t.settings.rules.items.length > 0 && evaluateRules(t.settings.rules, ctx);
+
 export type LayoutSlot = "header" | "footer";
-export type LayoutReason = "chosen" | "rules" | "everywhere" | "none-chosen" | "none-matched";
+export type LayoutReason = "chosen" | "rules" | "none-chosen" | "none-matched";
 
 export interface LayoutDecision {
   slot: LayoutSlot;
@@ -136,19 +148,15 @@ export interface LayoutDecision {
 }
 
 /** Highest priority, then the narrowest rules, then name, so the result never depends on list order. */
-function pickBest<T extends LayoutCandidate>(
-  list: readonly T[],
-  ctx: RuleContext
-): { best: T | null; matchedRules: boolean } {
-  const matching = list.filter((t) => liveAt(t, ctx) && evaluateRules(t.settings.rules, ctx));
+function pickBest<T extends LayoutCandidate>(list: readonly T[], ctx: RuleContext): T | null {
+  const matching = list.filter((t) => templateApplies(t, ctx));
   matching.sort(
     (a, b) =>
       b.settings.priority - a.settings.priority ||
       ruleSpecificity(b.settings.rules) - ruleSpecificity(a.settings.rules) ||
       a.name.localeCompare(b.name)
   );
-  const best = matching[0] ?? null;
-  return { best, matchedRules: best ? best.settings.rules.items.length > 0 : false };
+  return matching[0] ?? null;
 }
 
 /** The header or footer for a page: its own choice (none, or one template) or the best match. */
@@ -162,15 +170,12 @@ export function resolveSlot<T extends LayoutCandidate>(
   if (choice === LAYOUT_NONE)
     return { template: null, decision: { slot, template: null, reason: "none-chosen" } };
   if (choice !== LAYOUT_AUTO) {
-    const chosen = own.find((t) => t.id === choice && liveAt(t, ctx));
+    const chosen = own.find((t) => t.id === choice && templateApplies(t, ctx));
     if (chosen) return { template: chosen, decision: { slot, template: chosen, reason: "chosen" } };
   }
-  const { best, matchedRules } = pickBest(own, ctx);
+  const best = pickBest(own, ctx);
   if (!best) return { template: null, decision: { slot, template: null, reason: "none-matched" } };
-  return {
-    template: best,
-    decision: { slot, template: best, reason: matchedRules ? "rules" : "everywhere" }
-  };
+  return { template: best, decision: { slot, template: best, reason: "rules" } };
 }
 
 export interface ResolvedLayout<T extends LayoutCandidate> {
@@ -198,24 +203,26 @@ export function resolveNotFound<T extends LayoutCandidate>(
   templates: readonly T[],
   ctx: RuleContext
 ): T | null {
-  return pickBest(
-    templates.filter((t) => t.type === "error-404"),
-    ctx
-  ).best;
+  // The 404 template has no conditions: the best published one applies.
+  return (
+    templates
+      .filter((t) => t.type === "error-404" && liveAt(t, ctx))
+      .sort(
+        (a, b) => b.settings.priority - a.settings.priority || a.name.localeCompare(b.name)
+      )[0] ?? null
+  );
 }
 
-/**
- * The toast template Show Toast uses: the one it names when that one is live, else the best
- * published toast template for the page (priority, then rules). Null means Show Toast fails.
- */
+/** The toast template a Show Toast action names, when it is a live toast template whose conditions hold. */
 export function resolveToast<T extends LayoutCandidate>(
   templates: readonly T[],
   ctx: RuleContext,
-  chosenId = ""
+  templateId: string
 ): T | null {
-  const toasts = templates.filter((t) => t.type === "toast");
-  const chosen = chosenId ? toasts.find((t) => t.id === chosenId && liveAt(t, ctx)) : undefined;
-  return chosen ?? pickBest(toasts, ctx).best;
+  return (
+    templates.find((t) => t.id === templateId && t.type === "toast" && templateApplies(t, ctx)) ??
+    null
+  );
 }
 
 /** Plain-language lines for "Why is this applied?". */
@@ -227,12 +234,10 @@ export function explainLayout(decisions: readonly LayoutDecision[]): string[] {
         return `${label}: ${template?.name ?? ""}, chosen in this page's settings.`;
       case "rules":
         return `${label}: ${template?.name ?? ""}, its rules match this page.`;
-      case "everywhere":
-        return `${label}: ${template?.name ?? ""}, it applies everywhere and nothing narrower matched.`;
       case "none-chosen":
         return `${label}: none, this page turns it off.`;
       default:
-        return `${label}: none, no published ${slot} template matches this page.`;
+        return `${label}: none, no published ${slot} template has conditions that match this page.`;
     }
   });
 }

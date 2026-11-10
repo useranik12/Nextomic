@@ -110,11 +110,10 @@ export function startActionRuntime(
       );
       return redraw([...Object.keys(payload.deps), ...slots]);
     },
-    toast: async (values, position, durationMs) => {
+    toast: async (templateId, params) => {
       const { app, state } = live.context();
-      const response = await options.fetchFragments({ app, state, toast: values });
-      if (response.toast)
-        showToastHtml(response.toast.html, response.toast.css, position, durationMs);
+      const response = await options.fetchFragments({ app, state, toast: { templateId, params } });
+      if (response.toast) showToastHtml(response.toast);
     }
   });
 

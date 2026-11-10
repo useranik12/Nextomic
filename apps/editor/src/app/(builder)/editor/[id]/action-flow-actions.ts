@@ -2,7 +2,8 @@
 
 import {
   blankRuleContext,
-  resolveToast,
+  templateApplies,
+  type PageParam,
   type ElementNode,
   FLOW_OWNER_KINDS,
   saveBlockInputSchema,
@@ -100,14 +101,20 @@ export async function deleteBlockAction(
   }
 }
 
+export interface TestToast {
+  tree: ElementNode;
+  params: PageParam[];
+  closeAfterMs: number;
+}
+
 export interface TestContext {
   /** Page id to route, for Navigate To. */
   routes: Record<string, string>;
-  /** The toast template Show Toast uses (saved draft; it must be set to Published). */
-  toast: ElementNode | null;
+  /** Toast templates that can show (saved draft set to Published, conditions that hold), by id. */
+  toasts: Record<string, TestToast>;
 }
 
-/** What the flow editor's Test needs beyond the open page: page routes and the toast template. */
+/** What the flow editor's Test needs beyond the open page: page routes and toast templates. */
 export async function testContextAction(projectId: string): Promise<ActionResult<TestContext>> {
   try {
     await authorize(projectId);
@@ -115,12 +122,19 @@ export async function testContextAction(projectId: string): Promise<ActionResult
       listPages(projectId),
       getDraftTemplates(projectId)
     ]);
-    const toast = resolveToast(templates, blankRuleContext());
+    const ctx = blankRuleContext();
+    const toasts: Record<string, TestToast> = {};
+    for (const t of templates) {
+      if (t.type === "toast" && templateApplies(t, ctx)) {
+        toasts[t.id] = {
+          tree: t.tree,
+          params: t.settings.params,
+          closeAfterMs: t.settings.closeAfterMs
+        };
+      }
+    }
     return {
-      data: {
-        routes: Object.fromEntries(pages.map((p) => [p.id, p.route])),
-        toast: toast?.tree ?? null
-      },
+      data: { routes: Object.fromEntries(pages.map((p) => [p.id, p.route])), toasts },
       error: null
     };
   } catch (error) {

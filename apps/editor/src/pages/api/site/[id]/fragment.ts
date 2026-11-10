@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import type { NextomicUser } from "@nextomic/schema";
+import { resolveToast, type NextomicUser } from "@nextomic/schema";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
@@ -12,6 +12,7 @@ import {
   withClientState
 } from "@/server/runtime/fragments";
 import { draftView, liveView } from "@/server/runtime/view-layout";
+import { getDraftTemplates, getPublishedTemplates } from "@/server/templates";
 
 // Server fragments for the action runtime (docs/dynamic-data-and-actions.md section 8): elements
 // redrawn with the visitor's current app and page state, or the toast template filled with a
@@ -33,9 +34,8 @@ const bodySchema = z.object({
   state: values,
   toast: z
     .object({
-      title: z.string().max(500),
-      message: z.string().max(5000),
-      type: z.string().max(20)
+      templateId: z.string().min(1).max(64),
+      params: z.record(z.string().max(64), z.string().max(5000)).default({})
     })
     .optional()
 });
@@ -106,15 +106,14 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
   const dynamic = withClientState(laid.dynamic, body.app, body.state);
   const parts = renderParts({ tree: laid.tree, dynamic, settings: laid.settings, ids: body.ids });
-  let toast: { html: string; css: string } | null = null;
+  let toast: ReturnType<typeof renderToast> | null = null;
   if (body.toast) {
-    if (!laid.toast) return fail(409, "No toast template is published.");
-    toast = renderToast({
-      template: laid.toast.tree,
-      dynamic,
-      settings: laid.settings,
-      toast: body.toast
-    });
+    const templates =
+      body.mode === "live" ? await getPublishedTemplates(id) : await getDraftTemplates(id);
+    const template = resolveToast(templates, laid.rules, body.toast.templateId);
+    if (!template)
+      return fail(409, "The toast template is not published or its conditions do not match.");
+    toast = renderToast({ template, dynamic, settings: laid.settings, params: body.toast.params });
   }
   return response.status(200).json({ parts, toast });
 }

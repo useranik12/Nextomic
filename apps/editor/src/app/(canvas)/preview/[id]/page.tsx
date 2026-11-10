@@ -12,8 +12,7 @@ import {
   customCssFor,
   elementAnimationCss,
   resolveTheme,
-  timelinesForPage,
-  usedClassNames
+  timelinesForPage
 } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -247,7 +246,6 @@ export default async function PreviewPage({
     "templateIds" in laid
       ? await previewPayload(id, page, settings, laid, new URLSearchParams(values).toString())
       : null;
-  const toastTree = "toast" in laid && laid.toast ? laid.toast.tree : null;
   const loopRows = await pageLoopRows({
     projectId: id,
     tree,
@@ -281,7 +279,6 @@ export default async function PreviewPage({
         bootScript
         pruneUnusedClasses
         liveSlots={actions !== null}
-        keepClasses={actions && toastTree ? [...usedClassNames(toastTree)] : undefined}
       />
       {actions ? <ActionRuntime payload={actions} /> : null}
     </>

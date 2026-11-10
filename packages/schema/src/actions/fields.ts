@@ -22,7 +22,9 @@ export const FIELD_KINDS = [
   "restCall",
   "timeline",
   "theme",
-  "rows"
+  "rows",
+  "template",
+  "targetParams"
 ] as const;
 export type FieldKind = (typeof FIELD_KINDS)[number];
 
@@ -55,7 +57,28 @@ export interface ParamField {
   max?: number;
   /** `supabaseColumn(s)` only: the key of the action's table field the columns come from. */
   tableParam?: string;
+  /** `template` only: the template type that may be picked. */
+  templateType?: "header" | "footer" | "error-404" | "toast";
+  /**
+   * `targetParams` only: the key of the action's page or template field. One value per parameter
+   * of the chosen page or template, stored as rows `{ name, value }`.
+   */
+  targetParam?: string;
 }
+
+/** Columns of a `targetParams` value: the parameter name and the value passed. */
+export const TARGET_PARAM_COLUMNS: readonly ParamField[] = [
+  { key: "name", label: "Name", kind: "text", required: true },
+  { key: "value", label: "Value", kind: "text" }
+];
+
+/** The row columns of a `rows` or `targetParams` field; other fields have none. */
+export const rowColumns = (field: ParamField): readonly ParamField[] =>
+  field.kind === "targetParams" ? TARGET_PARAM_COLUMNS : (field.columns ?? []);
+
+/** Fields stored as a list of rows. */
+export const isRowsField = (field: Pick<ParamField, "kind">): boolean =>
+  field.kind === "rows" || field.kind === "targetParams";
 
 /**
  * Fields that name a structure item (an element, a page, a variable, a saved query or call) take
@@ -73,7 +96,10 @@ export const UNBINDABLE_FIELD_REASONS: Partial<Record<FieldKind, string>> = {
   supabaseColumns: "Picks columns of the chosen table so the flow can be checked when it is saved.",
   restCall: "Picks a saved API Data call; its variables take dynamic data.",
   timeline: "Picks a saved GSAP timeline.",
-  rows: "A list of rows; each column says whether it takes dynamic data."
+  rows: "A list of rows; each column says whether it takes dynamic data.",
+  template: "Picks a template so its parameters can be checked when the flow is saved.",
+  targetParams:
+    "One value per parameter of the chosen page or template; each value takes dynamic data."
 };
 
 export const fieldBindable = (field: Pick<ParamField, "kind">): boolean =>
@@ -131,6 +157,7 @@ export function incompleteRows(fields: readonly ParamField[], params: Params): s
     const value = params[field.key];
     if (field.kind !== "rows" || !Array.isArray(value) || !fieldShown(field, params, fields))
       continue;
+    // targetParams rows are checked against the page or template (target-check.ts).
     value.forEach((row, i) => {
       const touched = Object.values(row).some((v) => v.trim() !== "");
       if (!touched) return;
@@ -160,7 +187,7 @@ export function invalidOptions(fields: readonly ParamField[], params: Params): s
 export function defaultParams(fields: readonly ParamField[]): Params {
   const params: Params = {};
   for (const field of fields) {
-    if (field.kind === "rows") params[field.key] = [];
+    if (isRowsField(field)) params[field.key] = [];
     else if (field.default !== undefined) params[field.key] = field.default;
   }
   return params;

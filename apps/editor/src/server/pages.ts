@@ -1,4 +1,5 @@
 import {
+  type PageParam,
   defaultPageSettings,
   newPageRequiresAuth,
   defaultProjectSettings,
@@ -43,6 +44,8 @@ export interface PageSummary {
   route: string;
   version: number;
   isHome: boolean;
+  /** For Navigate To: the values a link to this page passes. */
+  params: PageParam[];
 }
 
 export type SaveResult =
@@ -103,13 +106,17 @@ export async function listPages(projectId: string): Promise<PageSummary[]> {
     .from(pages)
     .where(eq(pages.projectId, projectId))
     .orderBy(asc(pages.createdAt));
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    route: row.route,
-    version: row.version,
-    isHome: pageSettingsSchema.parse(row.settings).isHome
-  }));
+  return rows.map((row) => {
+    const settings = pageSettingsSchema.parse(row.settings);
+    return {
+      id: row.id,
+      name: row.name,
+      route: row.route,
+      version: row.version,
+      isHome: settings.isHome,
+      params: settings.params
+    };
+  });
 }
 
 export async function getPage(projectId: string, pageId: string): Promise<StoredPage | null> {

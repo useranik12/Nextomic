@@ -43,7 +43,8 @@ export function useAutosave(): { saveNow: () => Promise<void> } {
         const outcome = await saveTemplateAction(state.projectId, state.page.id, {
           baseVersion: state.page.version,
           name: saved.name,
-          settings: saved.template,
+          // Template parameters are edited in the page-settings slot of the open document.
+          settings: saved.template && { ...saved.template, params: saved.settings.params },
           tree: saved.tree,
           ...pendingFlows()
         });
