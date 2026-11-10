@@ -1,4 +1,7 @@
 import {
+  actionBlockSchema,
+  appStateVariableSchema,
+  flowNodeSchema,
   breakpointListSchema,
   dynamicContextSchema,
   variableListSchema,
@@ -69,12 +72,41 @@ export const hostMessageSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("anim-seek"), time: finite.min(0) }),
   // Element picking: the canvas dims the page and clears the element under the pointer.
-  z.object({ type: z.literal("pick"), on: z.boolean() })
+  z.object({ type: z.literal("pick"), on: z.boolean() }),
+  // Flow editor Test: run these nodes on the canvas as if a trigger of `elementId` fired.
+  z.object({
+    type: z.literal("test-run"),
+    runId: z.string().max(64),
+    elementId: z.string().max(64).nullable(),
+    nodes: z.array(flowNodeSchema).max(500),
+    blocks: z.array(actionBlockSchema).max(500),
+    appState: z.array(appStateVariableSchema).max(500),
+    routes: z.record(z.string().max(64), z.string().max(2000)),
+    toast: elementNodeSchema.nullable()
+  }),
+  // Ends a test: stops the run and drops the state it changed.
+  z.object({ type: z.literal("test-stop") })
 ]);
 export type HostMessage = z.infer<typeof hostMessageSchema>;
 
+const runLogEntrySchema = z.object({
+  nodeId: z.string().max(64),
+  label: z.string().max(200),
+  status: z.enum(["ok", "error"]),
+  ms: finite.min(0),
+  output: z.unknown().optional(),
+  error: z.string().max(5000).optional()
+});
+
 export const canvasMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("ready") }),
+  // Flow editor Test: one finished step, then the end of the run.
+  z.object({ type: z.literal("test-log"), runId: z.string().max(64), entry: runLogEntrySchema }),
+  z.object({
+    type: z.literal("test-done"),
+    runId: z.string().max(64),
+    error: z.string().max(5000).nullable()
+  }),
   // Where the animation preview is, in seconds.
   z.object({
     type: z.literal("anim-state"),

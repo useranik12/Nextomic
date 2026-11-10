@@ -129,6 +129,7 @@ Docs: `dynamic-data-and-actions.md` (section 8), `ui-reference.md` (4.8)
   - Step 1 built 2026-11-10: flow engine with tests.
   - Step 2 built 2026-11-10: toast template type with the HeroUI-like starter design; Show Toast fields title, message, type, position, duration.
   - Step 3 built 2026-11-10: runtime on `/site` and `/preview` (`packages/runtime/src/flow/page-runtime.ts`, `live-state.ts`, `handlers.ts`, `dom.ts`), payload (`apps/editor/src/server/runtime/page-runtime.ts`), fragment endpoint (`pages/api/site/[id]/fragment.ts`), `liveSlots` in the renderer, published views carry flows and page routes, theme CSS keeps template classes. Rebuild All Pages dropped (only the open page is mounted on a website). See `dynamic-data-and-actions.md` 8.6.
+  - Step 4 built 2026-11-10: Test in the flow editor (`canvas-test.ts` runs the draft in the canvas iframe with its own state; `flow-test.ts`, `test-panel.tsx`; node menu Test node action). The editor hides while a test runs so the canvas is visible (the modal covers it otherwise); results in a floating "Test run" panel. Flow editor warns on Show Toast when no toast template is published. Stopped for owner review.
   - Later (owner note): Set Theme and Set UI Mode show disabled when the project has no matching setting (several themes / dark mode on). Do this when the main actions are finished.
 
 - [x] Action flow editor modal replicating the FlutterFlow structure with Nextomic styling (triggers list, flow canvas, Define Action panel, error badge) (5a, 2026-11-10)

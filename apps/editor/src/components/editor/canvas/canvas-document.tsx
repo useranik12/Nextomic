@@ -4,6 +4,7 @@ import { BASE_CSS, PageRenderer, getElementDefinition } from "@nextomic/renderer
 import { previewTimeline, type PreviewHandle } from "@nextomic/runtime";
 import { findNode } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
+import { createCanvasTester, type StateOverride } from "./canvas-test";
 import {
   hostMessageSchema,
   type CanvasMessage,
@@ -65,6 +66,8 @@ export function CanvasDocument() {
   const loadSeq = useRef(0);
   const pickRef = useRef<HTMLDivElement>(null);
   const [picking, setPicking] = useState(false);
+  // App and page state changed by a flow editor Test (cleared when the test ends).
+  const [override, setOverride] = useState<StateOverride | null>(null);
 
   payloadRef.current = payload;
 
@@ -154,12 +157,20 @@ export function CanvasDocument() {
       }
     }
 
+    const tester = createCanvasTester({
+      current: () => payloadRef.current,
+      setOverride,
+      post: postToHost
+    });
+
     function onMessage(event: MessageEvent) {
       if (event.source !== window.parent) return;
       const parsed = hostMessageSchema.safeParse(event.data);
       if (!parsed.success) return;
       const message = parsed.data;
       if (message.type === "render") setPayload(message);
+      else if (message.type === "test-run") void tester.run(message);
+      else if (message.type === "test-stop") tester.stop();
       else if (message.type === "pick") setPicking(message.on);
       else if (
         message.type === "anim-load" ||
@@ -186,6 +197,7 @@ export function CanvasDocument() {
     postToHost({ type: "ready" });
     return () => {
       window.removeEventListener("message", onMessage);
+      tester.stop();
       clearPreview();
     };
   }, []);
@@ -347,7 +359,7 @@ export function CanvasDocument() {
         fontBase={payload.fontBase}
         theme={payload.theme}
         customCss={payload.customCss}
-        dynamic={payload.dynamic}
+        dynamic={override ? { ...payload.dynamic, ...override } : payload.dynamic}
         loopRows={payload.loopRows}
         loopPlaceholder
         visibilityPreview={payload.visibilityPreview}

@@ -5,11 +5,16 @@ import {
   flowIssues,
   nodesIssues,
   recursiveBlocks,
+  walkFlow,
   type ActionBlock,
   type FlowIssue
 } from "@nextomic/schema";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { listBlocksAction, saveBlockAction } from "@/app/(builder)/editor/[id]/action-flow-actions";
+import {
+  listBlocksAction,
+  saveBlockAction,
+  testContextAction
+} from "@/app/(builder)/editor/[id]/action-flow-actions";
 import { useQuerySourcesStore } from "../../query/use-query-sources";
 import { useEditorStore } from "../../store/editor-store";
 import { flowOwnerOf } from "../actions-list";
@@ -94,6 +99,26 @@ function useOpenDraft(): Load {
   return load;
 }
 
+const NO_TOAST =
+  "No toast template applies: create one in Templates and set it to Published, or Show Toast fails.";
+
+/** Whether a toast template is set to Published (null while unknown); checked when the editor opens. */
+function useHasToast(open: boolean): boolean | null {
+  const projectId = useEditorStore((s) => s.projectId);
+  const [hasToast, setHasToast] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!open || !projectId) return;
+    let live = true;
+    void testContextAction(projectId).then((result) => {
+      if (live) setHasToast(result.error === null ? result.data.toast !== null : null);
+    });
+    return () => {
+      live = false;
+    };
+  }, [open, projectId]);
+  return hasToast;
+}
+
 /** Every problem of the draft, each tagged with its trigger. */
 function useIssues(): EditorIssue[] {
   const target = useFlowDraft((s) => s.target);
@@ -101,12 +126,28 @@ function useIssues(): EditorIssue[] {
   const block = useFlowDraft((s) => s.block);
   const blocks = useFlowDraft((s) => s.blocks);
   const supabase = useQuerySourcesStore((s) => s.data?.supabase?.structure ?? null);
+  const hasToast = useHasToast(target !== null);
   return useMemo(() => {
     if (target?.mode === "flows") {
       const ctx = { owner: target.owner, elementType: target.elementType, blocks, supabase };
-      return flows.flatMap((flow) =>
-        flowIssues(flow, ctx).map((i) => ({ ...i, trigger: flow.trigger }))
-      );
+      return flows.flatMap((flow) => {
+        const issues: EditorIssue[] = flowIssues(flow, ctx).map((i) => ({
+          ...i,
+          trigger: flow.trigger
+        }));
+        if (hasToast === false) {
+          walkFlow(flow.nodes, (n) => {
+            if (n.kind === "action" && n.type === "toast")
+              issues.push({
+                nodeId: n.id,
+                message: NO_TOAST,
+                severity: "warning",
+                trigger: flow.trigger
+              });
+          });
+        }
+        return issues;
+      });
     }
     if (!block) return [];
     const all = [...blocks.filter((b) => b.id !== block.id), block];
@@ -124,7 +165,7 @@ function useIssues(): EditorIssue[] {
       ...i,
       trigger: null
     }));
-  }, [target, flows, block, blocks, supabase]);
+  }, [target, flows, block, blocks, supabase, hasToast]);
 }
 
 /** Saves the draft: an element's flows, or one Action Block. Returns true when saved. */

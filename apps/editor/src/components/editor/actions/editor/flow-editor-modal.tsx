@@ -8,7 +8,9 @@ import { BlockSidebar } from "./block-sidebar";
 import { DefinePanel } from "./define-panel";
 import { FlowCanvas } from "./flow-canvas";
 import { useFlowDraft } from "./flow-draft";
+import { useFlowTest } from "./flow-test";
 import { IssuesMenu } from "./issues-menu";
+import { TestPanel } from "./test-panel";
 import { TriggerSidebar } from "./trigger-sidebar";
 import { useFlowEditor } from "./use-flow-editor";
 
@@ -66,6 +68,9 @@ export function FlowEditorModal() {
   const target = useFlowDraft((s) => s.target);
   const dirty = useFlowDraft((s) => s.dirty);
   const trigger = useFlowDraft((s) => s.trigger);
+  const hasNodes = useFlowDraft((s) => s.nodes().length > 0);
+  const testing = useFlowTest((s) => s.active);
+  const startTest = useFlowTest((s) => s.start);
   const [asking, setAsking] = useState(false);
   const errors = useMemo(
     () =>
@@ -82,6 +87,14 @@ export function FlowEditorModal() {
     [issues, target, trigger]
   );
   if (load.status === "closed") return null;
+  // While a test runs the editor steps aside so the canvas shows what the flow does.
+  if (testing) return <TestPanel />;
+  const testBlocked =
+    target?.mode !== "flows"
+      ? "Test a block from a flow that calls it."
+      : !trigger || !hasNodes
+        ? "Add an action to this trigger to test it."
+        : null;
 
   const requestClose = () => (dirty ? setAsking(true) : close());
   const subtitle =
@@ -116,12 +129,15 @@ export function FlowEditorModal() {
               {dirty ? (
                 <span className="text-tiny font-medium text-warning">Unsaved changes</span>
               ) : null}
-              <span title="Testing flows arrives in Phase 5b.">
+              <span
+                title={testBlocked ?? "Run this trigger on the canvas with the unsaved changes."}
+              >
                 <ActionButton
                   size="sm"
                   tone="ghost"
-                  isDisabled
+                  isDisabled={testBlocked !== null || load.status !== "ready"}
                   startContent={<Icon name="ph:play" />}
+                  onPress={() => void startTest()}
                 >
                   Test
                 </ActionButton>

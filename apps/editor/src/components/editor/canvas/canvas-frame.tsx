@@ -24,6 +24,7 @@ import { useCanvasLoopRows } from "./use-canvas-loop-rows";
 import { themeModeFor, useResolvedTheme } from "../store/use-resolved-theme";
 import { onAnimationCommand, reportAnimationState } from "./animation-bridge";
 import { setCanvasDropTarget } from "./canvas-drop";
+import { onTestCommand, reportTest } from "./test-bridge";
 import { CanvasToolbar } from "./canvas-toolbar";
 import { useLayoutComposer } from "./use-layout";
 import { canvasMessageSchema, type HostMessage } from "./protocol";
@@ -259,6 +260,12 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
             playing: message.playing
           });
           break;
+        case "test-log":
+          reportTest({ type: "log", runId: message.runId, entry: message.entry });
+          break;
+        case "test-done":
+          reportTest({ type: "done", runId: message.runId, error: message.error });
+          break;
         case "probe-result":
           if (insideCanvas.current)
             setCanvasDropTarget({ id: message.id ?? "", zone: message.zone });
@@ -290,6 +297,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
 
   // Commands from the Animations editor go to the canvas that holds the page.
   useEffect(() => onAnimationCommand((command) => ready && send(command)), [ready, send]);
+  // Test runs from the flow editor go to the same canvas.
+  useEffect(() => (ready ? onTestCommand(send) : undefined), [ready, send]);
 
   useEffect(() => {
     if (!ready || !doc || !dynamic) return;

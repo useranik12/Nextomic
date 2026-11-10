@@ -6,6 +6,19 @@ import type { RuntimePayload } from "./payload";
 // Browser actions available in Phase 5b. Every other action reports "does not run yet" until its
 // phase (docs/phases.md 5c to 5e).
 
+export interface Navigation {
+  open: (href: string, replace: boolean) => void;
+  back: () => void;
+  reload: () => void;
+}
+
+/** The browser's own navigation, for built pages. */
+export const browserNavigation: Navigation = {
+  open: (href, replace) => (replace ? window.location.replace(href) : window.location.assign(href)),
+  back: () => window.history.back(),
+  reload: () => window.location.reload()
+};
+
 export interface HandlerDeps {
   payload: RuntimePayload;
   state: LiveState;
@@ -19,6 +32,8 @@ export interface HandlerDeps {
   rebuild: () => Promise<void>;
   /** A page URL of this site (live or preview). */
   hrefFor: (route: string, query: URLSearchParams) => string;
+  /** Leaves or reloads the page; the editor's Test only reports where it would go. */
+  navigation: Navigation;
   log?: (entry: RunLogEntry) => void;
 }
 
@@ -90,12 +105,12 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
       const params = query(p.routeParams);
       for (const [k, v] of query(p.query)) params.append(k, v);
       const href = deps.hrefFor(route, params);
-      if (toText(p.replace) === "true") window.location.replace(href);
-      else window.location.assign(href);
+      deps.navigation.open(href, toText(p.replace) === "true");
+      return href;
     },
-    navigateBack: () => window.history.back(),
+    navigateBack: () => deps.navigation.back(),
     "page.reload": (p) => {
-      window.setTimeout(() => window.location.reload(), Math.max(0, numberParam(p.delay, 0)));
+      window.setTimeout(() => deps.navigation.reload(), Math.max(0, numberParam(p.delay, 0)));
     }
   };
 }
