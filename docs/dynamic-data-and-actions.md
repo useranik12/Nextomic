@@ -164,45 +164,43 @@ Layout and behavior are in `ui-reference.md` (4.8). Rules:
 
 ### 8.2 Triggers
 
-onClick, onDoubleClick, onHover, onChange, onInput, onFocus, onBlur, onSubmit, onKey, onScrollIntoView, onLoad (element), page load, template load, onQuerySuccess, onQueryError, timer/interval, popup opened/closed, custom event.
+Source of truth: `packages/schema/src/actions/triggers.ts` (built 2026-11-10, 5a step 1). The owner's list in `blueprint/action-flow-sytem.md` is the base; every listed trigger exists.
+
+- **Common** (every element and the page/template root): On Click, Double Click, Click And Hold (hold time), Secondary Click / Double Click / Click And Hold, Pinch Zoom Start / Update / End, Hover Start / End, Focus, Blur, When Content Loaded (on roots "When Loaded"; also fires when a condition re-inserts the element and for new loop rows), When Comes To Viewport and When Leaves Viewport (visible amount, viewport margin, once or every time), When Position Updated (element edge, viewport line %, scroll direction), On Scroll Progress, When Resized.
+- **Page and template roots only:** On Key Press (key with modifiers), Timer / Interval (every ms, repeat), On Page Leave, On Online, On Offline.
+- **Element-specific**, keyed by element type in the schema (one list, so the renderer registry does not repeat it): Pull To Refresh (section, container), Image Loaded / Load Error (image). Triggers of elements that are not built yet (slider, accordion, video, audio, timer, table, switch, tabs, input, dropdown/radio/choice chips, checkbox, PIN/OTP, range slider, rating, counter) are listed with a `disabled` reason and turn on when the element lands.
+- A trigger may have settings (`fields`); each owner has at most one flow per trigger.
 
 ### 8.3 Flow model
 
-```ts
-type ActionStep =
-  | {
-      id: string;
-      type: string;
-      name?: string;
-      disabled?: boolean;
-      params: Record<string, Binding>;
-      target?: TargetRef;
-      outputName?: string;
-      onSuccess?: ActionStep[];
-      onError?: ActionStep[];
-    }
-  | { id: string; type: "condition"; if: ConditionGroup; then: ActionStep[]; else?: ActionStep[] }
-  | { id: string; type: "parallel"; branches: ActionStep[][] };
-```
+Source of truth: `packages/schema/src/actions/flow.ts`. Every step is a node; the editor lays nodes out top to bottom.
 
-### 8.4 Action catalog (categories mirror the FlutterFlow picker; Nextomic adds the marked ones)
+- `action`: catalog `type` (empty = "Not defined", an error), `params` (text with tags, or rows of such texts for list fields), optional `outputName`.
+- `condition`: branches (if, else if...) each with a condition group from section 7, plus an optional else.
+- `loop`: for each (list + item name) or while (condition), with a safety `maxIterations`; `break` and `continue` nodes work only inside a loop (not across a parallel lane).
+- `parallel`: lanes that run at the same time; all finish before the next node.
+- `tryCatch`: try and catch lists; catch nodes read the error by `errorName` (`{ code, message }`). This replaces per-action onSuccess/onError branches.
+- `block`: calls an Action Block with values by parameter id and an optional `outputName`.
+- Every node has `id`, optional `name` and `disabled` (skipped with everything inside it). Limits: 500 nodes, 10 levels.
+- A flow (`TriggerFlow`) is `{ id, trigger, disabled?, settings, nodes }`. Flows are saved apart from the page tree, one record per owner (5a step 2).
+- Output names, loop item names and error names are identifiers, unique in the flow. A node sees the outputs of nodes that surely ran before it (earlier nodes of its own list and of every list around it, all lanes of an earlier parallel), plus loop items and caught errors around it. Outputs inside an earlier condition, loop or try are not visible after it (`visibleNames`).
+- Issues (`flowIssues`): Not defined, unknown or disabled action, required field empty (only fields on screen), incomplete rows, unknown select value, empty condition branch, loop without list or condition, break/continue outside a loop, duplicate or invalid names, missing Action Block or required block parameter, trigger not available to the owner. Errors block publishing; warnings (output name on an action that returns nothing, one parallel lane, empty try) do not. Disabled nodes and flows are not checked.
+- **Action Blocks** (`blocks.ts`): name, description, typed parameters (every state type plus `element`), optional return value (type + value text), nodes. Editing a block changes every call; blocks that call themselves are found by `recursiveBlocks`.
 
-- **Navigation:** navigate to page (route params, query string), open URL, go back, reload page, scroll to element, open/close popup (template)
-- **Backend/Database:** query data, refresh query with new parameters, Supabase insert/update/delete/rpc, call REST endpoint (API Data), file upload to storage
-- **Authentication (added):** sign up, sign in, sign in with OAuth, send magic link, send/verify OTP, sign out, request/update password, update user, refresh session, get current user, resend verification. Full list and rules in `app-auth.md`. Available on every element.
-- **App Events:** page load, template load, timer, custom event emit/listen, set loading state
-- **State Management:** set/update/reset app state and page state, set variable from query or output, clear persisted state
-- **Widget/UI Interactions:** show/hide/toggle, set text/attribute/value, add/remove/toggle class, add/remove ID, enable/disable, focus, open/close off-canvas/accordion/tab/dropdown, expand/collapse, copy to clipboard, set color mode, toggle color mode
-- **Forms (added):** set/clear/reset field, validate (field or form), submit, set error, mask toggle, captcha validate
-- **Media (added):** play, pause, stop, repeat/loop toggle, seek, mute (video/audio)
-- **Alerts/Notifications:** toast, dialog, confirm
-- **Utilities:** wait, condition, loop over list, pick date/time, download file, store locally, console/debug log (dev only)
-- **Share:** Web Share API, copy link
-- **Animation:** start/stop saved animation on target, GSAP timeline control
-- **Device (added):** vibrate (preset rhythms and custom patterns)
-- **Integrations:** send email (project SMTP), call webhook, captcha providers
-- **Custom Actions:** project custom functions (see `dependencies.md`, Custom Codes)
-- **App Action Blocks:** later
+### 8.4 Action catalog
+
+Source of truth: `packages/schema/src/actions/catalog.ts` and `catalog-actions.ts`. Categories in picker order: Navigation, Backend/CMS, State Management, Element/UI Interactions, Alert/Notifications, Utilities, Share, Media/Animation, Integrations (disabled until a later phase), Action Blocks (the project's blocks), Accessibility. Each action has a sub-section, where it runs (browser or server), a description for the info hint, fields, an optional output type, the param keys of its one-line summary, and a `disabled` reason when it needs an unbuilt element or phase. Icons belong to the builder UI.
+
+- **Navigation:** Navigate To (page, route parameters, query string, replace), Navigate Back.
+- **Backend/CMS:** Supabase Authentication (Login with method email+password / OAuth / magic link / code by email or SMS, Verify One-Time Code, Register, Log Out, Send Password Reset Email, Update Password / Email / Phone, Update User Metadata, Resend Verification, Refresh Session, Get Current User; see `app-auth.md`), Supabase (Query / Insert / Upsert / Update / Delete Row(s); update and delete require filters), Refresh Supabase Query, Supabase File (Upload, Download, Clear Uploaded File, Delete), Supabase RPC, API Data (Call API Endpoint). These run on the server, except Refresh Supabase Query and Clear Uploaded File.
+- **State Management:** Update App State, Update Page State (rows of variable, operation, value), Rebuild Page, Form (Set / Reset / Clear / Validate: disabled until Phase 7), Rebuild Component/Element.
+- **Element/UI Interactions:** HTML/CSS Properties (Add / Remove / Toggle Class, Set / Remove ID, Set / Remove Attribute, Set Text; an empty element field means this element), Bottom Sheet (disabled until popups, Phase 9), Date/Time Picker, Color Picker, Scroll To, Launch Map, Control Table / Slider / Accordion / Tab / Timer / Switch / Swipeable Stack (disabled until the elements exist), Start / Stop GSAP Timeline, Set Theme, Set UI Mode. No show/hide actions: classes drive class conditions.
+- **Alert/Notifications:** Off Canvas, Modal, Tooltip (disabled until their elements or popups exist), Play / Stop Sound, Show Toast, Confirm Dialog (returns true or false).
+- **Utilities:** Wait, Copy To Clipboard, Pick File(s) (single, or multiple with a maximum; store locally or upload to Supabase; the output feeds Upload File and Put Data To Presigned S3 Storage), Put Data To Presigned S3 Storage, Execute Custom Code (disabled until Phase 10), Debug Log (preview and Test only).
+- **Share:** Share (Web Share API), Launch URL, Send Email (mailto), Call Number (tel), Send SMS (sms).
+- **Media/Animation:** Gallery, Video Player, Audio Player and Lottie actions, all disabled until those elements exist.
+- **Accessibility:** Semantic Announce (polite or assertive live region).
+- Dynamic data: every field takes tags except fields that pick a structure item (element, page, variable, query loop, Supabase table, API Data call, GSAP timeline); their written reasons are in `UNBINDABLE_FIELD_REASONS`.
 
 ### 8.5 Execution model
 

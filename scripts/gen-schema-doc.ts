@@ -7,7 +7,9 @@ import {
   pageSettingsSchema,
   projectSettingsSchema,
   savePageInputSchema,
-  styleMapSchema
+  styleMapSchema,
+  triggerFlowSchema,
+  actionBlockSchema
 } from "../packages/schema/src";
 
 // Generates docs/schema.md from the Zod schemas (packages/schema is the source of truth).
@@ -18,7 +20,9 @@ const entries = [
   ["ProjectSettings", projectSettingsSchema],
   ["PageSettings", pageSettingsSchema],
   ["CreatePageInput", createPageInputSchema],
-  ["SavePageInput", savePageInputSchema]
+  ["SavePageInput", savePageInputSchema],
+  ["TriggerFlow", triggerFlowSchema],
+  ["ActionBlock", actionBlockSchema]
 ] as const;
 
 const parts = [

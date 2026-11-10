@@ -50,3 +50,4 @@ export * from "./query-local";
 export * from "./rest";
 export * from "./rest-request";
 export * from "./json-path";
+export * from "./actions";
