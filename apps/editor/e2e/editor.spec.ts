@@ -1230,3 +1230,39 @@ test("conditions: class checks and list values as chips", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Remove home" })).toBeVisible();
   await expect(heading).toBeVisible();
 });
+
+test("action flows: add a trigger and an action, save, and see it after reload", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Section", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await expect(modal.getByText("Select Action Trigger")).toBeVisible();
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("toast");
+  await modal.getByRole("button", { name: "Show Toast" }).click();
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  const flows = page.getByRole("list", { name: "Action flows" });
+  await expect(flows.getByText("On Click")).toBeVisible();
+  await expect(flows.getByText("1 action")).toBeVisible();
+
+  await page.reload();
+  await page.getByRole("treeitem").first().click();
+  await page.getByRole("tab", { name: /action/i }).click();
+  await expect(
+    page.getByRole("list", { name: "Action flows" }).getByText("1 action")
+  ).toBeVisible();
+});
