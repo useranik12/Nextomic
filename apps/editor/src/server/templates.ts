@@ -1,6 +1,7 @@
 import {
   pageTreeSchema,
   emptyPageTree,
+  defaultToastTree,
   templateSettingsSchema,
   defaultTemplateSettings,
   type ElementNode,
@@ -80,6 +81,7 @@ export async function getTemplate(
 
 /** A template's root is a page-shaped node, so the same canvas and tree code edit it. */
 function templateTree(type: TemplateType): ElementNode {
+  if (type === "toast") return defaultToastTree();
   return { ...emptyPageTree(), name: type === "error-404" ? "404 page" : "Template" };
 }
 

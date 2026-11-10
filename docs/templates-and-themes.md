@@ -71,16 +71,17 @@ Design System page, Themes tab: list (name, condition summary, priority, default
 
 ### 4.1 Types
 
-| Type           | Purpose                                                       | Applied by                               | Phase |
-| -------------- | ------------------------------------------------------------- | ---------------------------------------- | ----- |
-| header         | Top of page                                                   | conditions                               | 3     |
-| footer         | Bottom of page                                                | conditions                               | 3     |
-| error-404      | Not found page                                                | one default, optional per-route override | 3     |
-| popup          | Overlay (modal, drawer, banner)                               | triggers + conditions                    | 9     |
-| archive        | List page for a collection (loop, filter, search, pagination) | route                                    | 9     |
-| single         | Detail page for one record, route param driven                | route                                    | 9     |
-| search-results | Results for `/search?q=`                                      | route                                    | 9     |
-| error-500      | Server error page                                             | one default                              | 9     |
+| Type           | Purpose                                                                                                                                                                   | Applied by                                                | Phase |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----- |
+| header         | Top of page                                                                                                                                                               | conditions                                                | 3     |
+| footer         | Bottom of page                                                                                                                                                            | conditions                                                | 3     |
+| error-404      | Not found page                                                                                                                                                            | one default, optional per-route override                  | 3     |
+| toast          | The card Show Toast displays (`{{ toast.title }}`, `{{ toast.message }}`, `{{ toast.type }}`); starts from a HeroUI-like design; must be published for Show Toast to work | Show Toast: highest priority, then rules (`resolveToast`) | 5     |
+| popup          | Overlay (modal, drawer, banner)                                                                                                                                           | triggers + conditions                                     | 9     |
+| archive        | List page for a collection (loop, filter, search, pagination)                                                                                                             | route                                                     | 9     |
+| single         | Detail page for one record, route param driven                                                                                                                            | route                                                     | 9     |
+| search-results | Results for `/search?q=`                                                                                                                                                  | route                                                     | 9     |
+| error-500      | Server error page                                                                                                                                                         | one default                                               | 9     |
 
 Header, footer, and 404 are required in v1. Others follow the same model; do not build them before their phase.
 
