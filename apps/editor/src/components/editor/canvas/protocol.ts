@@ -1,5 +1,7 @@
 import {
   actionBlockSchema,
+  overlaySchema,
+  sheetEntrySchema,
   pageParamSchema,
   appStateVariableSchema,
   flowNodeSchema,
@@ -83,14 +85,17 @@ export const hostMessageSchema = z.discriminatedUnion("type", [
     blocks: z.array(actionBlockSchema).max(500),
     appState: z.array(appStateVariableSchema).max(500),
     routes: z.record(z.string().max(64), z.string().max(2000)),
-    // Toast templates that can show, by id.
-    toasts: z
+    // Modal and bottom sheet templates that can show, by id.
+    overlays: z
       .record(
         z.string().max(64),
         z.object({
+          type: z.enum(["modal", "bottom-sheet"]),
           tree: elementNodeSchema,
           params: z.array(pageParamSchema).max(20),
-          closeAfterMs: z.number().int().min(0).max(60_000)
+          overlay: overlaySchema,
+          entry: sheetEntrySchema,
+          rank: z.number().int().min(0).max(100)
         })
       )
       .refine((m) => Object.keys(m).length <= 100)

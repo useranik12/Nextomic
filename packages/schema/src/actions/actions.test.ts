@@ -210,7 +210,7 @@ describe("action catalog", () => {
       "Play Sound",
       "Stop Sound",
       "Show Toast",
-      "Confirm Dialog",
+      "Dismiss Toast",
       "Wait",
       "Copy To Clipboard",
       "Pick File(s)",
@@ -252,7 +252,9 @@ describe("action catalog", () => {
 
   it("disables actions that need unbuilt parts, with a reason", () => {
     expect(actionDisabledReason(getAction("video.play")!)).toMatch(/not built/);
-    expect(actionDisabledReason(getAction("modal.show")!)).toMatch(/Phase 9/);
+    expect(actionDisabledReason(getAction("modal.show")!)).toBeNull();
+    expect(actionDisabledReason(getAction("bottomSheet.show")!)).toBeNull();
+    expect(getAction("confirm")).toBeUndefined();
     expect(actionDisabledReason(getAction("customCode")!)).toMatch(/Phase 10/);
     expect(actionDisabledReason(getAction("class.add")!)).toBeNull();
   });
@@ -318,7 +320,7 @@ describe("flow issues", () => {
     expect(issues.map((i) => [i.nodeId, i.message])).toEqual([
       ["a", "Not defined: choose an action."],
       ["b", "Password is required."],
-      ["c", "Toast template is required."]
+      ["c", "Title is required."]
     ]);
   });
 
@@ -339,8 +341,8 @@ describe("flow issues", () => {
       flow([
         action("n", "navigate", { params: { page: "p1", params: [] } }),
         action("ok", "navigate", { params: { page: "p1", params: [{ name: "id", value: "7" }] } }),
-        action("t", "toast", { params: { template: "t1", params: [] } }),
-        action("g", "toast", { params: { template: "gone" } })
+        action("t", "modal.show", { params: { template: "t1", params: [] } }),
+        action("g", "modal.show", { params: { template: "gone" } })
       ]),
       { ...ctx, targets }
     );
@@ -378,10 +380,7 @@ describe("flow issues", () => {
           step: "",
           nodes: []
         },
-        action("t1", "confirm", {
-          params: { title: "Sure?" },
-          outputName: "x"
-        } as Partial<FlowNode>)
+        action("t1", "picker.color", { outputName: "x" } as Partial<FlowNode>)
       ]),
       ctx
     );
@@ -416,7 +415,7 @@ describe("flow issues", () => {
 
 describe("visible names", () => {
   const nodes: FlowNode[] = [
-    action("a", "confirm", { outputName: "ok" } as Partial<FlowNode>),
+    action("a", "picker.color", { outputName: "ok" } as Partial<FlowNode>),
     {
       id: "c",
       kind: "condition",
@@ -424,7 +423,7 @@ describe("visible names", () => {
         {
           id: "b",
           group: group(1),
-          nodes: [action("in", "confirm", { outputName: "inner" } as Partial<FlowNode>)]
+          nodes: [action("in", "picker.color", { outputName: "inner" } as Partial<FlowNode>)]
         }
       ]
     },
@@ -432,7 +431,10 @@ describe("visible names", () => {
       id: "p",
       kind: "parallel",
       lanes: [
-        { id: "l1", nodes: [action("p1", "confirm", { outputName: "left" } as Partial<FlowNode>)] },
+        {
+          id: "l1",
+          nodes: [action("p1", "picker.color", { outputName: "left" } as Partial<FlowNode>)]
+        },
         { id: "l2", nodes: [action("p2", "wait")] }
       ]
     },
@@ -492,7 +494,15 @@ describe("Action Blocks", () => {
   });
 
   it("starts actions with field defaults", () => {
-    expect(defaultParams(getAction("toast")!.fields)).toEqual({ params: [] });
+    expect(defaultParams(getAction("toast")!.fields)).toMatchObject({
+      showButton: "false",
+      hideAfterMs: "5000",
+      hidePrevious: "false"
+    });
+    expect(defaultParams(getAction("modal.show")!.fields)).toEqual({
+      noOverlayDismiss: "false",
+      params: []
+    });
     expect(defaultParams(getAction("state.updateApp")!.fields)).toEqual({ updates: [] });
   });
 });

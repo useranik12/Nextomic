@@ -1,9 +1,11 @@
 import type { FlowNode, Params, TriggerFlow } from "@nextomic/schema";
 import { restorePersisted, type PersistEnv } from "../persisted-state";
-import { outermost, showToastHtml, swapParts } from "./dom";
-import { runFlow, type ActionHandler, type RunLogEntry } from "./engine";
+import { outermost, swapParts } from "./dom";
+import { FlowError, runFlow, type ActionHandler, type RunLogEntry } from "./engine";
 import { browserNavigation, starterHandlers } from "./handlers";
 import { LiveState } from "./live-state";
+import { createOverlayLayer } from "./overlays";
+import { createToastStack } from "./toasts";
 import type { FragmentRequest, FragmentResponse, RuntimePayload } from "./payload";
 
 // The action runtime of a built page (docs/dynamic-data-and-actions.md section 8): binds the
@@ -98,6 +100,10 @@ export function startActionRuntime(
   const restored = options.persist ? restorePersisted(payload.appState, options.persist) : {};
   const live = new LiveState(payload, restored, options.persist, onChange);
 
+  const overlays = createOverlayLayer((content) => bindInserted(content));
+  const toasts = createToastStack();
+  stops.push(overlays.destroy, toasts.destroy);
+
   const handlers: Record<string, ActionHandler> = starterHandlers({
     payload,
     state: live,
@@ -110,10 +116,17 @@ export function startActionRuntime(
       );
       return redraw([...Object.keys(payload.deps), ...slots]);
     },
-    toast: async (templateId, params) => {
+    overlays,
+    toasts,
+    renderOverlay: async (templateId, params) => {
       const { app, state } = live.context();
-      const response = await options.fetchFragments({ app, state, toast: { templateId, params } });
-      if (response.toast) showToastHtml(response.toast);
+      const response = await options.fetchFragments({
+        app,
+        state,
+        overlay: { templateId, params }
+      });
+      if (!response.overlay) throw new FlowError("no-template", "The template cannot be shown.");
+      return response.overlay;
     }
   });
 

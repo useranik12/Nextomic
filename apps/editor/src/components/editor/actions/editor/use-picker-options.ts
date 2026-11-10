@@ -57,7 +57,7 @@ const EMPTY_HINT: Record<PickerKind, string> = {
   restCall: "Add a call in API Data first.",
   timeline: "Create a GSAP timeline in Animations first.",
   theme: "No themes.",
-  template: "No toast templates yet: create one in Pages & Templates, Templates tab."
+  template: "No templates of this type yet: create one in Pages & Templates, Templates tab."
 };
 
 /** Options for every structure picker, read from the editor and the project. */

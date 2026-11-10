@@ -3,19 +3,32 @@ import { pageTreeSchema } from "./loop-names";
 import { flowsByNodeSchema, type FlowsByNode } from "./actions/storage";
 import { ITEM_STATUSES, isLive, scheduledAtSchema } from "./status";
 import { pageParamSchema } from "./params";
+import { CSS_ANIMATIONS } from "./css-animation";
 import { evaluateRules, ruleSetSchema, ruleSpecificity, type RuleContext } from "./rules";
 
 // Templates (docs/templates-and-themes.md section 4): a header, a footer and a 404 page in v1.
 // They are edited on the same canvas as pages and applied to pages by rules.
 
-export const TEMPLATE_TYPES = ["header", "footer", "error-404", "toast"] as const;
+export const TEMPLATE_TYPES = ["header", "footer", "error-404", "modal", "bottom-sheet"] as const;
 export type TemplateType = (typeof TEMPLATE_TYPES)[number];
 export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
   header: "Header",
   footer: "Footer",
   "error-404": "404 page",
-  toast: "Toast"
+  modal: "Modal",
+  "bottom-sheet": "Bottom Sheet"
 };
+
+/** Types an action shows over the page, each with its own overlay (not header, footer or 404). */
+export type OverlayTemplateType = "modal" | "bottom-sheet";
+export const isOverlayType = (type: TemplateType): type is OverlayTemplateType =>
+  type === "modal" || type === "bottom-sheet";
+
+/**
+ * Stacking bands for everything shown over the page, top to bottom: toast, modal, bottom sheet.
+ * Inside a band, the template setting "Show above" adds a rank (`overlayRanks`).
+ */
+export const Z_BANDS = { toast: 20_000, modal: 15_000, "bottom-sheet": 10_000 } as const;
 export const templateTypeSchema = z.enum(TEMPLATE_TYPES);
 
 /** Whether a page or template shows the header or footer that applies, none, or one specific template. */
@@ -49,6 +62,29 @@ export const stickyHeaderSchema = z.object({
 });
 export type StickyHeader = z.infer<typeof stickyHeaderSchema>;
 
+/** The layer behind a modal or bottom sheet. */
+export const overlaySchema = z.object({
+  disabled: z.boolean().default(false),
+  /** Any CSS color. */
+  color: z
+    .string()
+    .max(80)
+    .refine((v) => !/[{};<>]/.test(v), "That color has characters that are not allowed")
+    .default("rgb(0 0 0 / 0.1)"),
+  /** 0 to 1, multiplies the color. */
+  opacity: z.number().min(0).max(1).default(1)
+});
+export type Overlay = z.infer<typeof overlaySchema>;
+
+/** Bottom sheet entrance: an "up" animation from CSS_ANIMATIONS. */
+export const sheetEntrySchema = z.object({
+  animation: z.string().max(40).default("slide-in-up"),
+  /** Milliseconds. */
+  durationMs: z.number().int().min(0).max(5000).default(300),
+  delayMs: z.number().int().min(0).max(5000).default(100)
+});
+export type SheetEntry = z.infer<typeof sheetEntrySchema>;
+
 export const templateSettingsSchema = z.object({
   description: z.string().max(500).default(""),
   /**
@@ -72,8 +108,12 @@ export const templateSettingsSchema = z.object({
   tagIds: z.array(z.string().max(64)).max(50).default([]),
   /** Values the template's elements read as {{ param.* }}; Show Toast passes them. */
   params: z.array(pageParamSchema).max(20).default([]),
-  /** Toast templates only: how long a toast stays before it closes by itself. */
-  closeAfterMs: z.number().int().min(1000).max(60_000).default(5000)
+  /** Modal and bottom sheet only: the layer behind the template. */
+  overlay: overlaySchema.default({}),
+  /** Modal and bottom sheet only: other templates of the same type this one sits above. */
+  showAbove: z.array(z.string().max(64)).max(50).default([]),
+  /** Bottom sheet only: how it slides in. */
+  entry: sheetEntrySchema.default({})
 });
 export type TemplateSettings = z.infer<typeof templateSettingsSchema>;
 
@@ -123,6 +163,7 @@ export interface LayoutCandidate {
   type: TemplateType;
   name: string;
   settings: Pick<TemplateSettings, "priority" | "status" | "rules"> & {
+    showAbove?: string[];
     scheduledAt?: string | null;
     sticky?: StickyHeader;
   };
@@ -213,17 +254,50 @@ export function resolveNotFound<T extends LayoutCandidate>(
   );
 }
 
-/** The toast template a Show Toast action names, when it is a live toast template whose conditions hold. */
-export function resolveToast<T extends LayoutCandidate>(
+/** The modal or bottom sheet template an action names, when it is live and its conditions hold. */
+export function resolveOverlay<T extends LayoutCandidate>(
   templates: readonly T[],
   ctx: RuleContext,
-  templateId: string
+  templateId: string,
+  type: OverlayTemplateType
 ): T | null {
   return (
-    templates.find((t) => t.id === templateId && t.type === "toast" && templateApplies(t, ctx)) ??
-    null
+    templates.find((t) => t.id === templateId && t.type === type && templateApplies(t, ctx)) ?? null
   );
 }
+
+/**
+ * Rank of every template of one type: 0 without "Show above", else one more than the highest rank
+ * among the templates it sits above. A cycle counts as rank 0 for the template that closes it.
+ */
+export function overlayRanks(
+  templates: readonly { id: string; settings: { showAbove?: readonly string[] } }[]
+): Record<string, number> {
+  const above = new Map(templates.map((t) => [t.id, t.settings.showAbove ?? []]));
+  const ranks: Record<string, number> = {};
+  const visiting = new Set<string>();
+  const rank = (id: string): number => {
+    const known = ranks[id];
+    if (known !== undefined) return known;
+    if (visiting.has(id)) return 0;
+    visiting.add(id);
+    let value = 0;
+    for (const other of above.get(id) ?? [])
+      if (above.has(other)) value = Math.max(value, rank(other) + 1);
+    visiting.delete(id);
+    ranks[id] = value;
+    return value;
+  };
+  for (const id of above.keys()) rank(id);
+  return ranks;
+}
+
+/** z-index of an overlay: its band, 100 per rank, plus its open order (later opened sits above). */
+export const overlayZIndex = (
+  type: OverlayTemplateType | "toast",
+  rank: number,
+  openOrder: number
+): number => Z_BANDS[type] + Math.min(rank, 49) * 100 + Math.min(openOrder, 99);
 
 /** Plain-language lines for "Why is this applied?". */
 export function explainLayout(decisions: readonly LayoutDecision[]): string[] {
@@ -241,3 +315,8 @@ export function explainLayout(decisions: readonly LayoutDecision[]): string[] {
     }
   });
 }
+
+/** Entrance animations that move up (fade-in-up, slide-in-up, ...): the choices for a bottom sheet. */
+export const SHEET_ENTRY_ANIMATIONS = CSS_ANIMATIONS.filter(
+  (a) => a.entrance && a.id.includes("-in-up")
+);

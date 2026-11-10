@@ -78,7 +78,7 @@ export const useFlowTest = create<FlowTestState>((set, get) => ({
       blocks: draft.blocks,
       appState: project.appState,
       routes: context.data.routes,
-      toasts: context.data.toasts
+      overlays: context.data.overlays
     });
   },
   finish: () => {

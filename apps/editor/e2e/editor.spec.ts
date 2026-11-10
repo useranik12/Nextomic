@@ -722,21 +722,25 @@ async function addWholeSiteRule(page: Page): Promise<void> {
 }
 
 /**
- * A published toast template on the whole site with a required `title` parameter (default "Hi")
+ * A published modal template on the whole site with a required `title` parameter (default "Hi")
  * that its heading shows. Leaves the editor on the template.
  */
-async function newToastTemplate(page: Page): Promise<void> {
+async function newModalTemplate(
+  page: Page,
+  kind: "Modal" | "Bottom Sheet" = "Modal"
+): Promise<void> {
+  const name = `Main ${kind.toLowerCase()}`;
   await page.getByRole("button", { name: "Pages & Templates" }).click();
   await page.getByRole("button", { name: "Column layout" }).click();
   await page.getByRole("tab", { name: /Templates/ }).click();
   await page.getByRole("button", { name: "New template" }).click();
   const create = page.getByRole("dialog");
-  await create.getByLabel("Name").fill("Main toast");
+  await create.getByLabel("Name").fill(name);
   await create.getByRole("button", { name: /^Type/ }).click();
-  await page.locator("[role=option]", { hasText: "Toast" }).click();
+  await page.locator("[role=option]", { hasText: kind }).click();
   await page.getByRole("button", { name: "Create template" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await page.getByRole("button", { name: "More actions for Main toast" }).click();
+  await page.getByRole("button", { name: `More actions for ${name}` }).click();
   await page.getByRole("menuitem", { name: "Edit" }).click();
   await expect(page.getByLabel("Editing context")).toContainText("Template");
 
@@ -750,7 +754,7 @@ async function newToastTemplate(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Save Template Parameters" }).click();
   await expect(page.getByLabel("required", { exact: true })).toBeVisible();
 
-  // A new toast template is a blank canvas: its design is up to the user.
+  // A new modal template is a blank canvas: its design is up to the user.
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.getByRole("heading")).toHaveCount(0);
   await page.getByRole("button", { name: "Add element" }).click();
@@ -1354,11 +1358,11 @@ test("action flows: add a trigger and an action, save, and see it after reload",
   ).toBeVisible();
 });
 
-test("action runtime: a click shows the chosen toast template with the passed parameter", async ({
+test("action runtime: a click opens the chosen modal with the passed parameter, Escape closes it", async ({
   page
 }) => {
   const projectId = await signUpAndCreateProject(page);
-  await newToastTemplate(page);
+  await newModalTemplate(page);
   await editHome(page);
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Button", exact: true }).click();
@@ -1367,18 +1371,18 @@ test("action runtime: a click shows the chosen toast template with the passed pa
     timeout: 10_000
   });
 
-  // On Click > Show Toast: pick the template, then pass its parameter (required, so marked).
+  // On Click > Show Modal: pick the template, then pass its parameter (required, so marked).
   await page.getByRole("tab", { name: /action/i }).click();
   await page.getByRole("button", { name: "Add action" }).click();
   const modal = page.getByRole("dialog");
   await modal.getByRole("button", { name: "Choose a trigger" }).click();
   await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
   await modal.getByRole("button", { name: "Add Action", exact: true }).click();
-  await modal.getByLabel("Search actions").fill("toast");
-  await modal.getByRole("button", { name: "Show Toast" }).click();
+  await modal.getByLabel("Search actions").fill("modal");
+  await modal.getByRole("button", { name: "Show Modal" }).click();
   await expect(modal.getByText("Choose a template to see its parameters.")).toBeVisible();
-  await modal.getByRole("button", { name: /^Toast template/ }).click();
-  await page.locator("[role=option]", { hasText: "Main toast" }).click();
+  await modal.getByRole("button", { name: /^Modal template/ }).click();
+  await page.locator("[role=option]", { hasText: "Main modal" }).click();
   await expect(modal.getByText("Required: pass a value.")).toBeVisible();
   await modal.getByRole("textbox", { name: /^title/ }).fill("Saved from a flow");
   await expect(modal.getByText("Required: pass a value.")).toHaveCount(0);
@@ -1386,12 +1390,57 @@ test("action runtime: a click shows the chosen toast template with the passed pa
   await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
   await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
 
-  // The preview runs the saved flow: the toast shows the passed value, then closes on its timer.
+  // The preview runs the saved flow: the modal opens fixed over the page with the passed value.
   await page.goto(`/preview/${projectId}`);
   await page.locator("main button, body button").first().click();
-  const toast = page.locator("[data-nx-toast]");
-  await expect(toast).toContainText("Saved from a flow");
-  await expect(toast).toHaveCount(0, { timeout: 10_000 });
+  const layer = page.locator('[data-nx-overlay="modal"]');
+  await expect(layer).toContainText("Saved from a flow");
+  await expect(layer).toHaveCSS("position", "fixed");
+  await page.keyboard.press("Escape");
+  await expect(layer).toHaveCount(0);
+});
+
+test("action runtime: a bottom sheet sits at the bottom with its own overlay", async ({ page }) => {
+  const projectId = await signUpAndCreateProject(page);
+  await newModalTemplate(page, "Bottom Sheet");
+  await editHome(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("Show");
+  await modal.getByRole("button", { name: "Show", exact: true }).click();
+  await modal.getByRole("button", { name: /^Bottom sheet template/ }).click();
+  await page.locator("[role=option]", { hasText: "Main bottom sheet" }).click();
+  await modal.getByRole("textbox", { name: /^title/ }).fill("From a sheet");
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  await page.goto(`/preview/${projectId}`);
+  await page.locator("main button, body button").first().click();
+  const layer = page.locator('[data-nx-overlay="bottom-sheet"]');
+  await expect(layer).toContainText("From a sheet");
+  const sheet = layer.locator("[data-nx-overlay-content]");
+  // It slides in first (300ms after a 100ms delay), then rests on the bottom edge.
+  await expect
+    .poll(async () => {
+      const box = await sheet.boundingBox();
+      const height = page.viewportSize()?.height ?? 0;
+      return box ? Math.round(box.y + box.height - height) : null;
+    })
+    .toBe(0);
+  // Clicking the overlay closes it.
+  await page.mouse.click(5, 5);
+  await expect(layer).toHaveCount(0);
 });
 
 test("flow editor Test runs the unsaved trigger on the canvas and lists each step", async ({
@@ -1413,31 +1462,17 @@ test("flow editor Test runs the unsaved trigger on the canvas and lists each ste
   await modal.getByLabel("Search actions").fill("toast");
   await modal.getByRole("button", { name: "Show Toast" }).click();
 
-  // No toast template yet: the template picker is off and says why.
-  await expect(
-    modal.getByText("No toast templates yet: create one in Pages & Templates, Templates tab.")
-  ).toBeVisible();
-
-  // Test runs the unsaved flow and reports the failing step.
+  // Test runs the unsaved flow and reports the failing step: a toast needs a title.
   await modal.getByRole("button", { name: "Test", exact: true }).click();
   const panel = page.getByRole("region", { name: "Test run" });
   await expect(panel.getByRole("list", { name: "Test steps" })).toContainText("Show Toast");
-  await expect(panel.getByRole("alert")).toHaveText("Choose the toast template to show.");
+  await expect(panel.getByRole("alert")).toHaveText("Write the title of the toast.");
   await panel.getByRole("button", { name: "Back to editor" }).click();
   await expect(panel).toHaveCount(0);
   await expect(modal.getByText("Unsaved changes")).toBeVisible();
-  await modal.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
-  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
 
-  // With a toast template chosen and its parameter passed, the toast shows on the canvas.
-  await newToastTemplate(page);
-  await editHome(page);
-  await page.getByRole("button", { name: /^Open the actions of/ }).click();
-  await modal.getByText("Show Toast").first().click();
-  await modal.getByRole("button", { name: /^Toast template/ }).click();
-  await page.locator("[role=option]", { hasText: "Main toast" }).click();
-  await modal.getByRole("textbox", { name: /^title/ }).fill("Hello");
+  // With a title, the native toast shows on the canvas.
+  await modal.getByRole("textbox", { name: /^Title/ }).fill("Hello");
   await modal.getByRole("button", { name: "Test", exact: true }).click();
   await expect(panel.getByRole("status")).toHaveText("Finished");
   await expect(panel.getByRole("alert")).toHaveCount(0);

@@ -1,7 +1,9 @@
 import { toText } from "@nextomic/schema";
 import { FlowError, numberParam, type ActionHandler, type RunLogEntry } from "./engine";
 import type { LiveState, StateUpdate } from "./live-state";
-import type { RuntimePayload } from "./payload";
+import type { OverlayLayer, ShowOverlayOptions } from "./overlays";
+import type { OverlayPart, RuntimePayload } from "./payload";
+import type { ToastStack } from "./toasts";
 
 // Browser actions available in Phase 5b. Every other action reports "does not run yet" until its
 // phase (docs/phases.md 5c to 5e).
@@ -22,8 +24,10 @@ export const browserNavigation: Navigation = {
 export interface HandlerDeps {
   payload: RuntimePayload;
   state: LiveState;
-  /** Renders the toast template with these parameter values and shows it. */
-  toast: (templateId: string, params: Record<string, string>) => Promise<void>;
+  /** Renders a modal or bottom sheet template with these parameter values. */
+  renderOverlay: (templateId: string, params: Record<string, string>) => Promise<OverlayPart>;
+  overlays: OverlayLayer;
+  toasts: ToastStack;
   /** Redraws every element that reads state, and every slot. */
   rebuild: () => Promise<void>;
   /** A page URL of this site (live or preview). */
@@ -61,8 +65,46 @@ function query(pairs: unknown): URLSearchParams {
   return out;
 }
 
-export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler> {
+const optionalNumber = (value: unknown): number | undefined =>
+  value === "" || value === undefined || value === null ? undefined : numberParam(value, 0);
+const optionalBoolean = (value: unknown): boolean | undefined => {
+  const text = toText(value);
+  return text === "" ? undefined : text === "true";
+};
+
+function overlayOptions(p: Record<string, unknown>): ShowOverlayOptions {
   return {
+    overlayDisabled: optionalBoolean(p.overlayDisabled),
+    overlayColor: toText(p.overlayColor) || undefined,
+    overlayOpacity: optionalNumber(p.overlayOpacity),
+    noOverlayDismiss: toText(p.noOverlayDismiss) === "true",
+    noDrag: toText(p.noDrag) === "true"
+  };
+}
+
+export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler> {
+  const showOverlay = async (type: OverlayPart["type"], p: Record<string, unknown>) => {
+    const templateId = toText(p.template);
+    if (!templateId) throw new FlowError("no-template", "Choose the template to show.");
+    const part = await deps.renderOverlay(templateId, Object.fromEntries(query(p.params)));
+    if (part.type !== type)
+      throw new FlowError("wrong-template", "That template is the wrong type.");
+    deps.overlays.show(part, overlayOptions(p));
+  };
+  const closeOverlay = (type: OverlayPart["type"], p: Record<string, unknown>) =>
+    deps.overlays.close(type, toText(p.template) || undefined);
+  const toggleOverlay = async (type: OverlayPart["type"], p: Record<string, unknown>) => {
+    const templateId = toText(p.template);
+    if (templateId && deps.overlays.isOpen(templateId)) deps.overlays.close(type, templateId);
+    else await showOverlay(type, p);
+  };
+  return {
+    "modal.show": (p) => showOverlay("modal", p),
+    "modal.close": (p) => closeOverlay("modal", p),
+    "modal.toggle": (p) => toggleOverlay("modal", p),
+    "bottomSheet.show": (p) => showOverlay("bottom-sheet", p),
+    "bottomSheet.dismiss": (p) => closeOverlay("bottom-sheet", p),
+    "toast.dismiss": (p) => deps.toasts.dismiss(toText(p.which) === "all" ? "all" : "current"),
     "debug.log": (p, ctx) => {
       // Debug Log writes in preview and Test runs only, never on the live site.
       if (deps.payload.mode === "live") return;
@@ -75,10 +117,40 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
       );
     },
     wait: (p, ctx) => sleep(Math.max(0, numberParam(p.durationMs, 0)), ctx.signal),
-    toast: async (p) => {
-      const templateId = toText(p.template);
-      if (!templateId) throw new FlowError("no-template", "Choose the toast template to show.");
-      await deps.toast(templateId, Object.fromEntries(query(p.params)));
+    toast: (p, ctx) => {
+      if (toText(p.title).trim() === "") {
+        throw new FlowError("no-title", "Write the title of the toast.");
+      }
+      const showButton = toText(p.showButton) === "true";
+      deps.toasts.show({
+        title: toText(p.title),
+        message: toText(p.message) || undefined,
+        buttonText: showButton ? toText(p.buttonText) || undefined : undefined,
+        onButton: showButton
+          ? () => {
+              ctx.runSlot("buttonAction").catch((e: unknown) =>
+                deps.log?.({
+                  nodeId: ctx.node.id,
+                  label: "Toast button",
+                  status: "error",
+                  ms: 0,
+                  error: e instanceof Error ? e.message : String(e)
+                })
+              );
+            }
+          : undefined,
+        buttonColor: toText(p.buttonColor) || undefined,
+        buttonTextColor: toText(p.buttonTextColor) || undefined,
+        backgroundColor: toText(p.backgroundColor) || undefined,
+        titleColor: toText(p.titleColor) || undefined,
+        messageColor: toText(p.messageColor) || undefined,
+        borderStyle: toText(p.borderStyle) || undefined,
+        borderWidthPx: optionalNumber(p.borderWidth),
+        borderColor: toText(p.borderColor) || undefined,
+        borderRadiusPx: optionalNumber(p.borderRadius),
+        hideAfterMs: numberParam(p.hideAfterMs, 5000),
+        hidePrevious: toText(p.hidePrevious) === "true"
+      });
     },
     "state.updateApp": (p) => deps.state.update("app", updatesOf(p.updates)),
     "state.updatePage": (p) => deps.state.update("state", updatesOf(p.updates)),

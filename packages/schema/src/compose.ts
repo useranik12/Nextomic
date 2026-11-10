@@ -1,5 +1,6 @@
 import type { ElementNode } from "./element";
-import type { StickyHeader } from "./template";
+import { BASE_BREAKPOINT_ID } from "./breakpoint";
+import type { Overlay, OverlayTemplateType, StickyHeader } from "./template";
 
 // Layout composition: the page content goes inside <main>, with the header above and the footer
 // below (docs/templates-and-themes.md 4.3). It works on plain element trees so the editor preview,
@@ -105,6 +106,44 @@ export function composeForEditor(
       ...page.children,
       ...(footer ? [wrapper("layout-footer", "footer", footer.children)] : [])
     ]
+  };
+}
+
+/**
+ * A modal or bottom sheet template as it looks open, for the editor canvas and the preview: the
+ * root fills the window with the template's overlay behind its content, which sits centered
+ * (modal) or at the bottom (sheet), like the runtime layer. Only the root's look changes, so the
+ * elements keep their places and parents.
+ */
+export function frameOverlayTemplate(
+  tree: ElementNode,
+  type: OverlayTemplateType,
+  overlay: Overlay
+): ElementNode {
+  const sheet = type === "bottom-sheet";
+  const base: Record<string, string> = {
+    display: "flex",
+    "flex-direction": "column",
+    "justify-content": sheet ? "flex-end" : "center",
+    "align-items": sheet ? "stretch" : "center",
+    "min-height": "100dvh"
+  };
+  if (!overlay.disabled) {
+    base.background = `color-mix(in srgb, ${overlay.color} ${Math.round(overlay.opacity * 100)}%, transparent)`;
+  }
+  const existing = tree.styles.breakpoints[BASE_BREAKPOINT_ID]?.default ?? {};
+  return {
+    ...tree,
+    styles: {
+      ...tree.styles,
+      breakpoints: {
+        ...tree.styles.breakpoints,
+        [BASE_BREAKPOINT_ID]: {
+          ...tree.styles.breakpoints[BASE_BREAKPOINT_ID],
+          default: { ...base, ...existing }
+        }
+      }
+    }
   };
 }
 

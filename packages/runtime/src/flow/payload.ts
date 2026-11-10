@@ -1,4 +1,12 @@
-import type { ActionBlock, AppStateVariable, DynamicContext, FlowsByNode } from "@nextomic/schema";
+import type {
+  ActionBlock,
+  AppStateVariable,
+  DynamicContext,
+  FlowsByNode,
+  Overlay,
+  OverlayTemplateType,
+  SheetEntry
+} from "@nextomic/schema";
 
 /** What a built page's action runtime receives from the server render. */
 export interface RuntimePayload {
@@ -32,11 +40,25 @@ export interface FragmentRequest {
   ids?: string[];
   app: Record<string, string>;
   state: Record<string, string>;
-  /** Show Toast: the template and its parameter values. */
-  toast?: { templateId: string; params: Record<string, string> };
+  /** Show Modal or Show Bottom Sheet: the template and its parameter values. */
+  overlay?: { templateId: string; params: Record<string, string> };
+}
+
+/** A modal or bottom sheet template, rendered and ready for the overlay layer. */
+export interface OverlayPart {
+  templateId: string;
+  type: OverlayTemplateType;
+  html: string;
+  css: string;
+  /** Template's own overlay settings; the action may override them. */
+  overlay: Overlay;
+  /** Bottom sheet only. */
+  entry: SheetEntry;
+  /** Rank from the template's "Show above" settings, within its band. */
+  rank: number;
 }
 
 export interface FragmentResponse {
   parts: FragmentPart[];
-  toast: { html: string; css: string; closeAfterMs: number } | null;
+  overlay: OverlayPart | null;
 }

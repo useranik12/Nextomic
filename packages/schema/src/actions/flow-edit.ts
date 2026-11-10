@@ -1,4 +1,6 @@
 import type { ConditionGroup } from "../condition";
+import { getAction } from "./catalog";
+import { fieldShown } from "./fields";
 import { walkFlow, type FlowNode, type FlowNodeKind } from "./flow";
 
 // Pure edits of a node list for the flow editor. Every function returns a new list; the input is
@@ -15,6 +17,12 @@ export const TOP_SLOT: FlowSlot = { parent: null, list: "nodes" };
 /** The child lists of a node with their slot keys and labels, in display order. */
 export function slotLists(node: FlowNode): { list: string; label: string; nodes: FlowNode[] }[] {
   switch (node.kind) {
+    case "action": {
+      const def = getAction(node.type);
+      return (def?.fields ?? [])
+        .filter((f) => f.kind === "flow" && fieldShown(f, node.params, def?.fields ?? []))
+        .map((f) => ({ list: `slot:${f.key}`, label: f.label, nodes: node.slots?.[f.key] ?? [] }));
+    }
     case "condition":
       return [
         ...node.branches.map((b, i) => ({
@@ -46,7 +54,9 @@ export function slotLists(node: FlowNode): { list: string; label: string; nodes:
 
 /** Replaces one child list of a container (mutates `node`, which must be a copy). */
 function setList(node: FlowNode, list: string, nodes: FlowNode[]): void {
-  if (node.kind === "condition") {
+  if (node.kind === "action") {
+    if (list.startsWith("slot:")) node.slots = { ...node.slots, [list.slice(5)]: nodes };
+  } else if (node.kind === "condition") {
     if (list === "else") node.else = nodes;
     const branch = node.branches.find((b) => `branch:${b.id}` === list);
     if (branch) branch.nodes = nodes;

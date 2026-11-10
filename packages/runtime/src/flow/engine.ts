@@ -46,6 +46,11 @@ export interface ActionContext {
   /** The names at this node (state, loop rows, outputs), for handlers that read more. */
   scope: Readonly<Record<string, unknown>>;
   signal: AbortSignal;
+  /**
+   * Runs the nested flow of a `flow` field (Show Toast's Button Action) with the names this node
+   * saw. It can be called later, after the node finished.
+   */
+  runSlot: (key: string) => Promise<void>;
 }
 
 export type ActionHandler = (params: ResolvedParams, ctx: ActionContext) => unknown;
@@ -125,7 +130,11 @@ async function runAction(node: Extract<FlowNode, { kind: "action" }>, f: Frame) 
     node,
     elementId: f.env.elementId,
     scope,
-    signal: f.signal
+    signal: f.signal,
+    runSlot: async (key) => {
+      const nodes = node.slots?.[key];
+      if (nodes?.length) await runList(nodes, { ...f, names: { ...f.names } });
+    }
   });
   if (node.outputName) f.names[node.outputName] = output;
 }

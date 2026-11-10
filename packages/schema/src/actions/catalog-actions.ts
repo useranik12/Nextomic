@@ -32,7 +32,6 @@ const target = (extra: Partial<ParamField> = {}): ParamField => ({
 });
 
 const notBuilt = (name: string) => `The ${name} element is not built yet.`;
-const POPUPS_LATER = "Popup templates (modal, drawer, bottom sheet) come in Phase 9.";
 
 /** Listed, greyed actions: no fields until the element or phase they need exists. */
 function later(
@@ -485,6 +484,220 @@ const STATE_ACTIONS: ActionDef[] = [
   }
 ];
 
+const OVERLAY = "Overlay Options";
+
+/** Fields shared by Show Modal and Show Bottom Sheet. A value left unset follows the template. */
+function overlayFields(type: "modal" | "bottom-sheet", noun: string, sheet: boolean): ParamField[] {
+  return [
+    {
+      key: "template",
+      label: `${noun} template`,
+      kind: "template",
+      templateType: type,
+      required: true
+    },
+    { key: "overlayDisabled", label: "Disable overlay", kind: "boolean", group: OVERLAY },
+    { key: "overlayColor", label: "Overlay color", kind: "color", group: OVERLAY },
+    {
+      key: "overlayOpacity",
+      label: "Overlay opacity (0 to 1)",
+      kind: "number",
+      min: 0,
+      max: 1,
+      group: OVERLAY
+    },
+    {
+      key: "noOverlayDismiss",
+      label: "Disable overlay click dismiss",
+      kind: "boolean",
+      default: "false"
+    },
+    ...(sheet
+      ? [{ key: "noDrag", label: "Disable drag", kind: "boolean", default: "false" } as ParamField]
+      : []),
+    {
+      key: "params",
+      label: "Parameters",
+      kind: "targetParams",
+      targetParam: "template",
+      group: "Pass Parameters"
+    }
+  ];
+}
+
+const closeTemplate = (
+  type: "modal" | "bottom-sheet",
+  noun: string,
+  required: boolean
+): ParamField => ({
+  key: "template",
+  label: `${noun} template`,
+  kind: "template",
+  templateType: type,
+  required,
+  help: required ? undefined : `Leave empty for the topmost ${noun.toLowerCase()}.`
+});
+
+const MODAL_ACTIONS: ActionDef[] = [
+  {
+    type: "modal.show",
+    label: "Show Modal",
+    category: "alerts",
+    subcategory: "Modal",
+    runs: "browser",
+    description: "Shows a modal template over the page, centered on its own overlay.",
+    fields: overlayFields("modal", "Modal", false),
+    summary: ["template"]
+  },
+  {
+    type: "modal.close",
+    label: "Close Modal",
+    category: "alerts",
+    subcategory: "Modal",
+    runs: "browser",
+    description: "Closes a modal, or the topmost one.",
+    fields: [closeTemplate("modal", "Modal", false)]
+  },
+  {
+    type: "modal.toggle",
+    label: "Toggle Modal",
+    category: "alerts",
+    subcategory: "Modal",
+    runs: "browser",
+    description: "Shows the modal, or closes it when it is open.",
+    fields: [
+      closeTemplate("modal", "Modal", true),
+      {
+        key: "params",
+        label: "Parameters",
+        kind: "targetParams",
+        targetParam: "template",
+        group: "Pass Parameters"
+      }
+    ],
+    summary: ["template"]
+  }
+];
+
+const SHEET_ACTIONS: ActionDef[] = [
+  {
+    type: "bottomSheet.show",
+    label: "Show",
+    category: "ui",
+    subcategory: "Bottom Sheet",
+    runs: "browser",
+    description: "Slides a bottom sheet template up from the bottom of the screen.",
+    fields: overlayFields("bottom-sheet", "Bottom sheet", true),
+    summary: ["template"]
+  },
+  {
+    type: "bottomSheet.dismiss",
+    label: "Dismiss",
+    category: "ui",
+    subcategory: "Bottom Sheet",
+    runs: "browser",
+    description: "Closes a bottom sheet, or the topmost one.",
+    fields: [closeTemplate("bottom-sheet", "Bottom sheet", false)]
+  }
+];
+
+const BORDER = "Border";
+const TOAST_LOOK = "Colors";
+
+const TOAST_ACTIONS: ActionDef[] = [
+  {
+    type: "toast",
+    label: "Show Toast",
+    category: "alerts",
+    subcategory: "Toast",
+    runs: "browser",
+    description: "Shows a toast message in the corner of the screen.",
+    fields: [
+      text("title", "Title", { required: true }),
+      { key: "message", label: "Message", kind: "textarea" },
+      { key: "showButton", label: "Show action button", kind: "boolean", default: "false" },
+      text("buttonText", "Button text", {
+        required: true,
+        showIf: { key: "showButton", in: ["true"] }
+      }),
+      {
+        key: "buttonAction",
+        label: "Button action",
+        kind: "flow",
+        showIf: { key: "showButton", in: ["true"] }
+      },
+      {
+        key: "buttonColor",
+        label: "Button color",
+        kind: "color",
+        showIf: { key: "showButton", in: ["true"] }
+      },
+      {
+        key: "buttonTextColor",
+        label: "Button text color",
+        kind: "color",
+        showIf: { key: "showButton", in: ["true"] }
+      },
+      { key: "backgroundColor", label: "Background color", kind: "color", group: TOAST_LOOK },
+      { key: "titleColor", label: "Title color", kind: "color", group: TOAST_LOOK },
+      { key: "messageColor", label: "Message color", kind: "color", group: TOAST_LOOK },
+      {
+        key: "borderStyle",
+        label: "Type",
+        kind: "select",
+        default: "solid",
+        group: BORDER,
+        options: opts([
+          ["none", "None"],
+          ["solid", "Solid"],
+          ["dashed", "Dashed"],
+          ["dotted", "Dotted"]
+        ])
+      },
+      { key: "borderWidth", label: "Width (px)", kind: "number", min: 0, max: 20, group: BORDER },
+      { key: "borderColor", label: "Color", kind: "color", group: BORDER },
+      {
+        key: "borderRadius",
+        label: "Radius (px)",
+        kind: "number",
+        min: 0,
+        max: 200,
+        group: BORDER
+      },
+      {
+        key: "hideAfterMs",
+        label: "Hide after (ms)",
+        kind: "number",
+        default: "5000",
+        min: 500,
+        max: 600_000
+      },
+      { key: "hidePrevious", label: "Hide previous toasts", kind: "boolean", default: "false" }
+    ],
+    summary: ["title"]
+  },
+  {
+    type: "toast.dismiss",
+    label: "Dismiss Toast",
+    category: "alerts",
+    subcategory: "Toast",
+    runs: "browser",
+    description: "Closes the current toast, or every toast.",
+    fields: [
+      {
+        key: "which",
+        label: "Dismiss",
+        kind: "select",
+        default: "current",
+        options: opts([
+          ["current", "Current only"],
+          ["all", "All"]
+        ])
+      }
+    ]
+  }
+];
+
 const ui = (
   type: string,
   label: string,
@@ -553,10 +766,7 @@ const UI_ACTIONS: ActionDef[] = [
     ],
     PROPS
   ),
-  ...later("ui", "Bottom Sheet", POPUPS_LATER, [
-    ["bottomSheet.show", "Show"],
-    ["bottomSheet.dismiss", "Dismiss"]
-  ]),
+  ...SHEET_ACTIONS,
   ui(
     "picker.date",
     "Date/Time Picker",
@@ -702,11 +912,7 @@ const ALERT_ACTIONS: ActionDef[] = [
     ["offCanvas.close", "Close Off Canvas"],
     ["offCanvas.toggle", "Toggle Off Canvas"]
   ]),
-  ...later("alerts", "Modal", POPUPS_LATER, [
-    ["modal.show", "Show Modal"],
-    ["modal.close", "Close Modal"],
-    ["modal.toggle", "Toggle Modal"]
-  ]),
+  ...MODAL_ACTIONS,
   ...later("alerts", "Tooltip", notBuilt("Tooltip"), [
     ["tooltip.show", "Show Tooltip"],
     ["tooltip.close", "Close Tooltip"],
@@ -735,41 +941,7 @@ const ALERT_ACTIONS: ActionDef[] = [
     description: "Stops a sound started by Play Sound, or every sound when empty.",
     fields: [text("src", "Sound URL")]
   },
-  {
-    type: "toast",
-    label: "Show Toast",
-    category: "alerts",
-    runs: "browser",
-    description:
-      "Shows a toast template with the parameter values given; the template sets its design, position and how long it stays.",
-    fields: [
-      {
-        key: "template",
-        label: "Toast template",
-        kind: "template",
-        templateType: "toast",
-        required: true
-      },
-      { key: "params", label: "Parameters", kind: "targetParams", targetParam: "template" }
-    ],
-    summary: ["template"]
-  },
-  {
-    type: "confirm",
-    label: "Confirm Dialog",
-    category: "alerts",
-    runs: "browser",
-    description: "Asks the visitor to confirm; returns true or false.",
-    fields: [
-      text("title", "Title", { required: true }),
-      { key: "message", label: "Message", kind: "textarea" },
-      text("confirmLabel", "Confirm button", { default: "Confirm" }),
-      text("cancelLabel", "Cancel button", { default: "Cancel" }),
-      { key: "danger", label: "Destructive", kind: "boolean", default: "false" }
-    ],
-    output: { type: "boolean" },
-    summary: ["title"]
-  }
+  ...TOAST_ACTIONS
 ];
 
 const util = (

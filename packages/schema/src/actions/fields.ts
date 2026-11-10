@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { TemplateType } from "../template";
 
 // Parameter fields of actions, triggers and Action Block calls (docs/dynamic-data-and-actions.md
 // section 8). A field describes one input of the Define Action panel; its value is stored as text
@@ -24,7 +25,8 @@ export const FIELD_KINDS = [
   "theme",
   "rows",
   "template",
-  "targetParams"
+  "targetParams",
+  "flow"
 ] as const;
 export type FieldKind = (typeof FIELD_KINDS)[number];
 
@@ -37,6 +39,8 @@ export interface ParamField {
   key: string;
   label: string;
   kind: FieldKind;
+  /** Fields with the same group sit together under one collapsible heading in the panel. */
+  group?: string;
   required?: boolean;
   /** Text stored when the action is added. */
   default?: string;
@@ -58,7 +62,7 @@ export interface ParamField {
   /** `supabaseColumn(s)` only: the key of the action's table field the columns come from. */
   tableParam?: string;
   /** `template` only: the template type that may be picked. */
-  templateType?: "header" | "footer" | "error-404" | "toast";
+  templateType?: TemplateType;
   /**
    * `targetParams` only: the key of the action's page or template field. One value per parameter
    * of the chosen page or template, stored as rows `{ name, value }`.
@@ -99,7 +103,8 @@ export const UNBINDABLE_FIELD_REASONS: Partial<Record<FieldKind, string>> = {
   rows: "A list of rows; each column says whether it takes dynamic data.",
   template: "Picks a template so its parameters can be checked when the flow is saved.",
   targetParams:
-    "One value per parameter of the chosen page or template; each value takes dynamic data."
+    "One value per parameter of the chosen page or template; each value takes dynamic data.",
+  flow: "A nested action flow built in the editor, not a value."
 };
 
 export const fieldBindable = (field: Pick<ParamField, "kind">): boolean =>
