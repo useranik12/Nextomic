@@ -21,12 +21,15 @@ export function flowOwnerOf(node: ElementNode, kind: "page" | "template"): FlowO
   return node.type === ROOT_ELEMENT_TYPE ? kind : "element";
 }
 
+// One shared empty list: a selector returning a fresh [] re-renders forever.
+const NO_FLOWS: TriggerFlow[] = [];
+
 /** The Actions tab: one card per trigger of the selected element. */
 export function ActionsList({ node }: { node: ElementNode }) {
   const status = useFlowStore((s) => s.status);
   const error = useFlowStore((s) => s.error);
   const saved = useFlowStore((s) => s.savedIds.has(node.id));
-  const flows = useFlowStore((s) => s.pending[node.id] ?? s.byNode[node.id]?.flows ?? []);
+  const flows = useFlowStore((s) => s.pending[node.id] ?? s.byNode[node.id]?.flows ?? NO_FLOWS);
   const clipboard = useFlowStore((s) => s.flowClipboard);
   const pageKind = useEditorStore((s) => s.page?.kind ?? "page");
   const toast = useEditorStore((s) => s.showToast);

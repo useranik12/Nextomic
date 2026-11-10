@@ -37,7 +37,7 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
   const groups = [...new Set(triggers.map((t) => t.group))];
   const disabledKeys = triggers.filter((t) => t.disabled || used.includes(t.id)).map((t) => t.id);
   return (
-    <Dropdown placement="bottom" classNames={{ content: "max-h-[60vh] overflow-y-auto" }}>
+    <Dropdown placement="bottom">
       <DropdownTrigger>
         {variant === "large" ? (
           <ActionButton size="sm" endContent={<Icon name="ph:caret-down" />}>
@@ -55,6 +55,8 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
       </DropdownTrigger>
       <DropdownMenu
         aria-label="Triggers"
+        // The list scrolls inside the menu, so a long list never runs off the screen.
+        className="max-h-[50vh] overflow-y-auto"
         disabledKeys={disabledKeys}
         onAction={(key) => {
           const trigger = triggers.find((t) => t.id === key);
