@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { saveProjectSettingsAction, savePageAction } from "@/app/(builder)/editor/[id]/actions";
 import { saveTemplateAction } from "@/app/(builder)/editor/[id]/library-actions";
+import { useFlowStore } from "./actions/flow-store";
 import { useEditorStore } from "./store/editor-store";
 
 /**
@@ -43,7 +44,8 @@ export function useAutosave(): { saveNow: () => Promise<void> } {
           baseVersion: state.page.version,
           name: saved.name,
           settings: saved.template,
-          tree: saved.tree
+          tree: saved.tree,
+          ...pendingFlows()
         });
         const now = useEditorStore.getState();
         if (outcome.error !== null) {
@@ -81,7 +83,8 @@ export function useAutosave(): { saveNow: () => Promise<void> } {
         name: saved.name,
         route: saved.route,
         settings: saved.settings,
-        tree: saved.tree
+        tree: saved.tree,
+        ...pendingFlows()
       });
       const current = useEditorStore.getState();
       if (result.error !== null) {
@@ -137,4 +140,10 @@ export function useAutosave(): { saveNow: () => Promise<void> } {
   }, []);
 
   return { saveNow };
+}
+
+/** Flows of pasted or duplicated elements, sent with the page save that adds those elements. */
+function pendingFlows() {
+  const { pending } = useFlowStore.getState();
+  return Object.keys(pending).length > 0 ? { flows: pending } : {};
 }

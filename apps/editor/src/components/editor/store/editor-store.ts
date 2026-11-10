@@ -8,6 +8,7 @@ import {
   cloneWithNewIds,
   collectHtmlIds,
   duplicateNode,
+  pairNodeIds,
   findNode,
   renameLoopTag,
   uniqueLoopNames,
@@ -52,6 +53,7 @@ import {
 } from "@nextomic/schema";
 import { current, produce } from "immer";
 import { create } from "zustand";
+import { useFlowStore } from "../actions/flow-store";
 
 export interface PageDoc {
   name: string;
@@ -544,9 +546,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
     duplicateElement: (id) => {
       const { project } = get();
       let copyId: string | null = null;
+      let pairs: Map<string, string> | null = null;
       edit(null, (draft) => {
-        copyId = duplicateNode(draft.tree, id, project.generateElementIds)?.id ?? null;
+        const source = findNode(draft.tree, id)?.node;
+        const copy = duplicateNode(draft.tree, id, project.generateElementIds);
+        copyId = copy?.id ?? null;
+        if (source && copy) pairs = pairNodeIds(source, copy);
       });
+      if (pairs) useFlowStore.getState().copyFlows(pairs);
       if (copyId) {
         set({ selectedId: copyId });
         get().showToast(`${elementLabel(get().doc, id)} duplicated`);
@@ -558,6 +565,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       const found = doc ? findNode(doc.tree, id) : null;
       if (found && found.parent) {
         set({ clipboard: JSON.parse(JSON.stringify(found.node)) });
+        useFlowStore.getState().captureClipboard(found.node);
         get().showToast(`${found.node.name ?? found.node.type} copied to clipboard`);
       }
     },
@@ -576,6 +584,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
         }
       }
       const copy = cloneWithNewIds(clipboard, collectHtmlIds(doc.tree), project.generateElementIds);
+      const flows = useFlowStore.getState();
+      flows.copyFlows(pairNodeIds(clipboard, copy), flows.elementClipboard);
       const finalTarget = target;
       edit(null, (draft) => {
         if (!insertNode(draft.tree, finalTarget, copy, at, canHaveChildren)) {

@@ -243,3 +243,17 @@ export function unwrapNode(root: ElementNode, id: string): boolean {
   found.parent.children.splice(found.index, 1, ...found.node.children);
   return true;
 }
+
+/** Old id to new id for a copy made by `cloneWithNewIds` or `duplicateNode` (same shape). */
+export function pairNodeIds(source: ElementNode, copy: ElementNode): Map<string, string> {
+  const pairs = new Map<string, string>();
+  const visit = (a: ElementNode, b: ElementNode) => {
+    pairs.set(a.id, b.id);
+    a.children.forEach((child, i) => {
+      const other = b.children[i];
+      if (other) visit(child, other);
+    });
+  };
+  visit(source, copy);
+  return pairs;
+}

@@ -12,6 +12,7 @@ import {
 } from "@nextomic/schema";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
+import { ActionTab } from "../actions/action-tab";
 import { Icon } from "@/lib/icons/Icon";
 import { ConditionsGroup } from "../conditions/conditions-group";
 import { QueryLoopGroup } from "../query/query-loop-group";
@@ -346,9 +347,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             ) : null}
           </div>
         ) : null}
-        {showAction ? (
-          <p className="text-small text-default-500">Action flows arrive in a later phase.</p>
-        ) : null}
+        {showAction ? <ActionTab key={node.id} node={node} /> : null}
         {q && controls.length === 0 && groups.length === 0 ? (
           <p className="text-small text-default-500">No settings match.</p>
         ) : null}
