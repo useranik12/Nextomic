@@ -120,11 +120,15 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
   await expect(page.getByRole("switch", { name: "Enable realtime query" })).not.toBeChecked();
 
   // The Navigator marks the element with the orange query icon.
-  await expect(page.getByRole("img", { name: "Query loop: Supabase Query" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /^Open the query loop of .*: Supabase Query$/ })
+  ).toBeVisible();
 
   // Turning the query off keeps its settings.
   await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
-  await expect(page.getByRole("img", { name: "Query loop: Supabase Query" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /^Open the query loop of .*: Supabase Query$/ })
+  ).toHaveCount(0);
   await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
   await expect(tablePicker).toHaveValue(tableName);
 

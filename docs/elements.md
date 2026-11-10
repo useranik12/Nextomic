@@ -36,7 +36,7 @@ interface ElementNode {
 
 Rules:
 
-- Every element has 3 tabs: **Element** (content, properties, data binding, conditional visibility, loop), **Design** (CSS), **Action** (event flows). Layout of the panel is in `ui-reference.md` (4.7). In code and schema the first tab may be called `content`; the user-facing label is "Element".
+- Every element has 3 tabs: **Element** (content, properties, data binding, conditional visibility, loop), **Design** (CSS), **Action** (event flows). Layout of the panel is in `ui-reference.md` (4.7). In code and schema the first tab may be called `content`; the user-facing label is "Element". The Action tab has two tabs: **Actions** (one card per trigger of the element, or of the page/template when its root is selected; kebab menu disable, copy, cut, delete; paste) and **Action Blocks** (the project's reusable flows). Flows are stored apart from the element node (`action_flows`, one row per element), so they are not element props; element-specific triggers are keyed by element type in `packages/schema/src/actions/triggers.ts`. In the Navigator, an element with a query loop shows an orange database icon (opens its Query Loop settings) and an element with actions shows a sky-blue lightning icon (opens the flow editor).
 - A dot indicator shows on any property changed at the current breakpoint, on the tab, and on the breakpoint switcher if any breakpoint has changes.
 - All elements register in the component registry: type, category, default node, Zod props schema, content controls, design groups, supported events, `bindable` map, supported actions-as-target, editor render, output render (Next/Astro).
 - Elements must render in the editor with dynamic data (live fetch or user-authored sample values, never stored rows).

@@ -157,12 +157,13 @@ export function DynamicDataModal({
                   No dynamic tags match &ldquo;{query}&rdquo;.
                 </p>
               ) : (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+                // Masonry columns: groups of different heights pack with no blank space.
+                <div className="columns-1 gap-6 sm:columns-2 xl:columns-4">
                   {visible.map((g) => (
                     <section
                       key={g.id}
                       aria-label={g.label}
-                      className="flex min-w-0 flex-col gap-2"
+                      className="mb-6 flex min-w-0 break-inside-avoid flex-col gap-2"
                     >
                       <h3 className="text-tiny font-semibold uppercase text-default-500">
                         {g.label}
