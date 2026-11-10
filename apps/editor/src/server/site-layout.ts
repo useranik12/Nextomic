@@ -8,6 +8,7 @@ import {
   fillTokens,
   isSafeUrl,
   resolveLayout,
+  resolveToast,
   resolveNotFound,
   type DynamicContext,
   type NextomicUser,
@@ -148,6 +149,12 @@ export function layoutForPage(input: PageLayoutInput): {
   dynamic: DynamicContext;
   /** The request facts, for theme rules too. */
   rules: RuleContext;
+  /** Ids of the header and footer shown (their action flows run on the page). */
+  templateIds: string[];
+  /** Ids of the page root and the header and footer roots: page-level triggers live on them. */
+  rootIds: string[];
+  /** The toast template Show Toast uses on this page, if one is published. */
+  toast: PageLayoutInput["templates"][number] | null;
 } {
   const { settings, page } = input;
   const dynamic = buildDynamicContext({
@@ -191,7 +198,12 @@ export function layoutForPage(input: PageLayoutInput): {
       layout.header?.settings.sticky
     ),
     dynamic,
-    rules: ctx
+    rules: ctx,
+    templateIds: [layout.header?.id, layout.footer?.id].filter((id): id is string => !!id),
+    rootIds: [input.tree.id, layout.header?.tree.id, layout.footer?.tree.id].filter(
+      (id): id is string => !!id
+    ),
+    toast: resolveToast(input.templates, ctx)
   };
 }
 

@@ -1,4 +1,5 @@
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
+import { ActionRuntime } from "@/components/runtime/action-runtime";
 import { AnimationPlayer } from "@/components/runtime/animation-player";
 import {
   buildDynamicContext,
@@ -11,7 +12,8 @@ import {
   customCssFor,
   elementAnimationCss,
   resolveTheme,
-  timelinesForPage
+  timelinesForPage,
+  usedClassNames
 } from "@nextomic/schema";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
@@ -24,6 +26,7 @@ import { getPageByRoute, getProjectSettings, listPages, type StoredPage } from "
 import type { ProxyCaller } from "@/server/connectors/proxy";
 import { editorExecutor, pageLoopRows } from "@/server/queries/run-query";
 import { requestFacts } from "@/server/request-facts";
+import { previewPayload } from "@/server/runtime/page-runtime";
 import {
   layoutForNotFound,
   layoutForPage,
@@ -239,6 +242,12 @@ export default async function PreviewPage({
       projectId: id
     });
   const { tree, dynamic } = laid;
+  // Template previews (sample content around a header or footer) run no actions.
+  const actions =
+    "templateIds" in laid
+      ? await previewPayload(id, page, settings, laid, new URLSearchParams(values).toString())
+      : null;
+  const toastTree = "toast" in laid && laid.toast ? laid.toast.tree : null;
   const loopRows = await pageLoopRows({
     projectId: id,
     tree,
@@ -271,7 +280,10 @@ export default async function PreviewPage({
         loopRows={loopRows}
         bootScript
         pruneUnusedClasses
+        liveSlots={actions !== null}
+        keepClasses={actions && toastTree ? [...usedClassNames(toastTree)] : undefined}
       />
+      {actions ? <ActionRuntime payload={actions} /> : null}
     </>
   );
 }

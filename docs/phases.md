@@ -127,6 +127,8 @@ Docs: `dynamic-data-and-actions.md` (section 8), `ui-reference.md` (4.8)
 
   - **Toast template (owner 2026-11-10):** new template type `toast`. Show Toast renders the published toast template (server fragment) with `{{ toast.title }}`, `{{ toast.message }}`, `{{ toast.type }}`; with no published toast template, Show Toast fails with a clear error and the flow editor warns. A new toast template starts from a design modeled on the HeroUI (NextUI) toast, built from Nextomic elements and styles (no HeroUI CSS in output).
   - Step 1 built 2026-11-10: flow engine with tests.
+  - Step 2 built 2026-11-10: toast template type with the HeroUI-like starter design; Show Toast fields title, message, type, position, duration.
+  - Step 3 built 2026-11-10: runtime on `/site` and `/preview` (`packages/runtime/src/flow/page-runtime.ts`, `live-state.ts`, `handlers.ts`, `dom.ts`), payload (`apps/editor/src/server/runtime/page-runtime.ts`), fragment endpoint (`pages/api/site/[id]/fragment.ts`), `liveSlots` in the renderer, published views carry flows and page routes, theme CSS keeps template classes. Rebuild All Pages dropped (only the open page is mounted on a website). See `dynamic-data-and-actions.md` 8.6.
   - Later (owner note): Set Theme and Set UI Mode show disabled when the project has no matching setting (several themes / dark mode on). Do this when the main actions are finished.
 
 - [x] Action flow editor modal replicating the FlutterFlow structure with Nextomic styling (triggers list, flow canvas, Define Action panel, error badge) (5a, 2026-11-10)

@@ -91,6 +91,12 @@ export interface RenderOptions {
    * PageRenderer sets it; a partial render (loop copies) passes the page tree.
    */
   tree?: ElementNode;
+  /**
+   * Built pages with actions: an element whose conditions fail leaves an empty
+   * `<template data-nx-slot="id">` where it would be, so the runtime can insert it when its
+   * condition passes. Its content never reaches the browser before then.
+   */
+  liveSlots?: boolean;
 }
 
 const BOOLEAN_ATTRIBUTES = new Set([
@@ -238,7 +244,10 @@ function passes(node: ElementNode, options: RenderOptions, scope: RenderScope): 
 
 function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderScope): ReactNode {
   const definition = getElementDefinition(node.type);
-  if (!definition || node.hidden || !passes(node, options, scope)) return null;
+  if (!definition || node.hidden) return null;
+  if (!passes(node, options, scope)) {
+    return options.liveSlots ? <template key={node.id} data-nx-slot={node.id} /> : null;
+  }
   const attrs = elementAttrs(node, scope.resolveToken);
   return definition.render({
     node,
