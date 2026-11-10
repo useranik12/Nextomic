@@ -4,7 +4,9 @@ import {
   FlowError,
   LiveState,
   runFlow,
-  showToastHtml,
+  createOverlayLayer,
+  createToastStack,
+  type OverlayPart,
   starterHandlers,
   type RunLogEntry,
   type RuntimePayload
@@ -38,9 +40,10 @@ function plain(value: unknown): unknown {
   }
 }
 
-/** A toast template's content as HTML and CSS, rendered here like the server would. */
-function toastMarkup(
-  toast: TestRun["toasts"][string],
+/** A modal or bottom sheet template as the overlay layer needs it, rendered here like the server would. */
+function overlayPart(
+  templateId: string,
+  toast: TestRun["overlays"][string],
   render: RenderMessage,
   dynamic: DynamicContext,
   values: Readonly<Record<string, string>>
@@ -68,13 +71,26 @@ function toastMarkup(
   const html = host.innerHTML;
   root.unmount();
   const css = pageCss(toast.tree, render.breakpoints, render.classes, resolveToken);
-  return { html, css, closeAfterMs: toast.closeAfterMs };
+  return {
+    templateId,
+    type: toast.type,
+    html,
+    css,
+    overlay: toast.overlay,
+    entry: toast.entry,
+    rank: toast.rank
+  } satisfies OverlayPart;
 }
 
 export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
   let controller: AbortController | null = null;
+  // Opened by a test run and kept open so the owner sees them; closed when the test ends.
+  const overlays = createOverlayLayer();
+  const toasts = createToastStack();
 
   function stop() {
+    overlays.destroy();
+    toasts.destroy();
     controller?.abort();
     controller = null;
     setOverride(null);
@@ -122,15 +138,17 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
       },
       // The canvas re-renders from state on its own.
       rebuild: async () => {},
-      toast: async (templateId, values) => {
-        const toast = message.toasts[templateId];
-        if (!toast) {
+      overlays,
+      toasts,
+      renderOverlay: async (templateId, values) => {
+        const template = message.overlays[templateId];
+        if (!template) {
           throw new FlowError(
             "no-template",
-            "The toast template is not published or has no conditions that hold."
+            "The template is not published or has no conditions that hold."
           );
         }
-        showToastHtml(toastMarkup(toast, render, live.context(), values));
+        return overlayPart(templateId, template, render, live.context(), values);
       }
     });
     let error: string | null = null;

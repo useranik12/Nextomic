@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { BoltInput } from "../../right-panel/bolt-input";
+import { useFlowTargets } from "./flow-targets";
 import { TargetParamsInput } from "./target-params-input";
 import { PICKER_KINDS, usePickerOptions, type PickerKind } from "./use-picker-options";
 
@@ -226,54 +227,88 @@ export function ParamFields({
   onChange: (params: Params) => void;
 }) {
   const options = usePickerOptions();
+  const templates = useFlowTargets((s) => s.templates);
   const set = (key: string, value: ParamValue) => {
     const next: Params = { ...params, [key]: value };
     // A new page or template has other parameters: values for the old one are dropped.
     for (const f of fields)
       if (f.kind === "targetParams" && f.targetParam === key) next[f.key] = [];
+    // Show Modal and Show Bottom Sheet start from the template's own overlay values.
+    const picked = fields.find((f) => f.key === key);
+    if (picked?.kind === "template" && fields.some((f) => f.key === "overlayColor")) {
+      const overlay = templates.find((t) => t.id === value)?.settings.overlay;
+      if (overlay) {
+        next.overlayDisabled = String(overlay.disabled);
+        next.overlayColor = overlay.color;
+        next.overlayOpacity = String(overlay.opacity);
+      }
+    }
     onChange(next);
+  };
+  // Fields of one group sit together under a heading; nested flows are drawn on the canvas.
+  const shown = fields.filter((f) => f.kind !== "flow" && fieldShown(f, params, fields));
+  const chunks: { group?: string; items: ParamField[] }[] = [];
+  for (const field of shown) {
+    const last = chunks[chunks.length - 1];
+    if (last && last.group === field.group) last.items.push(field);
+    else chunks.push({ group: field.group, items: [field] });
+  }
+  const renderField = (field: ParamField) => {
+    const value = params[field.key];
+    return (
+      <div key={field.key} className="flex flex-col gap-1">
+        {field.kind === "targetParams" ? (
+          <TargetParamsInput
+            field={field}
+            sourceKind={
+              fields.find((f) => f.key === field.targetParam)?.kind === "page" ? "page" : "template"
+            }
+            params={params}
+            rows={Array.isArray(value) ? value : []}
+            onChange={(rows) => set(field.key, rows)}
+          />
+        ) : field.kind === "rows" ? (
+          <RowsInput
+            field={field}
+            rows={Array.isArray(value) ? value : []}
+            options={options}
+            params={params}
+            onChange={(rows) => set(field.key, rows)}
+          />
+        ) : (
+          <SingleInput
+            field={field}
+            value={typeof value === "string" ? value : ""}
+            options={options}
+            params={params}
+            onChange={(v) => set(field.key, v)}
+          />
+        )}
+        {field.help ? <p className="text-tiny text-default-500">{field.help}</p> : null}
+      </div>
+    );
   };
   return (
     <div className="flex flex-col gap-3">
-      {fields
-        .filter((f) => fieldShown(f, params, fields))
-        .map((field) => {
-          const value = params[field.key];
-          return (
-            <div key={field.key} className="flex flex-col gap-1">
-              {field.kind === "targetParams" ? (
-                <TargetParamsInput
-                  field={field}
-                  sourceKind={
-                    fields.find((f) => f.key === field.targetParam)?.kind === "page"
-                      ? "page"
-                      : "template"
-                  }
-                  params={params}
-                  rows={Array.isArray(value) ? value : []}
-                  onChange={(rows) => set(field.key, rows)}
-                />
-              ) : field.kind === "rows" ? (
-                <RowsInput
-                  field={field}
-                  rows={Array.isArray(value) ? value : []}
-                  options={options}
-                  params={params}
-                  onChange={(rows) => set(field.key, rows)}
-                />
-              ) : (
-                <SingleInput
-                  field={field}
-                  value={typeof value === "string" ? value : ""}
-                  options={options}
-                  params={params}
-                  onChange={(v) => set(field.key, v)}
-                />
-              )}
-              {field.help ? <p className="text-tiny text-default-500">{field.help}</p> : null}
-            </div>
-          );
-        })}
+      {chunks.map(({ group, items }) =>
+        group ? (
+          <details
+            key={items[0]?.key}
+            open={items.some(
+              (f) =>
+                f.kind === "targetParams" || (params[f.key] !== undefined && params[f.key] !== "")
+            )}
+            className="rounded-medium border border-default-200 px-3 py-2"
+          >
+            <summary className="cursor-pointer text-small font-medium text-default-700">
+              {group}
+            </summary>
+            <div className="mt-3 flex flex-col gap-3">{items.map(renderField)}</div>
+          </details>
+        ) : (
+          items.map(renderField)
+        )
+      )}
     </div>
   );
 }

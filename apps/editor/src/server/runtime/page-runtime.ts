@@ -5,6 +5,7 @@ import {
   type ActionBlock,
   type DynamicContext,
   type ElementNode,
+  isOverlayType,
   type FlowsByNode,
   type ProjectSettings
 } from "@nextomic/schema";
@@ -15,7 +16,7 @@ import { loopFreeIds } from "@/server/runtime/loop-free";
 import { flowsOf, listBlocks } from "@/server/action-flows";
 import { listPages } from "@/server/pages";
 import type { PublishedView } from "@/server/publish";
-import { getPublishedTemplates } from "@/server/templates";
+import { getDraftTemplates, getPublishedTemplates } from "@/server/templates";
 
 // What a built page's action runtime receives (docs/dynamic-data-and-actions.md section 8): the
 // flows of the page and of the header and footer shown, the Action Blocks they call, which
@@ -105,7 +106,9 @@ export async function livePayload(
 ): Promise<RuntimePayload | null> {
   const flows: FlowsByNode = { ...view.page.flows };
   const templates = await getPublishedTemplates(projectId);
-  for (const t of templates) if (laid.templateIds.includes(t.id)) Object.assign(flows, t.flows);
+  // Modals and bottom sheets are opened by actions, so their flows come with every page.
+  for (const t of templates)
+    if (laid.templateIds.includes(t.id) || isOverlayType(t.type)) Object.assign(flows, t.flows);
   if (!hasNodes(flows)) return null;
   const [row] = await getDb()
     .select({ blocks: projects.publishedActionBlocks })
@@ -135,7 +138,10 @@ export async function previewPayload(
 ): Promise<RuntimePayload | null> {
   const db = getDb();
   const flows: FlowsByNode = { ...(await flowsOf(db, projectId, { kind: "page", id: page.id })) };
-  for (const id of laid.templateIds) {
+  const overlayIds = (await getDraftTemplates(projectId))
+    .filter((t) => isOverlayType(t.type))
+    .map((t) => t.id);
+  for (const id of new Set([...laid.templateIds, ...overlayIds])) {
     Object.assign(flows, await flowsOf(db, projectId, { kind: "template", id }));
   }
   if (!hasNodes(flows)) return null;

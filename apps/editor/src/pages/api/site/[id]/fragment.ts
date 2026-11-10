@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { resolveToast, type NextomicUser } from "@nextomic/schema";
+import { overlayRanks, resolveOverlay, type NextomicUser } from "@nextomic/schema";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
@@ -8,7 +8,7 @@ import { createRateLimiter } from "@/server/rate-limit";
 import {
   MAX_FRAGMENT_IDS,
   renderParts,
-  renderToast,
+  renderOverlay,
   withClientState
 } from "@/server/runtime/fragments";
 import { draftView, liveView } from "@/server/runtime/view-layout";
@@ -32,7 +32,7 @@ const bodySchema = z.object({
   ids: z.array(z.string().min(1).max(64)).max(MAX_FRAGMENT_IDS).default([]),
   app: values,
   state: values,
-  toast: z
+  overlay: z
     .object({
       templateId: z.string().min(1).max(64),
       params: z.record(z.string().max(64), z.string().max(5000)).default({})
@@ -106,16 +106,30 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
   const dynamic = withClientState(laid.dynamic, body.app, body.state);
   const parts = renderParts({ tree: laid.tree, dynamic, settings: laid.settings, ids: body.ids });
-  let toast: ReturnType<typeof renderToast> | null = null;
-  if (body.toast) {
+  let overlay: ReturnType<typeof renderOverlay> | null = null;
+  if (body.overlay) {
     const templates =
       body.mode === "live" ? await getPublishedTemplates(id) : await getDraftTemplates(id);
-    const template = resolveToast(templates, laid.rules, body.toast.templateId);
+    const named = templates.find((t) => t.id === body.overlay?.templateId);
+    const template =
+      named && (named.type === "modal" || named.type === "bottom-sheet")
+        ? resolveOverlay(templates, laid.rules, named.id, named.type)
+        : null;
     if (!template)
-      return fail(409, "The toast template is not published or its conditions do not match.");
-    toast = renderToast({ template, dynamic, settings: laid.settings, params: body.toast.params });
+      return fail(
+        409,
+        "The modal or bottom sheet template is not published or its conditions do not match."
+      );
+    const ranks = overlayRanks(templates.filter((t) => t.type === template.type));
+    overlay = renderOverlay({
+      template,
+      rank: ranks[template.id] ?? 0,
+      dynamic,
+      settings: laid.settings,
+      params: body.overlay.params
+    });
   }
-  return response.status(200).json({ parts, toast });
+  return response.status(200).json({ parts, overlay });
 }
 
 export const config = { api: { bodyParser: { sizeLimit: "256kb" } } };

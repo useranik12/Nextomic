@@ -2,6 +2,7 @@ import { pageCss, renderNode } from "@nextomic/renderer";
 import {
   createTokenResolver,
   findNode,
+  isOverlayType,
   type DynamicContext,
   type ElementNode,
   type ProjectSettings,
@@ -10,7 +11,7 @@ import {
 } from "@nextomic/schema";
 import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { FragmentPart } from "@nextomic/runtime";
+import type { FragmentPart, OverlayPart } from "@nextomic/runtime";
 import { loopFreeIds } from "@/server/runtime/loop-free";
 
 // Server fragments (owner decision 2026-11-10): after an action changes state, the runtime asks
@@ -65,14 +66,16 @@ export function renderParts(input: {
   return parts;
 }
 
-/** A toast: the template's content with its parameters filled from the values Show Toast passed. */
-export function renderToast(input: {
+/** A modal or bottom sheet: the template's content with its parameters filled from the values the action passed. */
+export function renderOverlay(input: {
   template: PublishedTemplate;
+  rank: number;
   dynamic: DynamicContext;
   settings: ProjectSettings;
   params: Readonly<Record<string, string>>;
-}): { html: string; css: string; closeAfterMs: number } {
+}): OverlayPart {
   const { template, settings } = input;
+  if (!isOverlayType(template.type)) throw new Error("Not a modal or bottom sheet template.");
   const dynamic = withTemplateParams(input.dynamic, template.settings.params, input.params);
   const resolveToken = createTokenResolver(dynamic);
   const options = {
@@ -91,5 +94,13 @@ export function renderToast(input: {
   );
   // Class styles come along: the page may not use the template's classes.
   const css = pageCss(template.tree, settings.breakpoints, settings.classes, resolveToken);
-  return { html, css, closeAfterMs: template.settings.closeAfterMs };
+  return {
+    templateId: template.id,
+    type: template.type,
+    html,
+    css,
+    overlay: template.settings.overlay,
+    entry: template.settings.entry,
+    rank: input.rank
+  };
 }

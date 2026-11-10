@@ -147,20 +147,23 @@ function SelectorPicker({
 /** The searchable list of ready-made animations. */
 export function AnimationPicker({
   value,
-  onChange
+  onChange,
+  only
 }: {
   value: string;
   onChange: (id: string) => void;
+  /** Limits the list (a bottom sheet offers only "up" entrances). */
+  only?: readonly { id: string; label: string; group: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const current = cssAnimationById(value);
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return CSS_ANIMATIONS.filter(
+    return (only ?? CSS_ANIMATIONS).filter(
       (a) => !q || a.label.toLowerCase().includes(q) || a.group.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, only]);
 
   return (
     <SettingRow

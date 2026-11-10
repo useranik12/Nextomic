@@ -8,16 +8,25 @@ import {
   type RuntimePayload
 } from "@nextomic/runtime";
 import { useEffect } from "react";
+import { overlaySchema, sheetEntrySchema } from "@nextomic/schema";
 import { z } from "zod";
 
 // Client side of action flows on /site and /preview (docs/dynamic-data-and-actions.md section 8).
-// The server sends the flows, blocks and state this page needs; redraws and toasts come from the
+// The server sends the flows, blocks and state this page needs; redraws, modals and bottom sheets come from the
 // fragment endpoint as rendered HTML.
 
 const responseSchema = z.object({
   parts: z.array(z.object({ id: z.string(), html: z.string(), css: z.string() })),
-  toast: z
-    .object({ html: z.string(), css: z.string(), closeAfterMs: z.number().int().min(0) })
+  overlay: z
+    .object({
+      templateId: z.string(),
+      type: z.enum(["modal", "bottom-sheet"]),
+      html: z.string(),
+      css: z.string(),
+      overlay: overlaySchema,
+      entry: sheetEntrySchema,
+      rank: z.number().int().min(0)
+    })
     .nullable()
 });
 const errorSchema = z.object({ error: z.string() });

@@ -4,6 +4,8 @@ import { AnimationPlayer } from "@/components/runtime/animation-player";
 import {
   buildDynamicContext,
   composePage,
+  frameOverlayTemplate,
+  isOverlayType,
   emptyPageTree,
   type ElementNode,
   type ProjectSettings,
@@ -151,6 +153,18 @@ async function previewTemplate(
       mode: "preview",
       projectId
     });
+  }
+  if (isOverlayType(stored.type)) {
+    // Shown open: the template over its own overlay, centered or at the bottom.
+    return {
+      tree: frameOverlayTemplate(stored.tree, stored.type, stored.settings.overlay),
+      dynamic: buildDynamicContext({
+        page: { name: page.name, route: page.route, settings: page.settings },
+        mode: "preview",
+        globals: settings
+      }),
+      rules: undefined
+    };
   }
   const sample = sampleContent();
   const dynamic = buildDynamicContext({

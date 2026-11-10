@@ -2,6 +2,8 @@
 
 import {
   composeForEditor,
+  frameOverlayTemplate,
+  isOverlayType,
   resolveLayout,
   type ElementNode,
   type PublishedTemplate
@@ -23,6 +25,8 @@ export function useLayoutComposer(): (tree: ElementNode) => ElementNode {
   const name = useEditorStore((s) => s.doc?.name ?? "");
   const route = useEditorStore((s) => s.doc?.route ?? "/");
   const choice = useEditorStore((s) => s.doc?.settings);
+  const templateType = useEditorStore((s) => s.page?.templateType);
+  const overlay = useEditorStore((s) => s.doc?.template?.overlay);
   const [templates, setTemplates] = useState<PublishedTemplate[]>([]);
 
   useEffect(() => {
@@ -38,6 +42,9 @@ export function useLayoutComposer(): (tree: ElementNode) => ElementNode {
 
   return useCallback(
     (tree: ElementNode) => {
+      if (kind === "template" && templateType && isOverlayType(templateType) && overlay) {
+        return frameOverlayTemplate(tree, templateType, overlay);
+      }
       if (kind === "template" || !pageId) return tree;
       const layout = resolveLayout(
         templates.map((t) => ({ ...t })),
@@ -46,6 +53,6 @@ export function useLayoutComposer(): (tree: ElementNode) => ElementNode {
       );
       return composeForEditor(tree, layout.header?.tree ?? null, layout.footer?.tree ?? null);
     },
-    [templates, kind, pageId, name, route, choice?.header, choice?.footer]
+    [templates, kind, pageId, name, route, choice?.header, choice?.footer, templateType, overlay]
   );
 }

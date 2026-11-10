@@ -26,6 +26,8 @@ export interface ActionNode extends NodeBase {
   params: Params;
   /** Name of the output variable later nodes read; empty = the output is not kept. */
   outputName?: string | undefined;
+  /** Nested flows of the action's `flow` fields (Show Toast's Button Action), by field key. */
+  slots?: Record<string, FlowNode[]> | undefined;
 }
 
 export interface ConditionBranch {
@@ -123,7 +125,8 @@ export const flowNodeSchema: z.ZodType<FlowNode, z.ZodTypeDef, unknown> = z.lazy
       kind: z.literal("action"),
       type: z.string().max(64),
       params: paramsSchema,
-      outputName
+      outputName,
+      slots: z.record(z.string().max(64), nodes).optional()
     }),
     z.object({
       ...base,
@@ -207,9 +210,11 @@ export const ownerFlowsSchema = z
     });
   });
 
-/** The child node lists of a node (none for actions, break and continue). */
+/** The child node lists of a node (none for break, continue, Action Block calls and plain actions). */
 export function childLists(node: FlowNode): FlowNode[][] {
   switch (node.kind) {
+    case "action":
+      return Object.values(node.slots ?? {});
     case "condition":
       return [...node.branches.map((b) => b.nodes), ...(node.else ? [node.else] : [])];
     case "loop":

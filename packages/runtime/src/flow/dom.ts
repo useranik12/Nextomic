@@ -1,6 +1,6 @@
 import type { FragmentPart } from "./payload";
 
-// DOM work of the action runtime: swapping redrawn elements in, and the toast stack.
+// DOM work of the action runtime: swapping redrawn elements in.
 
 /** The live element of a node, or its empty slot when its conditions fail. */
 export function placeOf(root: ParentNode, id: string): Element | null {
@@ -49,30 +49,3 @@ export function swapParts(parts: readonly FragmentPart[]): Element[] {
   }
   return inserted;
 }
-
-/**
- * Shows a rendered toast template. Its design (position, size, look) comes from the template; it
- * closes after `closeAfterMs` or when an element with `data-nx-toast-close` is clicked.
- */
-export function showToastHtml(toast: { html: string; css: string; closeAfterMs: number }) {
-  const item = document.createElement("div");
-  // Each toast keeps its own styles: two toasts of one template share element ids.
-  const key = String((toastCount += 1));
-  item.dataset.nxToast = key;
-  item.setAttribute("role", "status");
-  item.setAttribute("aria-live", "polite");
-  const style = document.createElement("style");
-  style.textContent = `[data-nx-toast="${key}"]{${toast.css}}`;
-  item.append(style, document.createRange().createContextualFragment(toast.html));
-  document.body.append(item);
-  const close = () => {
-    window.clearTimeout(timer);
-    item.remove();
-  };
-  const timer = window.setTimeout(close, toast.closeAfterMs);
-  item.addEventListener("click", (e) => {
-    if (e.target instanceof Element && e.target.closest("[data-nx-toast-close]")) close();
-  });
-}
-
-let toastCount = 0;
