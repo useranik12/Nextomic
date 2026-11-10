@@ -188,9 +188,7 @@ const AUTH_ACTIONS: ActionDef[] = [
   ),
   auth("resendVerification", "Resend Verification", "Sends the confirmation email again.", [
     text("email", "Email", { required: true })
-  ]),
-  auth("refreshSession", "Refresh Session", "Renews the session and returns the user.", [], true),
-  auth("getUser", "Get Current User", "Returns the signed-in user, or empty.", [], true)
+  ])
 ];
 
 const TABLE: ParamField = {
