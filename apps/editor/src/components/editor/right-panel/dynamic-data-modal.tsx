@@ -157,8 +157,8 @@ export function DynamicDataModal({
                   No dynamic tags match &ldquo;{query}&rdquo;.
                 </p>
               ) : (
-                // Masonry columns: groups of different heights pack with no blank space.
-                <div className="columns-1 gap-6 sm:columns-2 xl:columns-4">
+                // Masonry columns about 14rem wide: as many as fit, groups pack with no blank space.
+                <div className="columns-[14rem] gap-6">
                   {visible.map((g) => (
                     <section
                       key={g.id}
