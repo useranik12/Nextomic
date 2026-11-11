@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@heroui/react";
+import { Checkbox } from "@heroui-v2/react";
 import {
   parseJsonPath,
   readJsonPath,
@@ -130,12 +130,7 @@ export function JsonPaths({
           onDelete={() => onChange(paths.filter((x) => x.id !== p.id))}
         />
       ))}
-      <ActionButton
-        size="sm"
-        tone="ghost"
-        className="self-start border border-default-200"
-        onPress={() => add("$")}
-      >
+      <ActionButton size="sm" tone="outline" className="self-start" onPress={() => add("$")}>
         <Icon name="ph:plus" width={14} height={14} />
         Add JSON Path
       </ActionButton>
@@ -167,12 +162,7 @@ export function JsonPaths({
                     label={path}
                     onToggle={() => onToggleShown(`rec:${path}`)}
                   />
-                  <ActionButton
-                    size="sm"
-                    tone="ghost"
-                    className="border border-default-200"
-                    onPress={() => add(path)}
-                  >
+                  <ActionButton size="sm" tone="outline" onPress={() => add(path)}>
                     <Icon name="ph:plus" width={14} height={14} />
                     Add JSON Path
                   </ActionButton>

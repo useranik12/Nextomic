@@ -1,6 +1,6 @@
 "use client";
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Tooltip } from "@heroui/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Tooltip } from "@heroui-v2/react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";

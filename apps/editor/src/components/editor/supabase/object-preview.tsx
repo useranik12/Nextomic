@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner } from "@heroui/react";
+import { Spinner } from "@heroui-v2/react";
 import type { StorageEntry } from "@nextomic/integrations";
 import { useEffect, useState } from "react";
 import { signSupabaseObjectAction } from "@/app/(builder)/editor/[id]/connector-actions";
@@ -135,8 +135,8 @@ export function ObjectPreview({
       </dl>
       <ActionButton
         size="sm"
-        tone="ghost"
-        className="shrink-0 self-start border border-default-200 text-success"
+        tone="outline"
+        className="shrink-0 self-start text-success"
         isDisabled={!url}
         onPress={() => void copy()}
       >

@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@heroui/react";
+import { Link } from "@heroui-v2/react";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { getBrandAsset } from "@/lib/assets";

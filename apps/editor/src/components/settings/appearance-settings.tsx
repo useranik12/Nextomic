@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColorMode } from "@nextomic/schema";
-import { Radio, RadioGroup } from "@heroui/react";
+import { Radio, RadioGroup } from "@heroui-v2/react";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { updateColorModeAction } from "@/app/(builder)/(dashboard)/settings/actions";

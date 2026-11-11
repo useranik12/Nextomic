@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, type AvatarProps } from "@heroui/react";
+import { Avatar, type AvatarProps } from "@heroui-v2/react";
 
 /** The first letter of the name, upper-cased; "?" when the name is empty. */
 export function avatarLetter(name: string): string {

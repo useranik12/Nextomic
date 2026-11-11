@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
 import { useEffect, useState } from "react";
 import { previewProps, useStylePreview } from "./design-field-tools";
 import { isNumberText, lengthMode, parseLength, unitSpecFor, type UnitSpec } from "./length-units";

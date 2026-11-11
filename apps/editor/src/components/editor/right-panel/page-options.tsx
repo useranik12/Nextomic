@@ -1,6 +1,5 @@
 "use client";
 
-import { Checkbox } from "@heroui/react";
 import {
   PARAM_TYPES,
   ROUTE_PATTERN,
@@ -12,6 +11,7 @@ import {
 import { TypePicker } from "../data-types/type-picker";
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
+import { CheckField } from "@/components/ui/toggles";
 import { Icon } from "@/lib/icons/Icon";
 import { DraftScope } from "../draft-scope";
 import { useEditorStore } from "../store/editor-store";
@@ -57,7 +57,7 @@ function NameField({
         className={compactFieldClass + (problem ? " !border-danger" : "")}
       />
       {problem ? (
-        <p role="alert" className="mt-0.5 text-tiny text-danger">
+        <p role="alert" className="mt-1 px-1 text-xs text-danger">
           {problem}
         </p>
       ) : null}
@@ -109,10 +109,11 @@ function DraftHeader({
   onCancel: () => void;
   onSave: () => void;
 }) {
-  const icon = "rounded-full p-1 text-default-600 transition-colors duration-300 ";
+  const icon =
+    "inline-flex h-7 w-7 items-center justify-center rounded-full text-muted outline-none transition-colors duration-150 hover:bg-default focus-visible:ring-2 focus-visible:ring-focus ";
   return (
     <div className="flex items-center justify-between">
-      <h3 className="flex items-center gap-1.5 text-small text-default-600">
+      <h3 className="flex items-center gap-1.5 text-sm font-medium text-foreground">
         {title}
         {dirty ? (
           <span
@@ -197,7 +198,7 @@ function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }
       type="button"
       aria-label={`Remove ${name}`}
       onClick={onRemove}
-      className="mt-1.5 shrink-0 rounded p-0.5 text-default-500 hover:text-danger"
+      className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-subtle outline-none transition-colors duration-150 hover:bg-danger/10 hover:text-danger focus-visible:ring-2 focus-visible:ring-focus"
     >
       <Icon name="ph:trash" width={14} height={14} />
     </button>
@@ -239,12 +240,12 @@ export function PageParameters({ title = "Page Parameters" }: { title?: string }
           onSave={save}
         />
         {params.length === 0 && !editing ? (
-          <p className="text-tiny text-default-500">No parameters.</p>
+          <p className="text-xs text-muted">No parameters.</p>
         ) : null}
         {params.map((param, index) => (
           <div
             key={index}
-            className="flex min-w-0 flex-col gap-1.5 rounded-large border border-default-200 p-2"
+            className="flex min-w-0 flex-col gap-2 rounded-xl border border-border p-2.5"
           >
             {editing ? (
               <>
@@ -281,33 +282,31 @@ export function PageParameters({ title = "Page Parameters" }: { title?: string }
                     }
                   />
                 </div>
-                <Checkbox
-                  size="sm"
+                <CheckField
+                  label="Required"
                   isSelected={param.required}
-                  onValueChange={(required) =>
+                  onChange={(required) =>
                     set(params.map((p, i) => (i === index ? { ...p, required } : p)))
                   }
-                >
-                  <span className="text-tiny">Required</span>
-                </Checkbox>
+                />
                 {problems[param.name] ? (
-                  <p role="alert" className="text-tiny text-danger">
+                  <p role="alert" className="text-xs text-danger">
                     <span aria-hidden="true">* </span>
                     {problems[param.name]}
                   </p>
                 ) : null}
               </>
             ) : (
-              <p className="min-w-0 truncate text-small text-foreground">
+              <p className="min-w-0 truncate text-sm text-body">
                 {param.name}
                 {param.required ? (
                   <span className="text-danger" aria-label="required">
                     *
                   </span>
                 ) : null}
-                <span className="text-tiny text-default-500"> {param.type}</span>
+                <span className="text-xs text-subtle"> {param.type}</span>
                 {param.defaultValue ? (
-                  <span className="text-tiny text-default-500"> = {param.defaultValue}</span>
+                  <span className="text-xs text-subtle"> = {param.defaultValue}</span>
                 ) : null}
               </p>
             )}
@@ -316,7 +315,9 @@ export function PageParameters({ title = "Page Parameters" }: { title?: string }
         {editing ? (
           <ActionButton
             size="sm"
-            tone="ghost"
+            tone="outline"
+            startContent={<Icon name="ph:plus" width={14} height={14} />}
+            className="self-start"
             onPress={() =>
               set([
                 ...params,
@@ -354,13 +355,13 @@ function RouteSettings() {
   return (
     <section aria-label="Route settings" className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-small text-default-600">Route Settings</h3>
+        <h3 className="text-sm font-medium text-foreground">Route Settings</h3>
         <button
           type="button"
           aria-label={open ? "Collapse route settings" : "Expand route settings"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="rounded p-1 text-default-600 hover:text-foreground"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted outline-none transition-colors duration-150 hover:bg-default hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus"
         >
           {open ? (
             <Icon name="ph:minus-circle" width={16} height={16} />
@@ -372,7 +373,7 @@ function RouteSettings() {
       {open ? (
         <>
           <div className="flex items-center gap-2">
-            <label htmlFor="route-input" className="text-tiny text-default-600">
+            <label htmlFor="route-input" className="shrink-0 text-xs font-medium text-muted">
               Route/
             </label>
             <input
@@ -389,24 +390,22 @@ function RouteSettings() {
             />
           </div>
           {valid ? null : (
-            <p role="alert" className="text-tiny text-danger">
+            <p role="alert" className="px-1 text-xs text-danger">
               Use letters, digits, - _ . and / between segments.
             </p>
           )}
-          <Checkbox
-            size="sm"
+          <CheckField
+            label="Requires Authentication"
             isSelected={requiresAuth && !isLoginPage}
             isDisabled={!appAuth.enabled || isLoginPage}
-            onValueChange={(v) => updateSettings({ requiresAuth: v })}
-          >
-            <span className="text-small">Requires Authentication</span>
-          </Checkbox>
+            onChange={(v) => updateSettings({ requiresAuth: v })}
+          />
           {!appAuth.enabled ? (
-            <p className="text-tiny text-default-500">
+            <p className="text-xs text-muted">
               Turn on authentication in App Settings to use this.
             </p>
           ) : isLoginPage ? (
-            <p className="text-tiny text-default-500">
+            <p className="text-xs text-muted">
               This is the login page, so it never requires sign-in.
             </p>
           ) : null}
@@ -447,15 +446,10 @@ function StateVariables() {
           onSave={save}
         />
         {vars.length === 0 && !editing ? (
-          <p className="text-tiny text-default-500">
-            No variables yet. They reset when the page is left.
-          </p>
+          <p className="text-xs text-muted">No variables yet. They reset when the page is left.</p>
         ) : null}
         {vars.map((v, index) => (
-          <div
-            key={index}
-            className="flex flex-col gap-1.5 rounded-large border border-default-200 p-2"
-          >
+          <div key={index} className="flex flex-col gap-2 rounded-xl border border-border p-2.5">
             {editing ? (
               <>
                 <div className="flex items-start gap-1">
@@ -480,15 +474,13 @@ function StateVariables() {
                       }
                     />
                   </div>
-                  <Checkbox
-                    size="sm"
+                  <CheckField
+                    label="List"
                     isSelected={v.isList}
-                    onValueChange={(isList) =>
+                    onChange={(isList) =>
                       set(vars.map((x, i) => (i === index ? { ...x, isList } : x)))
                     }
-                  >
-                    <span className="text-tiny">List</span>
-                  </Checkbox>
+                  />
                   <BoltInput
                     label={`Default value for ${v.name}`}
                     placeholder="Default value"
@@ -502,15 +494,15 @@ function StateVariables() {
                 </div>
               </>
             ) : (
-              <p className="min-w-0 truncate text-small text-foreground">
+              <p className="min-w-0 truncate text-sm text-body">
                 {v.name}
-                <span className="text-tiny text-default-500">
+                <span className="text-xs text-subtle">
                   {" "}
                   {v.type}
                   {v.isList ? "[]" : ""}
                 </span>
                 {typeof v.defaultValue === "string" && v.defaultValue ? (
-                  <span className="text-tiny text-default-500"> = {v.defaultValue}</span>
+                  <span className="text-xs text-subtle"> = {v.defaultValue}</span>
                 ) : null}
               </p>
             )}
@@ -519,7 +511,9 @@ function StateVariables() {
         {editing ? (
           <ActionButton
             size="sm"
-            tone="ghost"
+            tone="outline"
+            startContent={<Icon name="ph:plus" width={14} height={14} />}
+            className="self-start"
             onPress={() =>
               set([
                 ...vars,

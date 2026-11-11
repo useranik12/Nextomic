@@ -1,6 +1,7 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch } from "@heroui/react";
+import { ModalBody, ModalContent, ModalFooter, ModalHeader, Switch } from "@heroui-v2/react";
+import { Modal } from "@/components/ui/legacy-modal";
 import {
   VERSION_LIMIT_MAX,
   VERSION_LIMIT_MIN,

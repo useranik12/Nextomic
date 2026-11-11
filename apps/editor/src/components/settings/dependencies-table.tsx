@@ -1,6 +1,6 @@
 "use client";
 
-import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui/react";
+import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui-v2/react";
 import type { BuilderDependenciesManifest } from "@/lib/deps-manifest";
 
 export function DependenciesTable({ manifest }: { manifest: BuilderDependenciesManifest }) {

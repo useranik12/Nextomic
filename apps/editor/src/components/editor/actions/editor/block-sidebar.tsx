@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui/react";
+import { Switch } from "@heroui-v2/react";
 import {
   BLOCK_PARAM_TYPES,
   STATE_TYPE_LABELS,

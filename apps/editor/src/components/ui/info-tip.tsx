@@ -17,21 +17,17 @@ export function InfoTip({
   placement?: "top" | "left" | "right" | "bottom";
 }) {
   return (
-    <Tooltip
-      content={<span className="block max-w-64 px-1 py-0.5 text-tiny leading-snug">{text}</span>}
-      placement={placement}
-      delay={150}
-      closeDelay={0}
-      classNames={{ base: "z-[1000]" }}
-    >
-      <button
-        type="button"
+    <Tooltip delay={150} closeDelay={0}>
+      <Tooltip.Trigger
         data-own-tip
         aria-label={`${label}: ${text}`}
-        className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800/40"
+        className="inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full text-subtle outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus"
       >
         <Icon name="ph:info" width={14} height={14} />
-      </button>
+      </Tooltip.Trigger>
+      <Tooltip.Content placement={placement} className="z-[1000] max-w-64 text-xs leading-snug">
+        {text}
+      </Tooltip.Content>
     </Tooltip>
   );
 }
@@ -53,7 +49,7 @@ export function TipField({
 }) {
   return (
     <div className={"flex flex-col " + (className ?? "")}>
-      <span className="flex items-center gap-1.5 pb-0.5 text-tiny font-medium text-default-600">
+      <span className="flex items-center gap-1.5 pb-1 text-xs font-medium text-muted">
         <span>{label}</span>
         <InfoTip text={tip} label={label} />
       </span>

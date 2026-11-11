@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui/react";
+import { Switch } from "@heroui-v2/react";
 import { useState } from "react";
 import { ActionButton, PasswordInput } from "@/components/ui/controls";
 import { useEditorStore } from "../store/editor-store";

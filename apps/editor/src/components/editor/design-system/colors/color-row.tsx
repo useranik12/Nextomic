@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui/react";
+import { Switch } from "@heroui-v2/react";
 import {
   MAX_SHADES,
   UTILITY_PROPS,
@@ -278,8 +278,7 @@ export function ColorRow({
                   />
                   <ActionButton
                     size="sm"
-                    tone="ghost"
-                    className="border border-default-200"
+                    tone="outline"
                     onPress={() =>
                       void onChange((fw) =>
                         setColorValue(

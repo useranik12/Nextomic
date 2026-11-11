@@ -93,7 +93,7 @@ export function EnumEditor({
             </p>
           ) : null}
         </div>
-        <ActionButton size="sm" tone="ghost" className="border border-default-300" onPress={add}>
+        <ActionButton size="sm" tone="outline" onPress={add}>
           <Icon name="ph:plus" width={14} height={14} />
           Add Value
         </ActionButton>

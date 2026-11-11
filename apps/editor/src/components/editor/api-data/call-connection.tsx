@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui/react";
+import { Switch } from "@heroui-v2/react";
 import { REST_METHODS, type RestCall, type RestGroup, type RestMethod } from "@nextomic/schema";
 import { FormInput, SelectField } from "@/components/ui/controls";
 

@@ -11,7 +11,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader
-} from "@heroui/react";
+} from "@heroui-v2/react";
 import { TEMPLATE_TYPE_LABELS, createPageInputSchema } from "@nextomic/schema";
 import { useState } from "react";
 import { createPageAction, listPagesAction } from "@/app/(builder)/editor/[id]/actions";

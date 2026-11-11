@@ -1,12 +1,8 @@
 "use client";
 
-import { Switch } from "@heroui/react";
-import { InfoTip } from "./info-tip";
+import { Toggle } from "./toggles";
 
-/**
- * A switch with its label and an (i) tip. The tip sits beside the switch, not inside it: inside the
- * switch's label the tooltip never opens, because the label swallows hover and focus.
- */
+/** A switch with its label and an (i) tip beside it (outside the label, so hover reaches it). */
 export function SwitchRow({
   label,
   tip,
@@ -21,16 +17,12 @@ export function SwitchRow({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-1.5">
-      <Switch
-        size="sm"
-        isSelected={selected}
-        isDisabled={disabled ?? false}
-        onValueChange={onChange}
-      >
-        <span className="text-small">{label}</span>
-      </Switch>
-      <InfoTip text={tip} label={label} />
-    </div>
+    <Toggle
+      label={label}
+      tip={tip}
+      isSelected={selected}
+      onChange={onChange}
+      isDisabled={disabled ?? false}
+    />
   );
 }

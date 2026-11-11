@@ -141,8 +141,8 @@ export function KeyValueLines({
       />
       <ActionButton
         size="sm"
-        tone="ghost"
-        className="self-start border border-default-200"
+        tone="outline"
+        className="self-start"
         isDisabled={draft.trim() === ""}
         onPress={add}
       >

@@ -1,8 +1,7 @@
 "use client";
 
 import { tagText } from "@nextomic/schema";
-import type { InputProps } from "@heroui/react";
-import { FormInput } from "@/components/ui/controls";
+import { FormInput, type FormInputProps } from "@/components/ui/controls";
 import { DynamicBolt } from "./dynamic-bolt";
 
 /** A compact text field with the dynamic bolt inside: static text mixed with {{tags}}. */
@@ -13,7 +12,7 @@ export function BoltInput({
   serverRun,
   tip,
   ...rest
-}: Omit<InputProps, "value" | "onValueChange" | "label" | "endContent"> & {
+}: Omit<FormInputProps, "value" | "onValueChange" | "label" | "endContent"> & {
   label: string;
   value: string;
   onValueChange: (value: string) => void;

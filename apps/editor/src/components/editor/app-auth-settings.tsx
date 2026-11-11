@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, Switch } from "@heroui/react";
+import { Checkbox, Switch } from "@heroui-v2/react";
 import type { AppAuthSettings, ProjectSettings } from "@nextomic/schema";
 import { SelectField, type SelectOption } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";

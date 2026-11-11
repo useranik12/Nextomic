@@ -1,21 +1,9 @@
 "use client";
 
 import type { Project } from "@nextomic/schema";
-import {
-  Button,
-  ButtonGroup,
-  Chip,
-  Input,
-  Select,
-  SelectItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow
-} from "@heroui/react";
-import { ActionButton } from "@/components/ui/controls";
+import { Chip, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui-v2/react";
+import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -32,11 +20,11 @@ import { ProjectCard } from "./project-card";
 import { RenameProjectModal } from "./rename-project-modal";
 
 const DATE_RANGES = [
-  { key: "all", label: "All time" },
-  { key: "7", label: "Last 7 days" },
-  { key: "30", label: "Last 30 days" },
-  { key: "90", label: "Last 90 days" }
-] as const;
+  { value: "all", label: "All time" },
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" }
+];
 
 export interface ProjectsBoardProps {
   workspaceName: string;
@@ -92,55 +80,50 @@ export function ProjectsBoard({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
-        <h2 className="text-2xl font-semibold text-foreground">All Projects</h2>
-        <Chip color="primary" variant="flat">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground">All Projects</h2>
+        <Chip size="sm" variant="soft">
           {workspaceName}
         </Chip>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Input
+      <div className="flex flex-wrap items-center gap-2">
+        <FormInput
+          aria-label="Search projects"
           placeholder="Search Project"
           value={query}
           onValueChange={setQuery}
           startContent={<Icon name="ph:magnifying-glass" />}
           className="max-w-xs"
-          aria-label="Search projects"
         />
-        <Select
-          aria-label="Date range"
-          placeholder="Date Range"
-          selectedKeys={[dateRange]}
-          onSelectionChange={(keys) => setDateRange(String([...keys][0]))}
-          startContent={<Icon name="ph:calendar-blank" />}
-          className="w-44"
+        <SelectField
+          label="Date range"
+          hideLabel
+          options={DATE_RANGES}
+          value={dateRange}
+          onValueChange={setDateRange}
+          className="w-40"
+        />
+        <ToggleButtonGroup
+          aria-label="View"
+          size="sm"
+          selectionMode="single"
+          disallowEmptySelection
+          selectedKeys={[view]}
+          onSelectionChange={(keys) => {
+            const next = [...keys][0];
+            if (next === "grid" || next === "list") setView(next);
+          }}
         >
-          {DATE_RANGES.map((range) => (
-            <SelectItem key={range.key}>{range.label}</SelectItem>
-          ))}
-        </Select>
-        <ButtonGroup aria-label="View">
-          <Button
-            isIconOnly
-            variant={view === "grid" ? "solid" : "flat"}
-            color={view === "grid" ? "primary" : "default"}
-            aria-pressed={view === "grid"}
-            onPress={() => setView("grid")}
-          >
-            <Icon name="ph:squares-four" label="Grid view" />
-          </Button>
-          <Button
-            isIconOnly
-            variant={view === "list" ? "solid" : "flat"}
-            color={view === "list" ? "primary" : "default"}
-            aria-pressed={view === "list"}
-            onPress={() => setView("list")}
-          >
-            <Icon name="ph:list" label="List view" />
-          </Button>
-        </ButtonGroup>
+          <ToggleButton id="grid" isIconOnly aria-label="Grid view">
+            <Icon name="ph:squares-four" />
+          </ToggleButton>
+          <ToggleButton id="list" isIconOnly aria-label="List view">
+            <Icon name="ph:list" />
+          </ToggleButton>
+        </ToggleButtonGroup>
         <ActionButton
-          endContent={<Icon name="ph:plus" />}
+          size="sm"
+          startContent={<Icon name="ph:plus" />}
           onPress={() => setIsNewProjectOpen(true)}
           className="ml-auto"
         >
@@ -225,17 +208,22 @@ function EmptyState({
   onNewProject: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-large border border-dashed border-divider py-20 text-center">
-      <p className="text-lg font-medium text-foreground">
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border py-20 text-center">
+      <p className="text-base font-semibold text-foreground">
         {hasAnyProjects ? "No projects match your filters" : "No projects yet"}
       </p>
-      <p className="max-w-sm text-default-500">
+      <p className="max-w-sm text-sm text-muted">
         {hasAnyProjects
           ? "Try a different search term or date range."
           : "Create your first site to get started."}
       </p>
       {hasAnyProjects ? null : (
-        <ActionButton endContent={<Icon name="ph:plus" />} onPress={onNewProject}>
+        <ActionButton
+          size="sm"
+          startContent={<Icon name="ph:plus" />}
+          onPress={onNewProject}
+          className="mt-2"
+        >
           New Project
         </ActionButton>
       )}

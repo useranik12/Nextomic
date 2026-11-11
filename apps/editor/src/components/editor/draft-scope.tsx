@@ -1,6 +1,7 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal } from "@/components/ui/legacy-modal";
 import { useEffect, useRef, useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -143,11 +144,11 @@ export function DraftActions({
       )}
       <ActionButton
         size="sm"
-        tone="ghost"
+        tone="outline"
         aria-label={`Discard changes to ${label}`}
         isDisabled={!dirty}
         onPress={onDiscard}
-        className="h-7 border border-default-200 px-2.5"
+        className="h-7 px-2.5"
       >
         Discard
       </ActionButton>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@heroui/react";
+import { Checkbox } from "@heroui-v2/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";

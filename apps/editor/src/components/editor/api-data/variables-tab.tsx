@@ -161,8 +161,8 @@ export function VariablesTab({
       ))}
       <ActionButton
         size="sm"
-        tone="ghost"
-        className="self-start border border-default-200"
+        tone="outline"
+        className="self-start"
         onPress={() =>
           onChange([
             ...variables,

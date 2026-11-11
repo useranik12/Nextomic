@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner } from "@heroui/react";
+import { Spinner } from "@heroui-v2/react";
 import { jsonPathValues, type RestCall } from "@nextomic/schema";
 import { useState } from "react";
 import { Tabs } from "./tabs";

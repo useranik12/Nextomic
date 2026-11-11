@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui/react";
+import { Switch } from "@heroui-v2/react";
 import {
   fieldShown,
   UNBINDABLE_FIELD_REASONS,

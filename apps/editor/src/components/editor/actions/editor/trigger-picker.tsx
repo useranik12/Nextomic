@@ -6,7 +6,7 @@ import {
   DropdownMenu,
   DropdownSection,
   DropdownTrigger
-} from "@heroui/react";
+} from "@heroui-v2/react";
 import { defaultParams, triggerLabel, triggersFor, type TriggerDef } from "@nextomic/schema";
 import { ActionButton } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";

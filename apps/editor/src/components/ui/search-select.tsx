@@ -1,25 +1,16 @@
 "use client";
 
-import { Autocomplete, AutocompleteItem, AutocompleteSection } from "@heroui/react";
-import { Icon } from "@/lib/icons/Icon";
-import { useIgnoreOpeningScroll } from "./controls";
-import { TipField } from "./info-tip";
+import { ComboBox, Header, Input, Label, ListBox } from "@heroui/react";
+import { useIgnoreOpeningScroll } from "./select-field";
+import { InfoTip } from "./info-tip";
 
 export interface SearchSelectSection {
   title: string;
   options: { value: string; label: string }[];
 }
 
-// A small searchable dropdown (HeroUI Autocomplete) with titled sections, styled like SelectField:
-// pill trigger, compact by default. Typing filters the options; the value is controlled.
-
-const INPUT_CLASSES = {
-  label: "pb-0.5 text-tiny font-medium !text-default-600",
-  inputWrapper:
-    "h-8 min-h-8 rounded-full border border-default-200 bg-transparent px-3 shadow-none " +
-    "data-[hover=true]:border-default-400 group-data-[focus=true]:border-default-800",
-  input: "text-small"
-};
+// A small searchable dropdown (HeroUI v3 ComboBox) with titled sections, the same 32px pill as the
+// other fields. Typing filters the options; the value is controlled.
 
 export function SearchSelect({
   label,
@@ -43,52 +34,53 @@ export function SearchSelect({
   tip?: string;
   hideLabel?: boolean;
 }) {
-  if (tip && !hideLabel) {
-    return (
-      <TipField label={label} tip={tip}>
-        <SearchSelect
-          hideLabel
-          label={label}
-          placeholder={placeholder}
-          sections={sections}
-          value={value}
-          onValueChange={onValueChange}
-          isDisabled={isDisabled}
-          emptyText={emptyText}
-        />
-      </TipField>
-    );
-  }
   const shown = sections.filter((s) => s.options.length > 0);
   const markOpened = useIgnoreOpeningScroll();
   return (
-    <Autocomplete
+    <ComboBox
+      fullWidth
       aria-label={label}
-      label={hideLabel ? undefined : label}
-      labelPlacement="outside"
-      placeholder={placeholder}
-      variant="bordered"
-      size="sm"
       isDisabled={isDisabled}
       onOpenChange={markOpened}
-      selectedKey={value || null}
-      onSelectionChange={(key) => {
+      value={value || null}
+      onChange={(key) => {
         if (key !== null) onValueChange(String(key));
       }}
-      inputProps={{ classNames: INPUT_CLASSES }}
-      popoverProps={{ offset: 6, placement: "bottom-start" }}
-      listboxProps={{ emptyContent: emptyText }}
-      selectorIcon={<Icon name="ph:caret-down" width={14} height={14} />}
     >
-      {shown.map((section) => (
-        <AutocompleteSection key={section.title} title={section.title}>
-          {section.options.map((option) => (
-            <AutocompleteItem key={option.value} textValue={option.label}>
-              {option.label}
-            </AutocompleteItem>
+      {hideLabel ? null : (
+        <span className="flex items-center gap-1.5">
+          <Label className="text-xs font-medium text-muted">{label}</Label>
+          {tip ? <InfoTip text={tip} label={label} /> : null}
+        </span>
+      )}
+      <ComboBox.InputGroup>
+        <Input placeholder={placeholder} />
+        <ComboBox.Trigger />
+      </ComboBox.InputGroup>
+      <ComboBox.Popover placement="bottom start" offset={6}>
+        <ListBox
+          renderEmptyState={() => <p className="px-2.5 py-2 text-sm text-muted">{emptyText}</p>}
+        >
+          {shown.map((section) => (
+            <ListBox.Section key={section.title}>
+              <Header className="px-2.5 pt-2 pb-1 text-[11px] font-semibold tracking-wide text-subtle uppercase">
+                {section.title}
+              </Header>
+              {section.options.map((option) => (
+                <ListBox.Item
+                  key={option.value}
+                  id={option.value}
+                  textValue={option.label}
+                  className="text-body data-[selected=true]:font-medium data-[selected=true]:text-foreground"
+                >
+                  {option.label}
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              ))}
+            </ListBox.Section>
           ))}
-        </AutocompleteSection>
-      ))}
-    </Autocomplete>
+        </ListBox>
+      </ComboBox.Popover>
+    </ComboBox>
   );
 }

@@ -1,19 +1,18 @@
 "use client";
 
 import type { Project } from "@nextomic/schema";
-import {
-  Button,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
-  Tooltip
-} from "@heroui/react";
+import { buttonVariants, Dropdown, Label } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { formatOrdinalDate } from "@/lib/format";
 import { Icon } from "@/lib/icons/Icon";
 
-const DISABLED_ACTIONS = new Set(["duplicate", "export", "backup", "settings"]);
+// Shown per the design but built in later phases (docs/phases.md): visible, disabled, with a hint.
+const LATER_ACTIONS = [
+  { key: "duplicate", label: "Duplicate", icon: "ph:copy" },
+  { key: "export", label: "Export", icon: "ph:export" },
+  { key: "backup", label: "Backup now", icon: "ph:clock-counter-clockwise" },
+  { key: "settings", label: "Settings", icon: "ph:gear-six" }
+] as const;
 
 export interface ProjectCardProps {
   project: Project;
@@ -32,73 +31,58 @@ export function ProjectCard({ project, onRename, onDelete }: ProjectCardProps) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-large border border-divider bg-content1">
+    <div className="group/card flex flex-col overflow-hidden rounded-2xl border border-border bg-surface transition-colors duration-150 hover:border-default-hover">
       <button
         type="button"
-        className="flex aspect-video w-full items-center justify-center bg-gradient-to-br from-content2 to-content3 text-default-400"
+        className="flex aspect-video w-full items-center justify-center bg-surface-secondary text-subtle outline-none transition-colors duration-150 group-hover/card:text-muted focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset"
         onClick={() => router.push(`/editor/${project.id}`)}
         aria-label={`Open ${project.name}`}
       >
         <Icon name="ph:stack" />
       </button>
-      <div className="flex items-center justify-between gap-2 bg-content2 px-4 py-3">
+      <div className="flex items-center justify-between gap-2 px-4 py-3">
         <div className="min-w-0">
-          <p className="truncate font-medium text-foreground">{project.name}</p>
-          <p className="text-small text-default-500">
+          <p className="truncate text-sm font-medium text-foreground">{project.name}</p>
+          <p className="text-xs text-muted">
             Last modified: {formatOrdinalDate(project.lastModifiedAt)}
           </p>
         </div>
         <Dropdown>
-          <DropdownTrigger>
-            <Button isIconOnly variant="light" size="sm" aria-label={`${project.name} actions`}>
-              <Icon name="ph:dots-three-vertical" label="Actions" />
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu aria-label="Project actions" onAction={(key) => handleAction(String(key))}>
-            <DropdownItem key="rename" startContent={<Icon name="ph:pencil-simple" />}>
-              Rename
-            </DropdownItem>
-            <DropdownItem key="duplicate" isDisabled={DISABLED_ACTIONS.has("duplicate")}>
-              <Tooltip content="Available in a later phase">
-                <span>Duplicate</span>
-              </Tooltip>
-            </DropdownItem>
-            <DropdownItem
-              key="export"
-              isDisabled={DISABLED_ACTIONS.has("export")}
-              startContent={<Icon name="ph:export" />}
+          <Dropdown.Trigger
+            aria-label={`${project.name} actions`}
+            className={
+              buttonVariants({ variant: "ghost", size: "sm", isIconOnly: true }) + " h-8 w-8"
+            }
+          >
+            <Icon name="ph:dots-three-vertical" label="Actions" />
+          </Dropdown.Trigger>
+          <Dropdown.Popover placement="bottom end" className="min-w-44">
+            <Dropdown.Menu
+              aria-label="Project actions"
+              onAction={(key) => handleAction(String(key))}
             >
-              <Tooltip content="Available in a later phase">
-                <span>Export</span>
-              </Tooltip>
-            </DropdownItem>
-            <DropdownItem
-              key="backup"
-              isDisabled={DISABLED_ACTIONS.has("backup")}
-              startContent={<Icon name="ph:clock-counter-clockwise" />}
-            >
-              <Tooltip content="Available in a later phase">
-                <span>Backup now</span>
-              </Tooltip>
-            </DropdownItem>
-            <DropdownItem
-              key="settings"
-              isDisabled={DISABLED_ACTIONS.has("settings")}
-              startContent={<Icon name="ph:gear-six" />}
-            >
-              <Tooltip content="Available in a later phase">
-                <span>Settings</span>
-              </Tooltip>
-            </DropdownItem>
-            <DropdownItem
-              key="delete"
-              color="danger"
-              className="text-danger"
-              startContent={<Icon name="ph:trash" />}
-            >
-              Delete
-            </DropdownItem>
-          </DropdownMenu>
+              <Dropdown.Item id="rename" textValue="Rename">
+                <Icon name="ph:pencil-simple" className="text-muted" />
+                <Label>Rename</Label>
+              </Dropdown.Item>
+              {LATER_ACTIONS.map((action) => (
+                <Dropdown.Item
+                  key={action.key}
+                  id={action.key}
+                  textValue={action.label}
+                  isDisabled
+                  className="data-[disabled=true]:pointer-events-auto"
+                >
+                  <Icon name={action.icon} className="text-muted" />
+                  <Label data-tip="Available in a later phase">{action.label}</Label>
+                </Dropdown.Item>
+              ))}
+              <Dropdown.Item id="delete" textValue="Delete" variant="danger">
+                <Icon name="ph:trash" />
+                <Label>Delete</Label>
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown.Popover>
         </Dropdown>
       </div>
     </div>

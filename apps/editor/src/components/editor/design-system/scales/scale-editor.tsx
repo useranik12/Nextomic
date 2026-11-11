@@ -288,8 +288,7 @@ export function ScaleEditor({
         <div className="flex flex-wrap items-center gap-2 border-t border-divider p-3">
           <ActionButton
             size="sm"
-            tone="ghost"
-            className="border border-default-200"
+            tone="outline"
             isDisabled={scale.names.length >= MAX_SCALE_STEPS}
             onPress={() => void swapSteps(addScaleStep(scale, "smaller"))}
           >
@@ -297,8 +296,7 @@ export function ScaleEditor({
           </ActionButton>
           <ActionButton
             size="sm"
-            tone="ghost"
-            className="border border-default-200"
+            tone="outline"
             isDisabled={scale.names.length >= MAX_SCALE_STEPS}
             onPress={() => void swapSteps(addScaleStep(scale, "larger"))}
           >

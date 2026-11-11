@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@heroui/react";
+import { Checkbox } from "@heroui-v2/react";
 import type { SecretMask } from "@nextomic/integrations";
 import { previewRequest, type RestCall, type RestConfig } from "@nextomic/schema";
 import { useState } from "react";

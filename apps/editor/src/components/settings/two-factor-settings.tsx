@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip } from "@heroui/react";
+import { Chip } from "@heroui-v2/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { renderSVG } from "uqr";
@@ -95,8 +95,7 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
               <>
                 <ActionButton
                   size="sm"
-                  tone="ghost"
-                  className="border border-default-200"
+                  tone="outline"
                   onPress={() => setStep({ kind: "password", action: "codes" })}
                 >
                   New backup codes
@@ -112,8 +111,7 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
             ) : (
               <ActionButton
                 size="sm"
-                tone="ghost"
-                className="border border-default-200"
+                tone="outline"
                 onPress={() => setStep({ kind: "password", action: "enable" })}
               >
                 Turn on
@@ -209,8 +207,7 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
           <div className="flex gap-2">
             <ActionButton
               size="sm"
-              tone="ghost"
-              className="border border-default-200"
+              tone="outline"
               onPress={() => void navigator.clipboard.writeText(step.backupCodes.join("\n"))}
             >
               Copy codes
