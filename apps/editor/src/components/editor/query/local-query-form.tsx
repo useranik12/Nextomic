@@ -13,9 +13,11 @@ import {
 } from "@nextomic/schema";
 import { useId } from "react";
 import { FormInput, SelectField, type SelectOption } from "@/components/ui/controls";
+import { InfoTip } from "@/components/ui/info-tip";
 import { AutoTextarea } from "../right-panel/auto-textarea";
 import { BoltInput } from "../right-panel/bolt-input";
 import { useEditorStore } from "../store/editor-store";
+import { useQueryFormMode } from "./query-form-mode";
 import { RowSettings } from "./row-settings";
 
 // "Other Loops" settings of a query loop (owner decision 2026-11-09): the Source (page parameters,
@@ -75,6 +77,7 @@ export function LocalQueryForm({
   value: LocalLoopQuery;
   onChange: (next: LocalLoopQuery) => void;
 }) {
+  const mode = useQueryFormMode();
   const tree = useEditorStore((s) => s.doc?.tree);
   const variables = useVariables(value.kind);
   const jsonId = useId();
@@ -90,6 +93,7 @@ export function LocalQueryForm({
       <SelectField
         compact
         label="Source"
+        tip={mode.tip("source")}
         options={KIND_OPTIONS}
         value={value.kind}
         onValueChange={(kind) => patch({ kind: kind as LocalLoopKind, variable: "" })}
@@ -101,6 +105,7 @@ export function LocalQueryForm({
           <SelectField
             compact
             label="Variable"
+            tip={mode.tip("variable")}
             options={
               value.variable ? options : [{ value: "", label: "Choose a variable" }, ...options]
             }
@@ -129,6 +134,7 @@ export function LocalQueryForm({
             <SelectField
               compact
               label="Parent loop"
+              tip={mode.tip("parentLoop")}
               options={[
                 ...(value.parentLoop ? [] : [{ value: "", label: "Choose a loop" }]),
                 ...outerLoops.map((name) => ({ value: name, label: `%${name}` }))
@@ -144,6 +150,7 @@ export function LocalQueryForm({
             <FormInput
               compact
               label="List field"
+              tip={mode.tip("field")}
               placeholder="tags"
               description={`The field of %${value.parentLoop || "loop"}.item that holds the list, like tags or images[0].sizes.`}
               value={value.field}
@@ -155,9 +162,14 @@ export function LocalQueryForm({
       ) : null}
       {value.kind === "json" ? (
         <div className="flex flex-col gap-1">
-          <label htmlFor={jsonId} className="text-tiny font-medium text-default-600">
-            Static JSON
-          </label>
+          <span className="flex items-center gap-1.5">
+            <label htmlFor={jsonId} className="text-tiny font-medium text-default-600">
+              Static JSON
+            </label>
+            {mode.tip("json") ? (
+              <InfoTip text={mode.tip("json") ?? ""} label="Static JSON" />
+            ) : null}
+          </span>
           <AutoTextarea
             id={jsonId}
             value={value.json}
@@ -171,6 +183,7 @@ export function LocalQueryForm({
       {value.kind === "expression" ? (
         <BoltInput
           label="Expression"
+          tip={mode.tip("expression")}
           placeholder="{{ app.cart.filter(i => i.qty > 0) }}"
           description="One {{ tag }} that gives a list."
           value={value.expression}
@@ -182,6 +195,7 @@ export function LocalQueryForm({
         compact
         type="number"
         label="Offset"
+        tip={mode.tip("offset")}
         description="Rows to skip from the start of the list."
         min={0}
         value={String(value.offset)}

@@ -2,6 +2,7 @@
 
 import type { QueryOrder, SupabaseColumn } from "@nextomic/schema";
 import { SelectField } from "@/components/ui/controls";
+import { useQueryFormMode } from "./query-form-mode";
 import { RemoveRowButton } from "./remove-row-button";
 
 const DIRECTIONS = [
@@ -19,6 +20,7 @@ export function QueryOrderRow({
   columns: SupabaseColumn[];
   onChange: (next: QueryOrder | null) => void;
 }) {
+  const mode = useQueryFormMode();
   return (
     <div className="flex flex-col gap-2 rounded-medium border border-divider p-2">
       <div className="flex items-end gap-2">
@@ -26,6 +28,7 @@ export function QueryOrderRow({
           compact
           className="min-w-0 flex-1"
           label="Column"
+          tip={mode.tip(`order:${order.id}:column`)}
           options={columns.map((c) => ({ value: c.name, label: c.name }))}
           value={order.column}
           onValueChange={(column) => onChange({ ...order, column })}
@@ -35,6 +38,7 @@ export function QueryOrderRow({
       <SelectField
         compact
         label="Direction"
+        tip={mode.tip(`order:${order.id}:direction`)}
         options={DIRECTIONS}
         value={order.ascending ? "asc" : "desc"}
         onValueChange={(dir) => onChange({ ...order, ascending: dir === "asc" })}

@@ -327,10 +327,10 @@ const BACKEND_ACTIONS: ActionDef[] = [
     category: "backend",
     runs: "browser",
     description:
-      "Runs a query loop of this page again, optionally with new values for its filters, variables or limit, and redraws its rows.",
+      "Runs a query loop of this page again with the query settings set here (prefilled from the loop) and redraws its rows.",
     fields: [
       { key: "query", label: "Query loop", kind: "query", required: true },
-      { key: "values", label: "New values", kind: "queryParams", targetParam: "query" }
+      { key: "override", label: "Query settings", kind: "queryOverride", targetParam: "query" }
     ],
     summary: ["query"]
   },

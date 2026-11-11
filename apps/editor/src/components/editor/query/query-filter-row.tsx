@@ -11,6 +11,7 @@ import {
 import { SelectField, type SelectOption } from "@/components/ui/controls";
 import { BoltInput } from "../right-panel/bolt-input";
 import { DynamicBolt } from "../right-panel/dynamic-bolt";
+import { useQueryFormMode } from "./query-form-mode";
 import { RemoveRowButton } from "./remove-row-button";
 
 // One filter: a column, an operator that works on the column's type, and a value. The value is a
@@ -45,11 +46,14 @@ function ValueField({
   column: SupabaseColumn | undefined;
   onChange: (value: string) => void;
 }) {
+  const mode = useQueryFormMode();
+  const tip = mode.tip(`filter:${filter.id}:value`);
   const fixed = column ? choices(column, filter.operator) : null;
   if (!fixed || filter.value.includes("{{")) {
     return (
       <BoltInput
-        serverRun
+        serverRun={mode.serverRun}
+        tip={tip}
         label="Value"
         placeholder={column ? placeholderFor(column, filter.operator) : "Value"}
         value={filter.value}
@@ -64,12 +68,17 @@ function ValueField({
         compact
         className="min-w-0 flex-1"
         label="Value"
+        tip={tip}
         options={filter.value ? options : [{ value: "", label: "Choose" }, ...options]}
         value={filter.value}
         onValueChange={onChange}
       />
       <span className="flex h-8 items-center">
-        <DynamicBolt serverRun label="Value" onInsert={(token) => onChange(`${tagText(token)}`)} />
+        <DynamicBolt
+          serverRun={mode.serverRun}
+          label="Value"
+          onInsert={(token) => onChange(`${tagText(token)}`)}
+        />
       </span>
     </div>
   );
@@ -84,6 +93,7 @@ export function QueryFilterRow({
   columns: SupabaseColumn[];
   onChange: (next: QueryFilter | null) => void;
 }) {
+  const mode = useQueryFormMode();
   const column = columns.find((c) => c.name === filter.column);
   const operators = column ? operatorsFor(column) : [filter.operator];
 
@@ -107,6 +117,7 @@ export function QueryFilterRow({
           compact
           className="min-w-0 flex-1"
           label="Column"
+          tip={mode.tip(`filter:${filter.id}:column`)}
           options={columns.map((c) => ({ value: c.name, label: `${c.name} (${c.pgType})` }))}
           value={filter.column}
           onValueChange={chooseColumn}
@@ -119,6 +130,7 @@ export function QueryFilterRow({
       <SelectField
         compact
         label="Condition"
+        tip={mode.tip(`filter:${filter.id}:operator`)}
         options={operators.map((op) => ({ value: op, label: SUPABASE_OPERATOR_LABELS[op] }))}
         value={filter.operator}
         onValueChange={(op) => chooseOperator(op as SupabaseOperator)}

@@ -19,7 +19,8 @@ import {
 import { Icon } from "@/lib/icons/Icon";
 import { BoltInput } from "../../right-panel/bolt-input";
 import { useFlowTargets } from "./flow-targets";
-import { QueryParamsInput } from "./query-params-input";
+import { useEditorStore } from "../../store/editor-store";
+import { loopQueryText, QueryOverrideInput } from "./query-override-input";
 import { TargetParamsInput } from "./target-params-input";
 import { PICKER_KINDS, usePickerOptions, type PickerKind } from "./use-picker-options";
 
@@ -229,12 +230,16 @@ export function ParamFields({
 }) {
   const options = usePickerOptions();
   const templates = useFlowTargets((s) => s.templates);
+  const tree = useEditorStore((s) => s.doc?.tree);
   const set = (key: string, value: ParamValue) => {
     const next: Params = { ...params, [key]: value };
     // A new page or template has other parameters: values for the old one are dropped.
-    for (const f of fields)
-      if ((f.kind === "targetParams" || f.kind === "queryParams") && f.targetParam === key)
-        next[f.key] = [];
+    // Refresh Query starts from the chosen loop's own settings.
+    for (const f of fields) {
+      if (f.targetParam !== key) continue;
+      if (f.kind === "targetParams") next[f.key] = [];
+      if (f.kind === "queryOverride") next[f.key] = loopQueryText(tree, value);
+    }
     // Show Modal and Show Bottom Sheet start from the template's own overlay values.
     const picked = fields.find((f) => f.key === key);
     if (picked?.kind === "template" && fields.some((f) => f.key === "overlayColor")) {
@@ -269,12 +274,12 @@ export function ParamFields({
             rows={Array.isArray(value) ? value : []}
             onChange={(rows) => set(field.key, rows)}
           />
-        ) : field.kind === "queryParams" ? (
-          <QueryParamsInput
+        ) : field.kind === "queryOverride" ? (
+          <QueryOverrideInput
             field={field}
             params={params}
-            rows={Array.isArray(value) ? value : []}
-            onChange={(rows) => set(field.key, rows)}
+            value={typeof value === "string" ? value : ""}
+            onChange={(text) => set(field.key, text)}
           />
         ) : field.kind === "rows" ? (
           <RowsInput
@@ -306,7 +311,7 @@ export function ParamFields({
             open={items.some(
               (f) =>
                 f.kind === "targetParams" ||
-                f.kind === "queryParams" ||
+                f.kind === "queryOverride" ||
                 (params[f.key] !== undefined && params[f.key] !== "")
             )}
             className="rounded-medium border border-default-200 px-3 py-2"

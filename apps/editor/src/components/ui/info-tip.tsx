@@ -36,6 +36,32 @@ export function InfoTip({
   );
 }
 
+/**
+ * A field with its label and info tip above it. Tooltips do not open inside an input's own label,
+ * so fields with a tip hide their label and sit under this one.
+ */
+export function TipField({
+  label,
+  tip,
+  className,
+  children
+}: {
+  label: string;
+  tip: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={"flex flex-col " + (className ?? "")}>
+      <span className="flex items-center gap-1.5 pb-0.5 text-tiny font-medium text-default-600">
+        <span>{label}</span>
+        <InfoTip text={tip} label={label} />
+      </span>
+      {children}
+    </div>
+  );
+}
+
 /** A label with its info tip, for rows that have no input label of their own. */
 export function LabelWithTip({ children, tip }: { children: React.ReactNode; tip: string }) {
   return (

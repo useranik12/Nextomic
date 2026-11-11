@@ -1,8 +1,9 @@
 "use client";
 
-import { getAction, moveFlowNode, type FlowNode } from "@nextomic/schema";
+import { activeQuery, findNode, getAction, moveFlowNode, type FlowNode } from "@nextomic/schema";
 import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
+import { useEditorStore } from "../../store/editor-store";
 import { useFlowDraft } from "./flow-draft";
 import { useFlowTargets } from "./flow-targets";
 import { NODE_KIND_LABELS, NodeMenu } from "./node-menu";
@@ -13,7 +14,7 @@ const clip = (text: string) => (text.length > 60 ? `${text.slice(0, 57)}…` : t
 export function describeNode(
   node: FlowNode,
   blockName: (id: string) => string | undefined,
-  /** Names of picked pages and templates, so the summary shows a name instead of an id. */
+  /** Names of picked pages, templates and query loops, so the summary shows a name, not an id. */
   targetName: (id: string) => string | undefined = () => undefined
 ): { title: string; summary: string } {
   if (node.kind === "action") {
@@ -23,7 +24,8 @@ export function describeNode(
       .map((key) => {
         const value = node.params[key];
         const kind = action.fields.find((f) => f.key === key)?.kind;
-        return typeof value === "string" && (kind === "page" || kind === "template")
+        return typeof value === "string" &&
+          (kind === "page" || kind === "template" || kind === "query")
           ? (targetName(value) ?? value)
           : value;
       })
@@ -70,10 +72,18 @@ export function NodeCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const pages = useFlowTargets((s) => s.pages);
   const templates = useFlowTargets((s) => s.templates);
+  const tree = useEditorStore((s) => s.doc?.tree);
+  const loopName = (id: string) => {
+    const found = tree ? findNode(tree, id)?.node : undefined;
+    return found ? activeQuery(found)?.name : undefined;
+  };
   const { title, summary } = describeNode(
     node,
     (id) => blocks.find((b) => b.id === id)?.name,
-    (id) => pages.find((p) => p.id === id)?.name ?? templates.find((t) => t.id === id)?.name
+    (id) =>
+      pages.find((p) => p.id === id)?.name ??
+      templates.find((t) => t.id === id)?.name ??
+      loopName(id)
   );
   const undefinedAction = node.kind === "action" && !getAction(node.type);
   const move = (step: -1 | 1) => {

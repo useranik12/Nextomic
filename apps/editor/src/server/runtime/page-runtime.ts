@@ -97,6 +97,53 @@ interface LaidPage {
   rootIds: string[];
 }
 
+/** The flows a page runs and every Action Block of the project. */
+export interface PageFlows {
+  flows: FlowsByNode;
+  blocks: ActionBlock[];
+}
+
+/**
+ * The published flows of a live page (the page, its header and footer, and every modal and bottom
+ * sheet, which actions can open anywhere) and the published Action Blocks.
+ */
+export async function liveFlows(
+  projectId: string,
+  pageFlows: FlowsByNode | undefined,
+  templateIds: readonly string[]
+): Promise<PageFlows> {
+  const flows: FlowsByNode = { ...(pageFlows ?? {}) };
+  const templates = await getPublishedTemplates(projectId);
+  for (const t of templates)
+    if (templateIds.includes(t.id) || isOverlayType(t.type)) Object.assign(flows, t.flows);
+  if (!hasNodes(flows)) return { flows, blocks: [] };
+  const [row] = await getDb()
+    .select({ blocks: projects.publishedActionBlocks })
+    .from(projects)
+    .where(eq(projects.id, projectId))
+    .limit(1);
+  return { flows, blocks: row?.blocks ?? [] };
+}
+
+/** The saved (draft) flows of a page for the owner preview, with the draft Action Blocks. */
+export async function draftFlows(
+  projectId: string,
+  pageId: string,
+  templateIds: readonly string[]
+): Promise<PageFlows> {
+  const db = getDb();
+  const flows: FlowsByNode = { ...(await flowsOf(db, projectId, { kind: "page", id: pageId })) };
+  const overlayIds = (await getDraftTemplates(projectId))
+    .filter((t) => isOverlayType(t.type))
+    .map((t) => t.id);
+  for (const id of new Set([...templateIds, ...overlayIds])) {
+    Object.assign(flows, await flowsOf(db, projectId, { kind: "template", id }));
+  }
+  if (!hasNodes(flows)) return { flows, blocks: [] };
+  const blocks = await listBlocks(db, projectId);
+  return { flows, blocks: blocks.map((b) => b.block) };
+}
+
 /** The payload of a live page; flows and blocks come from the published snapshot. */
 export async function livePayload(
   projectId: string,
@@ -104,17 +151,8 @@ export async function livePayload(
   laid: LaidPage,
   search: string
 ): Promise<RuntimePayload | null> {
-  const flows: FlowsByNode = { ...view.page.flows };
-  const templates = await getPublishedTemplates(projectId);
-  // Modals and bottom sheets are opened by actions, so their flows come with every page.
-  for (const t of templates)
-    if (laid.templateIds.includes(t.id) || isOverlayType(t.type)) Object.assign(flows, t.flows);
+  const { flows, blocks } = await liveFlows(projectId, view.page.flows, laid.templateIds);
   if (!hasNodes(flows)) return null;
-  const [row] = await getDb()
-    .select({ blocks: projects.publishedActionBlocks })
-    .from(projects)
-    .where(eq(projects.id, projectId))
-    .limit(1);
   return runtimePayload({
     ...laid,
     projectId,
@@ -123,7 +161,7 @@ export async function livePayload(
     search,
     settings: view.settings,
     flows,
-    blocks: row?.blocks ?? [],
+    blocks,
     routes: view.routes
   });
 }
@@ -136,16 +174,9 @@ export async function previewPayload(
   laid: LaidPage,
   search: string
 ): Promise<RuntimePayload | null> {
-  const db = getDb();
-  const flows: FlowsByNode = { ...(await flowsOf(db, projectId, { kind: "page", id: page.id })) };
-  const overlayIds = (await getDraftTemplates(projectId))
-    .filter((t) => isOverlayType(t.type))
-    .map((t) => t.id);
-  for (const id of new Set([...laid.templateIds, ...overlayIds])) {
-    Object.assign(flows, await flowsOf(db, projectId, { kind: "template", id }));
-  }
+  const { flows, blocks } = await draftFlows(projectId, page.id, laid.templateIds);
   if (!hasNodes(flows)) return null;
-  const [blocks, pages] = await Promise.all([listBlocks(db, projectId), listPages(projectId)]);
+  const pages = await listPages(projectId);
   return runtimePayload({
     ...laid,
     projectId,
@@ -154,7 +185,7 @@ export async function previewPayload(
     search,
     settings,
     flows,
-    blocks: blocks.map((b) => b.block),
+    blocks,
     routes: Object.fromEntries(pages.map((p) => [p.id, p.route]))
   });
 }

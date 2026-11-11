@@ -3,6 +3,7 @@
 import { Autocomplete, AutocompleteItem, AutocompleteSection } from "@heroui/react";
 import { Icon } from "@/lib/icons/Icon";
 import { useIgnoreOpeningScroll } from "./controls";
+import { TipField } from "./info-tip";
 
 export interface SearchSelectSection {
   title: string;
@@ -27,7 +28,9 @@ export function SearchSelect({
   value,
   onValueChange,
   isDisabled,
-  emptyText = "Nothing matches."
+  emptyText = "Nothing matches.",
+  tip,
+  hideLabel
 }: {
   label: string;
   placeholder?: string;
@@ -36,13 +39,32 @@ export function SearchSelect({
   onValueChange: (value: string) => void;
   isDisabled?: boolean;
   emptyText?: string;
+  /** Info tip beside the label. */
+  tip?: string;
+  hideLabel?: boolean;
 }) {
+  if (tip && !hideLabel) {
+    return (
+      <TipField label={label} tip={tip}>
+        <SearchSelect
+          hideLabel
+          label={label}
+          placeholder={placeholder}
+          sections={sections}
+          value={value}
+          onValueChange={onValueChange}
+          isDisabled={isDisabled}
+          emptyText={emptyText}
+        />
+      </TipField>
+    );
+  }
   const shown = sections.filter((s) => s.options.length > 0);
   const markOpened = useIgnoreOpeningScroll();
   return (
     <Autocomplete
       aria-label={label}
-      label={label}
+      label={hideLabel ? undefined : label}
       labelPlacement="outside"
       placeholder={placeholder}
       variant="bordered"

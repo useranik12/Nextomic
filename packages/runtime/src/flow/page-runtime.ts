@@ -76,8 +76,8 @@ export function startActionRuntime(
 
   // --- state and redraw -------------------------------------------------------------------
   const edits = new ElementEditStore();
-  /** The values Refresh Query set, per loop; later redraws of the loop keep them. */
-  const queryValues: Record<string, Record<string, string>> = {};
+  /** The last Refresh Query of each loop; later redraws of the loop run it the same way. */
+  const refreshes: Record<string, { node: string; values: string[] | null }> = {};
   let pending = new Set<string>();
   let scheduled = false;
   /** Redraws the elements from the server; returns the ids that were redrawn. */
@@ -90,7 +90,7 @@ export function startActionRuntime(
       app,
       state,
       edits: edits.snapshot(),
-      queryValues
+      refreshes
     });
     const inserted = swapParts(response.parts);
     for (const el of inserted) bindInserted(el);
@@ -125,8 +125,8 @@ export function startActionRuntime(
     edits,
     touched: (names) => onChange(names),
     redrawElement: async (id) => (await redraw([id])).includes(id),
-    refreshLoop: async (id, values) => {
-      queryValues[id] = { ...queryValues[id], ...values };
+    refreshLoop: async (id, nodeId, values) => {
+      refreshes[id] = { node: nodeId, values };
       return (await redraw([id])).includes(id);
     },
     rebuild: async () => {

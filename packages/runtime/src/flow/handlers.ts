@@ -41,8 +41,11 @@ export interface HandlerDeps {
   touched: (names: string[]) => void;
   /** Redraws one element from the server; false when it cannot be redrawn alone. */
   redrawElement: (id: string) => Promise<boolean>;
-  /** Runs a query loop again with new setting values; false when it cannot be redrawn alone. */
-  refreshLoop: (id: string, values: Record<string, string>) => Promise<boolean>;
+  /**
+   * Runs a query loop again with the saved query of the Refresh Query node `nodeId` and its filled
+   * slot values (null: the loop's own query); false when it cannot be redrawn alone.
+   */
+  refreshLoop: (id: string, nodeId: string, values: string[] | null) => Promise<boolean>;
   /** A page URL of this site (live or preview). */
   hrefFor: (route: string, query: URLSearchParams) => string;
   /** Leaves or reloads the page; the editor's Test only reports where it would go. */
@@ -123,15 +126,11 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
           "This element is not on the page, or it is inside a query loop (rebuild the loop instead)."
         );
     },
-    "query.refresh": async (p) => {
+    "query.refresh": async (p, ctx) => {
       const id = toText(p.query);
       if (!id) throw new FlowError("no-query", "Choose the query loop to refresh.");
-      const values: Record<string, string> = {};
-      for (const row of rowsOf(p.values)) {
-        const name = toText(row.name);
-        if (name) values[name] = toText(row.value);
-      }
-      if (!(await deps.refreshLoop(id, values)))
+      const values = Array.isArray(p.override) ? p.override.map((v) => toText(v)) : null;
+      if (!(await deps.refreshLoop(id, ctx.node.id, values)))
         throw new FlowError(
           "no-query",
           "That query loop is not on this page, or it is inside another loop."

@@ -148,10 +148,10 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
         note("Rebuild element", `Would redraw ${id} from the server on the preview and live site.`);
         return true;
       },
-      refreshLoop: async (id, values) => {
+      refreshLoop: async (id, _node, values) => {
         note(
           "Refresh query",
-          `Would run loop ${id} again with ${JSON.stringify(values)} on the preview and live site.`
+          `Would run loop ${id} again with the saved query${values ? ` and values ${JSON.stringify(values)}` : ""} on the preview and live site.`
         );
         return true;
       },
