@@ -1,6 +1,7 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal } from "@/components/ui/legacy-modal";
 import { useState, type ReactNode } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -43,13 +44,7 @@ export function EditorFooter({
         {deleteLabel}
       </ActionButton>
       <div className="flex gap-2">
-        <ActionButton
-          size="sm"
-          tone="ghost"
-          className="border border-default-200"
-          isDisabled={!dirty || saving}
-          onPress={onCancel}
-        >
+        <ActionButton size="sm" tone="outline" isDisabled={!dirty || saving} onPress={onCancel}>
           <Icon name="ph:x" width={14} height={14} />
           Cancel
         </ActionButton>

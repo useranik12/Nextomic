@@ -115,18 +115,12 @@ export function ClassEditPanel({
         </ActionButton>
         {!framework ? (
           <>
-            <ActionButton
-              size="sm"
-              tone="ghost"
-              className="border border-default-200"
-              onPress={onLock}
-            >
+            <ActionButton size="sm" tone="outline" onPress={onLock}>
               {row.locked ? "Unlock" : "Lock"}
             </ActionButton>
             <ActionButton
               size="sm"
-              tone="ghost"
-              className="border border-default-200"
+              tone="outline"
               isDisabled={!row.hasStyles}
               onPress={onDuplicate}
             >
@@ -156,8 +150,7 @@ export function ClassEditPanel({
             </div>
             <ActionButton
               size="sm"
-              tone="ghost"
-              className="border border-default-200"
+              tone="outline"
               isDisabled={row.locked || name.trim() === row.name}
               onPress={rename}
             >

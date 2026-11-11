@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner } from "@heroui/react";
+import { Spinner } from "@heroui-v2/react";
 import type { RestCall, RestGroup } from "@nextomic/schema";
 import { ActionButton } from "@/components/ui/controls";
 import { ApiList } from "./api-list";

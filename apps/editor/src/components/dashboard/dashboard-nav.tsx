@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@heroui/react";
+import { cn } from "@heroui-v2/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/lib/icons/Icon";
@@ -23,14 +23,19 @@ export function DashboardNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-2 rounded-medium px-3 py-2 text-small transition-colors",
+              "group flex h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors duration-150",
               isActive
-                ? "bg-content2 font-medium text-foreground"
-                : "text-default-500 hover:bg-content1 hover:text-foreground"
+                ? "bg-default font-medium text-foreground"
+                : "text-muted hover:bg-default/60 hover:text-foreground"
             )}
             aria-current={isActive ? "page" : undefined}
           >
-            {item.icon ? <Icon name={item.icon} /> : null}
+            {item.icon ? (
+              <Icon
+                name={item.icon}
+                className={isActive ? "text-accent" : "text-subtle group-hover:text-body"}
+              />
+            ) : null}
             {item.label}
           </Link>
         );

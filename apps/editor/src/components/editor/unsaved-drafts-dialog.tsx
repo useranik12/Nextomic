@@ -1,6 +1,7 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import { ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal } from "@/components/ui/legacy-modal";
 import { ActionButton } from "@/components/ui/controls";
 
 /** Shown when publishing while parameters or state variables are edited but not saved yet. */

@@ -1,40 +1,186 @@
+/* Builder UI only (never built sites). HeroUI v3 components and tokens; the design rules are in
+   docs/ui-reference.md "Builder design rules". Colors come from blueprint/tokens.json through
+   builder-tokens.ts. hero.ts (HeroUI v2) stays only until the last v2 component is migrated. */
 @import "tailwindcss";
+@import "@heroui/styles";
 @source "../../../node_modules/@heroui/theme/dist/**/*.{js,mjs}";
 @plugin "../../../hero.ts";
+@plugin "../../../builder-tokens.ts";
 
 @custom-variant dark (&:is(.dark *));
+
+/* Text roles: text-foreground (titles, values), text-body, text-muted (labels, descriptions),
+   text-subtle (hints, placeholders, meta). `muted` is HeroUI v3's own --muted (set from the same
+   scale step in builder-tokens.ts). */
+@theme inline {
+  --color-body: var(--nx-text-body);
+  --color-subtle: var(--nx-text-subtle);
+  --ease-nx: cubic-bezier(0.2, 0, 0, 1);
+}
 
 :root {
   --font-sans: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-body {
-  font-family: var(--font-sans);
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  /* Every hand-made button fades its colours (150ms); HeroUI buttons bring the same timing. */
+  button,
+  [role="button"] {
+    font-weight: 500;
+    transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+    transition-duration: 150ms;
+    transition-timing-function: var(--ease-nx);
+  }
+
+  /* Anything clickable shows the pointer; Tailwind v4 resets buttons to the default cursor. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="menuitem"]:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+
+  /* Typed text in fields is the body tone; only dynamic {{tags}} are full foreground. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea {
+    color: var(--nx-text-body);
+  }
+
+  /* One focus treatment: an inner field never draws its own square outline inside a wrapper. */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+  }
 }
 
-/* Every button: medium weight and a 300ms colour transition (no movement on hover). */
-button,
-[role="button"] {
-  font-weight: 500;
-  transition-property: color, background-color, border-color, opacity, box-shadow;
-  transition-duration: 300ms;
-  transition-timing-function: ease;
-}
+@layer components {
+  /* Buttons (docs/ui-reference.md): Primary = page inverse, dims on hover; Secondary = light gray
+     fill, lifts on hover; Ghost (v3 outline) = 1px border, fills with the secondary gray on hover;
+     Danger = soft red. Same 150ms fade and 0.98 press everywhere. */
+  .button {
+    font-weight: 500;
+    transition:
+      transform 200ms var(--ease-nx),
+      background-color 150ms var(--ease-nx),
+      border-color 150ms var(--ease-nx),
+      color 150ms var(--ease-nx),
+      box-shadow 150ms var(--ease-nx);
+  }
+  .button--primary {
+    --button-bg: var(--foreground);
+    --button-bg-hover: color-mix(in oklab, var(--foreground) 86%, var(--background));
+    --button-bg-pressed: color-mix(in oklab, var(--foreground) 80%, var(--background));
+    --button-fg: var(--background);
+  }
+  .button--secondary,
+  .button--tertiary {
+    --button-bg: var(--default);
+    --button-bg-hover: var(--default-hover);
+    --button-bg-pressed: var(--default-hover);
+    --button-fg: var(--foreground);
+  }
+  .button--outline {
+    border-color: var(--border);
+    --button-bg: transparent;
+    --button-bg-hover: var(--default);
+    --button-bg-pressed: var(--default-hover);
+    --button-fg: var(--foreground);
+  }
+  .button--ghost {
+    --button-bg: transparent;
+    --button-bg-hover: var(--default);
+    --button-bg-pressed: var(--default-hover);
+    --button-fg: var(--nx-text-body);
+  }
+  .button--ghost:hover {
+    color: var(--foreground);
+  }
+  .button--ghost.button--danger-ghost {
+    --button-bg-hover: color-mix(in oklab, var(--danger) 12%, transparent);
+    --button-bg-pressed: color-mix(in oklab, var(--danger) 18%, transparent);
+    --button-fg: var(--danger);
+    color: var(--danger);
+  }
+  .button--danger-soft {
+    --button-bg: color-mix(in oklab, var(--danger) 14%, transparent);
+    --button-bg-hover: color-mix(in oklab, var(--danger) 22%, transparent);
+    --button-bg-pressed: color-mix(in oklab, var(--danger) 26%, transparent);
+    --button-fg: var(--danger);
+  }
 
-/* Anything clickable shows the pointer; Tailwind v4 resets buttons to the default cursor. */
-button:not(:disabled),
-[role="button"]:not([aria-disabled="true"]),
-[role="tab"],
-[role="menuitem"]:not(:disabled),
-summary {
-  cursor: pointer;
-}
-
-/* Typed text in fields is a step softer than headings; only dynamic {{tags}} are full white. */
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
-textarea {
-  color: hsl(var(--heroui-default-600));
+  /* Fields: one size (32px), pill, 1px border; hover lifts the border, focus turns it blue with a
+     soft ring, invalid turns it red. Multi-line fields keep a 12px radius. */
+  .input,
+  .select__trigger,
+  .combo-box__input-group,
+  .autocomplete__trigger,
+  .input-group,
+  .search-field__group,
+  .date-input-group,
+  .number-field__group {
+    min-height: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+  }
+  .input,
+  .select__trigger {
+    padding-block: 0;
+    padding-inline: 0.75rem;
+  }
+  .select__trigger {
+    align-items: center;
+  }
+  .input-group__input {
+    height: 100%;
+    padding-block: 0;
+  }
+  /* Focus: the border turns blue with a soft 3px ring (not v3's solid 2px ring). Invalid: the
+     border itself turns red, never a second outline around it. */
+  .input:focus,
+  .input[data-focused="true"],
+  .input-group:has([data-slot="input-group-input"]:focus),
+  .input-group:has([data-slot="input-group-textarea"]:focus),
+  .textarea:focus,
+  .textarea[data-focused="true"],
+  .select__trigger[data-focus-visible="true"],
+  .select__trigger[data-pressed="true"],
+  .select[data-open="true"] .select__trigger,
+  .combo-box [data-slot="input"]:focus,
+  .combo-box [data-slot="input"][data-focus] {
+    border-color: var(--field-border-focus);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--focus) 22%, transparent);
+    outline: none;
+  }
+  .input[data-invalid="true"],
+  .input[aria-invalid="true"],
+  .input-group[data-invalid="true"],
+  .textarea[data-invalid="true"],
+  .select[data-invalid="true"] .select__trigger,
+  .textfield[data-invalid="true"] .input,
+  .textfield[data-invalid="true"] .input-group {
+    border-color: var(--danger);
+    outline: none;
+  }
+  .input[data-invalid="true"]:focus,
+  .input[aria-invalid="true"]:focus,
+  .textfield[data-invalid="true"] .input:focus,
+  .textfield[data-invalid="true"] .input-group:focus-within {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--danger) 22%, transparent);
+  }
+  .textarea {
+    border-radius: 12px;
+    font-size: 0.875rem;
+  }
 }
 
 /* A field whose {{tags}} are drawn by the expression overlay hides its own glyphs, keeps the caret. */

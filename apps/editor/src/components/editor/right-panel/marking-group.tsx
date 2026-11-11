@@ -96,7 +96,7 @@ function TermInput({
             title={`Create "${text}" and apply it`}
             onMouseDown={(e) => e.preventDefault()}
             onClick={create}
-            className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-default-200 text-default-700 hover:bg-default-300 hover:text-foreground"
+            className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full bg-default text-body transition-colors duration-150 hover:bg-default-hover hover:text-foreground"
           >
             <Icon name="ph:plus" width={12} height={12} />
           </button>
@@ -106,7 +106,7 @@ function TermInput({
             id={listId}
             role="listbox"
             aria-label={`${label} matches`}
-            className="absolute z-20 mt-1 max-h-44 w-full overflow-y-auto rounded-medium border border-divider bg-content1 p-1 shadow-lg"
+            className="absolute z-20 mt-1.5 max-h-44 w-full overflow-y-auto rounded-xl border border-border bg-overlay p-1 shadow-overlay"
           >
             {matches.map((t) => (
               <li key={t.id} role="presentation">
@@ -116,7 +116,7 @@ function TermInput({
                   aria-selected={false}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => pick(t.id)}
-                  className="w-full rounded-medium px-2 py-1 text-left text-small hover:bg-default-100"
+                  className="w-full rounded-lg px-2.5 py-1.5 text-left text-sm text-body transition-colors duration-150 hover:bg-default hover:text-foreground"
                 >
                   {t.name}
                 </button>
@@ -204,13 +204,13 @@ export function MarkingGroup({
   return (
     <section aria-label="Categories and tags" className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-small text-default-600">Categories and tags</h3>
+        <h3 className="text-sm font-medium text-foreground">Categories and tags</h3>
         <button
           type="button"
           aria-label={open ? "Collapse categories and tags" : "Expand categories and tags"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="rounded p-1 text-default-600 hover:text-foreground"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted outline-none transition-colors duration-150 hover:bg-default hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus"
         >
           {open ? (
             <Icon name="ph:minus-circle" width={16} height={16} />

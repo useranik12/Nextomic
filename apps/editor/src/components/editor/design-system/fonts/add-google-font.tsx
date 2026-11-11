@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, Slider, Switch } from "@heroui/react";
+import { Checkbox, Slider, Switch } from "@heroui-v2/react";
 import type { ProjectFont } from "@nextomic/schema";
 import { useEffect, useState } from "react";
 import {

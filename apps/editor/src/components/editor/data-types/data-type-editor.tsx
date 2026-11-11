@@ -121,8 +121,7 @@ export function DataTypeEditor({
       <div>
         <ActionButton
           size="sm"
-          tone="ghost"
-          className="border border-default-300"
+          tone="outline"
           onPress={() =>
             onChange({
               ...value,

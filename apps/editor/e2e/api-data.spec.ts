@@ -18,7 +18,7 @@ async function openEditor(page: Page) {
   await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple-9");
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
-  await page.getByRole("link", { name: "All Projects" }).click();
+  await page.getByRole("link", { name: "All Projects", exact: true }).click();
   await page
     .getByRole("button", { name: /New Project/i })
     .first()

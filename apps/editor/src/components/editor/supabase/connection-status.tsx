@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip, Spinner } from "@heroui/react";
+import { Chip, Spinner } from "@heroui-v2/react";
 import { Icon } from "@/lib/icons/Icon";
 
 /** Where the Supabase connection stands, checked live with the connection test. */

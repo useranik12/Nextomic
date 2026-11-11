@@ -9,7 +9,7 @@ async function signUpAndCreateProject(page: Page): Promise<string> {
   await page.getByRole("button", { name: "Sign up" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 
-  await page.getByRole("link", { name: "All Projects" }).click();
+  await page.getByRole("link", { name: "All Projects", exact: true }).click();
   await expect(page).toHaveURL(/\/projects/);
   await page
     .getByRole("button", { name: /New Project/i })
@@ -452,7 +452,7 @@ test("animations: build a timeline, preview it on the canvas, see its GSAP code"
   const dialog = page.getByRole("dialog", { name: "Animations" });
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "New timeline" }).click();
-  await dialog.getByLabel("Trigger", { exact: true }).click();
+  await dialog.getByRole("button", { name: /Trigger$/ }).click();
   await page.getByRole("option", { name: "Page load" }).click();
 
   // Every setting carries an info tip.
@@ -461,7 +461,7 @@ test("animations: build a timeline, preview it on the canvas, see its GSAP code"
   await dialog.getByRole("button", { name: "Add animation" }).click();
   // Target the page's heading and make it fade out (opacity 0 -> a value we can see mid-way).
   await dialog.getByLabel("Target", { exact: true }).fill("h1,h2,h3,h4,h5,h6");
-  await dialog.getByLabel("Method", { exact: true }).click();
+  await dialog.getByRole("button", { name: /Method$/ }).click();
   await page.getByRole("option", { name: /^To \(/ }).click();
   await dialog.getByLabel("Duration", { exact: true }).fill("0.5");
 
@@ -660,7 +660,7 @@ test("Pages & Templates: manager, marking, header template on the site, default 
   await page.getByRole("button", { name: "Template settings" }).click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Status/ })
+    .getByRole("button", { name: /Status$/ })
     .click();
   await page.locator("[role=option]", { hasText: "Published" }).click();
   // Without a condition a template never shows.
@@ -736,7 +736,7 @@ async function newModalTemplate(
   await page.getByRole("button", { name: "New template" }).click();
   const create = page.getByRole("dialog");
   await create.getByLabel("Name").fill(name);
-  await create.getByRole("button", { name: /^Type/ }).click();
+  await create.getByRole("button", { name: /Type$/ }).click();
   await page.locator("[role=option]", { hasText: kind }).click();
   await page.getByRole("button", { name: "Create template" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -765,7 +765,7 @@ async function newModalTemplate(
   await page.getByRole("button", { name: "Template settings" }).click();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Status/ })
+    .getByRole("button", { name: /Status$/ })
     .click();
   await page.locator("[role=option]", { hasText: "Published" }).click();
   await addWholeSiteRule(page);
@@ -815,13 +815,13 @@ test("sticky header settings reach the live site; scheduled status shows a date 
   await newHeaderTemplate(page, "Sticky header");
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Status/ })
+    .getByRole("button", { name: /Status$/ })
     .click();
   await page.locator("[role=option]", { hasText: "Scheduled" }).click();
   await expect(page.getByLabel("Go live at").first()).toBeVisible();
   await page
     .getByRole("dialog")
-    .getByRole("button", { name: /^Status/ })
+    .getByRole("button", { name: /Status$/ })
     .click();
   await page.locator("[role=option]", { hasText: "Published" }).click();
   await addWholeSiteRule(page);
@@ -850,7 +850,7 @@ test("page settings: no header and footer choice, status can be scheduled", asyn
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Header and footer")).toHaveCount(0);
   await expect(dialog.getByText("Include in publish")).toHaveCount(0);
-  await dialog.getByRole("button", { name: /^Status/ }).click();
+  await dialog.getByRole("button", { name: /Status$/ }).click();
   await page.locator("[role=option]", { hasText: "Scheduled" }).click();
   await expect(dialog.getByLabel("Go live at").first()).toBeVisible();
 });
@@ -1281,7 +1281,7 @@ test("conditions: class checks and list values as chips", async ({ page }) => {
   await page.locator("[role=option]", { hasText: "Class" }).click();
   await page.getByLabel("Class name", { exact: true }).fill("is-open");
   await expect(heading).toHaveCount(0);
-  await page.getByLabel("Operator", { exact: true }).click();
+  await page.getByRole("button", { name: /Operator$/ }).click();
   await page.locator("[role=option]", { hasText: "does not have" }).click();
   await expect(heading).toBeVisible();
 
@@ -1289,7 +1289,7 @@ test("conditions: class checks and list values as chips", async ({ page }) => {
   await page.getByLabel("Condition type", { exact: true }).click();
   await page.locator("[role=option]", { hasText: "Value comparison" }).click();
   await page.getByLabel("Value", { exact: true }).fill("{{ page.name }}");
-  await page.getByLabel("Operator", { exact: true }).click();
+  await page.getByRole("button", { name: /Operator$/ }).click();
   await page.locator("[role=option]", { hasText: "is in list" }).first().click();
   const list = page.getByLabel("Compare with", { exact: true });
   await list.pressSequentially("Blog,");
@@ -1510,6 +1510,8 @@ test("Refresh Query edits the loop's own settings and the preview runs them", as
   const offset = modal.getByRole("spinbutton", { name: "Offset" });
   await expect(offset).toHaveValue("0");
   await expect(modal.getByRole("button", { name: /^Offset: The loop skips 0 rows/ })).toBeVisible();
+  // A key press first: like a real keyboard user, focus then opens the info tip.
+  await page.keyboard.press("F2");
   await modal.getByRole("button", { name: /^Source: The loop reads/ }).focus();
   await expect(page.locator("[role=tooltip]")).toContainText("The loop reads Static JSON");
   await offset.fill("1");

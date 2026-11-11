@@ -57,8 +57,7 @@ export function PasswordChange({ email, policy }: { email: string; policy: Passw
         {!sent ? (
           <ActionButton
             size="sm"
-            tone="ghost"
-            className="border border-default-200"
+            tone="outline"
             isLoading={busy === "send"}
             onPress={() => void send()}
           >

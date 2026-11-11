@@ -1,8 +1,8 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { ActionButton, FormInput } from "@/components/ui/controls";
 import { useState } from "react";
+import { ActionButton, FormInput } from "@/components/ui/controls";
+import { Dialog } from "@/components/ui/dialog";
 
 export interface NewProjectModalProps {
   isOpen: boolean;
@@ -34,29 +34,45 @@ export function NewProjectModal({ isOpen, onClose, onCreate }: NewProjectModalPr
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <ModalContent>
-        <ModalHeader>New Project</ModalHeader>
-        <ModalBody>
-          <FormInput
-            label="Project name"
-            value={name}
-            onValueChange={setName}
-            isRequired
-            autoFocus
-            errorMessage={error}
-            isInvalid={Boolean(error)}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <ActionButton tone="ghost" onPress={onClose}>
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      size="sm"
+      title="New Project"
+      description="A project holds the pages, templates and settings of one site or app."
+      footer={
+        <>
+          <ActionButton tone="secondary" onPress={onClose}>
             Cancel
           </ActionButton>
-          <ActionButton tone="primary" onPress={handleSubmit} isLoading={isPending}>
+          <ActionButton type="submit" form="new-project-form" isLoading={isPending}>
             Create
           </ActionButton>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </>
+      }
+    >
+      <form
+        id="new-project-form"
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit();
+        }}
+      >
+        <FormInput
+          label="Project name"
+          value={name}
+          onValueChange={(next) => {
+            setName(next);
+            if (error) setError(null);
+          }}
+          isRequired
+          autoFocus
+          validationBehavior="aria"
+          errorMessage={error}
+          isInvalid={Boolean(error)}
+        />
+      </form>
+    </Dialog>
   );
 }

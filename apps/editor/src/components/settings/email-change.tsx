@@ -58,8 +58,7 @@ export function EmailChange({ email }: { email: string }) {
         {step.kind === "idle" ? (
           <ActionButton
             size="sm"
-            tone="ghost"
-            className="border border-default-200"
+            tone="outline"
             onPress={() => {
               setNotice(null);
               setNext("");

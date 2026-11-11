@@ -253,12 +253,7 @@ function ColorsManager({ theme, framework, update }: GateProps) {
             ) : null}
           </ul>
           <div>
-            <ActionButton
-              size="sm"
-              tone="ghost"
-              className="border border-default-200"
-              onPress={() => begin("add-color")}
-            >
+            <ActionButton size="sm" tone="outline" onPress={() => begin("add-color")}>
               Add a color to {palette}
             </ActionButton>
           </div>

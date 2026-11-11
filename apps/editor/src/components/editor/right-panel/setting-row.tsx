@@ -54,8 +54,8 @@ export function SettingRow({
             className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning"
           />
         ) : null}
-        {icon ? <span className="shrink-0 text-default-500">{icon}</span> : null}
-        <label htmlFor={htmlFor} className="text-small font-semibold text-foreground">
+        {icon ? <span className="shrink-0 text-muted">{icon}</span> : null}
+        <label htmlFor={htmlFor} className="text-xs font-medium text-body">
           {label}
         </label>
         {responsive ? (
@@ -63,7 +63,7 @@ export function SettingRow({
             name="ph:laptop"
             width={12}
             height={12}
-            className="shrink-0 text-default-500"
+            className="shrink-0 text-subtle"
             aria-label="Can differ per breakpoint"
           />
         ) : null}
@@ -76,7 +76,7 @@ export function SettingRow({
               aria-label={`Reset ${label}`}
               title="Reset (or right-click the row)"
               onClick={onReset}
-              className="rounded p-0.5 text-default-500 hover:text-foreground"
+              className="rounded p-0.5 text-subtle transition-colors duration-150 hover:text-foreground"
             >
               <Icon name="ph:arrow-counter-clockwise" width={12} height={12} />
             </button>
@@ -88,8 +88,11 @@ export function SettingRow({
   );
 }
 
-export const compactFieldClass =
-  "h-8 w-full rounded-full border border-default-200 bg-transparent px-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:border-default-400 focus:border-default-800 focus:ring-1 focus:ring-default-800/10";
+/**
+ * A hand-made text field that looks and reacts exactly like FormInput: HeroUI v3's `input` class,
+ * sized by globals.css (32px pill, 1px border, blue focus ring, red when aria-invalid).
+ */
+export const compactFieldClass = "input w-full min-w-0";
 
 /** The grey shell around a Design value and its tools (unit, color, variable). */
 export const fieldShellClass =

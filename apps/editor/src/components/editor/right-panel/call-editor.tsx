@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
 import { Icon } from "@/lib/icons/Icon";
 import {
   FILTER_FIELDS,

@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, Divider } from "@heroui/react";
+import { Checkbox, Divider } from "@heroui-v2/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthCard, AuthError, AuthLink, AuthNotice } from "@/components/auth/auth-ui";
@@ -118,8 +118,7 @@ export default function SignInPage() {
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <ActionButton
-            tone="ghost"
-            className="border border-default-200"
+            tone="outline"
             isLoading={busy === "magic"}
             isDisabled={busy !== null && busy !== "magic"}
             onPress={() => void sendMagicLink()}
@@ -128,8 +127,7 @@ export default function SignInPage() {
             Email me a link
           </ActionButton>
           <ActionButton
-            tone="ghost"
-            className="border border-default-200"
+            tone="outline"
             isLoading={busy === "passkey"}
             isDisabled={busy !== null && busy !== "passkey"}
             onPress={() => void signInWithPasskey()}

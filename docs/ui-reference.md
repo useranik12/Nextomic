@@ -42,7 +42,7 @@ Source images live in `blueprint/`. Use this doc as the index and the images as 
 
 **Type pickers** show every type; a type with nothing to choose yet (ENUM without enums, Data Type without data types, Supabase Row until Supabase is connected) is disabled, and resting on it says what to add first. ENUM and Data Type show the second select beside the type.
 
-**Field text color:** typed text in inputs and text areas is `default-700`, a step below the full white of headings. Only dynamic tags are full white.
+**Field text color:** typed text in inputs and text areas is the `body` text role, a step below the full white of headings. Only dynamic tags are full white.
 
 - The Figma kit is the HeroUI kit (the sheet links to heroui.org). Token names follow it: layout (`background`, `foreground`, `divider`, `focus`), content (`content1` to `content4`), colors (`default`, `primary`, `secondary`, `success`, `warning`, `danger`, each 50 to 900), radius (small 8px, medium 12px, large 14px, full), typography (tiny, small, medium, large), Inter font.
 - Colors: primary blue `#006FEE`, secondary purple `#7828C8` (`#9353D3` in dark), success `#17C964`, warning `#F5A524`, danger `#F31260`.
@@ -62,15 +62,59 @@ Source images live in `blueprint/`. Use this doc as the index and the images as 
 - Licenses differ per set and some need attribution (for example Streamline's free sets; Lineicons and Streamline have free and paid tiers). Verify each set before use, record set, license, source URL, and version in `assets/icons/LICENSES.md`, and show required attributions on an About page. Do not ship a set whose license is unclear.
 - Accessibility: decorative icons are `aria-hidden`; icon-only buttons need an accessible name and a tooltip.
 
-### Form controls and buttons (owner rule, applies to every screen added later)
+### Builder design rules (owner rule, locked 2026-11-12; applies to every screen added later)
 
-Never use raw HeroUI `Input` or `Button` for form fields and actions. Use `components/ui/controls.tsx`:
+The builder UI is built on **HeroUI v3** (`@heroui/react` + `@heroui/styles`, React Aria underneath). Built sites are never affected: they keep the Nextomic CSS framework and the project's own design system. During the migration, screens not yet moved still use HeroUI v2 through the `@heroui-v2/react` alias; every new or touched screen uses v3 and the primitives below. A v2 modal not yet moved imports `Modal` from `components/ui/legacy-modal.tsx`, never from `@heroui-v2/react` directly: v2 and v3 keep separate overlay stacks, so v2's own outside-click handling would close the modal when a v3 popover inside it is used. The wrapper closes only on a press on the modal's backdrop; Escape and the close button work as before.
 
-- `FormInput` / `PasswordInput`: pill, 44px high, one 2px outline, label above. Only that outline reacts (hover brightens, focus adds a light ring, error turns it red). No second border, no filled background.
-- `ActionButton`: 40px high (`size="sm"` 32px), 14px text (12px for sm), medium weight on EVERY button, hover changes colour only with a 300ms transition (no movement, no growth; a global rule in `globals.css` applies the weight and transition to all buttons). Colour carries meaning through `tone`: `primary` (white shades of the default scale, inverts in light mode) for the main safe action, `danger` (red) for delete/remove/destructive, `ghost` for cancel and quiet actions, `danger-ghost` for quiet destructive actions. Never render a destructive action in a neutral or white tone.
-- The font is Inter, loaded with `next/font/google` (self-hosted at build). Without it, weight 500 falls back to a regular system face and nothing looks medium.
-- The header logo is the mascot: `mascot-light` on dark mode, `mascot-dark` on light mode. The welcome text shows the first name only, `User` when there is none.
-- Icon-only buttons, segmented toggles and the search field keep their own designed styles from the mocks.
+**Tokens.** `blueprint/tokens.json` stays the single source of truth for colors. `apps/editor/builder-tokens.ts` turns it into HeroUI v3's semantic variables (`--background`, `--foreground`, `--surface*`, `--overlay`, `--default`, `--default-hover`, `--accent`, `--border`, `--separator`, `--focus`, `--field-*`, status colors) for light and dark mode. Never hard-code a hex value or a raw scale step in a component; use the semantic utilities (`bg-surface`, `bg-overlay`, `bg-default`, `border-border`, `text-muted`, `ring-focus`, ...).
+
+**Text roles.** Text has four levels; never make everything white.
+
+| Role   | Utility           | Use for                                                                  |
+| ------ | ----------------- | ------------------------------------------------------------------------ |
+| Strong | `text-foreground` | page and dialog titles, section headings, values the user typed or chose |
+| Body   | `text-body`       | list items, field text, menu items, readable copy                        |
+| Muted  | `text-muted`      | field labels, descriptions, help text, empty states                      |
+| Subtle | `text-subtle`     | hints, meta (types, dates), placeholders, quiet icons                    |
+
+Sizes: page title `text-2xl font-semibold tracking-tight`, dialog title `text-base font-semibold`, section heading `text-sm font-medium`, field label `text-xs font-medium` (dense panels) or `text-sm font-medium` (full forms), help and errors `text-xs`.
+
+**Color meaning.** Blue (`accent`, `focus`, `link`) marks only focus rings, links, selected or active items (nav item icon, toggle-button selection, switch and checkbox "on", chosen list item check) and info. Blue is never a button color. Red is only for errors and destructive actions. Green and amber are only for success and warning states. Category, tag, HTTP method and bolt colors keep their own documented meanings.
+
+**Buttons** (`ActionButton` in `components/ui/controls.tsx`, `tone` prop):
+
+| Tone           | Look                                                                      | Use for                                                       |
+| -------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `primary`      | page inverse: white in dark mode, near-black in light mode; dims on hover | the one main action of a view or dialog                       |
+| `secondary`    | very light gray fill; a step lighter on hover                             | Cancel and other second actions beside primary                |
+| `outline`      | 1px border, transparent; fills with the secondary gray on hover           | third-level actions (Add row, Add parameter, Go to dashboard) |
+| `ghost`        | transparent, body text; soft gray fill on hover                           | quiet toolbar, row and icon actions                           |
+| `danger`       | solid red                                                                 | confirming a destructive action                               |
+| `danger-ghost` | red text; soft red fill on hover                                          | quiet destructive actions (Delete in a row)                   |
+
+Sizes: `sm` 32px (matches the fields, use in panels and toolbars), `md` 36px (dialog footers, page actions). Every button: medium weight, 150ms color fade, a slight press scale (0.97 to 0.98), a blue focus ring for keyboard focus, a spinner when `isLoading`, and an accessible name plus tooltip when icon-only. `href` renders a link that looks like the button. One primary per view.
+
+**Fields** (`FormInput`, `PasswordInput`, `SelectField`, `MultiSelectField`, `SearchSelect`, `DateTimeField`; hand-made inputs use `compactFieldClass`, which is v3's `input` class):
+
+- One size everywhere: 32px pill, 14px text, one 1px border (`--field-border`), transparent background. The inner `<input>` never draws its own border or outline.
+- Hover: the border lifts one step (`--field-border-hover`).
+- Focus: the border turns blue with a soft 3px blue ring.
+- Invalid: the border itself turns red (no second outline); with focus the ring turns soft red; the label turns red and the message shows under the field in `text-xs`.
+- Disabled: faded, no pointer.
+- Labels sit above the field; an info tip (`tip` prop) sits beside the label. Multi-line fields keep a 12px radius.
+- Prefix and suffix content (search icon, clear button, eye toggle, dynamic bolt) sits inside the same pill.
+
+**Toggles.** `Toggle` (switch) and `CheckField` (checkbox) in `components/ui/toggles.tsx`. Both animate when toggled (thumb slides, check draws in); "on" is blue. Labels are `text-sm text-body`. The info tip sits outside the control's label so hover reaches it.
+
+**Surfaces.** Page `bg-background`; cards and panels `bg-surface` with `border-border` and `rounded-2xl` (cards) or `rounded-xl` (repeater rows); popovers, menus and dialogs `bg-overlay` with `shadow-overlay`. Dialogs use `Dialog` (`components/ui/dialog.tsx`): blurred backdrop, title plus optional one-line description, body, right-aligned footer (Cancel `secondary`, then the primary or `danger` action), Escape and the close button dismiss, focus is trapped.
+
+**Motion.** Colors fade in 150ms with `--ease-nx` (`cubic-bezier(0.2, 0, 0, 1)`); presses scale slightly; overlays fade and scale in (HeroUI defaults). Respect reduced motion (HeroUI does). Nothing moves or grows on hover.
+
+**States.** Every interactive element shows hover, pressed, keyboard focus (blue ring), disabled, and where it applies loading, error, success and notice. Use `text-danger` / `text-success` / `text-warning` messages and HeroUI alerts or toasts for notices; never color alone (pair with text or an icon).
+
+**Tooltips.** Builder tooltips open after 300ms (`--tooltip-delay`); info tips (`InfoTip`) after 150ms; close immediately.
+
+**Other rules kept from before.** The font is DM Sans via `next/font`. The header logo is the mascot (`mascot-light` on dark, `mascot-dark` on light); the welcome text shows the first name only, `User` when there is none. Never render a destructive action in a neutral or white tone.
 
 ## 4. Screens
 

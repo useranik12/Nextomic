@@ -98,12 +98,7 @@ export function ProfileSettings({
               if (file) pick(file);
             }}
           />
-          <ActionButton
-            size="sm"
-            tone="ghost"
-            className="border border-default-200"
-            onPress={() => input.current?.click()}
-          >
+          <ActionButton size="sm" tone="outline" onPress={() => input.current?.click()}>
             <Icon name="ph:upload-simple" width={14} height={14} />
             {shownImage ? "Change image" : "Upload image"}
           </ActionButton>

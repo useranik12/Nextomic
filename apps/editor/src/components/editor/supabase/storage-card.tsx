@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip, Spinner } from "@heroui/react";
+import { Chip, Spinner } from "@heroui-v2/react";
 import type { StorageEntry } from "@nextomic/integrations";
 import type { SupabaseBucket } from "@nextomic/schema";
 import { useEffect, useState } from "react";

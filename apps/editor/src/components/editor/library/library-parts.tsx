@@ -1,6 +1,6 @@
 "use client";
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui-v2/react";
 import { TEMPLATE_TYPE_LABELS } from "@nextomic/schema";
 import { Icon } from "@/lib/icons/Icon";
 import type { LibraryItem, LibraryStatus } from "@/server/library";

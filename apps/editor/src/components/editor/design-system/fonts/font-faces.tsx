@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@heroui/react";
+import { Checkbox } from "@heroui-v2/react";
 import { fontStack, sortFontFiles, type FontFile, type ProjectFont } from "@nextomic/schema";
 import { useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
@@ -228,8 +228,7 @@ export function FontFaces({
           <div className="flex flex-wrap items-center gap-2">
             <ActionButton
               size="sm"
-              tone="ghost"
-              className="border border-default-200"
+              tone="outline"
               isDisabled={!rights}
               isLoading={busy === "bulk"}
               onPress={() => bulk.current?.click()}
@@ -239,8 +238,7 @@ export function FontFaces({
             </ActionButton>
             <ActionButton
               size="sm"
-              tone="ghost"
-              className="border border-default-200"
+              tone="outline"
               isDisabled={!rights || pending !== null}
               onPress={() => setPending({ file: null, weight: 400, style: "normal" })}
             >
@@ -390,12 +388,7 @@ export function FontFaces({
                 e.target.value = "";
               }}
             />
-            <ActionButton
-              size="sm"
-              tone="ghost"
-              className="border border-default-200"
-              onPress={() => choose.current?.click()}
-            >
+            <ActionButton size="sm" tone="outline" onPress={() => choose.current?.click()}>
               <Icon name="ph:upload-simple" width={14} height={14} />
               {pending.file ? "Change file" : "Choose file"}
             </ActionButton>

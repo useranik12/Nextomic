@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner } from "@heroui/react";
+import { Spinner } from "@heroui-v2/react";
 import type { ReactNode } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { AuthCard } from "./auth-card";

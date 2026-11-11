@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner } from "@heroui/react";
+import { Spinner } from "@heroui-v2/react";
 import { useCallback, useEffect, useState } from "react";
 import { ActionButton, FormInput } from "@/components/ui/controls";
 import { authClient } from "@/lib/auth-client";
@@ -64,12 +64,7 @@ export function PasskeySettings() {
           </span>
         </div>
         {!adding ? (
-          <ActionButton
-            size="sm"
-            tone="ghost"
-            className="border border-default-200"
-            onPress={() => setAdding(true)}
-          >
+          <ActionButton size="sm" tone="outline" onPress={() => setAdding(true)}>
             <Icon name="ph:fingerprint" width={14} height={14} />
             Add passkey
           </ActionButton>

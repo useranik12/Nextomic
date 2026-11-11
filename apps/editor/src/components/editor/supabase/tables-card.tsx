@@ -97,8 +97,8 @@ function TableDetail({ table }: { table: SupabaseTable }) {
         {used.length > 0 ? (
           <ActionButton
             size="sm"
-            tone="ghost"
-            className="ml-auto border border-default-200"
+            tone="outline"
+            className="ml-auto"
             isDisabled={allSynced}
             onPress={() => save(used)}
           >
@@ -153,8 +153,7 @@ function TableDetail({ table }: { table: SupabaseTable }) {
                       {item ? (
                         <ActionButton
                           size="sm"
-                          tone="ghost"
-                          className="border border-default-200"
+                          tone="outline"
                           isDisabled={synced}
                           aria-label={`Save enum ${item.name}`}
                           onPress={() => save([item])}

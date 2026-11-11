@@ -8,7 +8,7 @@ import {
   DropdownSection,
   DropdownTrigger,
   Tooltip
-} from "@heroui/react";
+} from "@heroui-v2/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

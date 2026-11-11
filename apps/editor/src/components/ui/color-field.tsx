@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
 import { parseColor, toHex } from "@nextomic/schema";
 import { useState } from "react";
 import { ColorPicker } from "./color-picker";

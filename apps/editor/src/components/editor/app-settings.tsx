@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui/react";
+import { Switch } from "@heroui-v2/react";
 import type { ProjectSettings } from "@nextomic/schema";
 import { useState } from "react";
 import { saveProjectSettingsAction, setHomePageAction } from "@/app/(builder)/editor/[id]/actions";

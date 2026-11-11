@@ -1,7 +1,7 @@
 "use client";
 
 import { ColorField } from "@/components/ui/color-field";
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { previewProps, useStylePreview } from "./design-field-tools";
