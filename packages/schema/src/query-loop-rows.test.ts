@@ -62,7 +62,7 @@ describe("collectLoopRows", () => {
 
   it("gives a failing loop no rows and stops at the run limit", async () => {
     const failed = await collectLoopRows(tree, {}, () => Promise.reject(new Error("down")));
-    expect(failed).toEqual({ posts: { rows: [], hasMore: false } });
+    expect(failed).toEqual({ posts: { rows: [], hasMore: false, failed: true } });
     let runs = 0;
     await collectLoopRows(
       tree,

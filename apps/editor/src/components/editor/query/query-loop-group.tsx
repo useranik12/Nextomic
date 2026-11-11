@@ -15,6 +15,7 @@ import {
 import { ActionButton, SelectField, type SelectOption } from "@/components/ui/controls";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { useLoopPreview } from "../canvas/use-canvas-loop-rows";
+import { BoltInput } from "../right-panel/bolt-input";
 import { useEditorStore } from "../store/editor-store";
 import { LoopNameField } from "./loop-name-field";
 import { LocalQueryForm } from "./local-query-form";
@@ -140,6 +141,28 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
               onChange={(local) => change({ ...query, local })}
             />
           )}
+          {query.source !== "local" ? (
+            <div className="flex flex-col gap-3">
+              <SwitchRow
+                label="Enable Query Fail Fallbacks"
+                tip="When the query fails (not when it returns no rows), show this text in place of the loop's children."
+                selected={query.fallback.enabled}
+                onChange={(on) =>
+                  update({ ...query, fallback: { ...query.fallback, enabled: on } })
+                }
+              />
+              {query.fallback.enabled ? (
+                <BoltInput
+                  label="Fallback text"
+                  placeholder="Something went wrong. Please try again."
+                  value={query.fallback.text}
+                  onValueChange={(text) =>
+                    update({ ...query, fallback: { ...query.fallback, text } })
+                  }
+                />
+              ) : null}
+            </div>
+          ) : null}
           {enabled && problems.length === 0 && previewError ? (
             <p role="status" className="text-tiny text-danger">
               Canvas preview: {previewError}

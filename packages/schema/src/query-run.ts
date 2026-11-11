@@ -142,6 +142,8 @@ export interface QueryRows {
   rows: unknown[];
   /** More rows can be loaded (infinite scroll). */
   hasMore: boolean;
+  /** The query could not run (not the same as no rows): the loop may show its fail fallback. */
+  failed?: boolean;
 }
 
 /** Supabase rows: the page that came back; a full page means there may be more. */

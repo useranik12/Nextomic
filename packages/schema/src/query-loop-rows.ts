@@ -95,7 +95,7 @@ export type LoopRunner = (
   fill: (template: string) => string
 ) => Promise<QueryRows>;
 
-const NO_ROWS: QueryRows = { rows: [], hasMore: false };
+const NO_ROWS: QueryRows = { rows: [], hasMore: false, failed: true };
 
 /**
  * Runs every query loop of a page, outer loops first, inner loops once per outer row (in

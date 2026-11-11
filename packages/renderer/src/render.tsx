@@ -156,7 +156,10 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
       <Fragment key={child.id + suffix}>{renderScoped(child, options, inner)}</Fragment>
     ));
   if (!activeQuery(node)) return copy({ ...scope, row: undefined }, "");
+  const query = activeQuery(node);
   const result = options.loopRows?.[loopKey(scope.path, node.id)];
+  if (result?.failed && query?.fallback.enabled && query.fallback.text !== "")
+    return resolveText(query.fallback.text, scope.resolveToken);
   const rows = result ? result.rows : options.loopPlaceholder ? [{}] : [];
   return rows.map((item, index) => {
     const frames = [loopFrame(node, item, index), ...scope.frames];
