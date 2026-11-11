@@ -238,3 +238,63 @@ test("a published query loop loads more rows on scroll through the site endpoint
   });
   expect(malformed.status()).toBe(400);
 });
+
+test("Refresh Query shows the loop's Supabase settings with tips and dynamic data", async ({
+  page
+}) => {
+  test.setTimeout(150_000);
+  await openEditor(page);
+  await page.getByRole("button", { name: "Supabase", exact: true }).click();
+  await page.getByLabel("Supabase URL").fill(url ?? "");
+  await page.getByLabel("Anon Key/Publishable Key").fill(anonKey ?? "");
+  await page.getByRole("button", { name: "Fetch Schema" }).click();
+  await expect(page.getByText("Schema fetched.")).toBeVisible({ timeout: 60_000 });
+  const firstTable = page.getByRole("list", { name: "Tables" }).getByRole("button").first();
+  const tableName = (await firstTable.innerText()).trim().split("\n")[0] ?? "";
+
+  await page.getByRole("button", { name: "Navigator", exact: true }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Container", exact: true }).click();
+  await page.getByRole("button", { name: "Query Loop" }).click();
+  const settings = page.getByRole("region", { name: "Query Loop" });
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
+  const tablePicker = settings.getByRole("combobox", { name: "Table or view" });
+  await tablePicker.fill(tableName);
+  await page.getByRole("option", { name: tableName, exact: true }).click();
+  await settings.getByRole("button", { name: "Add filter" }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 15_000
+  });
+
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("Refresh");
+  await modal.getByRole("button", { name: "Refresh Supabase Query" }).click();
+  await modal.getByRole("button", { name: /^Query loop/ }).click();
+  await page.locator("[role=option]", { hasText: "supabaseLoop" }).click();
+
+  // Every setting of the loop, prefilled, with tips saying what the loop uses.
+  await expect(modal.getByRole("combobox", { name: "Table or view" })).toHaveValue(tableName);
+  await expect(modal.getByRole("button", { name: /^Table or view: The loop reads/ })).toBeVisible();
+  await expect(modal.getByRole("button", { name: /^Column: The loop uses/ })).toBeVisible();
+  await expect(modal.getByRole("button", { name: /^Condition: The loop uses/ })).toBeVisible();
+  await expect(modal.getByRole("button", { name: /^Value: The loop uses/ })).toBeVisible();
+  await expect(modal.getByRole("button", { name: "Dynamic value for Value" })).toBeVisible();
+  await expect(modal.getByRole("switch", { name: "Enable realtime query" })).toBeDisabled();
+  await modal
+    .getByRole("button", { name: /^Enable realtime query: The loop has realtime off/ })
+    .focus();
+  await expect(page.locator("[role=tooltip]")).toContainText(
+    "A refresh keeps the loop's own setting"
+  );
+  await modal.getByRole("button", { name: "Add filter" }).click();
+  await expect(
+    modal.getByRole("button", { name: /^Column: Added here: the loop has no such filter/ })
+  ).toBeVisible();
+  await page.screenshot({ path: "C:/Users/zaynt/.claude/jobs/63a9e151/tmp/supa.png" });
+});
