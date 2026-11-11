@@ -214,6 +214,17 @@ export const localLoopQuerySchema = z.object({
 
 export type LocalLoopQuery = z.infer<typeof localLoopQuerySchema>;
 
+/**
+ * "Enable Query Fail Fallbacks" (owner decision 2026-11-11): text shown in place of the loop's
+ * children when the query fails (not when it returns no rows). Static text mixed with dynamic data.
+ */
+export const queryFallbackSchema = z.object({
+  enabled: z.boolean().default(false),
+  text: template
+});
+
+export type QueryFallback = z.infer<typeof queryFallbackSchema>;
+
 /** An element's query. Each source keeps its settings while another is chosen. */
 export const elementQuerySchema = z.object({
   /** How expressions inside the loop read it: `%name.item`, `%name.index`. Unique per page. */
@@ -226,7 +237,8 @@ export const elementQuerySchema = z.object({
   source: z.enum(QUERY_SOURCES).default("supabase"),
   supabase: supabaseLoopQuerySchema.default({}),
   rest: restLoopQuerySchema.default({}),
-  local: localLoopQuerySchema.default({})
+  local: localLoopQuerySchema.default({}),
+  fallback: queryFallbackSchema.default({})
 });
 
 export type QueryFilter = z.infer<typeof queryFilterSchema>;

@@ -473,6 +473,28 @@ describe("query loops", () => {
     expect(html).toContain('<p data-nid="t">A #0</p><p data-nid="t">B #1</p>');
   });
 
+  it("shows the fail fallback only when the query failed, not when it has no rows", () => {
+    const tree = loopTree();
+    const list = tree.children[0]!;
+    list.query = {
+      ...list.query!,
+      fallback: { enabled: true, text: "Try again later" }
+    };
+    const render = (rows: { rows: unknown[]; hasMore: boolean; failed?: boolean }) =>
+      renderToStaticMarkup(
+        <PageRenderer
+          tree={tree}
+          breakpoints={DEFAULT_BREAKPOINTS}
+          dynamic={dynamic}
+          loopRows={{ list: rows }}
+        />
+      );
+    expect(render({ rows: [], hasMore: false, failed: true })).toContain("Try again later");
+    expect(render({ rows: [], hasMore: false })).not.toContain("Try again later");
+    list.query = { ...list.query!, fallback: { enabled: false, text: "Try again later" } };
+    expect(render({ rows: [], hasMore: false, failed: true })).not.toContain("Try again later");
+  });
+
   it("renders no children without rows, or one placeholder copy on the canvas", () => {
     const none = renderToStaticMarkup(
       <PageRenderer tree={loopTree()} breakpoints={DEFAULT_BREAKPOINTS} dynamic={dynamic} />
