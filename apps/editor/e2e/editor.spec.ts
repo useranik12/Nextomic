@@ -1510,6 +1510,8 @@ test("Refresh Query edits the loop's own settings and the preview runs them", as
   const offset = modal.getByRole("spinbutton", { name: "Offset" });
   await expect(offset).toHaveValue("0");
   await expect(modal.getByRole("button", { name: /^Offset: The loop skips 0 rows/ })).toBeVisible();
+  await modal.getByRole("button", { name: /^Source: The loop reads/ }).focus();
+  await expect(page.locator("[role=tooltip]")).toContainText("The loop reads Static JSON");
   await offset.fill("1");
   await expect(offset).toHaveValue("1");
   await modal.getByRole("button", { name: "Save", exact: true }).click();

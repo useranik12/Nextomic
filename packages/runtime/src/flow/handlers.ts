@@ -130,6 +130,9 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
       const id = toText(p.query);
       if (!id) throw new FlowError("no-query", "Choose the query loop to refresh.");
       const values = Array.isArray(p.override) ? p.override.map((v) => toText(v)) : null;
+      // The server refuses tags in values; refusing here keeps later redraws working.
+      if (values?.some((v) => v.includes("{{")))
+        throw new FlowError("bad-value", "A query value cannot hold {{ }}.");
       if (!(await deps.refreshLoop(id, ctx.node.id, values)))
         throw new FlowError(
           "no-query",
