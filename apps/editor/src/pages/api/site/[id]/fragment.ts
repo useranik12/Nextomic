@@ -2,8 +2,10 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   elementEditsSchema,
   overlayRanks,
-  queryValuesSchema,
+  findRefreshQuery,
+  refreshRequestSchema,
   resolveOverlay,
+  type ElementQuery,
   type NextomicUser
 } from "@nextomic/schema";
 import { z } from "zod";
@@ -24,6 +26,7 @@ import {
   renderOverlay,
   withClientState
 } from "@/server/runtime/fragments";
+import { draftFlows, liveFlows } from "@/server/runtime/page-runtime";
 import { draftView, liveView } from "@/server/runtime/view-layout";
 import { getDraftTemplates, getPublishedTemplates } from "@/server/templates";
 
@@ -46,7 +49,7 @@ const bodySchema = z.object({
   app: values,
   state: values,
   edits: elementEditsSchema.default({}),
-  queryValues: queryValuesSchema.default({}),
+  refreshes: refreshRequestSchema.default({}),
   overlay: z
     .object({
       templateId: z.string().min(1).max(64),
@@ -133,13 +136,29 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }
     return executor(row, request);
   };
+  // Refresh Query: the query comes from the saved flow (published or draft), never the browser.
+  let savedQuery: ((nodeId: string, loopId: string) => ElementQuery | null) | undefined;
+  if (Object.keys(body.refreshes).length > 0) {
+    const { flows, blocks } =
+      body.mode === "live" && "pageFlows" in laid
+        ? await liveFlows(id, laid.pageFlows, laid.templateIds)
+        : "page" in laid
+          ? await draftFlows(id, laid.page.id, laid.templateIds)
+          : { flows: {}, blocks: [] };
+    const lists = [
+      ...Object.values(flows).flatMap((list) => list.map((flow) => flow.nodes)),
+      ...blocks.map((block) => block.nodes)
+    ];
+    savedQuery = (nodeId, loopId) => findRefreshQuery(lists, nodeId, loopId);
+  }
   const parts = await renderParts({
     tree: laid.tree,
     dynamic,
     settings: laid.settings,
     ids: body.ids,
     edits: body.edits,
-    queryValues: body.queryValues,
+    refreshes: body.refreshes,
+    savedQuery,
     loopRows: (node) => pageLoopRows({ projectId: id, tree: node, dynamic, execute })
   });
   let overlay: ReturnType<typeof renderOverlay> | null = null;

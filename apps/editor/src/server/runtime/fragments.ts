@@ -1,7 +1,7 @@
 import { pageCss, renderNode } from "@nextomic/renderer";
 import {
   applyElementEdits,
-  applyQueryValues,
+  applyRefreshes,
   createTokenResolver,
   findNode,
   isOverlayType,
@@ -10,7 +10,8 @@ import {
   type ElementEdits,
   type ElementNode,
   type LoopRows,
-  type QueryValues,
+  type ElementQuery,
+  type RefreshRequest,
   type ProjectSettings,
   type PublishedTemplate,
   withTemplateParams
@@ -42,8 +43,8 @@ export function withClientState(
 }
 
 /**
- * Redraws elements of a page. The visitor's class, ID and attribute edits and the setting values
- * Refresh Query gave loops are applied to the tree first (both are validated, bounded input).
+ * Redraws elements of a page. The visitor's class, ID and attribute edits and the saved queries
+ * of Refresh Query actions are applied to the tree first (both are validated, bounded input).
  * `loopRows` runs the query loops inside an element (the endpoint runs them on the server).
  */
 export async function renderParts(input: {
@@ -52,13 +53,16 @@ export async function renderParts(input: {
   settings: ProjectSettings;
   ids: readonly string[];
   edits?: ElementEdits;
-  queryValues?: QueryValues;
+  /** Loops Refresh Query ran, and how to find each action's saved query. */
+  refreshes?: RefreshRequest;
+  savedQuery?: (nodeId: string, loopId: string) => ElementQuery | null;
   loopRows?: (node: ElementNode) => Promise<LoopRows>;
 }): Promise<FragmentPart[]> {
   const resolveToken = createTokenResolver(input.dynamic);
-  const tree = applyQueryValues(
+  const tree = applyRefreshes(
     applyElementEdits(input.tree, input.edits ?? {}),
-    input.queryValues ?? {}
+    input.refreshes ?? {},
+    input.savedQuery ?? (() => null)
   );
   const free = loopFreeIds(tree);
   const parts: FragmentPart[] = [];

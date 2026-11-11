@@ -11,6 +11,7 @@ import {
 } from "@heroui/react";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
+import { TipField } from "./info-tip";
 
 // The builder's text fields and buttons. Use these everywhere instead of raw HeroUI Input/Button
 // so every screen looks and reacts the same.
@@ -48,7 +49,23 @@ const COMPACT_INPUT_CLASSES: InputProps["classNames"] = {
     "h-full min-w-0 flex-1 text-small text-foreground outline-none placeholder:text-default-400 data-[focus-visible=true]:outline-none"
 };
 
-export function FormInput({ compact, ...props }: InputProps & { compact?: boolean }) {
+export function FormInput({
+  compact,
+  tip,
+  ...props
+}: InputProps & {
+  compact?: boolean;
+  /** Info tip beside the label (needs a text label). */
+  tip?: string;
+}) {
+  if (tip && typeof props.label === "string") {
+    const { label, className, ...rest } = props;
+    return (
+      <TipField label={label} tip={tip} className={className}>
+        <FormInput compact={compact} aria-label={label} {...rest} />
+      </TipField>
+    );
+  }
   return (
     <Input
       variant="bordered"
@@ -108,6 +125,8 @@ export interface SelectFieldProps {
   /** Help text under the field. */
   description?: string;
   className?: string;
+  /** Info tip beside the label. */
+  tip?: string;
 }
 
 /**
@@ -138,11 +157,28 @@ export function SelectField({
   compact = false,
   isDisabled,
   description,
-  className
+  className,
+  tip
 }: SelectFieldProps) {
   const markOpened = useIgnoreOpeningScroll();
   const known = options.some((option) => option.value === value);
   const items = known ? options : [{ value, label: value }, ...options];
+  if (tip && !hideLabel) {
+    return (
+      <TipField label={label} tip={tip} className={className}>
+        <SelectField
+          hideLabel
+          label={label}
+          options={options}
+          value={value}
+          onValueChange={onValueChange}
+          compact={compact}
+          isDisabled={isDisabled}
+          description={description}
+        />
+      </TipField>
+    );
+  }
   return (
     <Select
       aria-label={label}

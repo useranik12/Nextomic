@@ -1471,6 +1471,57 @@ test("action runtime: Add Class changes the clicked button", async ({ page }) =>
   await expect(button).toHaveClass(/is-clicked/);
 });
 
+test("Refresh Query edits the loop's own settings and the preview runs them", async ({ page }) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Container", exact: true }).click();
+  await page.getByRole("button", { name: "Query Loop" }).click();
+  await page.getByRole("switch", { name: "Enable Query Loop" }).click({ force: true });
+  const settings = page.getByRole("region", { name: "Query Loop" });
+  await settings.getByLabel("Query Type", { exact: true }).click();
+  await page.getByRole("option", { name: "Other Loops" }).click();
+  await settings.getByLabel("Source", { exact: true }).click();
+  await page.getByRole("option", { name: "Static JSON" }).click();
+  await settings
+    .getByRole("textbox", { name: "Static JSON" })
+    .fill('[{"t":"A"},{"t":"B"},{"t":"C"}]');
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByLabel("Text", { exact: true }).fill("Item {{ %jsonLoop.item.t }}");
+
+  // The flow sits on the loop container: a click on an item refreshes the loop.
+  await page.getByRole("button", { name: /^Open the query loop of .*: Other Loops/ }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 15_000
+  });
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("Refresh");
+  await modal.getByRole("button", { name: "Refresh Supabase Query" }).click();
+  await modal.getByRole("button", { name: /^Query loop/ }).click();
+  await page.locator("[role=option]", { hasText: "jsonLoop" }).click();
+
+  // The loop's settings, prefilled, each label saying what the loop uses.
+  const offset = modal.getByRole("spinbutton", { name: "Offset" });
+  await expect(offset).toHaveValue("0");
+  await expect(modal.getByRole("button", { name: /^Offset: The loop skips 0 rows/ })).toBeVisible();
+  await offset.fill("1");
+  await expect(offset).toHaveValue("1");
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  await page.goto(`/preview/${projectId}`);
+  await expect(page.getByRole("heading")).toHaveText(["Item A", "Item B", "Item C"]);
+  await page.getByRole("heading", { name: "Item A" }).click();
+  await expect(page.getByRole("heading")).toHaveText(["Item B", "Item C"]);
+});
+
 test("flow editor Test runs the unsaved trigger on the canvas and lists each step", async ({
   page
 }) => {

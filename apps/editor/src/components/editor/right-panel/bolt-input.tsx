@@ -11,6 +11,7 @@ export function BoltInput({
   value,
   onValueChange,
   serverRun,
+  tip,
   ...rest
 }: Omit<InputProps, "value" | "onValueChange" | "label" | "endContent"> & {
   label: string;
@@ -18,11 +19,14 @@ export function BoltInput({
   onValueChange: (value: string) => void;
   /** Filled and used only on the server (query settings): the raw token is offered. */
   serverRun?: boolean;
+  /** Info tip beside the label. */
+  tip?: string;
 }) {
   return (
     <FormInput
       compact
       label={label}
+      tip={tip}
       value={value}
       onValueChange={onValueChange}
       endContent={

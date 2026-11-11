@@ -2,6 +2,7 @@
 
 import { FormInput, SelectField } from "@/components/ui/controls";
 import { SwitchRow } from "@/components/ui/switch-row";
+import { useQueryFormMode } from "./query-form-mode";
 
 // Settings both query types share: Single Row or List of Rows and the list's limit. Infinite scroll
 // (lists only) shows only for types that support it (Supabase; REST waits for paged APIs).
@@ -24,11 +25,13 @@ export function RowSettings({
   value: RowSettingsValue;
   onChange: (patch: Partial<RowSettingsValue>) => void;
 }) {
+  const mode = useQueryFormMode();
   return (
     <>
       <SelectField
         compact
         label="Rows"
+        tip={mode.tip("rows")}
         options={SHAPES}
         value={value.single ? "single" : "list"}
         onValueChange={(shape) => onChange({ single: shape === "single" })}
@@ -39,6 +42,7 @@ export function RowSettings({
             compact
             type="number"
             label="Limit"
+            tip={mode.tip("limit")}
             description="How many rows to load at a time (1 to 1000)."
             min={1}
             max={1000}
@@ -51,7 +55,11 @@ export function RowSettings({
           {value.infiniteScroll === undefined ? null : (
             <SwitchRow
               label="Infinite scroll"
-              tip="Loads the next rows when 90% of the loaded rows have been viewed."
+              tip={
+                mode.tip("infiniteScroll") ??
+                "Loads the next rows when 90% of the loaded rows have been viewed."
+              }
+              disabled={mode.refresh}
               selected={value.infiniteScroll}
               onChange={(infiniteScroll) => onChange({ infiniteScroll })}
             />

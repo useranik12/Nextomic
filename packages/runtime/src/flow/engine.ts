@@ -5,6 +5,8 @@ import {
   rowColumns,
   MAX_LOOP_ITERATIONS,
   operandValue,
+  parseRefreshQuery,
+  refreshSlots,
   toText,
   type ActionBlock,
   type FlowNode,
@@ -83,6 +85,11 @@ interface Frame {
 const scopeOf = (f: Frame) => ({ ...f.env.baseScope(), ...f.env.extra, ...f.names });
 
 function resolveField(field: ParamField, value: unknown, scope: Record<string, unknown>) {
+  // A saved query is JSON holding templates: only its value slots are filled (never the JSON).
+  if (field.kind === "queryOverride") {
+    const query = parseRefreshQuery(value);
+    return query ? refreshSlots(query).map((slot) => toText(operandValue(slot, scope))) : null;
+  }
   if (isRowsField(field)) {
     const rows = Array.isArray(value) ? (value as Record<string, string>[]) : [];
     const columns = rowColumns(field);

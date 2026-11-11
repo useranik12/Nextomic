@@ -2,7 +2,9 @@
 
 import { callVariables, type RestConfig, type RestLoopQuery } from "@nextomic/schema";
 import { SelectField, type SelectOption } from "@/components/ui/controls";
+import { LabelWithTip } from "@/components/ui/info-tip";
 import { BoltInput } from "../right-panel/bolt-input";
+import { useQueryFormMode } from "./query-form-mode";
 import { RowSettings } from "./row-settings";
 
 // REST settings of a query loop: a saved API Data call, a value for each of its variables (the
@@ -34,6 +36,7 @@ export function RestQueryForm({
   config: RestConfig;
   onChange: (next: RestLoopQuery) => void;
 }) {
+  const mode = useQueryFormMode();
   const call = config.calls.find((c) => c.id === value.callId);
   const group = call?.groupId ? (config.groups.find((g) => g.id === call.groupId) ?? null) : null;
   const variables = call ? callVariables(call, group) : [];
@@ -45,18 +48,26 @@ export function RestQueryForm({
       <SelectField
         compact
         label="API call"
+        tip={mode.tip("call")}
         options={value.callId ? options : [{ value: "", label: "Choose a call" }, ...options]}
         value={value.callId}
         onValueChange={(callId) => patch({ callId, values: {}, listPath: "" })}
       />
       {call && variables.length > 0 ? (
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-2 text-tiny font-medium text-default-600">Variables</legend>
+          <legend className="mb-2 text-tiny font-medium text-default-600">
+            {mode.tip("variables") ? (
+              <LabelWithTip tip={mode.tip("variables") ?? ""}>Variables</LabelWithTip>
+            ) : (
+              "Variables"
+            )}
+          </legend>
           {variables.map((variable) => (
             <BoltInput
-              serverRun
+              serverRun={mode.serverRun}
               key={variable.name}
               label={variable.name}
+              tip={mode.tip(`var:${variable.name}`)}
               placeholder={variable.defaultValue || "Default (empty)"}
               value={value.values[variable.name] ?? ""}
               onValueChange={(text) => {
@@ -73,6 +84,7 @@ export function RestQueryForm({
         <SelectField
           compact
           label="List"
+          tip={mode.tip("list")}
           description="The JSON path that holds the rows, or the whole response."
           options={[
             { value: WHOLE, label: "Whole response" },

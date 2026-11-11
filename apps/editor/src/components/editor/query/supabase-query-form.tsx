@@ -10,9 +10,11 @@ import {
   type SupabaseStructure
 } from "@nextomic/schema";
 import { ActionButton } from "@/components/ui/controls";
+import { LabelWithTip } from "@/components/ui/info-tip";
 import { SearchSelect, type SearchSelectSection } from "@/components/ui/search-select";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { QueryFilterRow } from "./query-filter-row";
+import { useQueryFormMode } from "./query-form-mode";
 import { QueryOrderRow } from "./query-order-row";
 import { RowSettings } from "./row-settings";
 
@@ -48,6 +50,7 @@ export function SupabaseQueryForm({
   structure: SupabaseStructure | null;
   onChange: (next: SupabaseLoopQuery) => void;
 }) {
+  const mode = useQueryFormMode();
   const table = findTable(structure, value.schema, value.table);
   const columns = table?.columns ?? [];
   const patch = (next: Partial<SupabaseLoopQuery>) => onChange({ ...value, ...next });
@@ -106,10 +109,17 @@ export function SupabaseQueryForm({
         value={value.table ? `${value.schema}/${value.table}` : ""}
         onValueChange={chooseTable}
         emptyText="No table or view matches."
+        tip={mode.tip("table")}
       />
       <RowSettings value={value} onChange={patch} />
       <fieldset className="flex flex-col gap-3" disabled={!table}>
-        <legend className="mb-2 text-tiny font-medium text-default-600">Filters</legend>
+        <legend className="mb-2 text-tiny font-medium text-default-600">
+          {mode.tip("filters") ? (
+            <LabelWithTip tip={mode.tip("filters") ?? ""}>Filters</LabelWithTip>
+          ) : (
+            "Filters"
+          )}
+        </legend>
         {value.filters.length === 0 ? (
           <p className="text-tiny text-default-500">No filters: every row the anon key can read.</p>
         ) : null}
@@ -132,7 +142,13 @@ export function SupabaseQueryForm({
         </ActionButton>
       </fieldset>
       <fieldset className="flex flex-col gap-3" disabled={!table}>
-        <legend className="mb-2 text-tiny font-medium text-default-600">Order by</legend>
+        <legend className="mb-2 text-tiny font-medium text-default-600">
+          {mode.tip("order") ? (
+            <LabelWithTip tip={mode.tip("order") ?? ""}>Order by</LabelWithTip>
+          ) : (
+            "Order by"
+          )}
+        </legend>
         {value.order.map((order) => (
           <QueryOrderRow
             key={order.id}
@@ -153,7 +169,11 @@ export function SupabaseQueryForm({
       </fieldset>
       <SwitchRow
         label="Enable realtime query"
-        tip="Streams inserts, updates and deletes to the page with Supabase Realtime (anon key). Turn on Realtime for the table in Supabase."
+        tip={
+          mode.tip("realtime") ??
+          "Streams inserts, updates and deletes to the page with Supabase Realtime (anon key). Turn on Realtime for the table in Supabase."
+        }
+        disabled={mode.refresh}
         selected={value.realtime}
         onChange={(realtime) => patch({ realtime })}
       />

@@ -6,7 +6,7 @@ import type {
   ElementEdits,
   Overlay,
   OverlayTemplateType,
-  QueryValues,
+  RefreshRequest,
   SheetEntry
 } from "@nextomic/schema";
 
@@ -44,8 +44,8 @@ export interface FragmentRequest {
   state: Record<string, string>;
   /** Changes class, ID and attribute actions made: the redraw applies them first. */
   edits?: ElementEdits;
-  /** New setting values Refresh Query gave loops (by loop id): the redraw runs them with these. */
-  queryValues?: QueryValues;
+  /** Loops Refresh Query ran (by loop id): the action node and its filled values. */
+  refreshes?: RefreshRequest;
   /** Show Modal or Show Bottom Sheet: the template and its parameter values. */
   overlay?: { templateId: string; params: Record<string, string> };
 }

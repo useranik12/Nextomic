@@ -1,78 +1,137 @@
 import { z } from "zod";
+import { walkFlow, type FlowNode } from "./actions/flow";
 import { walkElements, type ElementNode } from "./element";
-import { activeQuery, querySingle, SUPABASE_OPERATOR_LABELS, type ElementQuery } from "./query";
+import { activeQuery, elementQuerySchema, type ElementQuery } from "./query";
 
-// Refresh Query (docs/dynamic-data-and-actions.md section 8): an action runs a query loop of the
-// page again, optionally with new values for the settings the loop exposes.
+// Refresh Query (docs/dynamic-data-and-actions.md section 8.7): an action runs a query loop of the
+// page again with query settings the owner edited in the flow editor (the loop's own settings,
+// prefilled). The edited query is saved on the action node. A visitor cannot change what a query
+// asks for: the browser only sends the filled values of its template slots (filter values, REST
+// variable values) and names the action node; the server takes the query itself from the saved
+// flow.
 
-/** A value Refresh Query can change on a loop: its name in the action and what the panel calls it. */
-export interface RefreshField {
-  name: string;
-  label: string;
+export const REFRESH_ACTION = "query.refresh";
+
+/** The saved query of a Refresh Query action, or null when it is empty or not a query. */
+export function parseRefreshQuery(text: unknown): ElementQuery | null {
+  if (typeof text !== "string" || text.trim() === "") return null;
+  try {
+    const parsed = elementQuerySchema.safeParse(JSON.parse(text));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+const restNames = (query: ElementQuery) => Object.keys(query.rest.values).sort();
+
+/**
+ * The templates the browser fills before asking for a refresh, in a fixed order: the Supabase
+ * filter values, or the REST variable values by variable name. Other Loops read page data on the
+ * server, so they have none.
+ */
+export function refreshSlots(query: ElementQuery): string[] {
+  if (query.source === "supabase") return query.supabase.filters.map((f) => f.value);
+  if (query.source === "rest") return restNames(query).map((name) => query.rest.values[name] ?? "");
+  return [];
 }
 
 /**
- * The settings of a loop that Refresh Query can give new values: a Supabase loop's filter values
- * (`filter:<filter id>`), a REST loop's call variables (`var:<name>`, from `restVariables`), and
- * the Limit of either when the loop gives a list. Other Loops read page data, so they have none.
+ * A copy of the query with its slots replaced by filled values (by position; extras ignored). Only
+ * a slot that holds a {{ tag }} takes a value: fixed text stays as saved, so a visitor cannot
+ * change it.
  */
-export function refreshFields(
-  query: ElementQuery,
-  restVariables: readonly string[] = []
-): RefreshField[] {
-  if (query.source === "local") return [];
-  const fields: RefreshField[] =
-    query.source === "supabase"
-      ? query.supabase.filters.map((f) => ({
-          name: `filter:${f.id}`,
-          label: `${f.column || "Filter"} (${SUPABASE_OPERATOR_LABELS[f.operator]})`
-        }))
-      : restVariables.map((name) => ({ name: `var:${name}`, label: name }));
-  if (!querySingle(query)) fields.push({ name: "limit", label: "Limit" });
-  return fields;
+export function withSlotValues(query: ElementQuery, values: readonly string[]): ElementQuery {
+  const next = structuredClone(query);
+  if (next.source === "supabase") {
+    next.supabase.filters.forEach((filter, at) => {
+      const value = values[at];
+      if (value !== undefined && filter.value.includes("{{")) filter.value = value;
+    });
+  } else if (next.source === "rest") {
+    restNames(next).forEach((name, at) => {
+      const value = values[at];
+      if (value !== undefined && next.rest.values[name]?.includes("{{"))
+        next.rest.values[name] = value;
+    });
+  }
+  return next;
 }
 
 /**
- * New setting values for loops, by loop element id then field name (see `refreshFields`). They
- * come from a browser, so a value is plain text: it never holds a {{ tag }}, which the server
- * would fill with its own data.
+ * Refreshes the browser asks for, by loop element id: the Refresh Query action node and its
+ * filled slot values (null: use the saved templates, filled on the server). Values are plain
+ * text: one holding a {{ tag }} is refused, because the server would fill it with its own data.
  */
-export const queryValuesSchema = z.record(
-  z.string().min(1).max(64),
-  z.record(
-    z.string().max(70),
-    z
-      .string()
-      .max(5000)
-      .refine((value) => !value.includes("{{"), "Values cannot hold dynamic tags.")
+export const refreshRequestSchema = z
+  .record(
+    z.string().min(1).max(64),
+    z.object({
+      node: z.string().min(1).max(64),
+      values: z
+        .array(
+          z
+            .string()
+            .max(5000)
+            .refine((value) => !value.includes("{{"), "Values cannot hold dynamic tags.")
+        )
+        .max(200)
+        .nullable()
+    })
   )
-);
-export type QueryValues = z.infer<typeof queryValuesSchema>;
+  .refine((all) => Object.keys(all).length <= 50, "Too many refreshed loops.");
+export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
 
-const MAX_LOOPS = 50;
+/** The saved query of the Refresh Query action `nodeId` for loop `loopId`, found in these flows. */
+export function findRefreshQuery(
+  flows: readonly (readonly FlowNode[])[],
+  nodeId: string,
+  loopId: string
+): ElementQuery | null {
+  let found: ElementQuery | null = null;
+  for (const nodes of flows) {
+    walkFlow(nodes, (node) => {
+      if (found || node.id !== nodeId || node.kind !== "action") return;
+      if (node.type !== REFRESH_ACTION || node.params.query !== loopId) return;
+      found = parseRefreshQuery(node.params.override);
+    });
+    if (found) break;
+  }
+  return found;
+}
 
-/** A copy of the tree whose loops use the given values; unknown loops and fields are ignored. */
-export function applyQueryValues(tree: ElementNode, values: Readonly<QueryValues>): ElementNode {
-  const count = Object.keys(values).length;
-  if (count === 0 || count > MAX_LOOPS) return tree;
+/**
+ * A copy of the tree whose refreshed loops run the action's saved query with the browser's values.
+ * The loop keeps its name, its fail fallback, realtime, infinite scroll and its type: a saved query of another type (the loop
+ * changed after the flow was saved) is ignored, so the loop runs as it is.
+ */
+export function applyRefreshes(
+  tree: ElementNode,
+  refreshes: Readonly<RefreshRequest>,
+  savedQuery: (nodeId: string, loopId: string) => ElementQuery | null
+): ElementNode {
+  if (Object.keys(refreshes).length === 0) return tree;
   const copy = structuredClone(tree);
   walkElements(copy, (node) => {
-    const given = values[node.id];
-    const query = node.query;
-    if (!given || !query || !activeQuery(node)) return;
-    for (const [name, value] of Object.entries(given)) {
-      if (name === "limit") {
-        const limit = Number(value);
-        if (!Number.isInteger(limit) || limit < 1 || limit > 1000) continue;
-        if (query.source === "supabase") query.supabase.limit = limit;
-        else if (query.source === "rest") query.rest.limit = limit;
-      } else if (name.startsWith("filter:") && query.source === "supabase") {
-        const filter = query.supabase.filters.find((f) => f.id === name.slice(7));
-        if (filter) filter.value = value;
-      } else if (name.startsWith("var:") && query.source === "rest") {
-        query.rest.values[name.slice(4)] = value;
-      }
-    }
+    const refresh = refreshes[node.id];
+    const current = activeQuery(node);
+    if (!refresh || !current) return;
+    const saved = savedQuery(refresh.node, node.id);
+    if (!saved || saved.source !== current.source) return;
+    const filled = refresh.values ? withSlotValues(saved, refresh.values) : saved;
+    // Realtime and infinite scroll are wired by the page render, so they stay the loop's own.
+    const supabase = {
+      ...filled.supabase,
+      realtime: current.supabase.realtime,
+      infiniteScroll: current.supabase.infiniteScroll
+    };
+    node.query = {
+      ...filled,
+      supabase,
+      name: current.name,
+      enabled: true,
+      fallback: current.fallback
+    };
   });
   return copy;
 }
