@@ -1,7 +1,6 @@
 "use client";
 
-import { ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
-import { Modal } from "@/components/ui/legacy-modal";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 

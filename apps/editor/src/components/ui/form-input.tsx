@@ -59,8 +59,8 @@ export interface FormInputProps {
 }
 
 const LABEL = {
-  normal: "text-sm font-medium text-body",
-  compact: "text-xs font-medium text-muted"
+  normal: "text-sm font-medium text-body in-data-[invalid=true]:text-danger",
+  compact: "text-xs font-medium text-muted in-data-[invalid=true]:text-danger"
 } as const;
 
 export function FormInput({

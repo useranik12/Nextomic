@@ -1,6 +1,7 @@
 "use client";
 
 import { ComboBox, Header, Input, Label, ListBox } from "@heroui/react";
+import { TOP_LAYER } from "./top-layer";
 import { useIgnoreOpeningScroll } from "./select-field";
 import { InfoTip } from "./info-tip";
 
@@ -57,7 +58,7 @@ export function SearchSelect({
         <Input placeholder={placeholder} />
         <ComboBox.Trigger />
       </ComboBox.InputGroup>
-      <ComboBox.Popover placement="bottom start" offset={6}>
+      <ComboBox.Popover {...TOP_LAYER} placement="bottom start" offset={6}>
         <ListBox
           renderEmptyState={() => <p className="px-2.5 py-2 text-sm text-muted">{emptyText}</p>}
         >

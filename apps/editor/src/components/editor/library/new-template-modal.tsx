@@ -1,7 +1,6 @@
 "use client";
 
-import { ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
-import { Modal } from "@/components/ui/legacy-modal";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
 import {
   TEMPLATE_TYPES,
   TEMPLATE_TYPE_LABELS,
