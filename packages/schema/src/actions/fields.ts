@@ -26,6 +26,7 @@ export const FIELD_KINDS = [
   "rows",
   "template",
   "targetParams",
+  "queryParams",
   "flow"
 ] as const;
 export type FieldKind = (typeof FIELD_KINDS)[number];
@@ -64,6 +65,8 @@ export interface ParamField {
   /** `template` only: the template type that may be picked. */
   templateType?: TemplateType;
   /**
+   * `queryParams` only: the key of the action's query loop field; one value per setting that loop
+   * exposes (`refreshFields`), stored as rows `{ name, value }`.
    * `targetParams` only: the key of the action's page or template field. One value per parameter
    * of the chosen page or template, stored as rows `{ name, value }`.
    */
@@ -78,11 +81,13 @@ export const TARGET_PARAM_COLUMNS: readonly ParamField[] = [
 
 /** The row columns of a `rows` or `targetParams` field; other fields have none. */
 export const rowColumns = (field: ParamField): readonly ParamField[] =>
-  field.kind === "targetParams" ? TARGET_PARAM_COLUMNS : (field.columns ?? []);
+  field.kind === "targetParams" || field.kind === "queryParams"
+    ? TARGET_PARAM_COLUMNS
+    : (field.columns ?? []);
 
 /** Fields stored as a list of rows. */
 export const isRowsField = (field: Pick<ParamField, "kind">): boolean =>
-  field.kind === "rows" || field.kind === "targetParams";
+  field.kind === "rows" || field.kind === "targetParams" || field.kind === "queryParams";
 
 /**
  * Fields that name a structure item (an element, a page, a variable, a saved query or call) take
@@ -104,6 +109,7 @@ export const UNBINDABLE_FIELD_REASONS: Partial<Record<FieldKind, string>> = {
   template: "Picks a template so its parameters can be checked when the flow is saved.",
   targetParams:
     "One value per parameter of the chosen page or template; each value takes dynamic data.",
+  queryParams: "One new value per setting of the chosen query loop; each value takes dynamic data.",
   flow: "A nested action flow built in the editor, not a value."
 };
 

@@ -44,18 +44,46 @@ describe("withClientState", () => {
 });
 
 describe("renderParts", () => {
-  it("renders an empty slot while the condition fails and the element once it holds", () => {
-    const closed = renderParts({ tree, dynamic: context(), settings, ids: ["panel"] });
+  it("renders an empty slot while the condition fails and the element once it holds", async () => {
+    const closed = await renderParts({ tree, dynamic: context(), settings, ids: ["panel"] });
     expect(closed[0]?.html).toBe('<template data-nx-slot="panel"></template>');
     expect(closed[0]?.html).not.toContain("Panel body");
 
     const dynamic = withClientState(context(), {}, { open: "true" });
-    const open = renderParts({ tree, dynamic, settings, ids: ["panel"] });
+    const open = await renderParts({ tree, dynamic, settings, ids: ["panel"] });
     expect(open[0]?.html).toContain("Panel body");
     expect(open[0]?.html).toContain('data-nid="panel"');
   });
 
-  it("skips unknown ids", () => {
-    expect(renderParts({ tree, dynamic: context(), settings, ids: ["nope"] })).toEqual([]);
+  it("skips unknown ids", async () => {
+    expect(await renderParts({ tree, dynamic: context(), settings, ids: ["nope"] })).toEqual([]);
+  });
+
+  it("applies class edits so a class condition on another element holds, and runs loops", async () => {
+    const gated = node({
+      id: "gated",
+      type: "text",
+      props: { text: "Menu is open" },
+      visibility: {
+        group: {
+          id: "g",
+          match: "all",
+          items: [{ id: "c", kind: "class", target: "menu", op: "has", left: "is-open" }]
+        }
+      }
+    });
+    const menu = node({ id: "menu", type: "container", classIds: ["menu"] });
+    const page = node({ id: "root", type: "section", children: [menu, gated] });
+    const closed = await renderParts({ tree: page, dynamic: context(), settings, ids: ["gated"] });
+    expect(closed[0]?.html).toBe('<template data-nx-slot="gated"></template>');
+    const open = await renderParts({
+      tree: page,
+      dynamic: context(),
+      settings,
+      ids: ["gated", "menu"],
+      edits: { menu: { addClasses: ["is-open"], removeClasses: [] } }
+    });
+    expect(open[0]?.html).toContain("Menu is open");
+    expect(open[1]?.html).toContain("is-open");
   });
 });

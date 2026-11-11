@@ -1,10 +1,16 @@
 import { pageCss, renderNode } from "@nextomic/renderer";
 import {
+  applyElementEdits,
+  applyQueryValues,
   createTokenResolver,
   findNode,
   isOverlayType,
+  loopInstances,
   type DynamicContext,
+  type ElementEdits,
   type ElementNode,
+  type LoopRows,
+  type QueryValues,
   type ProjectSettings,
   type PublishedTemplate,
   withTemplateParams
@@ -35,18 +41,32 @@ export function withClientState(
   return { ...dynamic, app: pick(dynamic.app, app), state: pick(dynamic.state, state) };
 }
 
-export function renderParts(input: {
+/**
+ * Redraws elements of a page. The visitor's class, ID and attribute edits and the setting values
+ * Refresh Query gave loops are applied to the tree first (both are validated, bounded input).
+ * `loopRows` runs the query loops inside an element (the endpoint runs them on the server).
+ */
+export async function renderParts(input: {
   tree: ElementNode;
   dynamic: DynamicContext;
   settings: ProjectSettings;
   ids: readonly string[];
-}): FragmentPart[] {
+  edits?: ElementEdits;
+  queryValues?: QueryValues;
+  loopRows?: (node: ElementNode) => Promise<LoopRows>;
+}): Promise<FragmentPart[]> {
   const resolveToken = createTokenResolver(input.dynamic);
-  const free = loopFreeIds(input.tree);
+  const tree = applyQueryValues(
+    applyElementEdits(input.tree, input.edits ?? {}),
+    input.queryValues ?? {}
+  );
+  const free = loopFreeIds(tree);
   const parts: FragmentPart[] = [];
   for (const id of input.ids.slice(0, MAX_FRAGMENT_IDS)) {
-    const node = free.has(id) ? findNode(input.tree, id)?.node : null;
+    const node = free.has(id) ? findNode(tree, id)?.node : null;
     if (!node) continue;
+    const hasLoops = loopInstances(node, {}, 1).length > 0;
+    const loopRows = hasLoops ? await input.loopRows?.(node) : undefined;
     const html = renderToStaticMarkup(
       createElement(
         Fragment,
@@ -56,8 +76,9 @@ export function renderParts(input: {
           classes: input.settings.classes,
           dynamic: input.dynamic,
           resolveToken,
-          tree: input.tree,
-          liveSlots: true
+          tree,
+          liveSlots: true,
+          ...(loopRows ? { loopRows } : {})
         })
       )
     );

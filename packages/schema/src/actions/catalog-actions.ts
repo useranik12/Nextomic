@@ -326,8 +326,12 @@ const BACKEND_ACTIONS: ActionDef[] = [
     label: "Refresh Supabase Query",
     category: "backend",
     runs: "browser",
-    description: "Runs a query loop of this page again and redraws its rows.",
-    fields: [{ key: "query", label: "Query", kind: "query", required: true }],
+    description:
+      "Runs a query loop of this page again, optionally with new values for its filters, variables or limit, and redraws its rows.",
+    fields: [
+      { key: "query", label: "Query loop", kind: "query", required: true },
+      { key: "values", label: "New values", kind: "queryParams", targetParam: "query" }
+    ],
     summary: ["query"]
   },
   {

@@ -1443,6 +1443,34 @@ test("action runtime: a bottom sheet sits at the bottom with its own overlay", a
   await expect(layer).toHaveCount(0);
 });
 
+test("action runtime: Add Class changes the clicked button", async ({ page }) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("Add Class");
+  await modal.getByRole("button", { name: "Add Class" }).click();
+  await modal.getByRole("textbox", { name: /^Class/ }).fill("is-clicked");
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  await page.goto(`/preview/${projectId}`);
+  const button = page.locator("main button, body button").first();
+  await expect(button).not.toHaveClass(/is-clicked/);
+  await button.click();
+  await expect(button).toHaveClass(/is-clicked/);
+});
+
 test("flow editor Test runs the unsaved trigger on the canvas and lists each step", async ({
   page
 }) => {

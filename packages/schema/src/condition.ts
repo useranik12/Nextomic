@@ -364,6 +364,21 @@ export function conditionTargets(group: ConditionGroup): string[] {
   );
 }
 
+/**
+ * The elements whose class, ID or attribute a group checks, as "el.<node id>" (a condition with no
+ * target checks the element `ownId` itself). Built pages redraw the element when an action edits
+ * any of these.
+ */
+export function elementConditionRefs(group: ConditionGroup, ownId: string): string[] {
+  return group.items.flatMap((item) =>
+    isConditionGroup(item)
+      ? elementConditionRefs(item, ownId)
+      : item.kind === "value"
+        ? []
+        : [`el.${item.target ?? ownId}`]
+  );
+}
+
 /** Splits list text on commas outside {{ tags }}; blank items are dropped. */
 export function splitListText(text: string): string[] {
   const items: string[] = [];
