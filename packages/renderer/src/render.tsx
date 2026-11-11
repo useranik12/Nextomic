@@ -3,6 +3,7 @@ import {
   CLASS_NAME_PATTERN,
   loopFrame,
   loopKey,
+  BOOLEAN_ATTRIBUTES,
   URL_ATTRIBUTES,
   createTokenResolver,
   expressionScope,
@@ -98,17 +99,6 @@ export interface RenderOptions {
    */
   liveSlots?: boolean;
 }
-
-const BOOLEAN_ATTRIBUTES = new Set([
-  "required",
-  "disabled",
-  "readonly",
-  "checked",
-  "selected",
-  "multiple",
-  "hidden",
-  "autofocus"
-]);
 
 /** Where an element renders: the loop rows around it and the resolver that sees them. */
 interface RenderScope {

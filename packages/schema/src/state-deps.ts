@@ -1,3 +1,4 @@
+import { elementConditionRefs, hasConditions } from "./condition";
 import { walkElements, type ElementNode } from "./element";
 
 // Which elements read which state (docs/dynamic-data-and-actions.md section 5): built pages redraw
@@ -15,7 +16,7 @@ export function stateRefs(text: string): string[] {
   return [...found];
 }
 
-/** Per element id, the state names its own props, attributes, styles, conditions and query read. */
+/** Per element id, the state names (and "el.<id>" edits of other elements) its own props, attributes, styles, conditions and query read. */
 export function stateDependencies(root: ElementNode): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   walkElements(root, (node) => {
@@ -27,6 +28,8 @@ export function stateDependencies(root: ElementNode): Record<string, string[]> {
       node.query
     ]);
     const refs = stateRefs(own);
+    if (hasConditions(node.visibility))
+      refs.push(...elementConditionRefs(node.visibility.group, node.id));
     if (refs.length > 0) out[node.id] = refs;
   });
   return out;

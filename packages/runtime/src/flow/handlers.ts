@@ -1,15 +1,19 @@
 import { toText } from "@nextomic/schema";
+import { browserActionHandlers } from "./browser-actions";
 import { FlowError, numberParam, type ActionHandler, type RunLogEntry } from "./engine";
+import { htmlPropsHandlers, type ElementEditStore } from "./html-props";
 import type { LiveState, StateUpdate } from "./live-state";
 import type { OverlayLayer, ShowOverlayOptions } from "./overlays";
 import type { OverlayPart, RuntimePayload } from "./payload";
 import type { ToastStack } from "./toasts";
 
-// Browser actions available in Phase 5b. Every other action reports "does not run yet" until its
-// phase (docs/phases.md 5c to 5e).
+// Browser actions that run today (5b and 5c). Every other action reports "does not run yet" until
+// its phase (docs/phases.md 5d and 5e).
 
 export interface Navigation {
   open: (href: string, replace: boolean) => void;
+  /** A link in a new tab (without access to this page). */
+  openTab: (href: string) => void;
   back: () => void;
   reload: () => void;
 }
@@ -17,6 +21,7 @@ export interface Navigation {
 /** The browser's own navigation, for built pages. */
 export const browserNavigation: Navigation = {
   open: (href, replace) => (replace ? window.location.replace(href) : window.location.assign(href)),
+  openTab: (href) => void window.open(href, "_blank", "noopener,noreferrer"),
   back: () => window.history.back(),
   reload: () => window.location.reload()
 };
@@ -30,6 +35,14 @@ export interface HandlerDeps {
   toasts: ToastStack;
   /** Redraws every element that reads state, and every slot. */
   rebuild: () => Promise<void>;
+  /** Changes made by class, ID and attribute actions (sent with fragment requests). */
+  edits: ElementEditStore;
+  /** Tells the runtime these elements changed ("el.<id>"), so elements that check them redraw. */
+  touched: (names: string[]) => void;
+  /** Redraws one element from the server; false when it cannot be redrawn alone. */
+  redrawElement: (id: string) => Promise<boolean>;
+  /** Runs a query loop again with new setting values; false when it cannot be redrawn alone. */
+  refreshLoop: (id: string, values: Record<string, string>) => Promise<boolean>;
   /** A page URL of this site (live or preview). */
   hrefFor: (route: string, query: URLSearchParams) => string;
   /** Leaves or reloads the page; the editor's Test only reports where it would go. */
@@ -99,6 +112,31 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
     else await showOverlay(type, p);
   };
   return {
+    ...htmlPropsHandlers({ edits: deps.edits, touched: deps.touched }),
+    ...browserActionHandlers(deps.navigation),
+    "element.rebuild": async (p) => {
+      const id = toText(p.element);
+      if (!id) throw new FlowError("no-element", "Choose the element to rebuild.");
+      if (!(await deps.redrawElement(id)))
+        throw new FlowError(
+          "not-redrawable",
+          "This element is not on the page, or it is inside a query loop (rebuild the loop instead)."
+        );
+    },
+    "query.refresh": async (p) => {
+      const id = toText(p.query);
+      if (!id) throw new FlowError("no-query", "Choose the query loop to refresh.");
+      const values: Record<string, string> = {};
+      for (const row of rowsOf(p.values)) {
+        const name = toText(row.name);
+        if (name) values[name] = toText(row.value);
+      }
+      if (!(await deps.refreshLoop(id, values)))
+        throw new FlowError(
+          "no-query",
+          "That query loop is not on this page, or it is inside another loop."
+        );
+    },
     "modal.show": (p) => showOverlay("modal", p),
     "modal.close": (p) => closeOverlay("modal", p),
     "modal.toggle": (p) => toggleOverlay("modal", p),

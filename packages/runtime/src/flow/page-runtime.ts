@@ -1,6 +1,7 @@
 import type { FlowNode, Params, TriggerFlow } from "@nextomic/schema";
 import { restorePersisted, type PersistEnv } from "../persisted-state";
 import { outermost, swapParts } from "./dom";
+import { ElementEditStore } from "./html-props";
 import { FlowError, runFlow, type ActionHandler, type RunLogEntry } from "./engine";
 import { browserNavigation, starterHandlers } from "./handlers";
 import { LiveState } from "./live-state";
@@ -74,15 +75,26 @@ export function startActionRuntime(
     payload.flows[nodeId]?.find((f) => f.trigger === trigger && !f.disabled && f.nodes.length > 0);
 
   // --- state and redraw -------------------------------------------------------------------
+  const edits = new ElementEditStore();
+  /** The values Refresh Query set, per loop; later redraws of the loop keep them. */
+  const queryValues: Record<string, Record<string, string>> = {};
   let pending = new Set<string>();
   let scheduled = false;
-  const redraw = async (ids: string[]) => {
+  /** Redraws the elements from the server; returns the ids that were redrawn. */
+  const redraw = async (ids: string[]): Promise<string[]> => {
     const wanted = outermost(ids, document);
-    if (wanted.length === 0) return;
+    if (wanted.length === 0) return [];
     const { app, state } = live.context();
-    const response = await options.fetchFragments({ ids: wanted, app, state });
+    const response = await options.fetchFragments({
+      ids: wanted,
+      app,
+      state,
+      edits: edits.snapshot(),
+      queryValues
+    });
     const inserted = swapParts(response.parts);
     for (const el of inserted) bindInserted(el);
+    return response.parts.map((part) => part.id);
   };
   const onChange = (names: string[]) => {
     for (const [id, refs] of Object.entries(payload.deps)) {
@@ -110,11 +122,18 @@ export function startActionRuntime(
     log: options.log,
     hrefFor: options.hrefFor,
     navigation: browserNavigation,
-    rebuild: () => {
+    edits,
+    touched: (names) => onChange(names),
+    redrawElement: async (id) => (await redraw([id])).includes(id),
+    refreshLoop: async (id, values) => {
+      queryValues[id] = { ...queryValues[id], ...values };
+      return (await redraw([id])).includes(id);
+    },
+    rebuild: async () => {
       const slots = [...document.querySelectorAll("template[data-nx-slot]")].map(
         (t) => t.getAttribute("data-nx-slot") ?? ""
       );
-      return redraw([...Object.keys(payload.deps), ...slots]);
+      await redraw([...Object.keys(payload.deps), ...slots]);
     },
     overlays,
     toasts,

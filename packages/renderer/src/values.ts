@@ -21,11 +21,4 @@ export function resolveBoolean(value: PropValue | undefined): boolean {
   return value === true || value === "true";
 }
 
-const SAFE_URL = /^(https?:|mailto:|tel:|\/|#|\.\/|\.\.\/)/i;
-
-/** User supplied URLs: only http(s), mailto, tel and relative paths. Everything else becomes "". */
-export function safeUrl(raw: string): string {
-  const url = raw.trim();
-  if (url === "") return "";
-  return SAFE_URL.test(url) || !/^[a-z][a-z0-9+.-]*:/i.test(url) ? url : "";
-}
+export { safeUrl } from "@nextomic/schema";

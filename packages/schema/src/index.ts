@@ -35,6 +35,8 @@ export * from "./taxonomy";
 export * from "./rules";
 export * from "./template";
 export * from "./state-deps";
+export * from "./element-edits";
+export * from "./query-refresh";
 export * from "./compose";
 export * from "./fonts";
 export * from "./font-support";

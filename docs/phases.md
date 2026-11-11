@@ -146,7 +146,7 @@ Docs: `dynamic-data-and-actions.md` (section 8), `ui-reference.md` (4.8)
 - [x] Action flow editor modal replicating the FlutterFlow structure with Nextomic styling (triggers list, flow canvas, Define Action panel, error badge) (5a, 2026-11-10)
 - [ ] `packages/runtime` client runtime (tree-shakable)
 - [ ] Live state (moved from Phase 4): client state store, live re-checks of conditions (browser state, classes/IDs/attributes changed by actions), loop re-render, browser operands for theme and template rules
-- [ ] Core actions: queries, state, navigation, element manipulation, class/ID actions, wait, conditions, parallel
+- [x] Core actions: queries, state, navigation, element manipulation, class/ID actions, wait, conditions, parallel _5c built 2026-11-11: HTML/CSS Properties, Rebuild Element, Refresh Query (loop select + the loop's own fields), Scroll To, links, maps, share, clipboard, sound, announce, UI mode, GSAP start/stop; see `dynamic-data-and-actions.md` 8.7. Set Theme waits for per-theme stylesheets on the page._
 - [ ] Form actions, media actions, animation actions, color mode actions, device actions (vibrate presets, share, pick datetime, toast)
 - [ ] Server actions: send email, webhook, bucket upload, custom function (generated server handlers; secrets in env only)
 - [ ] Tests: flows, success/error paths, no secret leakage

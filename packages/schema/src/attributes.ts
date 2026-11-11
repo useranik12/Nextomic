@@ -69,3 +69,24 @@ export function isAllowedAttribute(name: string): boolean {
   if (name.startsWith("on")) return false;
   return /^(aria|data)-[a-z0-9-]+$/.test(name) || GENERAL.has(name);
 }
+
+const SAFE_URL = /^(https?:|mailto:|tel:|\/|#|\.\/|\.\.\/)/i;
+
+/** User supplied URLs: only http(s), mailto, tel and relative paths. Everything else becomes "". */
+export function safeUrl(raw: string): string {
+  const url = raw.trim();
+  if (url === "") return "";
+  return SAFE_URL.test(url) || !/^[a-z][a-z0-9+.-]*:/i.test(url) ? url : "";
+}
+
+/** Switch attributes: on when empty or "true", off when "false". */
+export const BOOLEAN_ATTRIBUTES: ReadonlySet<string> = new Set([
+  "required",
+  "disabled",
+  "readonly",
+  "checked",
+  "selected",
+  "multiple",
+  "hidden",
+  "autofocus"
+]);

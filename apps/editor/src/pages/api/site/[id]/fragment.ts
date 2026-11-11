@@ -1,9 +1,22 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { overlayRanks, resolveOverlay, type NextomicUser } from "@nextomic/schema";
+import {
+  elementEditsSchema,
+  overlayRanks,
+  queryValuesSchema,
+  resolveOverlay,
+  type NextomicUser
+} from "@nextomic/schema";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { nextomicUserOf } from "@/server/nextomic-user";
+import {
+  editorExecutor,
+  pageLoopRows,
+  projectWorkspaceId,
+  siteExecutor,
+  type Executor
+} from "@/server/queries/run-query";
 import { createRateLimiter } from "@/server/rate-limit";
 import {
   MAX_FRAGMENT_IDS,
@@ -32,6 +45,8 @@ const bodySchema = z.object({
   ids: z.array(z.string().min(1).max(64)).max(MAX_FRAGMENT_IDS).default([]),
   app: values,
   state: values,
+  edits: elementEditsSchema.default({}),
+  queryValues: queryValuesSchema.default({}),
   overlay: z
     .object({
       templateId: z.string().min(1).max(64),
@@ -105,7 +120,28 @@ export default async function handler(request: NextApiRequest, response: NextApi
   if (!laid) return fail(404, "Not found.");
 
   const dynamic = withClientState(laid.dynamic, body.app, body.state);
-  const parts = renderParts({ tree: laid.tree, dynamic, settings: laid.settings, ids: body.ids });
+  // Loops inside a redrawn element run here, with the connector of this mode: the site's own in
+  // its workspace, or the signed-in member's in the preview.
+  let executor: Executor | null = null;
+  const execute: Executor = async (row, request) => {
+    if (!executor) {
+      const workspaceId = await projectWorkspaceId(id);
+      if (!workspaceId) throw new Error("Project not found.");
+      executor = member
+        ? editorExecutor({ userId: member.id, projectId: id, workspaceId })
+        : siteExecutor(id, workspaceId);
+    }
+    return executor(row, request);
+  };
+  const parts = await renderParts({
+    tree: laid.tree,
+    dynamic,
+    settings: laid.settings,
+    ids: body.ids,
+    edits: body.edits,
+    queryValues: body.queryValues,
+    loopRows: (node) => pageLoopRows({ projectId: id, tree: node, dynamic, execute })
+  });
   let overlay: ReturnType<typeof renderOverlay> | null = null;
   if (body.overlay) {
     const templates =

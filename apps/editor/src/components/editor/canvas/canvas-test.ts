@@ -4,6 +4,7 @@ import {
   FlowError,
   LiveState,
   runFlow,
+  ElementEditStore,
   createOverlayLayer,
   createToastStack,
   type OverlayPart,
@@ -133,11 +134,27 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
       hrefFor: (route, query) => (query.size > 0 ? `${route}?${query.toString()}` : route),
       navigation: {
         open: (href) => note("Navigation", `Would open ${href}; Test stays in the editor.`),
+        openTab: (href) => note("Navigation", `Would open ${href} in a new tab.`),
         back: () => note("Navigation", "Would go back; Test stays in the editor."),
         reload: () => note("Navigation", "Would reload the page; Test stays in the editor.")
       },
       // The canvas re-renders from state on its own.
       rebuild: async () => {},
+      // Class, ID and attribute changes show on the canvas element itself; conditions and loops
+      // are not re-checked in Test (the server redraws them on the preview and live site).
+      edits: new ElementEditStore(),
+      touched: () => {},
+      redrawElement: async (id) => {
+        note("Rebuild element", `Would redraw ${id} from the server on the preview and live site.`);
+        return true;
+      },
+      refreshLoop: async (id, values) => {
+        note(
+          "Refresh query",
+          `Would run loop ${id} again with ${JSON.stringify(values)} on the preview and live site.`
+        );
+        return true;
+      },
       overlays,
       toasts,
       renderOverlay: async (templateId, values) => {
