@@ -1,18 +1,20 @@
 "use client";
 
 import { addCollection, Icon as IconifyIcon, type IconifyIconProps } from "@iconify/react";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import bundledIcons from "./bundled-icons.json";
 import { ICON_IDS } from "./registry";
 
-let collectionLoaded = false;
-function ensureCollectionLoaded() {
-  if (collectionLoaded) return;
+// The bundled sets load once in the browser. The server renders no icon; during hydration every
+// icon reads the server value (not ready), so the HTML always matches, then icons appear in the
+// pass right after hydration. Mounts after hydration render the icon at once.
+if (typeof window !== "undefined") {
   for (const [prefix, iconSet] of Object.entries(bundledIcons)) {
     addCollection(iconSet as Parameters<typeof addCollection>[0], prefix);
   }
-  collectionLoaded = true;
 }
+
+const neverChanges = () => () => undefined;
 
 export interface IconProps extends Omit<IconifyIconProps, "icon"> {
   /** "<set>:<name>", must be registered in src/lib/icons/registry.ts */
@@ -23,12 +25,11 @@ export interface IconProps extends Omit<IconifyIconProps, "icon"> {
 }
 
 export function Icon({ name, label, ...props }: IconProps) {
-  const [ready, setReady] = useState(collectionLoaded);
-
-  useEffect(() => {
-    ensureCollectionLoaded();
-    setReady(true);
-  }, []);
+  const ready = useSyncExternalStore(
+    neverChanges,
+    () => true,
+    () => false
+  );
 
   if (process.env.NODE_ENV !== "production" && !ICON_IDS.includes(name)) {
     throw new Error(

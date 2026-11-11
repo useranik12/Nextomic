@@ -1,6 +1,7 @@
 "use client";
 
 import { Tooltip } from "@heroui/react";
+import { TOP_LAYER } from "./top-layer";
 import { Icon } from "@/lib/icons/Icon";
 
 /**
@@ -25,7 +26,11 @@ export function InfoTip({
       >
         <Icon name="ph:info" width={14} height={14} />
       </Tooltip.Trigger>
-      <Tooltip.Content placement={placement} className="z-[1000] max-w-64 text-xs leading-snug">
+      <Tooltip.Content
+        {...TOP_LAYER}
+        placement={placement}
+        className="z-[1000] max-w-64 text-xs leading-snug"
+      >
         {text}
       </Tooltip.Content>
     </Tooltip>

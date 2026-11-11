@@ -1,7 +1,6 @@
 "use client";
 
-import { ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
-import { Modal } from "@/components/ui/legacy-modal";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
 import { templateNameSchema } from "@nextomic/schema";
 import { ActionButton } from "@/components/ui/controls";
 import { BoltInput } from "./right-panel/bolt-input";

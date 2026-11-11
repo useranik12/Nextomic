@@ -47,7 +47,8 @@ function vars(mode: Mode): Record<string, string> {
     "--segment-foreground": m.layout.foreground,
     // Fields: transparent with a 1px border; hover lifts the border, focus turns it blue.
     "--field-background": "transparent",
-    "--field-foreground": m.layout.foreground,
+    // Typed and chosen values use the body text role, a step below headings (docs/ui-reference.md).
+    "--field-foreground": d["600"],
     "--field-placeholder": d["400"],
     "--field-border": d["200"],
     "--field-border-hover": d["400"],

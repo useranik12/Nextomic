@@ -38,9 +38,16 @@ test("profile image, first letter fallback and the account menu", async ({ page 
   // A member does not see the email settings.
   await expect(page.getByRole("heading", { name: "Email", exact: true })).toHaveCount(0);
 
-  await page
-    .getByLabel("Profile image file")
-    .setInputFiles({ name: "a.svg", mimeType: "image/png", buffer: Buffer.from("<svg/>") });
+  // Under load the file can be set before the page hydrates and the change is lost; pick it again
+  // until the form turns dirty (Save shows).
+  await expect(async () => {
+    await page
+      .getByLabel("Profile image file")
+      .setInputFiles({ name: "a.svg", mimeType: "image/png", buffer: Buffer.from("<svg/>") });
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toBeVisible({
+      timeout: 1_000
+    });
+  }).toPass({ timeout: 15_000 });
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Use a PNG, JPG, WebP or GIF image.")).toBeVisible();
 

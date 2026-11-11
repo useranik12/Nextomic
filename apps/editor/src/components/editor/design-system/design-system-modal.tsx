@@ -1,7 +1,6 @@
 "use client";
 
-import { ModalContent } from "@heroui-v2/react";
-import { Modal } from "@/components/ui/legacy-modal";
+import { Modal, ModalContent } from "@heroui-v2/react";
 import { useCallback, useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";

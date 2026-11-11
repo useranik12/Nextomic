@@ -1,8 +1,7 @@
 "use client";
 
 import type { Project } from "@nextomic/schema";
-import { ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
-import { Modal } from "@/components/ui/legacy-modal";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
 import { ActionButton, FormInput } from "@/components/ui/controls";
 import { useEffect, useState } from "react";
 

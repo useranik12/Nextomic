@@ -1,7 +1,6 @@
 "use client";
 
-import { ModalBody, ModalContent, ModalHeader } from "@heroui-v2/react";
-import { Modal } from "@/components/ui/legacy-modal";
+import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui-v2/react";
 import { getElementDefinition } from "@nextomic/renderer";
 import { loopAncestors, tokenTags, type TransformChain } from "@nextomic/schema";
 import { useEffect, useMemo, useState } from "react";
