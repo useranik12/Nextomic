@@ -81,12 +81,15 @@ export function DetailsPanel({
   const replaceInput = useRef<HTMLInputElement>(null);
   const flow = useTrashFlow(model, onClose);
 
+  // The draft restarts only when the saved details really change. A list refresh hands over a new
+  // object with the same content, and must not wipe what is being typed.
+  const saved = JSON.stringify(draftOf(asset));
   useEffect(() => {
-    setDraft(draftOf(asset));
+    setDraft(JSON.parse(saved) as Draft);
     setError(null);
-  }, [asset]);
+  }, [saved]);
 
-  const dirty = JSON.stringify(draft) !== JSON.stringify(draftOf(asset));
+  const dirty = JSON.stringify(draft) !== saved;
   const set = (p: Partial<Draft>) => {
     setDraft((d) => ({ ...d, ...p }));
     setError(null);

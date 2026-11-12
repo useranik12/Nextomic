@@ -63,6 +63,13 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
 
   return (
     <SettingRow label={control.label} htmlFor={id}>
+      {node.type === "image" && control.key === "alt" && value.trim() === "" ? (
+        <p role="note" className="mb-1 flex items-start gap-1.5 text-xs text-warning">
+          <Icon name="ph:warning" width={14} height={14} className="mt-0.5 shrink-0" />
+          Missing alt text. Describe the image for screen readers, or leave it empty only if it is
+          decoration.
+        </p>
+      ) : null}
       <div className="relative">
         {control.kind === "textarea" ? (
           <AutoTextarea

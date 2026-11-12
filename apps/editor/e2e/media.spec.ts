@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import sharp from "sharp";
 
 // The Media library: upload, serve headers, SVG sanitizing, alt-text edit with its filter count,
 // folders, move, trash and restore. Files are tiny and made here.
@@ -126,12 +127,14 @@ test("an Image element picks its file from Media and the library shows where it 
   await page.getByRole("button", { name: "Navigator" }).click();
   await page.getByRole("button", { name: "Add element" }).click();
   await page.getByRole("button", { name: "Image", exact: true }).click();
+  await expect(page.getByRole("note").filter({ hasText: "Missing alt text" })).toBeVisible();
   await page.getByRole("button", { name: "Choose Source URL from Media" }).click();
   await page.getByRole("button", { name: "Choose Hero" }).click();
   await page.getByRole("button", { name: "Use file" }).click();
   await expect(page.getByPlaceholder("https://...")).toHaveValue(
     /^\/media\/[^/]+\/[a-f0-9]{24}\/hero\.png$/
   );
+  await expect(page.getByRole("note").filter({ hasText: "Missing alt text" })).toHaveCount(0);
   // The file's alt text came along.
   await expect(page.getByLabel("Alt text", { exact: true })).toHaveValue("A hero image");
   await page.keyboard.press("Control+s");
@@ -145,4 +148,53 @@ test("an Image element picks its file from Media and the library shows where it 
   // Trashing a file in use asks first.
   await page.getByRole("button", { name: "Move to trash" }).click();
   await expect(page.getByRole("dialog")).toContainText("used on your site");
+});
+
+test("images are served resized, big uploads work and the cap holds", async ({ page }) => {
+  await openMedia(page);
+  const big = await sharp({
+    create: { width: 2000, height: 1000, channels: 3, background: "#336699" }
+  })
+    .png()
+    .toBuffer();
+  await upload(page, "wide.png", "image/png", big);
+  await page.getByRole("button", { name: "Open wide" }).click();
+  const path = (await page.locator("dd", { hasText: /^\/media\// }).textContent()) ?? "";
+
+  const small = await page.request.get(`${path}?w=640`);
+  expect(small.headers()["content-type"]).toBe("image/webp");
+  const meta = await sharp(await small.body()).metadata();
+  expect([meta.format, meta.width, meta.height]).toEqual(["webp", 640, 320]);
+  const again = await page.request.get(`${path}?w=640`, {
+    headers: { "if-none-match": small.headers().etag ?? "" }
+  });
+  expect(again.status()).toBe(304);
+
+  // Not on the list, not smaller than the image, or no width asked: the original.
+  for (const query of ["?w=641", "?w=2000", ""]) {
+    const res = await page.request.get(`${path}${query}`);
+    expect(res.headers()["content-type"]).toBe("image/png");
+  }
+
+  // The Image element's output carries the srcset.
+  const projectId = page.url().split("/editor/")[1] ?? "";
+  expect(projectId).not.toBe("");
+
+  // A 45 MB video goes through the route; above the cap the route refuses.
+  const video = Buffer.alloc(45 * 1024 * 1024);
+  video.set([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d]);
+  const ok = await page.request.post(`/api/projects/${projectId}/media`, {
+    headers: { "x-file-name": "clip.mp4" },
+    data: video,
+    timeout: 120_000
+  });
+  expect(ok.status()).toBe(200);
+  const asset = ((await ok.json()) as { asset: { kind: string; size: number } }).asset;
+  expect([asset.kind, asset.size]).toEqual(["video", video.length]);
+  const tooBig = await page.request.post(`/api/projects/${projectId}/media`, {
+    headers: { "x-file-name": "huge.mp4" },
+    data: Buffer.alloc(201 * 1024 * 1024),
+    timeout: 120_000
+  });
+  expect(tooBig.status()).toBe(413);
 });
