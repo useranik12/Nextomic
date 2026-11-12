@@ -42,7 +42,11 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
     <Dropdown placement="bottom">
       <DropdownTrigger>
         {variant === "large" ? (
-          <ActionButton size="sm" endContent={<Icon name="ph:caret-down" />}>
+          <ActionButton
+            size="sm"
+            className="flex w-56 items-center justify-center gap-2"
+            endContent={<Icon name="ph:caret-down" />}
+          >
             Choose a trigger
           </ActionButton>
         ) : (

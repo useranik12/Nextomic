@@ -153,6 +153,7 @@ export function FlowCanvas({ errors }: { errors: ReadonlySet<string> }) {
             <ActionButton
               key={kind}
               size="sm"
+              className="w-full justify-center"
               tone={kind === "action" ? "primary" : "ghost"}
               isDisabled={kind === "block" && !hasBlocks}
               onPress={() => addNode(TOP_SLOT, 0, kind)}
