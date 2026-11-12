@@ -2,7 +2,7 @@ import { fileAccepted, MAX_UPLOAD_BYTES } from "@nextomic/schema";
 
 // Files a visitor picked with Pick File(s). The browser keeps the File objects here and hands the
 // flow only a small description (`PickedFile`), so a file never travels through state, tags or
-// the page's HTML. Upload File, Put Data To Presigned S3 Storage and Clear Uploaded File take that
+// the page's HTML. Upload File, Put Data To Presigned S3 Storage and Clear Files take that
 // description back and find the file by its id.
 
 export interface PickedFile {

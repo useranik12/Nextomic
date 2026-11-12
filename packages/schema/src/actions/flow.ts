@@ -266,3 +266,46 @@ export function flowDepth(nodes: readonly FlowNode[]): number {
   });
   return depth;
 }
+
+/** A name a node can read: an earlier node's output, a loop's item, or a catch's error. */
+export interface FlowName {
+  name: string;
+  kind: "output" | "loopItem" | "error";
+  /** The action type, or "block", for an output. */
+  type?: string;
+  /** The node's own name, when set. */
+  nodeName?: string;
+}
+
+/**
+ * The names the node `nodeId` can read, in the order they are set: outputs of earlier nodes in its
+ * list and in the lists around it, the item of each loop around it, and the error inside a catch.
+ * Names set inside a nested list stay in it, as in the engine. Null when the node is not in `nodes`.
+ */
+export function flowNamesBefore(
+  nodes: readonly FlowNode[],
+  nodeId: string,
+  inherited: readonly FlowName[] = []
+): FlowName[] | null {
+  const names = [...inherited];
+  for (const node of nodes) {
+    if (node.id === nodeId) return names;
+    for (const list of childLists(node)) {
+      const extra: FlowName[] = [];
+      if (node.kind === "loop" && node.mode === "forEach" && node.itemName && list === node.nodes)
+        extra.push({ name: node.itemName, kind: "loopItem", nodeName: node.name });
+      if (node.kind === "tryCatch" && node.errorName && list === node.catch)
+        extra.push({ name: node.errorName, kind: "error", nodeName: node.name });
+      const found = flowNamesBefore(list, nodeId, [...names, ...extra]);
+      if (found) return found;
+    }
+    if ((node.kind === "action" || node.kind === "block") && node.outputName)
+      names.push({
+        name: node.outputName,
+        kind: "output",
+        type: node.kind === "action" ? node.type : "block",
+        nodeName: node.name
+      });
+  }
+  return null;
+}

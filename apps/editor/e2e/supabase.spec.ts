@@ -149,8 +149,9 @@ test("a Container runs a Supabase query loop set in the Query Loop group", async
   await page.getByRole("button", { name: "Dynamic value for Text" }).click();
   const tags = page.getByRole("dialog");
   const loopGroup = "%posts · Container (Supabase Query)";
-  await expect(tags.getByRole("button", { name: loopGroup })).toBeVisible();
-  const loopTags = tags.getByRole("region", { name: loopGroup });
+  await tags.getByRole("button", { name: "Added Queries" }).click();
+  await expect(tags.getByText(loopGroup)).toBeVisible();
+  const loopTags = tags.locator("details", { hasText: loopGroup }).last();
   await expect(loopTags.getByText("{{ %posts.item }}", { exact: true })).toBeVisible();
   await expect(loopTags.getByText("{{ %posts.index }}", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");

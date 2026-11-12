@@ -9,7 +9,7 @@ import {
   type Params,
   type ParamValue
 } from "@nextomic/schema";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActionButton,
   MultiSelectField,
@@ -41,6 +41,8 @@ function Switchable({
   children: React.ReactNode;
 }) {
   const [asText, setAsText] = useState(value.includes("{{"));
+  // The fixed value to come back to when the bolt is turned off again.
+  const fixed = useRef(value.includes("{{") ? (field.default ?? "") : value);
   if (asText) {
     return (
       <div className="flex items-end gap-1">
@@ -55,7 +57,7 @@ function Switchable({
           aria-label="Use a fixed value"
           onClick={() => {
             setAsText(false);
-            onChange(field.default ?? "");
+            onChange(fixed.current);
           }}
           className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-default"
         >
@@ -70,7 +72,10 @@ function Switchable({
       <button
         type="button"
         aria-label={`Use dynamic data for ${field.label}`}
-        onClick={() => setAsText(true)}
+        onClick={() => {
+          fixed.current = value;
+          setAsText(true);
+        }}
         className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-default hover:text-warning"
       >
         <Icon name="ph:lightning" />

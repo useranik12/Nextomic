@@ -361,17 +361,6 @@ const BACKEND_ACTIONS: ActionDef[] = [
     summary: ["path"]
   },
   {
-    type: "file.clearLocal",
-    label: "Clear Uploaded File",
-    category: "backend",
-    subcategory: "Supabase File",
-    runs: "browser",
-    description: "Forgets files kept in the browser by Pick File(s).",
-    fields: [
-      text("files", "Files", { required: true, help: "The output of a Pick File(s) action." })
-    ]
-  },
-  {
     type: "file.delete",
     label: "Delete File",
     category: "backend",
@@ -1014,7 +1003,17 @@ const UTILITY_ACTIONS: ActionDef[] = [
       { ...BUCKET, showIf: { key: "mode", in: ["supabase"] } },
       text("path", "Folder path", { showIf: { key: "mode", in: ["supabase"] } })
     ],
-    { output: { type: "json", list: { param: "multiple", when: "true" } } }
+    {
+      subcategory: "File Actions",
+      output: { type: "json", list: { param: "multiple", when: "true" } }
+    }
+  ),
+  util(
+    "file.clearLocal",
+    "Clear Files",
+    "Forgets files kept in the browser by Pick File(s).",
+    [text("files", "Files", { required: true, help: "The output of a Pick File(s) action." })],
+    { subcategory: "File Actions" }
   ),
   util(
     "s3.put",
@@ -1035,7 +1034,7 @@ const UTILITY_ACTIONS: ActionDef[] = [
         ])
       }
     ],
-    { output: { type: "json" } }
+    { subcategory: "File Actions", output: { type: "json" } }
   ),
   ...later("utilities", undefined, "Custom code comes in Phase 10.", [
     ["customCode", "Execute Custom Code"]

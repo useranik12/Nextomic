@@ -157,6 +157,10 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
         );
         return null;
       },
+      chooseFiles: async () => {
+        note("Pick File(s)", "Test cannot open the file chooser. Use Preview to pick files.");
+        return [];
+      },
       uploadFile: async (nodeId, _values, file) => {
         note(
           "Server action",

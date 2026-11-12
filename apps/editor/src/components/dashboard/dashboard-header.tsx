@@ -18,7 +18,10 @@ export interface DashboardHeaderProps {
 }
 
 const ICON_TRIGGER =
-  buttonVariants({ variant: "ghost", size: "sm", isIconOnly: true }) + " h-9 w-9 rounded-full";
+  buttonVariants({ variant: "ghost", size: "sm", isIconOnly: true }) +
+  " flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-0";
+
+const ICON = "size-5!";
 
 const SHORTCUTS = [
   { key: "new-project", label: "New Project", href: "/projects?new=1" },
@@ -60,22 +63,22 @@ export function DashboardHeader({ userName, userEmail, userImage }: DashboardHea
         <h1 className="text-lg font-semibold text-foreground">Welcome {firstName}</h1>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <Hint content="Search projects">
           <ActionButton
             tone="ghost"
             isIconOnly
             href="/projects"
             aria-label="Search projects"
-            className="rounded-full"
+            className="flex shrink-0 items-center justify-center rounded-full"
           >
-            <Icon name="ph:magnifying-glass" label="Search" />
+            <Icon name="ph:magnifying-glass" label="Search" className={ICON} />
           </ActionButton>
         </Hint>
 
         <Dropdown>
           <Dropdown.Trigger aria-label="Shortcuts" className={ICON_TRIGGER}>
-            <Icon name="ph:squares-four" label="Shortcuts" />
+            <Icon name="ph:squares-four" label="Shortcuts" className={ICON} />
           </Dropdown.Trigger>
           <Dropdown.Popover placement="bottom end" className="min-w-44">
             <Dropdown.Menu aria-label="Shortcuts" onAction={(key) => router.push(String(key))}>
@@ -94,9 +97,9 @@ export function DashboardHeader({ userName, userEmail, userImage }: DashboardHea
             isIconOnly
             href="/settings"
             aria-label="Settings"
-            className="rounded-full"
+            className="flex shrink-0 items-center justify-center rounded-full"
           >
-            <Icon name="ph:gear-six" label="Settings" />
+            <Icon name="ph:gear-six" label="Settings" className={ICON} />
           </ActionButton>
         </Hint>
 

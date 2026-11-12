@@ -11,6 +11,8 @@ export interface DynamicTag {
 export interface DynamicGroup {
   id: string;
   label: string;
+  /** Groups with the same section sit together in one collapsible block. */
+  section?: { id: string; label: string };
   tags: DynamicTag[];
 }
 
