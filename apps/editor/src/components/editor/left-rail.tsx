@@ -54,7 +54,7 @@ export const RAIL_ITEMS: { id: RailItemId; label: string; ready: boolean }[] = [
   { id: "pages-templates", label: "Pages & Templates", ready: true },
   { id: "data-types", label: "Data Types", ready: true },
   { id: "state", label: "State Management", ready: true },
-  { id: "media", label: "Media", ready: false },
+  { id: "media", label: "Media", ready: true },
   { id: "supabase", label: "Supabase", ready: true },
   { id: "api", label: "API Data", ready: true },
   { id: "design-system", label: "Design System", ready: true },

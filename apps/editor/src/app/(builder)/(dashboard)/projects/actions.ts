@@ -10,6 +10,7 @@ import {
   requireWorkspaceMembership
 } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
+import { deleteProjectMediaFiles } from "@/server/media";
 
 interface ActionResult<T> {
   data: T | null;
@@ -72,6 +73,7 @@ export async function deleteProjectAction(projectId: string): Promise<ActionResu
     const sessionData = await requireSession();
     await requireProjectAccess(sessionData.user.id, projectId);
     const db = getDb();
+    await deleteProjectMediaFiles(projectId);
     await db.delete(projects).where(eq(projects.id, projectId));
     revalidatePath("/projects");
     return { data: true, error: null };

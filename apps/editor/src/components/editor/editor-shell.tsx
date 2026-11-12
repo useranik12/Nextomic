@@ -31,6 +31,7 @@ import { VersionHistory } from "./version-history";
 import { StateManager } from "./state/state-manager";
 import { DataTypesManager } from "./data-types/data-types-manager";
 import { useNextomicUser } from "./nextomic-user-store";
+import { MediaPage } from "./media/media-page";
 import { SupabasePage } from "./supabase/supabase-page";
 import { ApiDataPage } from "./api-data/api-data-page";
 import { useSupabaseTables } from "./supabase/supabase-store";
@@ -189,6 +190,7 @@ export function EditorShell({
     rail === "state" ||
     rail === "data-types" ||
     rail === "supabase" ||
+    rail === "media" ||
     rail === "api";
   const railLabel = RAIL_ITEMS.find((i) => i.id === rail)?.label ?? "App Settings";
 
@@ -265,6 +267,10 @@ export function EditorShell({
           ) : rail === "data-types" ? (
             <main className="min-w-0 flex-1">
               <DataTypesManager />
+            </main>
+          ) : rail === "media" ? (
+            <main className="min-w-0 flex-1">
+              <MediaPage projectId={projectId} />
             </main>
           ) : rail === "supabase" ? (
             <main className="min-w-0 flex-1">
