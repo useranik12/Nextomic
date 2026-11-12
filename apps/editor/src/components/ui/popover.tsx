@@ -1,9 +1,8 @@
 "use client";
 
 import { Popover as V3Popover } from "@heroui/react";
-import { mergeProps } from "react-aria";
+import { cloneTrigger } from "./clone-trigger";
 import {
-  cloneElement,
   createContext,
   useContext,
   useEffect,
@@ -84,11 +83,7 @@ export function Popover({
 }
 
 export function PopoverTrigger({ children }: { children: ReactElement<Record<string, unknown>> }) {
-  return (
-    <V3Popover.Trigger
-      render={(props) => cloneElement(children, mergeProps(children.props, props))}
-    />
-  );
+  return <V3Popover.Trigger render={(props) => cloneTrigger(children, props)} />;
 }
 
 export function PopoverContent({
@@ -100,9 +95,23 @@ export function PopoverContent({
   className?: string;
 }) {
   const { placement, offset } = useContext(PlacementContext);
+  const dialog = useRef<HTMLElement>(null);
+  // An `autoFocus` input focuses while the panel mounts, before the panel is part of the modal's
+  // focus scope; inside a modal the scope then pulls focus back to the trigger and the panel
+  // closes. A field marked `data-popover-autofocus` is focused one frame later instead.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const el = dialog.current?.querySelector<HTMLElement>("[data-popover-autofocus]");
+      if (el && !dialog.current?.contains(document.activeElement))
+        el.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
   return (
     <V3Popover.Content placement={placement as "bottom end"} offset={offset} className="rounded-xl">
-      <V3Popover.Dialog className={className ?? "p-2"}>{children}</V3Popover.Dialog>
+      <V3Popover.Dialog ref={dialog} className={className ?? "p-2"}>
+        {children}
+      </V3Popover.Dialog>
     </V3Popover.Content>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Modal as V3Modal } from "@heroui/react";
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
 
 // Compound modal for dialogs that need their own layout (forms, scrolling bodies, full screen).
 // Simple confirm/form dialogs use `Dialog`. This wraps HeroUI v3's Modal with the builder's rules:
@@ -53,6 +53,29 @@ export interface ModalProps {
   children: ReactNode;
 }
 
+const POPOVER = '[data-slot$="popover"], [data-slot="popover-root"], .popover';
+
+/**
+ * A click outside an open select/popover inside a modal closes the popover, but react-aria also
+ * counts it as a click outside the modal and closes that too. Remember, at the start of each press
+ * or key, whether a popover was open; a modal close that follows within 400ms is ignored.
+ */
+export function usePopoverGuard(): () => boolean {
+  const seenAt = useRef(0);
+  useEffect(() => {
+    function note() {
+      if (document.querySelector(POPOVER)) seenAt.current = Date.now();
+    }
+    window.addEventListener("pointerdown", note, true);
+    window.addEventListener("keydown", note, true);
+    return () => {
+      window.removeEventListener("pointerdown", note, true);
+      window.removeEventListener("keydown", note, true);
+    };
+  }, []);
+  return () => Date.now() - seenAt.current < 400;
+}
+
 export function Modal({
   isOpen,
   onClose,
@@ -64,6 +87,7 @@ export function Modal({
   classNames,
   children
 }: ModalProps) {
+  const popoverJustClosed = usePopoverGuard();
   return (
     <ModalContext.Provider
       value={{
@@ -77,6 +101,7 @@ export function Modal({
       <V3Modal
         isOpen={isOpen}
         onOpenChange={(open) => {
+          if (!open && popoverJustClosed()) return;
           onOpenChange?.(open);
           if (!open) onClose?.();
         }}
@@ -101,7 +126,7 @@ export function ModalContent({ children }: { children: ReactNode }) {
       <V3Modal.Dialog
         className={cn(
           "gap-4 rounded-3xl",
-          full ? "h-full min-h-0 w-full max-w-none rounded-3xl" : MAX_WIDTH[size],
+          full ? "!h-full min-h-0 w-full max-w-none rounded-3xl" : MAX_WIDTH[size],
           base
         )}
       >
@@ -113,9 +138,12 @@ export function ModalContent({ children }: { children: ReactNode }) {
 }
 
 export function ModalHeader({ children, className }: { children: ReactNode; className?: string }) {
+  // The heading names the dialog for assistive tech (aria-labelledby).
   return (
-    <V3Modal.Header className={cn("text-base font-semibold text-foreground", className)}>
-      {children}
+    <V3Modal.Header>
+      <V3Modal.Heading className={cn("text-base font-semibold text-foreground", className)}>
+        {children}
+      </V3Modal.Heading>
     </V3Modal.Header>
   );
 }

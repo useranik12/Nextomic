@@ -2,6 +2,7 @@
 
 import { Modal } from "@heroui/react";
 import type { ReactNode } from "react";
+import { usePopoverGuard } from "./modal";
 
 // The builder's dialog (HeroUI v3 Modal): blurred backdrop, overlay surface, fade and scale in,
 // focus trapped inside, Escape and the close button dismiss it. Footer buttons follow the button
@@ -31,8 +32,12 @@ export function Dialog({
   size = "md",
   isDismissable = true
 }: DialogProps) {
+  const popoverJustClosed = usePopoverGuard();
   return (
-    <Modal isOpen={isOpen} onOpenChange={(open) => (open ? undefined : onClose())}>
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={(open) => (open || popoverJustClosed() ? undefined : onClose())}
+    >
       <Modal.Backdrop variant="blur" isDismissable={isDismissable}>
         <Modal.Container size={size}>
           <Modal.Dialog className="gap-5 rounded-3xl">

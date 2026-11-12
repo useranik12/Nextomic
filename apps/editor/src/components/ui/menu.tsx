@@ -1,9 +1,8 @@
 "use client";
 
 import { Dropdown as V3Dropdown, Header, Label, Separator } from "@heroui/react";
-import { mergeProps } from "react-aria";
+import { cloneTrigger } from "./clone-trigger";
 import {
-  cloneElement,
   createContext,
   useContext,
   type ComponentProps,
@@ -43,11 +42,7 @@ export function Dropdown({
 }
 
 export function DropdownTrigger({ children }: { children: ReactElement<Record<string, unknown>> }) {
-  return (
-    <V3Dropdown.Trigger
-      render={(props) => cloneElement(children, mergeProps(children.props, props))}
-    />
-  );
+  return <V3Dropdown.Trigger render={(props) => cloneTrigger(children, props)} />;
 }
 
 type MenuProps = Pick<

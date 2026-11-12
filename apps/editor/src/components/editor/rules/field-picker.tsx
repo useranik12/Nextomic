@@ -74,7 +74,7 @@ export function FieldPicker({
             className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
           />
           <input
-            autoFocus
+            data-popover-autofocus
             aria-label={`Search ${label}`}
             placeholder="Search conditions"
             value={query}
