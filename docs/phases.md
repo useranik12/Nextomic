@@ -159,8 +159,8 @@ Docs: `ui-reference.md` (4.6), `elements.md` (Icon, SVG, Image, Video, Audio)
 - [x] Media page replicating the Instatic structure with Nextomic styling (library filters, folders, trash, upload, search, type tabs, sort, grid/list, details drawer, bulk actions) _Built 2026-11-13, see `ui-reference.md` 4.6._
 - [x] Asset picker used by Image, Video, Audio, Icon, SVG elements _Built 2026-11-13 for Image (control `pick`); Video, Audio, SVG elements arrive in Phase 7 and the Icon picker with step 3._
 - [ ] Fonts & Icons tab, Icons sub-tab (`fonts-and-icons.md` section 3): catalog of popular free libraries, SVG and icon-font output modes, custom imports (IcoMoon, Fontello, generic icon font, SVG upload, Iconify JSON), license and attribution handling, icon picker
-- [ ] Image optimization, alt text checks, SVG sanitization, usage tracking _SVG sanitization and usage tracking built with the Media page (2026-11-13); image optimization and alt-text checks on built output open._
-- [ ] Tests: upload validation, usage, sanitization _Unit tests for sniffing, upload preparation and sanitizer, e2e for upload, serve headers, alt text, folders, trash and restore done; usage and optimization tests open._
+- [x] Image optimization, alt text checks, SVG sanitization, usage tracking _Built 2026-11-13: WebP width copies and `srcset` (see `ui-reference.md` 4.6), alt-text warning on Image, SVG sanitizer, usage list. Open: publish-time alt-text audit (ask the owner first)._
+- [x] Tests: upload validation, usage, sanitization _Unit tests for sniffing, upload preparation, sanitizer, variants, srcset; e2e for upload, serve headers, alt text, folders, trash, restore, picker with usage, resized copies, a 45 MB upload and the size cap._
 
 ## Phase 7: Element library
 

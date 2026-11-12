@@ -167,6 +167,25 @@ describe("PageRenderer", () => {
     expect(html).toContain("padding:24px");
   });
 
+  it("gives an image from Media a srcset, and leaves other sources alone", () => {
+    const render = (src: string) =>
+      renderToStaticMarkup(
+        <PageRenderer
+          tree={{
+            ...emptyPageTree(),
+            children: [node({ id: "i1", type: "image", props: { src, alt: "pic" } })]
+          }}
+          breakpoints={DEFAULT_BREAKPOINTS}
+        />
+      );
+    const id = "a1b2c3d4e5f60718293a4b5c";
+    const stored = render(`/media/p1/${id}/hero.png`);
+    expect(stored).toContain(`src="/media/p1/${id}/hero.png"`);
+    expect(stored).toContain(`srcSet="/media/p1/${id}/hero.png?w=320 320w`);
+    expect(render("https://example.com/a.png")).not.toContain("srcSet");
+    expect(render(`/media/p1/${id}/logo.svg`)).not.toContain("srcSet");
+  });
+
   it("renders a button as the chosen HTML tag, and a link when it has an address", () => {
     const render = (htmlTag: string | undefined, href: string) =>
       renderToStaticMarkup(

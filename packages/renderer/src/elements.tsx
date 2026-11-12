@@ -1,3 +1,4 @@
+import { mediaSrcSet } from "@nextomic/schema";
 import { createElement } from "react";
 import { z } from "zod";
 import { registerElement, type ControlDef } from "./registry";
@@ -134,9 +135,12 @@ registerElement({
   bindable: { src: true, alt: true },
   render: ({ attrs, text }) => {
     const src = safeUrl(text("src"));
+    // A file from Media gets resized copies to choose from; the original stays the fallback `src`.
+    const srcSet = mediaSrcSet(src);
     return createElement("img", {
       ...attrs,
       src: src === "" ? undefined : src,
+      ...(srcSet && !attrs.srcset ? { srcSet } : {}),
       alt: text("alt")
     });
   }

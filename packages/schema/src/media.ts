@@ -151,6 +151,29 @@ export function mediaIdFromPath(path: string): string | null {
   return m?.[1] ?? null;
 }
 
+/** Widths the public route resizes images to (`?w=`). Anything else is served as the original. */
+export const MEDIA_WIDTHS = [320, 640, 960, 1280, 1920] as const;
+const RESIZABLE = /\.(png|jpe?g|webp|avif)$/i;
+
+/**
+ * `srcset` for an image whose source is a stored media path (no query, a type the route can
+ * resize). Null for everything else: addresses elsewhere, SVG, GIF, dynamic text.
+ */
+export function mediaSrcSet(src: string): string | null {
+  if (!RESIZABLE.test(src) || mediaIdFromPath(src) === null || /[?#]/.test(src)) return null;
+  return MEDIA_WIDTHS.map((w) => `${src}?w=${w} ${w}w`).join(", ");
+}
+
+/** Storage key of a resized copy. Apart from the original's key so both can exist. */
+export function mediaVariantKey(
+  projectId: string,
+  assetId: string,
+  hash: string,
+  width: number
+): string {
+  return `media-variants/${projectId}/${assetId}/${hash.slice(0, 8)}-${width}.webp`;
+}
+
 export const mediaTagSchema = z
   .string()
   .trim()

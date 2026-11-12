@@ -5,6 +5,8 @@ import {
   mediaEditSchema,
   mediaFileName,
   mediaIdFromPath,
+  mediaSrcSet,
+  mediaVariantKey,
   mediaPath,
   mediaTagsSchema,
   mediaTitleFromName,
@@ -136,5 +138,24 @@ describe("imageSize", () => {
   });
   it("returns null for the unknown", () => {
     expect(imageSize(text("not an image at all, sorry"))).toBeNull();
+  });
+});
+
+describe("responsive images", () => {
+  const id = "a1b2c3d4e5f60718293a4b5c";
+  it("builds a srcset for stored raster images only", () => {
+    const set = mediaSrcSet(`/media/p1/${id}/hero.jpg`);
+    expect(set).toContain(`/media/p1/${id}/hero.jpg?w=320 320w`);
+    expect(set).toContain("?w=1920 1920w");
+    expect(mediaSrcSet(`/media/p1/${id}/logo.svg`)).toBeNull();
+    expect(mediaSrcSet(`/media/p1/${id}/anim.gif`)).toBeNull();
+    expect(mediaSrcSet(`/media/p1/${id}/hero.jpg?w=640`)).toBeNull();
+    expect(mediaSrcSet("https://example.com/hero.jpg")).toBeNull();
+    expect(mediaSrcSet("")).toBeNull();
+  });
+  it("keeps variants apart from the original key", () => {
+    expect(mediaVariantKey("p1", id, "0123456789abcdef", 640)).toBe(
+      `media-variants/p1/${id}/01234567-640.webp`
+    );
   });
 });
