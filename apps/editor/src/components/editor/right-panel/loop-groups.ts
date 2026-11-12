@@ -6,6 +6,7 @@ import {
   type RestConfig,
   type SupabaseStructure
 } from "@nextomic/schema";
+import { QUERIES_SECTION } from "./action-groups";
 import type { DynamicGroup, DynamicTag } from "./dynamic-sources";
 
 // Dynamic tag groups for the query loops around an element (innermost first), each read by its
@@ -53,6 +54,7 @@ export function loopGroups(
     return [
       {
         id: `loop-${node.id}`,
+        section: QUERIES_SECTION,
         label:
           `%${query.name} · ${queryLabel(labelOf(node), query)}` +
           (depth > 0 ? " (outer loop)" : ""),

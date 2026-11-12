@@ -2,15 +2,17 @@
 
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@/components/ui/modal";
 import { getElementDefinition } from "@nextomic/renderer";
-import { loopAncestors, tokenTags, type TransformChain } from "@nextomic/schema";
+import { flowNamesBefore, loopAncestors, tokenTags, type TransformChain } from "@nextomic/schema";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { TransformPanel } from "../expression/transform-panel";
 import { useExpressionScope } from "../expression/use-expression-scope";
 import { useQuerySourcesStore } from "../query/use-query-sources";
+import { useFlowDraft } from "../actions/editor/flow-draft";
 import { useEditorStore } from "../store/editor-store";
+import { actionGroups } from "./action-groups";
 import { TagCard } from "./dynamic-tag-card";
-import { dynamicGroups } from "./dynamic-sources";
+import { dynamicGroups, type DynamicGroup } from "./dynamic-sources";
 import { loopGroups } from "./loop-groups";
 
 export type Exclude = ("params" | "state")[];
@@ -76,10 +78,18 @@ export function DynamicDataModal({
       }),
     [settings, excludeKey, appState, constants, appAuth, serverRun]
   );
-  const allGroups = useMemo(() => [...loops, ...groups], [loops, groups]);
+  // Inside the Action Flow Editor: what the earlier nodes of the open node answer.
+  const flowNodes = useFlowDraft((s) => (s.target ? s.nodes() : null));
+  const flowNodeId = useFlowDraft((s) => s.selectedId);
+  const actions = useMemo(
+    () =>
+      flowNodes && flowNodeId ? actionGroups(flowNamesBefore(flowNodes, flowNodeId) ?? []) : [],
+    [flowNodes, flowNodeId]
+  );
+  const allGroups = useMemo(() => [...actions, ...loops, ...groups], [actions, loops, groups]);
   const q = query.trim().toLowerCase();
   const visible = allGroups
-    .filter((g) => group === "all" || g.id === group)
+    .filter((g) => group === "all" || g.id === group || g.section?.id === group)
     .map((g) => ({
       ...g,
       tags: g.tags.filter(
@@ -87,9 +97,37 @@ export function DynamicDataModal({
       )
     }))
     .filter((g) => g.tags.length > 0);
+  const plain = visible.filter((g) => !g.section);
+  const sections = [...new Set(visible.flatMap((g) => (g.section ? [g.section.id] : [])))].map(
+    (id) => ({
+      id,
+      label: visible.find((g) => g.section?.id === id)?.section?.label ?? id,
+      groups: visible.filter((g) => g.section?.id === id)
+    })
+  );
+  const chips = [
+    ...new Map(allGroups.map((g) => [g.section?.id ?? g.id, g.section?.label ?? g.label])).entries()
+  ].map(([id, label]) => ({ id, label }));
+  // A search or a chosen chip opens the blocks; otherwise they start closed.
+  const opened = q !== "" || group !== "all";
   const transformLabel =
     transform?.label ??
     allGroups.flatMap((g) => g.tags).find((t) => t.token === transform?.chain.base)?.label;
+
+  const renderTags = (g: DynamicGroup) =>
+    g.tags.map((tag) => (
+      <TagCard
+        key={tag.token}
+        tag={tag}
+        onPick={() => onPick(tag.token)}
+        onTransform={() =>
+          setTransform({
+            chain: { base: tag.token, steps: [], fallback: "" },
+            label: tag.label
+          })
+        }
+      />
+    ));
 
   return (
     <Modal
@@ -133,7 +171,7 @@ export function DynamicDataModal({
                 />
               </label>
               <div role="group" aria-label="Tag groups" className="flex flex-wrap gap-2">
-                {[{ id: "all", label: "All" }, ...allGroups].map((g) => (
+                {[{ id: "all", label: "All" }, ...chips].map((g) => (
                   <button
                     key={g.id}
                     type="button"
@@ -155,31 +193,47 @@ export function DynamicDataModal({
                   No dynamic tags match &ldquo;{query}&rdquo;.
                 </p>
               ) : (
-                // Masonry columns about 14rem wide: as many as fit, groups pack with no blank space.
-                <div className="columns-[14rem] gap-6">
-                  {visible.map((g) => (
-                    <section
-                      key={g.id}
-                      aria-label={g.label}
-                      className="mb-6 flex min-w-0 break-inside-avoid flex-col gap-2"
+                <>
+                  {sections.map((sec) => (
+                    <details
+                      key={`${sec.id}-${opened}`}
+                      open={opened}
+                      className="rounded-xl border border-border px-3 py-2"
                     >
-                      <h3 className="text-xs font-semibold uppercase text-muted">{g.label}</h3>
-                      {g.tags.map((tag) => (
-                        <TagCard
-                          key={tag.token}
-                          tag={tag}
-                          onPick={() => onPick(tag.token)}
-                          onTransform={() =>
-                            setTransform({
-                              chain: { base: tag.token, steps: [], fallback: "" },
-                              label: tag.label
-                            })
-                          }
-                        />
-                      ))}
-                    </section>
+                      <summary className="cursor-pointer text-sm font-semibold">
+                        {sec.label}{" "}
+                        <span className="font-normal text-muted">({sec.groups.length})</span>
+                      </summary>
+                      <div className="mt-2 flex flex-col gap-2">
+                        {sec.groups.map((g) => (
+                          <details key={`${g.id}-${opened}`} open={opened} className="pl-2">
+                            <summary className="cursor-pointer text-xs font-semibold uppercase text-muted">
+                              {g.label}
+                            </summary>
+                            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {renderTags(g)}
+                            </div>
+                          </details>
+                        ))}
+                      </div>
+                    </details>
                   ))}
-                </div>
+                  {plain.length > 0 ? (
+                    // Masonry columns about 14rem wide: as many as fit, groups pack with no blank space.
+                    <div className="columns-[14rem] gap-6">
+                      {plain.map((g) => (
+                        <section
+                          key={g.id}
+                          aria-label={g.label}
+                          className="mb-6 flex min-w-0 break-inside-avoid flex-col gap-2"
+                        >
+                          <h3 className="text-xs font-semibold uppercase text-muted">{g.label}</h3>
+                          {renderTags(g)}
+                        </section>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
               )}
             </>
           )}

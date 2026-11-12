@@ -19,6 +19,7 @@ import {
   visibleNames,
   type ActionBlock,
   type FlowCheckContext,
+  flowNamesBefore,
   type FlowNode,
   type ParamField,
   type TriggerFlow
@@ -161,7 +162,7 @@ describe("action catalog", () => {
       "Refresh Supabase Query",
       "Upload File",
       "Download File",
-      "Clear Uploaded File",
+      "Clear Files",
       "Delete File",
       "Call Supabase RPC",
       "Call API Endpoint",
@@ -644,5 +645,40 @@ describe("flow edits", () => {
     const m = await import("../index");
     const missing = m.TRIGGERS.filter((t) => !t.disabled && !t.description).map((t) => t.id);
     expect(missing).toEqual([]);
+  });
+});
+
+describe("flowNamesBefore", () => {
+  const out = (id: string, outputName?: string): FlowNode => ({
+    id,
+    kind: "action",
+    type: "wait",
+    params: {},
+    outputName
+  });
+  it("lists earlier outputs, loop items and catch errors, not later or inner ones", () => {
+    const nodes: FlowNode[] = [
+      out("a", "first"),
+      {
+        id: "loop",
+        kind: "loop",
+        mode: "forEach",
+        list: "",
+        itemName: "row",
+        start: "",
+        end: "",
+        step: "",
+        maxIterations: 10,
+        nodes: [out("inner", "innerOut"), out("target")]
+      },
+      out("after", "later")
+    ];
+    expect(flowNamesBefore(nodes, "target")?.map((n) => n.name)).toEqual([
+      "first",
+      "row",
+      "innerOut"
+    ]);
+    expect(flowNamesBefore(nodes, "after")?.map((n) => n.name)).toEqual(["first"]);
+    expect(flowNamesBefore(nodes, "missing")).toBeNull();
   });
 });

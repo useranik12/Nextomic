@@ -1653,3 +1653,54 @@ test("a page behind sign-in is never served, redrawn or looped to a signed-out v
   expect(refresh.status()).toBe(303);
   expect(refresh.headers().location).toBe(`/site/${projectId}`);
 });
+
+test("Pick File(s) opens the file chooser on the preview", async ({ page }) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("pick");
+  await modal.getByRole("button", { name: "Pick File(s)" }).click();
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  await page.goto(`/preview/${projectId}`);
+  const chooser = page.waitForEvent("filechooser", { timeout: 5000 });
+  await page.getByRole("button").first().click();
+  await chooser;
+});
+
+test("turning the bolt off on a switch keeps its fixed value and fields", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("toast");
+  await modal.getByRole("button", { name: "Show Toast" }).click();
+  const buttonText = modal.getByRole("textbox", { name: /^Button text/ }).first();
+  await modal.getByRole("switch", { name: /Show action button/i }).click({ force: true });
+  await expect(buttonText).toBeVisible();
+  await modal.getByRole("button", { name: /Use dynamic data for Show action button/i }).click();
+  await modal.getByRole("button", { name: "Use a fixed value" }).click();
+  await expect(modal.getByRole("switch", { name: /Show action button/i })).toBeChecked();
+  await expect(buttonText).toBeVisible();
+});

@@ -9,12 +9,14 @@ import {
   type UploadedFile
 } from "./files";
 
-// Pick File(s), Upload File, Clear Uploaded File, Put Data To Presigned S3 Storage and Download File
+// Pick File(s), Upload File, Clear Files, Put Data To Presigned S3 Storage and Download File
 // (docs/dynamic-data-and-actions.md section 8.9). Picked files stay in the browser's FileStore; a
 // flow only sees their descriptions.
 
 export interface FileDeps {
   store: FileStore;
+  /** Opens the file chooser (the editor's Test cannot: it has no click of the visitor). */
+  choose: typeof chooseFiles;
   /** Sends one file to the server action `nodeId` (with its filled tag values); resolves where it was stored. */
   upload: (nodeId: string, values: string[], file: File) => Promise<UploadedFile>;
   /** Runs the saved server action `nodeId` (Download File); resolves what it answered. */
@@ -47,7 +49,7 @@ export function fileHandlers(deps: FileDeps): Record<string, ActionHandler> {
         accept,
         maxSizeMb: Math.max(1, numberParam(p.maxSizeMb, 10))
       };
-      let chosen = await chooseFiles({ multiple, accept });
+      let chosen = await deps.choose({ multiple, accept });
       if (chosen.length === 0) return multiple ? [] : null;
       const max = multiple ? Math.max(1, numberParam(p.max, 100)) : 1;
       if (chosen.length > max) throw new FlowError("too-many", `Choose at most ${max} files.`);
