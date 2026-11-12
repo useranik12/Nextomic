@@ -71,7 +71,7 @@ export function VariablePicker({
       <PopoverContent className="w-64 items-stretch gap-2 p-2">
         {variables.length > 6 ? (
           <input
-            autoFocus
+            data-popover-autofocus
             type="search"
             aria-label="Search variables"
             placeholder="Search variables"

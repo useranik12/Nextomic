@@ -25,8 +25,9 @@ test("profile image, first letter fallback and the account menu", async ({ page 
   const menu = page.getByRole("button", { name: "Account menu" });
   await expect(menu).toContainText("Z");
   await menu.click();
-  await expect(page.getByRole("menu", { name: "Account" })).toContainText("zara Quinn");
-  await expect(page.getByRole("menu", { name: "Account" })).toContainText(email);
+  // The signed-in name and email sit above the menu items.
+  await expect(page.getByText("zara Quinn", { exact: true })).toBeVisible();
+  await expect(page.getByText(email, { exact: true })).toBeVisible();
   await page
     .getByRole("menu", { name: "Account" })
     .getByRole("menuitem", { name: "Settings", exact: true })

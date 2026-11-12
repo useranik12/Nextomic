@@ -1,8 +1,8 @@
 "use client";
 
 import { Tooltip } from "@heroui/react";
-import { mergeProps } from "react-aria";
-import { cloneElement, type ReactElement, type ReactNode } from "react";
+import { cloneTrigger } from "./clone-trigger";
+import { type ReactElement, type ReactNode } from "react";
 
 type Placement = "top" | "bottom" | "left" | "right";
 
@@ -24,9 +24,7 @@ export function Hint({
 }) {
   return (
     <Tooltip delay={delay} closeDelay={0}>
-      <Tooltip.Trigger
-        render={(props) => cloneElement(children, mergeProps(children.props, props))}
-      />
+      <Tooltip.Trigger render={(props) => cloneTrigger(children, props)} />
       <Tooltip.Content placement={placement} className="z-[1000] max-w-72 text-xs leading-snug">
         {content}
       </Tooltip.Content>

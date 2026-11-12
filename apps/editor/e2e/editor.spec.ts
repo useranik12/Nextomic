@@ -127,6 +127,24 @@ test("canvas zoom, wheel zoom and rotate", async ({ page }) => {
   );
 });
 
+test("a select inside a modal keeps the modal open after a pick or an outside click", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Page settings" }).click();
+  const dialog = page.getByRole("dialog", { name: "Page settings" });
+  const language = dialog.getByRole("button", { name: /Page language/ });
+  await language.click();
+  await page.locator("[role=option]", { hasText: "French (fr)" }).click();
+  await expect(language).toContainText("French");
+  await expect(dialog).toBeVisible();
+  await language.click();
+  await expect(page.locator("[role=option]").first()).toBeVisible();
+  await page.mouse.click(5, 400);
+  await expect(page.locator("[role=option]")).toHaveCount(0);
+  await expect(dialog).toBeVisible();
+});
+
 test("page settings: SEO, language, duplicate and home page", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "Page settings" }).click();
@@ -283,7 +301,7 @@ test("side panels can be resized with the keyboard", async ({ page }) => {
 test("version control off disables the page history limit", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "App Settings" }).click();
-  await page.getByRole("switch", { name: "Version control" }).click();
+  await page.getByRole("switch", { name: "Version control" }).click({ force: true });
   await page.getByRole("button", { name: "Page settings", exact: true }).click();
   await expect(page.getByRole("dialog").getByPlaceholder(/App default/)).toBeDisabled();
 });
@@ -517,7 +535,7 @@ test("CSS animation setting with element picker, clock toggle and panel size res
 
   // The clock appears when the App Settings switch is on.
   await page.getByRole("button", { name: "App Settings" }).click();
-  await page.getByRole("switch", { name: "Show time in the editor" }).click();
+  await page.getByRole("switch", { name: "Show time in the editor" }).click({ force: true });
   await expect(page.getByLabel("Current time")).toHaveText(/^\d\d:\d\d:\d\d (AM|PM)$/);
 
   // The Navigator header resets the side panel sizes.
@@ -768,6 +786,9 @@ async function newModalTemplate(
     .getByRole("button", { name: /Status$/ })
     .click();
   await page.locator("[role=option]", { hasText: "Published" }).click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: /Status$/ })).toContainText(
+    "Published"
+  );
   await addWholeSiteRule(page);
   await page.getByRole("button", { name: "Done" }).click();
   await page.keyboard.press("Control+s");
@@ -824,6 +845,9 @@ test("sticky header settings reach the live site; scheduled status shows a date 
     .getByRole("button", { name: /Status$/ })
     .click();
   await page.locator("[role=option]", { hasText: "Published" }).click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: /Status$/ })).toContainText(
+    "Published"
+  );
   await addWholeSiteRule(page);
   await page.getByRole("switch", { name: "Sticky header" }).check({ force: true });
   await expect(page.getByLabel("Slide up after", { exact: true })).toBeVisible();
@@ -1038,7 +1062,7 @@ test("expressions: auto close, grouped suggestions, result, invalid tags", async
 test("publish menu: schedule a publish and remove it", async ({ page }) => {
   await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "More publish options" }).click();
-  await page.getByText("Schedule publish", { exact: true }).click();
+  await page.getByRole("menuitem", { name: /Schedule publish/ }).click();
   const dialog = page.getByRole("dialog", { name: "Schedule publish" });
   await dialog.getByRole("button", { name: "Schedule", exact: true }).click();
   const chip = page.getByRole("button", { name: /^Publishes / });
@@ -1051,7 +1075,7 @@ test("publish menu: schedule a publish and remove it", async ({ page }) => {
   await expect(chip).toBeVisible();
 
   await page.getByRole("button", { name: "More publish options" }).click();
-  await page.getByText("Edit schedule", { exact: true }).click();
+  await page.getByRole("menuitem", { name: /Edit schedule/ }).click();
   await page
     .getByRole("dialog", { name: "Schedule publish" })
     .getByRole("button", { name: "Schedule", exact: true })
@@ -1065,7 +1089,7 @@ test("publish menu: schedule a publish and remove it", async ({ page }) => {
 
   // Scheduled again, then published now: the schedule goes away.
   await page.getByRole("button", { name: "More publish options" }).click();
-  await page.getByText("Schedule publish", { exact: true }).click();
+  await page.getByRole("menuitem", { name: /Schedule publish/ }).click();
   await page
     .getByRole("dialog", { name: "Schedule publish" })
     .getByRole("button", { name: "Schedule", exact: true })
