@@ -39,7 +39,7 @@ export function ConditionsGroup({ node }: { node: ElementNode }) {
   if (total === 0)
     return (
       <div className="flex flex-col gap-2">
-        <p className="text-tiny text-default-500">
+        <p className="text-xs text-muted">
           Show this element only when conditions are true, like a cart that is not empty or a
           signed-in user. When they are false the element is left out of the page.
         </p>
@@ -48,7 +48,7 @@ export function ConditionsGroup({ node }: { node: ElementNode }) {
           onClick={() =>
             save({ ...visibility, group: { ...visibility.group, items: [newCondition()] } })
           }
-          className="self-start rounded-full bg-default-100 px-3 py-1.5 text-tiny font-medium text-foreground transition-colors duration-300 hover:bg-default-200"
+          className="self-start rounded-full bg-default px-3 py-1.5 text-xs font-medium text-foreground transition-colors duration-300 hover:bg-default-hover"
         >
           Add condition
         </button>
@@ -64,11 +64,11 @@ export function ConditionsGroup({ node }: { node: ElementNode }) {
         onChange={(enabled) => save({ ...visibility, enabled })}
       />
       <div className="flex items-center gap-2">
-        <span className="text-tiny text-default-600">Canvas preview</span>
+        <span className="text-xs text-body">Canvas preview</span>
         <div
           role="radiogroup"
           aria-label="Canvas preview"
-          className="flex rounded-full bg-default-100 p-0.5"
+          className="flex rounded-full bg-default p-0.5"
         >
           {PREVIEW.map((option) => (
             <button
@@ -78,10 +78,10 @@ export function ConditionsGroup({ node }: { node: ElementNode }) {
               aria-checked={preview === option.value}
               onClick={() => setPreview(node.id, option.value === "auto" ? null : option.value)}
               className={
-                "rounded-full px-2.5 py-1 text-tiny transition-colors duration-300 " +
+                "rounded-full px-2.5 py-1 text-xs transition-colors duration-300 " +
                 (preview === option.value
-                  ? "bg-default-800 text-default-50"
-                  : "text-default-600 hover:text-foreground")
+                  ? "bg-default-hover text-foreground"
+                  : "text-body hover:text-foreground")
               }
             >
               {option.label}
@@ -90,14 +90,14 @@ export function ConditionsGroup({ node }: { node: ElementNode }) {
         </div>
       </div>
       {visibility.enabled && failing ? (
-        <p role="status" className="text-tiny text-warning">
+        <p role="status" className="text-xs text-warning">
           {preview === "show"
             ? "The conditions are false now; the canvas shows the element because of Show."
             : "The conditions are false with the preview values, so the element is hidden."}
         </p>
       ) : null}
       {byUser ? (
-        <p className="text-tiny text-default-500">
+        <p className="text-xs text-muted">
           Hiding by user or role only changes what shows. Protect data and pages on the server.
         </p>
       ) : null}
@@ -107,7 +107,7 @@ export function ConditionsGroup({ node }: { node: ElementNode }) {
         total={total}
         onChange={(group) => save({ ...visibility, group })}
       />
-      <p className="text-tiny text-default-500">
+      <p className="text-xs text-muted">
         Values that change in the browser (page state, saved app state) are checked with their
         starting values until live updates arrive.
       </p>

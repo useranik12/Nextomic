@@ -1,6 +1,6 @@
 "use client";
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui-v2/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@/components/ui/menu";
 import {
   findFlowNode,
   insertFlowNode,
@@ -91,7 +91,7 @@ export function NodeMenu({
         <button
           type="button"
           aria-label="Node options"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-default-500 hover:bg-default-100 hover:text-foreground"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted hover:bg-default hover:text-foreground"
         >
           <Icon name="ph:dots-three-vertical" width={18} height={18} />
         </button>
@@ -103,6 +103,7 @@ export function NodeMenu({
       >
         <DropdownItem
           key="test"
+          id="test"
           startContent={<Icon name="ph:play" />}
           description={
             canTestNode
@@ -112,26 +113,28 @@ export function NodeMenu({
         >
           Test node action
         </DropdownItem>
-        <DropdownItem key="copy" startContent={<Icon name="ph:copy" />}>
+        <DropdownItem key="copy" id="copy" startContent={<Icon name="ph:copy" />}>
           Copy
         </DropdownItem>
-        <DropdownItem key="paste" startContent={<Icon name="ph:clipboard" />}>
+        <DropdownItem key="paste" id="paste" startContent={<Icon name="ph:clipboard" />}>
           Paste after
         </DropdownItem>
-        <DropdownItem key="cut" startContent={<Icon name="ph:scissors" />}>
+        <DropdownItem key="cut" id="cut" startContent={<Icon name="ph:scissors" />}>
           Cut
         </DropdownItem>
-        <DropdownItem key="duplicate" startContent={<Icon name="ph:files" />}>
+        <DropdownItem key="duplicate" id="duplicate" startContent={<Icon name="ph:files" />}>
           Duplicate
         </DropdownItem>
         <DropdownItem
           key="toggle"
+          id="toggle"
           startContent={disabled ? <Icon name="ph:check-circle" /> : <Icon name="ph:prohibit" />}
         >
           {disabled ? "Enable" : "Disable"}
         </DropdownItem>
         <DropdownItem
           key="delete"
+          id="delete"
           className="text-danger"
           color="danger"
           startContent={<Icon name="ph:trash" />}

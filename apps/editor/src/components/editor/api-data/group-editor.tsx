@@ -89,7 +89,7 @@ export function GroupEditor({
     >
       <header className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-foreground">Define API Group</h1>
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           Calls in a group share its base URL, headers, variables, authentication and advanced
           settings.
         </p>
@@ -97,9 +97,9 @@ export function GroupEditor({
       <VariableFields variables={variables} className="flex flex-col gap-6">
         <section
           aria-label="Group"
-          className="flex flex-col gap-4 rounded-large border border-default-200 p-5"
+          className="flex flex-col gap-4 rounded-2xl border border-border p-5"
         >
-          <h2 className="text-small font-medium text-foreground">Group</h2>
+          <h2 className="text-sm font-medium text-foreground">Group</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div data-no-vars>
               <FormInput
@@ -162,11 +162,11 @@ export function GroupEditor({
         )}
       </VariableFields>
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : problems.length > 0 ? (
-        <p className="text-small text-warning">{problems[0]}</p>
+        <p className="text-sm text-warning">{problems[0]}</p>
       ) : null}
       <EditorFooter
         deleteLabel="Delete Group"

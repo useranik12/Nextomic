@@ -14,16 +14,14 @@ export function ValuePreview({ value }: { value: unknown }) {
   const sample = Array.isArray(value) ? value.find((v) => v !== null) : value;
   const color =
     value === null || value === undefined
-      ? "text-default-400"
+      ? "text-subtle"
       : typeof sample === "number"
         ? "text-violet-500"
         : typeof sample === "string"
           ? "text-orange-500"
           : "text-teal-500";
   return (
-    <span className={`block truncate py-1.5 font-mono text-tiny ${color}`}>
-      {previewJson(value)}
-    </span>
+    <span className={`block truncate py-1.5 font-mono text-xs ${color}`}>{previewJson(value)}</span>
   );
 }
 
@@ -44,7 +42,7 @@ export function EyeButton({
       aria-label={`Show ${label} in the response viewer`}
       data-tip={shown ? "Shown in the response viewer" : "Show in the response viewer"}
       onClick={onToggle}
-      className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-default-100 ${shown ? "bg-primary-500/10 text-primary-600 dark:text-primary-400" : "text-default-400 hover:text-foreground"}`}
+      className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-default ${shown ? "bg-accent/10 text-accent dark:text-accent" : "text-subtle hover:text-foreground"}`}
     >
       <Icon name="ph:eye" width={16} height={16} />
     </button>

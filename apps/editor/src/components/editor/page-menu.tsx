@@ -1,17 +1,13 @@
 "use client";
 
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import {
   Dropdown,
   DropdownItem,
   DropdownMenu,
   DropdownSection,
-  DropdownTrigger,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader
-} from "@heroui-v2/react";
+  DropdownTrigger
+} from "@/components/ui/menu";
 import { TEMPLATE_TYPE_LABELS, createPageInputSchema } from "@nextomic/schema";
 import { useState } from "react";
 import { createPageAction, listPagesAction } from "@/app/(builder)/editor/[id]/actions";
@@ -55,7 +51,7 @@ export function PageMenu({
         <DropdownTrigger>
           <button
             type="button"
-            className="flex h-9 items-center gap-2 rounded-full border border-default-200 px-4 text-small text-foreground transition-colors duration-300 hover:border-default-400"
+            className="flex h-9 items-center gap-2 rounded-full border border-border px-4 text-sm text-foreground transition-colors duration-300 hover:border-default-400"
           >
             <span className="max-w-[140px] truncate">{name}</span>
             <Icon name="ph:caret-down" width={14} height={14} />
@@ -73,20 +69,31 @@ export function PageMenu({
         >
           <DropdownSection title="Pages" showDivider>
             {pages.map((page) => (
-              <DropdownItem key={page.id} description={page.route} textValue={page.name}>
+              <DropdownItem
+                key={page.id}
+                id={page.id}
+                description={page.route}
+                textValue={page.name}
+              >
                 {page.name}
               </DropdownItem>
             ))}
           </DropdownSection>
           <DropdownSection title="Templates">
             {templates.length === 0 ? (
-              <DropdownItem key="no-templates" isDisabled textValue="No templates yet">
+              <DropdownItem
+                key="no-templates"
+                id="no-templates"
+                isDisabled
+                textValue="No templates yet"
+              >
                 No templates yet
               </DropdownItem>
             ) : (
               templates.map((t) => (
                 <DropdownItem
                   key={t.id}
+                  id={t.id}
                   description={TEMPLATE_TYPE_LABELS[t.type]}
                   textValue={t.name}
                 >
@@ -102,7 +109,7 @@ export function PageMenu({
           <button
             type="button"
             aria-label="New page or template"
-            className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+            className="rounded-full p-2 text-body transition-colors duration-300 hover:bg-default hover:text-foreground"
           >
             <Icon name="ph:plus" width={20} height={20} />
           </button>
@@ -111,12 +118,16 @@ export function PageMenu({
           aria-label="Create"
           onAction={(key) => (key === "page" ? setNewOpen(true) : setNewTemplateOpen(true))}
         >
-          <DropdownItem key="page">New page</DropdownItem>
-          <DropdownItem key="template">New template</DropdownItem>
+          <DropdownItem key="page" id="page">
+            New page
+          </DropdownItem>
+          <DropdownItem key="template" id="template">
+            New template
+          </DropdownItem>
         </DropdownMenu>
       </Dropdown>
       {message ? (
-        <span role="alert" className="text-tiny text-danger">
+        <span role="alert" className="text-xs text-danger">
           {message}
         </span>
       ) : null}
@@ -176,7 +187,7 @@ export function NewPageModal({
   }
 
   return (
-    <Modal isOpen onOpenChange={(open) => !open && onClose()} backdrop="blur">
+    <Modal isOpen onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <form
           onSubmit={(event) => {

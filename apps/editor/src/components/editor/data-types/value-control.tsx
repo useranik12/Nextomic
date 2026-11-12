@@ -11,7 +11,7 @@ import { compactFieldClass } from "../right-panel/setting-row";
 // A text box that can be dragged taller: no fixed or !important height (the browser's drag sets an
 // inline height, which an !important class would override).
 const AREA_CLASS =
-  "block w-full min-h-8 resize-y rounded-large border border-default-200 bg-transparent px-3 py-1.5 pr-9 font-mono text-tiny leading-5 text-foreground outline-none transition-colors placeholder:text-default-400 hover:border-default-400 focus:border-default-800 focus:ring-1 focus:ring-default-800/10";
+  "block w-full min-h-8 resize-y rounded-2xl border border-border bg-transparent px-3 py-1.5 pr-9 font-mono text-xs leading-5 text-foreground outline-none transition-colors placeholder:text-subtle hover:border-default-400 focus:border-focus focus:ring-1 focus:ring-focus/30";
 
 const JSON_TYPES = new Set(["json", "dataType", "supabaseRow"]);
 
@@ -25,7 +25,7 @@ function offsetOf(date: Date): string {
 
 function Problem({ text }: { text: string | null }) {
   return text ? (
-    <p role="alert" className="mt-0.5 px-2 text-tiny text-danger">
+    <p role="alert" className="mt-0.5 px-2 text-xs text-danger">
       {text}
     </p>
   ) : null;
@@ -99,7 +99,7 @@ function TimestampInput({
         type="button"
         aria-label={`Pick a date and time for ${label}`}
         onClick={() => picker.current?.showPicker()}
-        className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+        className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default hover:text-foreground"
       >
         <Icon name="ph:calendar-blank" width={14} height={14} />
       </button>
@@ -171,7 +171,7 @@ export function ValueControl({
             label: v
           }));
     if (spec.type === "enum" && values.length === 0)
-      return <p className="px-2 text-tiny text-default-500">Choose an enum that has values.</p>;
+      return <p className="px-2 text-xs text-muted">Choose an enum that has values.</p>;
     return (
       <SelectField
         compact

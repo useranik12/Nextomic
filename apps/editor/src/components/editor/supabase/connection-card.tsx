@@ -1,6 +1,7 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import { useState } from "react";
 import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -92,7 +93,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
             isDisabled={busy !== null}
             onValueChange={(on) => void toggleActive(on)}
           >
-            <span className="text-small">Active</span>
+            <span className="text-sm">Active</span>
           </Switch>
         ) : null
       }
@@ -163,7 +164,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
           </ActionButton>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3 text-tiny text-default-500">
+      <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
         {fetchedAt ? (
           <span>Schema fetched {new Date(fetchedAt).toLocaleString()}.</span>
         ) : (
@@ -172,7 +173,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
         {dirty && connector ? (
           <button
             type="button"
-            className="text-default-600 underline-offset-2 hover:underline"
+            className="text-body underline-offset-2 hover:underline"
             onClick={() => {
               setUrl(savedUrl);
               setKey("");
@@ -184,12 +185,12 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
         ) : null}
       </div>
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
       {notice && !error ? (
-        <p role="status" className="text-small text-success">
+        <p role="status" className="text-sm text-success">
           {notice}
         </p>
       ) : null}
@@ -197,7 +198,7 @@ export function ConnectionCard({ model }: { model: SupabasePageModel }) {
       <Modal isOpen={confirmClear} onOpenChange={setConfirmClear} size="md">
         <ModalContent>
           <ModalHeader>Clear the {schema.trim()} schema?</ModalHeader>
-          <ModalBody className="text-small text-default-600">
+          <ModalBody className="text-sm text-body">
             <p>
               The saved tables, views and functions of this schema are removed. Other schemas stay;
               the buckets go when no schema is left. Fetch again to bring them back.

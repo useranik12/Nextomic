@@ -73,15 +73,15 @@ export function DataTypesManager() {
 
   return (
     <div className="flex h-full min-h-0">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-divider bg-content1/30">
-        <div className="flex flex-col gap-3 border-b border-divider p-3">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-surface/30">
+        <div className="flex flex-col gap-3 border-b border-border p-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-medium font-semibold">Data Types</h1>
+            <h1 className="text-base font-semibold">Data Types</h1>
             <button
               type="button"
               aria-label={tab === "types" ? "Add data type" : "Add enum"}
               onClick={add}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-body transition-colors duration-300 hover:bg-default hover:text-foreground"
             >
               <Icon name="ph:plus-circle" width={20} height={20} />
             </button>
@@ -89,7 +89,7 @@ export function DataTypesManager() {
           <div
             role="tablist"
             aria-label="Data types"
-            className="flex gap-1 rounded-full bg-default-100 p-1"
+            className="flex gap-1 rounded-full bg-default p-1"
           >
             {TABS.map((t) => (
               <button
@@ -104,10 +104,10 @@ export function DataTypesManager() {
                   setError(null);
                 }}
                 className={
-                  "flex-1 whitespace-nowrap rounded-full px-2 py-1 text-tiny transition-colors duration-300 " +
+                  "flex-1 whitespace-nowrap rounded-full px-2 py-1 text-xs transition-colors duration-300 " +
                   (tab === t.id
                     ? "bg-default-300 font-medium text-foreground"
-                    : "text-default-600 hover:text-foreground")
+                    : "text-body hover:text-foreground")
                 }
               >
                 {t.label}
@@ -122,7 +122,7 @@ export function DataTypesManager() {
             className={compactFieldClass}
           />
           {error ? (
-            <p role="alert" className="text-tiny text-danger">
+            <p role="alert" className="text-xs text-danger">
               {error}
             </p>
           ) : null}
@@ -135,12 +135,12 @@ export function DataTypesManager() {
                 aria-current={selected?.id === item.id}
                 onClick={() => setSelectedId(item.id)}
                 className={
-                  "flex w-full items-center justify-between gap-2 rounded-medium px-3 py-2 text-left text-small transition-colors duration-300 " +
-                  (selected?.id === item.id ? "bg-default-200" : "hover:bg-default-100")
+                  "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors duration-300 " +
+                  (selected?.id === item.id ? "bg-default-hover" : "hover:bg-default")
                 }
               >
                 <span className="truncate font-mono">{item.name}</span>
-                <span className="shrink-0 text-tiny text-default-500">
+                <span className="shrink-0 text-xs text-muted">
                   {"fields" in item
                     ? `${item.fields.length} fields`
                     : `${item.values.length} values`}
@@ -149,11 +149,11 @@ export function DataTypesManager() {
             </li>
           ))}
           {list.length === 0 ? (
-            <li className="p-2 text-small text-default-500">
+            <li className="p-2 text-sm text-muted">
               {tab === "types" ? "No data types yet." : "No enums yet."} Use + to add one.
             </li>
           ) : shown.length === 0 ? (
-            <li className="p-2 text-small text-default-500">Nothing matches.</li>
+            <li className="p-2 text-sm text-muted">Nothing matches.</li>
           ) : null}
         </ul>
       </aside>
@@ -167,7 +167,7 @@ export function DataTypesManager() {
             onDelete={() => remove(selected)}
           />
         ) : (
-          <div className="flex h-full items-center justify-center p-6 text-center text-small text-default-500">
+          <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted">
             {tab === "types"
               ? "Custom data types describe structured values, such as an Address or a Product. Add one with +."
               : "Enums are fixed lists of choices, such as order statuses. Add one with +."}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui-v2/react";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import {
   fieldShown,
   UNBINDABLE_FIELD_REASONS,
@@ -57,7 +57,7 @@ function Switchable({
             setAsText(false);
             onChange(field.default ?? "");
           }}
-          className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-default-500 hover:bg-default-100"
+          className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-default"
         >
           <Icon name="ph:x" />
         </button>
@@ -71,7 +71,7 @@ function Switchable({
         type="button"
         aria-label={`Use dynamic data for ${field.label}`}
         onClick={() => setAsText(true)}
-        className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-default-500 hover:bg-default-100 hover:text-warning"
+        className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-default hover:text-warning"
       >
         <Icon name="ph:lightning" />
       </button>
@@ -146,7 +146,7 @@ function SingleInput({
           isSelected={(value || field.default) === "true"}
           onValueChange={(on) => onChange(on ? "true" : "false")}
         >
-          <span className="text-small">{field.label}</span>
+          <span className="text-sm">{field.label}</span>
         </Switch>
       </Switchable>
     );
@@ -179,9 +179,9 @@ function RowsInput({
   const blank = () => Object.fromEntries(columns.map((c) => [c.key, c.default ?? ""])) as ParamRow;
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-small font-medium text-default-700">{labelOf(field)}</legend>
+      <legend className="mb-1 text-sm font-medium text-body">{labelOf(field)}</legend>
       {rows.map((row, i) => (
-        <div key={i} className="flex items-start gap-2 rounded-medium border border-divider p-2">
+        <div key={i} className="flex items-start gap-2 rounded-xl border border-border p-2">
           <div className="grid min-w-0 flex-1 grid-cols-1 gap-2">
             {columns.map((column) => (
               <SingleInput
@@ -200,7 +200,7 @@ function RowsInput({
             type="button"
             aria-label={`Remove ${field.label} row ${i + 1}`}
             onClick={() => onChange(rows.filter((_, j) => j !== i))}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-default-500 hover:bg-default-100 hover:text-danger"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-default hover:text-danger"
           >
             <Icon name="ph:trash" />
           </button>
@@ -298,7 +298,7 @@ export function ParamFields({
             onChange={(v) => set(field.key, v)}
           />
         )}
-        {field.help ? <p className="text-tiny text-default-500">{field.help}</p> : null}
+        {field.help ? <p className="text-xs text-muted">{field.help}</p> : null}
       </div>
     );
   };
@@ -314,11 +314,9 @@ export function ParamFields({
                 f.kind === "queryOverride" ||
                 (params[f.key] !== undefined && params[f.key] !== "")
             )}
-            className="rounded-medium border border-default-200 px-3 py-2"
+            className="rounded-xl border border-border px-3 py-2"
           >
-            <summary className="cursor-pointer text-small font-medium text-default-700">
-              {group}
-            </summary>
+            <summary className="cursor-pointer text-sm font-medium text-body">{group}</summary>
             <div className="mt-3 flex flex-col gap-3">{items.map(renderField)}</div>
           </details>
         ) : (

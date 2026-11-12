@@ -51,13 +51,11 @@ export function FrameworkVariables({
   return (
     <div className="flex flex-col gap-3 p-3">
       <FormInput compact label="Search variables" value={query} onValueChange={setQuery} />
-      {groups.length === 0 ? (
-        <p className="text-small text-default-500">No variables match.</p>
-      ) : null}
+      {groups.length === 0 ? <p className="text-sm text-muted">No variables match.</p> : null}
       {groups.map(([group, list]) => (
         <section key={group}>
-          <h3 className="pb-1 text-small font-semibold">{group}</h3>
-          <ul className="flex flex-col divide-y divide-divider">
+          <h3 className="pb-1 text-sm font-semibold">{group}</h3>
+          <ul className="flex flex-col divide-y divide-border">
             {list.map((m) => {
               const dark = framework.variables.find((v) => v.name === m.name)?.dark ?? "";
               return (
@@ -69,7 +67,7 @@ export function FrameworkVariables({
                     {m.type === "color" ? (
                       <span
                         aria-hidden
-                        className="h-4 w-4 shrink-0 rounded-full border border-divider"
+                        className="h-4 w-4 shrink-0 rounded-full border border-border"
                         style={{ background: m.value }}
                       />
                     ) : null}
@@ -77,7 +75,7 @@ export function FrameworkVariables({
                       type="button"
                       title="Open in the Variables manager"
                       onClick={() => nav.go("variables", { variable: m.name })}
-                      className="min-w-0 truncate text-left font-mono text-tiny hover:underline"
+                      className="min-w-0 truncate text-left font-mono text-xs hover:underline"
                     >
                       {m.cssName}
                     </button>

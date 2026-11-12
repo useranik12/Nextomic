@@ -85,10 +85,10 @@ export function LeftRail({
         aria-current={isActive ? "page" : undefined}
         title={ready ? label : `${label} (coming in a later phase)`}
         className={
-          "flex h-9 w-full items-center gap-3 rounded-medium px-3 text-small transition-colors duration-300 " +
+          "flex h-9 w-full items-center gap-3 rounded-xl px-3 text-sm transition-colors duration-300 " +
           (isActive
-            ? "bg-default-200 text-foreground"
-            : "text-default-600 hover:bg-default-100 hover:text-foreground") +
+            ? "bg-default-hover text-foreground"
+            : "text-body hover:bg-default hover:text-foreground") +
           (ready ? "" : " opacity-60")
         }
       >
@@ -113,7 +113,7 @@ export function LeftRail({
           type="button"
           onClick={onToggleCollapse}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="flex h-9 w-full items-center rounded-medium px-3 text-default-600 hover:bg-default-100 hover:text-foreground"
+          className="flex h-9 w-full items-center rounded-xl px-3 text-body hover:bg-default hover:text-foreground"
         >
           <Icon name="ph:sidebar-simple" width={20} height={20} />
         </button>

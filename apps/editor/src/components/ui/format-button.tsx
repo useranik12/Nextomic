@@ -33,7 +33,7 @@ export function FormatButton({
   return (
     <span className="flex items-center gap-1">
       {error ? (
-        <span role="alert" className="max-w-56 truncate text-tiny text-danger" title={error}>
+        <span role="alert" className="max-w-56 truncate text-xs text-danger" title={error}>
           {error}
         </span>
       ) : null}
@@ -43,7 +43,7 @@ export function FormatButton({
         title={label}
         disabled={busy}
         onClick={() => void run()}
-        className="flex h-7 w-7 items-center justify-center rounded-full bg-default-200/80 text-default-600 backdrop-blur transition-colors duration-300 hover:bg-default-300 hover:text-foreground disabled:opacity-50"
+        className="flex h-7 w-7 items-center justify-center rounded-full bg-default-hover/80 text-body backdrop-blur transition-colors duration-300 hover:bg-default-300 hover:text-foreground disabled:opacity-50"
       >
         <Icon name="ph:magic-wand" width={14} height={14} />
       </button>

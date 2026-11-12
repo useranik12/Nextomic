@@ -66,7 +66,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full resize-none rounded-large border border-default-200 bg-transparent py-2 pl-3 pr-9 text-small text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
+            className="w-full resize-none rounded-2xl border border-border bg-transparent py-2 pl-3 pr-9 text-sm text-foreground outline-none transition-colors hover:border-default-400 focus:border-focus"
           />
         ) : (
           <input
@@ -172,7 +172,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-col gap-3 border-b border-divider p-3">
+      <div className="flex flex-col gap-3 border-b border-border p-3">
         <div className="flex items-start gap-1">
           <RenameField
             key={node.id}
@@ -180,13 +180,13 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             fallback={definition?.label ?? node.type}
             autoFocus={renamingId === node.id}
             onDone={() => setRenamingId(null)}
-            className="text-medium font-medium text-foreground"
+            className="text-base font-medium text-foreground"
           />
           <button
             type="button"
             aria-label="Duplicate element"
             onClick={() => duplicate(node.id)}
-            className="rounded p-1.5 text-default-600 hover:text-foreground"
+            className="rounded p-1.5 text-body hover:text-foreground"
           >
             <Icon name="ph:copy" width={16} height={16} />
           </button>
@@ -195,7 +195,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             aria-label="Rename element"
             title="Rename"
             onClick={() => setRenamingId(node.id)}
-            className="rounded p-1.5 text-default-600 hover:text-foreground"
+            className="rounded p-1.5 text-body hover:text-foreground"
           >
             <Icon name="ph:pencil-simple" width={16} height={16} />
           </button>
@@ -203,7 +203,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             type="button"
             aria-label="Copy element"
             onClick={() => copy(node.id)}
-            className="rounded p-1.5 text-default-600 hover:text-foreground"
+            className="rounded p-1.5 text-body hover:text-foreground"
           >
             <Icon name="ph:clipboard" width={16} height={16} />
           </button>
@@ -211,7 +211,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             type="button"
             aria-label="Delete element"
             onClick={() => remove(node.id)}
-            className="rounded p-1.5 text-default-600 hover:text-danger"
+            className="rounded p-1.5 text-body hover:text-danger"
           >
             <Icon name="ph:trash" width={16} height={16} />
           </button>
@@ -234,10 +234,10 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 setQuery("");
               }}
               className={
-                "relative h-10 flex-1 rounded-medium px-3 text-small font-bold uppercase tracking-wide transition-colors duration-300 " +
+                "relative h-10 flex-1 rounded-xl px-3 text-sm font-bold uppercase tracking-wide transition-colors duration-300 " +
                 (tab === id && !q
-                  ? "bg-default-200 text-foreground"
-                  : "text-default-500 hover:bg-default-100")
+                  ? "bg-default-hover text-foreground"
+                  : "text-muted hover:bg-default")
               }
             >
               {id}
@@ -264,7 +264,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
               onToggle={toggleElementSection}
             >
               {controls.length === 0 ? (
-                <p className="text-small text-default-500">This element has no content settings.</p>
+                <p className="text-sm text-muted">This element has no content settings.</p>
               ) : (
                 <div className="flex flex-col gap-5">
                   {controls.map((control) => (
@@ -350,17 +350,17 @@ export function ElementPanel({ node }: { node: ElementNode }) {
               </AccordionSection>
             ) : null}
             {q && groups.length === 0 ? (
-              <p className="text-small text-default-500">No settings match.</p>
+              <p className="text-sm text-muted">No settings match.</p>
             ) : null}
           </div>
         ) : null}
         {showAction ? <ActionTab key={node.id} node={node} /> : null}
         {q && controls.length === 0 && groups.length === 0 ? (
-          <p className="text-small text-default-500">No settings match.</p>
+          <p className="text-sm text-muted">No settings match.</p>
         ) : null}
       </div>
 
-      <div className="border-t border-divider p-3">
+      <div className="border-t border-border p-3">
         <input
           type="search"
           aria-label="Search settings"

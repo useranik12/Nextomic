@@ -43,7 +43,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onPress}
-      className={`flex h-9 w-9 items-center justify-center rounded-medium border border-divider text-default-600 transition-colors duration-300 ${danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default-100"}`}
+      className={`flex h-9 w-9 items-center justify-center rounded-xl border border-border text-body transition-colors duration-300 ${danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default"}`}
     >
       <Icon name={icon} width={16} height={16} />
     </button>
@@ -123,7 +123,7 @@ function ColorsManager({ theme, framework, update }: GateProps) {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <p className="text-small text-default-500">
+      <p className="text-sm text-muted">
         Manage the colors of this theme. Generate dark mode colors, shades and utility classes.
       </p>
       <div className="flex flex-wrap items-end gap-2">
@@ -193,7 +193,7 @@ function ColorsManager({ theme, framework, update }: GateProps) {
 
       {mode !== "none" ? (
         <form
-          className="flex flex-wrap items-end gap-2 rounded-large border border-divider p-3"
+          className="flex flex-wrap items-end gap-2 rounded-2xl border border-border p-3"
           onSubmit={(e) => {
             e.preventDefault();
             submit();
@@ -210,7 +210,7 @@ function ColorsManager({ theme, framework, update }: GateProps) {
           </div>
           {mode === "add-color" ? (
             <div className="w-56">
-              <p className="pb-0.5 text-tiny font-medium text-default-600">Value</p>
+              <p className="pb-0.5 text-xs font-medium text-body">Value</p>
               <ColorField label="New color value" value={value} onChange={setValue} />
             </div>
           ) : null}
@@ -223,13 +223,13 @@ function ColorsManager({ theme, framework, update }: GateProps) {
         </form>
       ) : null}
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}
 
       {palette === null ? (
-        <p className="text-small text-default-500">No palettes yet. Add one to start.</p>
+        <p className="text-sm text-muted">No palettes yet. Add one to start.</p>
       ) : (
         <>
           <ul aria-label={`${palette} colors`} className="flex flex-col gap-2">
@@ -247,7 +247,7 @@ function ColorsManager({ theme, framework, update }: GateProps) {
               />
             ))}
             {colors.length === 0 ? (
-              <li className="rounded-large border border-dashed border-default-300 p-4 text-small text-default-500">
+              <li className="rounded-2xl border border-dashed border-default-300 p-4 text-sm text-muted">
                 This palette has no colors yet.
               </li>
             ) : null}

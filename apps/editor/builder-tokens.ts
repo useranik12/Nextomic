@@ -57,7 +57,13 @@ function vars(mode: Mode): Record<string, string> {
     "--field-focus": "transparent",
     // Text roles (docs/ui-reference.md): strong = foreground, then body, muted, subtle.
     "--nx-text-body": d["600"],
-    "--nx-text-subtle": d["400"]
+    "--nx-text-subtle": d["400"],
+    // The full neutral ramp, for the few places that need a specific step (borders on hover, tracks).
+    ...Object.fromEntries(
+      Object.entries(d)
+        .filter(([k]) => /^\d+$/.test(k))
+        .map(([k, v]) => [`--nx-neutral-${k}`, v])
+    )
   };
 }
 

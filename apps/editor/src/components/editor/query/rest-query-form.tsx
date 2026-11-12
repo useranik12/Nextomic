@@ -55,7 +55,7 @@ export function RestQueryForm({
       />
       {call && variables.length > 0 ? (
         <fieldset className="flex flex-col gap-3">
-          <legend className="mb-2 text-tiny font-medium text-default-600">
+          <legend className="mb-2 text-xs font-medium text-body">
             {mode.tip("variables") ? (
               <LabelWithTip tip={mode.tip("variables") ?? ""}>Variables</LabelWithTip>
             ) : (

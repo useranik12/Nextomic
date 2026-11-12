@@ -74,25 +74,25 @@ export function CategoryPanel({
               if (e.key === "Escape") setRenaming(null);
             }}
             onBlur={() => setRenaming(null)}
-            className="h-9 w-full rounded-medium bg-default-100 px-3 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
+            className="h-9 w-full rounded-xl bg-default px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
           />
         ) : (
           <div
             className={
-              "flex items-center gap-1 rounded-medium pr-2 transition-colors duration-300 " +
-              (active ? "bg-default-800 text-default-50" : "hover:bg-default-100")
+              "flex items-center gap-1 rounded-xl pr-2 transition-colors duration-300 " +
+              (active ? "bg-default-hover text-foreground" : "hover:bg-default")
             }
           >
             <button
               type="button"
               aria-current={active}
               onClick={() => onSelect(id)}
-              className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-small"
+              className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-sm"
             >
               <span className="min-w-0 flex-1 truncate">{name}</span>
               {badge ? (
                 <span
-                  className={`rounded-medium px-1.5 py-0.5 text-tiny font-semibold ${active ? "bg-default-50/20" : "bg-default-200"}`}
+                  className={`rounded-xl px-1.5 py-0.5 text-xs font-semibold ${active ? "bg-default/20" : "bg-default-hover"}`}
                 >
                   {badge}
                 </span>
@@ -119,7 +119,7 @@ export function CategoryPanel({
               </span>
             ) : null}
             <span
-              className={`min-w-6 rounded-medium px-1.5 py-0.5 text-center text-tiny font-semibold ${active ? "bg-default-50 text-default-800" : "bg-default-200"}`}
+              className={`min-w-6 rounded-xl px-1.5 py-0.5 text-center text-xs font-semibold ${active ? "bg-default text-foreground" : "bg-default-hover"}`}
             >
               {count}
             </span>
@@ -130,13 +130,13 @@ export function CategoryPanel({
   };
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-divider" aria-label={title}>
-      <h3 className="border-b border-divider px-4 py-3 text-small font-semibold">{title}</h3>
+    <aside className="flex w-60 shrink-0 flex-col border-r border-border" aria-label={title}>
+      <h3 className="border-b border-border px-4 py-3 text-sm font-semibold">{title}</h3>
       <ul className="min-h-0 flex-1 overflow-y-auto p-2">
         {row(null, "All", total)}
         {items.map((c) => row(c.id, c.name, c.count, c.badge, c.editable))}
       </ul>
-      <div className="flex flex-col gap-1 border-t border-divider p-2">
+      <div className="flex flex-col gap-1 border-t border-border p-2">
         <div className="flex items-center gap-1">
           <input
             aria-label="New category name"
@@ -146,7 +146,7 @@ export function CategoryPanel({
             onKeyDown={(e) => {
               if (e.key === "Enter") add();
             }}
-            className="h-9 min-w-0 flex-1 rounded-medium border border-divider bg-transparent px-3 text-small outline-none focus-visible:border-default-800"
+            className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-transparent px-3 text-sm outline-none focus-visible:border-focus"
           />
           <button
             type="button"
@@ -154,13 +154,13 @@ export function CategoryPanel({
             title="Add the category"
             disabled={draft.trim() === ""}
             onClick={add}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-medium border border-divider transition-colors duration-300 hover:bg-default-100 disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border transition-colors duration-300 hover:bg-default disabled:opacity-40"
           >
             <Icon name="ph:plus" width={16} height={16} />
           </button>
         </div>
         {error ? (
-          <p role="alert" className="px-1 text-tiny text-danger">
+          <p role="alert" className="px-1 text-xs text-danger">
             {error}
           </p>
         ) : null}

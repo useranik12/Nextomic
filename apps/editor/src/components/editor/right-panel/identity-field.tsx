@@ -21,7 +21,7 @@ const STATES: PseudoState[] = ["default", "hover", "focus", "active", "disabled"
 const ID_FIELD = "!border-amber-500/50 bg-amber-500/10 font-mono";
 const CLASS_FIELD = "!border-sky-500/50 bg-sky-500/15 font-mono";
 const ICON_BUTTON =
-  "flex h-6 w-6 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-200 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800/40";
+  "flex h-6 w-6 items-center justify-center rounded-full text-body transition-colors duration-300 hover:bg-default-hover hover:text-foreground focus-visible:ring-1 focus-visible:ring-focus/30";
 
 type FieldMode = "view" | "edit" | "add";
 
@@ -169,7 +169,7 @@ export function IdentityField({ node }: { node: ElementNode }) {
                 <button
                   type="button"
                   onClick={apply}
-                  className="h-6 rounded-full bg-default-800 px-2.5 text-tiny font-medium text-default-50 transition-colors duration-300 hover:bg-default-700"
+                  className="h-6 rounded-full bg-default-hover px-2.5 text-xs font-medium text-foreground transition-colors duration-300 hover:bg-default-hover"
                 >
                   Apply
                 </button>
@@ -219,11 +219,11 @@ export function IdentityField({ node }: { node: ElementNode }) {
         </div>
       </SettingRow>
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : (
-        <p className="text-tiny text-default-500">
+        <p className="text-xs text-muted">
           {activeClass
             ? `Design edits change .${activeClass} for every element that uses it.`
             : "Design edits change this element only."}
@@ -238,7 +238,7 @@ export function IdentityField({ node }: { node: ElementNode }) {
             <li
               key={state}
               className={
-                "flex h-6 items-center rounded-full text-tiny transition-opacity duration-300 " +
+                "flex h-6 items-center rounded-full text-xs transition-opacity duration-300 " +
                 (active ? STATE_ACTIVE : STATE_CHIP + " " + FADED)
               }
             >
@@ -325,7 +325,7 @@ function Chip({
   return (
     <li
       className={
-        "flex h-6 select-none items-center rounded-full text-tiny transition-opacity duration-300 " +
+        "flex h-6 select-none items-center rounded-full text-xs transition-opacity duration-300 " +
         tone +
         (active ? ` ring-1 ${ring}` : " " + FADED)
       }

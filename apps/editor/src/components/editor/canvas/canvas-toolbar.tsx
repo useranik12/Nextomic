@@ -14,7 +14,7 @@ interface ToolbarProps {
 }
 
 const BUTTON =
-  "flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-small text-default-700 transition-colors duration-300 hover:bg-default-100 hover:text-foreground focus-visible:outline-2 focus-visible:outline-default-800 disabled:opacity-40";
+  "flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm text-body transition-colors duration-300 hover:bg-default hover:text-foreground focus-visible:outline-2 focus-visible:outline-focus disabled:opacity-40";
 
 export function CanvasToolbar({
   zoom,
@@ -30,7 +30,7 @@ export function CanvasToolbar({
     <div
       role="toolbar"
       aria-label="Canvas view"
-      className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-default-200 bg-content1 px-2 py-1 shadow-lg"
+      className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-surface px-2 py-1 shadow-lg"
     >
       <button type="button" aria-label="Zoom out" className={BUTTON} onClick={onZoomOut}>
         <Icon name="ph:minus" width={16} height={16} />
@@ -46,7 +46,7 @@ export function CanvasToolbar({
       <button type="button" aria-label="Zoom in" className={BUTTON} onClick={onZoomIn}>
         <Icon name="ph:plus" width={16} height={16} />
       </button>
-      <span aria-hidden className="mx-1 h-5 w-px bg-default-200" />
+      <span aria-hidden className="mx-1 h-5 w-px bg-default-hover" />
       <button type="button" aria-label="Fit to screen" className={BUTTON} onClick={onFit}>
         <Icon name="ph:corners-out" width={16} height={16} />
       </button>
@@ -55,7 +55,7 @@ export function CanvasToolbar({
         aria-label="Rotate device"
         aria-pressed={rotated}
         disabled={!canRotate}
-        className={`${BUTTON} ${rotated ? "bg-default-100 text-foreground" : ""}`}
+        className={`${BUTTON} ${rotated ? "bg-default text-foreground" : ""}`}
         onClick={onRotate}
       >
         <Icon name="ph:device-rotate" width={16} height={16} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui-v2/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@/components/ui/menu";
 import { insertFlowNode, newFlowNode, type FlowNodeKind, type FlowSlot } from "@nextomic/schema";
 import { Icon } from "@/lib/icons/Icon";
 import { useFlowDraft } from "./flow-draft";
@@ -45,7 +45,7 @@ export function AddNodeMenu({
         {label ? (
           <button
             type="button"
-            className="flex items-center gap-1 rounded-full border border-dashed border-default-300 px-3 py-1.5 text-small text-default-500 hover:border-default-500 hover:text-foreground"
+            className="flex items-center gap-1 rounded-full border border-dashed border-default-300 px-3 py-1.5 text-sm text-muted hover:border-default-500 hover:text-foreground"
           >
             <Icon name="ph:plus" /> {label}
           </button>
@@ -53,7 +53,7 @@ export function AddNodeMenu({
           <button
             type="button"
             aria-label="Insert a node here"
-            className="flex h-6 w-6 items-center justify-center rounded-full border border-divider bg-content1 text-default-500 hover:border-default-500 hover:text-foreground"
+            className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-surface text-muted hover:border-default-500 hover:text-foreground"
           >
             <Icon name="ph:plus" width={12} height={12} />
           </button>
@@ -67,6 +67,7 @@ export function AddNodeMenu({
         {KINDS.map((kind) => (
           <DropdownItem
             key={kind}
+            id={kind}
             description={
               kind === "block" && !hasBlocks
                 ? "Create an Action Block first."

@@ -30,7 +30,7 @@ export function FrameworkClasses({ framework }: { framework: Framework }) {
   }, [all, q]);
 
   if (all.length === 0)
-    return <p className="p-4 text-small text-default-500">This framework has no classes.</p>;
+    return <p className="p-4 text-sm text-muted">This framework has no classes.</p>;
   return (
     <div className="flex flex-col gap-3 p-3">
       <FormInput
@@ -41,16 +41,16 @@ export function FrameworkClasses({ framework }: { framework: Framework }) {
       />
       {groups.map(([group, names]) => (
         <section key={group}>
-          <h3 className="pb-1 text-small font-semibold">
-            {group} <span className="font-normal text-default-500">{names.length}</span>
+          <h3 className="pb-1 text-sm font-semibold">
+            {group} <span className="font-normal text-muted">{names.length}</span>
           </h3>
           <ul className="flex flex-col">
             {names.slice(0, 200).map((name) => (
-              <li key={name} className="border-b border-divider py-1">
+              <li key={name} className="border-b border-border py-1">
                 <div className="flex items-center justify-between gap-2">
                   <button
                     type="button"
-                    className="min-w-0 truncate text-left font-mono text-tiny hover:underline"
+                    className="min-w-0 truncate text-left font-mono text-xs hover:underline"
                     title="Open in the Classes manager"
                     onClick={() => nav.go("classes", { className: name })}
                   >
@@ -61,7 +61,7 @@ export function FrameworkClasses({ framework }: { framework: Framework }) {
                     aria-expanded={open === name}
                     aria-label={`Show the rules of .${name}`}
                     onClick={() => setOpen(open === name ? null : name)}
-                    className="shrink-0 rounded-medium px-2 text-tiny text-default-500 hover:bg-default-100"
+                    className="shrink-0 rounded-xl px-2 text-xs text-muted hover:bg-default"
                   >
                     {open === name ? "Hide CSS" : "CSS"}
                   </button>
@@ -77,7 +77,7 @@ export function FrameworkClasses({ framework }: { framework: Framework }) {
                   </ActionButton>
                 </div>
                 {open === name ? (
-                  <pre className="mt-1 max-h-40 overflow-auto rounded-medium bg-default-100 p-2 text-tiny">
+                  <pre className="mt-1 max-h-40 overflow-auto rounded-xl bg-default p-2 text-xs">
                     {frameworkClassRules(css, name)}
                   </pre>
                 ) : null}

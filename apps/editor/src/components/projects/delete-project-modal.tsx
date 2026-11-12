@@ -1,7 +1,7 @@
 "use client";
 
 import type { Project } from "@nextomic/schema";
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { ActionButton } from "@/components/ui/controls";
 import { useState } from "react";
 
@@ -34,7 +34,7 @@ export function DeleteProjectModal({ project, onClose, onDelete }: DeleteProject
       <ModalContent>
         <ModalHeader>Delete project</ModalHeader>
         <ModalBody>
-          <p className="text-default-600">
+          <p className="text-body">
             Delete <strong>{project?.name}</strong>? This cannot be undone.
           </p>
           {error ? <p className="text-sm text-danger">{error}</p> : null}

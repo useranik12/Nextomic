@@ -150,13 +150,13 @@ function TagValue({ hover }: { hover: Hover }) {
       ref={box}
       role="tooltip"
       style={{ left: place?.left ?? -9999, top: place?.top ?? -9999 }}
-      className="pointer-events-none fixed z-[1950] max-w-sm rounded-large border border-default-200 bg-content1 px-3 py-2 shadow-xl"
+      className="pointer-events-none fixed z-[1950] max-w-sm rounded-2xl border border-border bg-surface px-3 py-2 shadow-xl"
     >
-      <p className="truncate font-mono text-[10px] text-default-400">{`{{ ${hover.expr} }}`}</p>
+      <p className="truncate font-mono text-[10px] text-subtle">{`{{ ${hover.expr} }}`}</p>
       <p
-        className={`mt-1 whitespace-pre-wrap break-words font-mono text-tiny ${hover.error ? "text-danger" : "text-foreground"}`}
+        className={`mt-1 whitespace-pre-wrap break-words font-mono text-xs ${hover.error ? "text-danger" : "text-foreground"}`}
       >
-        {hover.text || <span className="text-default-400">(empty)</span>}
+        {hover.text || <span className="text-subtle">(empty)</span>}
       </p>
     </div>
   );

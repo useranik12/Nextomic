@@ -32,7 +32,7 @@ export function SelectionBar({
 
   return (
     <div className="flex min-h-9 flex-wrap items-center gap-2">
-      <label className="flex cursor-pointer items-center gap-2 text-tiny text-default-600">
+      <label className="flex cursor-pointer items-center gap-2 text-xs text-body">
         <input
           ref={box}
           type="checkbox"
@@ -40,7 +40,7 @@ export function SelectionBar({
           disabled={total === 0}
           onChange={() => (all ? onClear() : onSelectAll())}
           aria-label={`Select all ${noun}`}
-          className="h-4 w-4 cursor-pointer accent-default-800"
+          className="h-4 w-4 cursor-pointer accent-accent"
         />
         Select all
       </label>
@@ -49,11 +49,11 @@ export function SelectionBar({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-medium px-2 py-1 text-tiny text-default-600 hover:bg-default-100"
+            className="rounded-xl px-2 py-1 text-xs text-body hover:bg-default"
           >
             Deselect all
           </button>
-          <span className="text-tiny text-default-500" role="status">
+          <span className="text-xs text-muted" role="status">
             {selected} selected
           </span>
           <ActionButton size="sm" tone="danger" className="ml-auto" onPress={onDelete}>

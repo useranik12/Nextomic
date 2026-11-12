@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { useMemo, useState, type KeyboardEvent } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -37,14 +37,14 @@ function UnsavedDialog({
   onSave: () => void;
 }) {
   return (
-    <Modal isOpen onClose={onKeep} backdrop="blur" size="sm">
+    <Modal isOpen onClose={onKeep} size="sm">
       <ModalContent>
         <ModalHeader className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-warning" />
           Unsaved changes
         </ModalHeader>
         <ModalBody>
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             Your actions are not saved yet. Save them, discard them, or keep editing.
           </p>
         </ModalBody>
@@ -107,27 +107,22 @@ export function FlowEditorModal() {
       isDismissable={false}
       hideCloseButton
       size="full"
-      // Same 16px gap on every side; "full" alone fills the screen top to bottom.
-      classNames={{
-        wrapper: "items-center",
-        base: "!m-4 h-[calc(100dvh-2rem)] min-h-0 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-none !rounded-large",
-        body: "p-0"
-      }}
+      classNames={{ body: "p-0" }}
     >
       <ModalContent>
         <div className="flex h-full min-h-0 flex-col" onKeyDown={onHistoryKey}>
-          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-divider px-4">
-            <h2 className="flex min-w-0 items-center gap-2 text-medium font-medium">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-4">
+            <h2 className="flex min-w-0 items-center gap-2 text-base font-medium">
               <Icon name="ph:lightning" width={20} height={20} />
               Action Flow Editor
               {subtitle ? (
-                <span className="truncate text-small font-normal text-default-500">{subtitle}</span>
+                <span className="truncate text-sm font-normal text-muted">{subtitle}</span>
               ) : null}
             </h2>
             <div className="flex items-center gap-2">
               {load.status === "ready" ? <IssuesMenu issues={issues} /> : null}
               {dirty ? (
-                <span className="text-tiny font-medium text-warning">Unsaved changes</span>
+                <span className="text-xs font-medium text-warning">Unsaved changes</span>
               ) : null}
               <span
                 title={testBlocked ?? "Run this trigger on the canvas with the unsaved changes."}
@@ -154,32 +149,32 @@ export function FlowEditorModal() {
                 type="button"
                 aria-label="Close the Action Flow Editor"
                 onClick={requestClose}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-100"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-body transition-colors duration-300 hover:bg-default"
               >
                 <Icon name="ph:x" width={16} height={16} />
               </button>
             </div>
           </header>
           {load.status === "loading" ? (
-            <p className="p-6 text-small text-default-500">Loading the flow editor…</p>
+            <p className="p-6 text-sm text-muted">Loading the flow editor…</p>
           ) : load.status === "error" ? (
-            <p role="alert" className="p-6 text-small text-danger">
+            <p role="alert" className="p-6 text-sm text-danger">
               {load.error}
             </p>
           ) : (
             <div className="flex min-h-0 flex-1 overflow-hidden">
               <aside
                 aria-label={target?.mode === "block" ? "Block settings" : "Triggers"}
-                className="w-64 shrink-0 overflow-y-auto border-r border-divider p-3"
+                className="w-64 shrink-0 overflow-y-auto border-r border-border p-3"
               >
                 {target?.mode === "block" ? <BlockSidebar /> : <TriggerSidebar />}
               </aside>
-              <main className="min-w-0 flex-1 overflow-hidden bg-default-50/50">
+              <main className="min-w-0 flex-1 overflow-hidden bg-default/20">
                 <FlowCanvas errors={errors} />
               </main>
               <aside
                 aria-label="Settings"
-                className="w-80 shrink-0 overflow-y-auto border-l border-divider p-3"
+                className="w-80 shrink-0 overflow-y-auto border-l border-border p-3"
               >
                 <DefinePanel />
               </aside>

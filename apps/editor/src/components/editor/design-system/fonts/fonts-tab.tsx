@@ -24,8 +24,8 @@ function Pill({
       aria-pressed={active}
       onClick={onPress}
       className={
-        "rounded-full px-3 py-1 text-small transition-colors duration-300 " +
-        (active ? "bg-default-800 text-default-50" : "text-default-600 hover:bg-default-100")
+        "rounded-full px-3 py-1 text-sm transition-colors duration-300 " +
+        (active ? "bg-default-hover text-foreground" : "text-body hover:bg-default")
       }
     >
       {children}
@@ -79,7 +79,7 @@ export function FontsTab({ saveNow }: { saveNow: () => Promise<void> }) {
     <div className="flex h-full min-h-0 flex-col">
       <style>{previewCss}</style>
       <div
-        className="flex items-center gap-1 border-b border-divider p-3"
+        className="flex items-center gap-1 border-b border-border p-3"
         role="group"
         aria-label="Fonts and icons"
       >
@@ -91,7 +91,7 @@ export function FontsTab({ saveNow }: { saveNow: () => Promise<void> }) {
         </Pill>
       </div>
       {sub === "icons" ? (
-        <p className="p-4 text-small text-default-500">
+        <p className="p-4 text-sm text-muted">
           Icon libraries arrive with the Media manager (a later phase). Fonts are ready now.
         </p>
       ) : open ? (

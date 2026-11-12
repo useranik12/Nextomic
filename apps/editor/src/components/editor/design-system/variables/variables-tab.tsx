@@ -205,7 +205,7 @@ export function VariablesTab() {
           onFilter={(v) => setFilter(v as VarFilter)}
         />
         <div className="flex flex-col gap-1 px-4 pt-3">
-          <h3 className="text-small font-semibold">Variables ({shown.length})</h3>
+          <h3 className="text-sm font-semibold">Variables ({shown.length})</h3>
           <SelectionBar
             noun="variables"
             total={selectable.length}
@@ -216,16 +216,16 @@ export function VariablesTab() {
           />
         </div>
         {error ? (
-          <p role="alert" className="px-4 pt-1 text-tiny text-danger">
+          <p role="alert" className="px-4 pt-1 text-xs text-danger">
             {error}
           </p>
         ) : null}
         <ul
           aria-label="Variables"
-          className="mt-2 min-h-0 flex-1 overflow-y-auto border-y border-divider"
+          className="mt-2 min-h-0 flex-1 overflow-y-auto border-y border-border"
         >
           {shown.length === 0 ? (
-            <li className="p-4 text-small text-default-500">
+            <li className="p-4 text-sm text-muted">
               {rows.length === 0 ? "No variables yet. Add one below." : "No variable matches."}
             </li>
           ) : (
@@ -257,7 +257,7 @@ export function VariablesTab() {
             add();
           }}
         >
-          <span aria-hidden className="shrink-0 font-mono text-tiny text-default-500">
+          <span aria-hidden className="shrink-0 font-mono text-xs text-muted">
             {VARIABLE_PREFIX}
           </span>
           <input
@@ -266,9 +266,9 @@ export function VariablesTab() {
             value={name}
             spellCheck={false}
             onChange={(e) => setName(e.target.value)}
-            className="h-8 min-w-0 flex-1 rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
+            className="h-8 min-w-0 flex-1 rounded-full border border-border bg-transparent px-3 font-mono text-sm outline-none focus:border-focus"
           />
-          <span aria-hidden className="text-default-400">
+          <span aria-hidden className="text-subtle">
             =
           </span>
           <input
@@ -277,7 +277,7 @@ export function VariablesTab() {
             value={value}
             spellCheck={false}
             onChange={(e) => setValue(e.target.value)}
-            className="h-8 min-w-0 flex-1 rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
+            className="h-8 min-w-0 flex-1 rounded-full border border-border bg-transparent px-3 font-mono text-sm outline-none focus:border-focus"
           />
           <ActionButton
             size="sm"

@@ -30,7 +30,7 @@ export function RestPreview({
       >
         {fetched ? "Fetch preview again" : "Fetch preview"}
       </ActionButton>
-      <p className="text-tiny text-default-500">
+      <p className="text-xs text-muted">
         {fetched
           ? "The canvas shows the fetched rows. Changing the query waits for another fetch."
           : "The canvas shows a placeholder until you fetch a preview. Each fetch sends a real request to the API."}

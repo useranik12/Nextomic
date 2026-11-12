@@ -207,7 +207,7 @@ export function Thumb({
   if (!item.screenshotAt || broken) {
     return (
       <div
-        className={`${className} flex items-center justify-center bg-default-100 text-default-400`}
+        className={`${className} flex items-center justify-center bg-default text-subtle`}
         role="img"
         aria-label={`No screenshot of ${item.name} yet`}
       >

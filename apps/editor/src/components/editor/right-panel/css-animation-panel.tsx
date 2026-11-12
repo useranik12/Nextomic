@@ -129,14 +129,14 @@ function SelectorPicker({
             "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-300 " +
             (active
               ? "bg-pink-500 text-white"
-              : "bg-default-100 text-default-600 hover:bg-default-200 hover:text-foreground")
+              : "bg-default text-body hover:bg-default-hover hover:text-foreground")
           }
         >
           <Icon name="ph:crosshair" width={16} height={16} />
         </button>
       </div>
       {bad ? (
-        <p role="alert" className="mt-1 text-tiny text-danger">
+        <p role="alert" className="mt-1 text-xs text-danger">
           Selectors cannot contain {"{ } ; < >"}. This value is not saved.
         </p>
       ) : null}
@@ -178,11 +178,11 @@ export function AnimationPicker({
         onClick={() => setOpen((v) => !v)}
         className={compactFieldClass + " flex items-center justify-between text-left"}
       >
-        <span className={current ? "" : "text-default-400"}>{current?.label ?? "Choose…"}</span>
+        <span className={current ? "" : "text-subtle"}>{current?.label ?? "Choose…"}</span>
         <Icon name="ph:caret-down" width={14} height={14} />
       </button>
       {open ? (
-        <div className="mt-2 rounded-medium border border-divider bg-content1 p-2">
+        <div className="mt-2 rounded-xl border border-border bg-surface p-2">
           <input
             autoFocus
             aria-label="Search animations"
@@ -193,12 +193,12 @@ export function AnimationPicker({
           />
           <ul role="listbox" aria-label="Animations" className="mt-2 max-h-64 overflow-y-auto">
             {matches.length === 0 ? (
-              <li className="px-2 py-2 text-small text-default-500">No animation matches.</li>
+              <li className="px-2 py-2 text-sm text-muted">No animation matches.</li>
             ) : null}
             {matches.map((a, i) => (
               <li key={a.id} role="presentation">
                 {i === 0 || matches[i - 1]?.group !== a.group ? (
-                  <div className="px-2 pb-0.5 pt-2 text-tiny font-semibold uppercase tracking-wide text-default-500">
+                  <div className="px-2 pb-0.5 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
                     {a.group}
                   </div>
                 ) : null}
@@ -212,8 +212,8 @@ export function AnimationPicker({
                     setQuery("");
                   }}
                   className={
-                    "w-full rounded-medium px-2 py-1.5 text-left text-small hover:bg-default-100 " +
-                    (a.id === value ? "bg-default-200 font-medium" : "")
+                    "w-full rounded-xl px-2 py-1.5 text-left text-sm hover:bg-default " +
+                    (a.id === value ? "bg-default-hover font-medium" : "")
                   }
                 >
                   {a.label}
@@ -332,7 +332,7 @@ export function CssAnimationPanel({ node }: { node: ElementNode }) {
         <button
           type="button"
           onClick={() => set(node.id, null)}
-          className="self-start rounded-full px-3 py-1.5 text-small text-danger hover:bg-danger/10"
+          className="self-start rounded-full px-3 py-1.5 text-sm text-danger hover:bg-danger/10"
         >
           Remove animation
         </button>

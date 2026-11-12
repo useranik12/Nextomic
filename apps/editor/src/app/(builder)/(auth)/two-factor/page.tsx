@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@heroui-v2/react";
+import { CheckboxField as Checkbox } from "@/components/ui/toggles";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
@@ -62,7 +62,7 @@ export default function TwoFactorPage() {
           isInvalid={Boolean(error)}
         />
         <Checkbox size="sm" isSelected={trustDevice} onValueChange={setTrustDevice}>
-          <span className="text-small text-default-600">
+          <span className="text-sm text-body">
             Trust this device (skip this step here next time)
           </span>
         </Checkbox>
@@ -71,7 +71,7 @@ export default function TwoFactorPage() {
           Verify
         </ActionButton>
         <div className="flex justify-between">
-          <AuthLink as="button" type="button" onPress={switchMode}>
+          <AuthLink onPress={switchMode}>
             {mode === "totp" ? "Use a backup code" : "Use the authenticator app"}
           </AuthLink>
           <AuthLink href="/sign-in">Back to sign in</AuthLink>

@@ -34,7 +34,7 @@ export function BodyTab({
   const area = useRef<HTMLTextAreaElement>(null);
   if (!BODY_METHODS.has(call.method))
     return (
-      <p className="text-small text-default-500">
+      <p className="text-sm text-muted">
         {call.method} requests send no body. Choose POST, PUT, PATCH, DELETE or QUERY to add one.
       </p>
     );
@@ -60,16 +60,14 @@ export function BodyTab({
       </div>
       {textual ? (
         <div className="flex flex-col gap-2">
-          <p className="text-small text-default-500">
-            Available variables to add (or type [ to pick one)
-          </p>
+          <p className="text-sm text-muted">Available variables to add (or type [ to pick one)</p>
           <div className="flex flex-wrap gap-1.5">
             {variables.map(({ name }) => (
               <button
                 key={name}
                 type="button"
                 onClick={() => insert(name)}
-                className="rounded-full bg-primary-500/10 px-2.5 py-0.5 font-mono text-tiny text-primary-600 transition-colors hover:bg-primary-500/20 dark:text-primary-400"
+                className="rounded-full bg-accent/10 px-2.5 py-0.5 font-mono text-xs text-accent transition-colors hover:bg-accent/20 dark:text-accent"
               >
                 {name}
               </button>
@@ -92,7 +90,7 @@ export function BodyTab({
           rows={10}
           spellCheck={false}
           onChange={(e) => onChange({ ...call, body: e.target.value })}
-          className="rounded-medium bg-default-100 px-3 py-2.5 font-mono text-tiny leading-5 text-foreground outline-none focus:ring-1 focus:ring-default-800/30"
+          className="rounded-xl bg-default px-3 py-2.5 font-mono text-xs leading-5 text-foreground outline-none focus:ring-1 focus:ring-focus/30"
         />
       ) : call.bodyType === "multipart" || call.bodyType === "form" ? (
         <KeyValueLines
@@ -104,7 +102,7 @@ export function BodyTab({
           addLabel="Add Field"
         />
       ) : (
-        <p className="text-small text-default-500">This call sends no body.</p>
+        <p className="text-sm text-muted">This call sends no body.</p>
       )}
     </div>
   );

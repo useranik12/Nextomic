@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalHeader } from "@/components/ui/modal";
 import { getElementDefinition } from "@nextomic/renderer";
 import { loopAncestors, tokenTags, type TransformChain } from "@nextomic/schema";
 import { useEffect, useMemo, useState } from "react";
@@ -15,8 +15,7 @@ import { loopGroups } from "./loop-groups";
 
 export type Exclude = ("params" | "state")[];
 
-const CHIP =
-  "whitespace-nowrap rounded-full px-3 py-1.5 text-small transition-colors duration-300 ";
+const CHIP = "whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition-colors duration-300 ";
 
 /**
  * The dynamic data modal: tags grouped by source with a filter and group chips, and the Transform
@@ -96,14 +95,13 @@ export function DynamicDataModal({
     <Modal
       isOpen
       onClose={onClose}
-      backdrop="blur"
       scrollBehavior="inside"
       classNames={{ base: "h-[80vh] w-[80vw] max-w-[80vw] sm:max-w-[80vw]" }}
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-0.5">
           Dynamic data
-          <span className="text-tiny font-normal text-default-500">
+          <span className="text-xs font-normal text-muted">
             {transform ? "Transform a dynamic tag for" : "Insert a dynamic tag into"} {title}
           </span>
         </ModalHeader>
@@ -125,13 +123,13 @@ export function DynamicDataModal({
                   name="ph:magnifying-glass"
                   width={16}
                   height={16}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-default-500"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-muted"
                 />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Type here to filter the dynamic tags"
-                  className="h-11 w-full rounded-full border border-default-200 bg-transparent pl-10 pr-4 text-small outline-none transition-colors hover:border-default-400 focus:border-default-800"
+                  className="h-11 w-full rounded-full border border-border bg-transparent pl-10 pr-4 text-sm outline-none transition-colors hover:border-default-400 focus:border-focus"
                 />
               </label>
               <div role="group" aria-label="Tag groups" className="flex flex-wrap gap-2">
@@ -144,8 +142,8 @@ export function DynamicDataModal({
                     className={
                       CHIP +
                       (group === g.id
-                        ? "bg-default-800 text-default-50"
-                        : "bg-default-100 text-default-600 hover:bg-default-200")
+                        ? "bg-default-hover text-foreground"
+                        : "bg-default text-body hover:bg-default-hover")
                     }
                   >
                     {g.label}
@@ -153,7 +151,7 @@ export function DynamicDataModal({
                 ))}
               </div>
               {visible.length === 0 ? (
-                <p className="py-8 text-center text-small text-default-500">
+                <p className="py-8 text-center text-sm text-muted">
                   No dynamic tags match &ldquo;{query}&rdquo;.
                 </p>
               ) : (
@@ -165,9 +163,7 @@ export function DynamicDataModal({
                       aria-label={g.label}
                       className="mb-6 flex min-w-0 break-inside-avoid flex-col gap-2"
                     >
-                      <h3 className="text-tiny font-semibold uppercase text-default-500">
-                        {g.label}
-                      </h3>
+                      <h3 className="text-xs font-semibold uppercase text-muted">{g.label}</h3>
                       {g.tags.map((tag) => (
                         <TagCard
                           key={tag.token}

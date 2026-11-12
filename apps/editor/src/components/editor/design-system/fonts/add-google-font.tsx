@@ -1,6 +1,7 @@
 "use client";
 
-import { Checkbox, Slider, Switch } from "@heroui-v2/react";
+import { Label, Slider } from "@heroui/react";
+import { SwitchField as Switch, CheckboxField as Checkbox } from "@/components/ui/toggles";
 import type { ProjectFont } from "@nextomic/schema";
 import { useEffect, useState } from "react";
 import {
@@ -85,42 +86,51 @@ function InstallForm({
   }
 
   return (
-    <div className="flex flex-col gap-3 border-t border-divider p-3">
-      <p className="text-small font-medium">
-        {font.family} <span className="font-normal text-default-500">· {font.license}</span>
+    <div className="flex flex-col gap-3 border-t border-border p-3">
+      <p className="text-sm font-medium">
+        {font.family} <span className="font-normal text-muted">· {font.license}</span>
       </p>
       {axis === "checking" ? (
-        <p className="text-tiny text-default-500">Checking for a variable version…</p>
+        <p className="text-xs text-muted">Checking for a variable version…</p>
       ) : null}
       {axis && axis !== "checking" ? (
         <>
           <Switch size="sm" isSelected={variable} onValueChange={setVariable}>
-            <span className="text-small">Variable font (one file covers every weight)</span>
+            <span className="text-sm">Variable font (one file covers every weight)</span>
           </Switch>
           {variable && high > low ? (
             <Slider
-              size="sm"
               step={100}
               minValue={low}
               maxValue={high}
-              showSteps
-              label="Weights the font may use"
               value={range}
               onChange={(v) =>
                 Array.isArray(v) && v.length === 2 && setRange([v[0] ?? low, v[1] ?? high])
               }
-              getValue={(v) => (Array.isArray(v) ? `${v[0]} to ${v[1]}` : String(v))}
-              classNames={{
-                label: "text-tiny font-medium text-default-600",
-                value: "text-tiny text-default-600"
-              }}
-            />
+            >
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium text-muted">Weights the font may use</Label>
+                <Slider.Output className="text-xs text-muted">
+                  {({ state }) => `${state.values[0]} to ${state.values[1]}`}
+                </Slider.Output>
+              </div>
+              <Slider.Track>
+                {({ state }) => (
+                  <>
+                    <Slider.Fill />
+                    {state.values.map((_, i) => (
+                      <Slider.Thumb key={i} index={i} />
+                    ))}
+                  </>
+                )}
+              </Slider.Track>
+            </Slider>
           ) : null}
         </>
       ) : null}
       {variable ? null : (
         <fieldset className="flex flex-wrap gap-x-4 gap-y-1">
-          <legend className="pb-1 text-tiny font-medium text-default-600">Weights</legend>
+          <legend className="pb-1 text-xs font-medium text-body">Weights</legend>
           {font.weights.map((w) => (
             <Checkbox
               key={w}
@@ -141,9 +151,7 @@ function InstallForm({
         </Checkbox>
       ) : null}
       <fieldset className="flex flex-wrap gap-x-4 gap-y-1">
-        <legend className="pb-1 text-tiny font-medium text-default-600">
-          Subsets (only these ship)
-        </legend>
+        <legend className="pb-1 text-xs font-medium text-body">Subsets (only these ship)</legend>
         {font.subsets.map((s) => (
           <Checkbox
             key={s}
@@ -158,12 +166,12 @@ function InstallForm({
         ))}
       </fieldset>
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-tiny text-default-500">
+        <span className="text-xs text-muted">
           {files} file{files === 1 ? "" : "s"} · stored in this project, no Google requests on your
           site
         </span>
@@ -259,20 +267,20 @@ export function AddGoogleFont({
             setOffset(0);
           }}
         >
-          <span className="text-small">Variable only</span>
+          <span className="text-sm">Variable only</span>
         </Switch>
       </div>
       {error ? (
-        <p role="alert" className="px-3 pb-2 text-tiny text-danger">
+        <p role="alert" className="px-3 pb-2 text-xs text-danger">
           {error}
         </p>
       ) : null}
       {results === null && !error ? (
-        <p className="px-3 pb-3 text-small text-default-500">Loading the catalog…</p>
+        <p className="px-3 pb-3 text-sm text-muted">Loading the catalog…</p>
       ) : null}
       {results ? (
         <>
-          <ul aria-label="Fonts" className="max-h-56 overflow-y-auto border-t border-divider">
+          <ul aria-label="Fonts" className="max-h-56 overflow-y-auto border-t border-border">
             {results.fonts.map((f) => (
               <li key={f.id}>
                 <button
@@ -281,12 +289,12 @@ export function AddGoogleFont({
                   onClick={() => setSelected(f)}
                   aria-pressed={selected?.id === f.id}
                   className={
-                    "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-small transition-colors duration-300 disabled:opacity-50 " +
-                    (selected?.id === f.id ? "bg-default-200" : "hover:bg-default-100")
+                    "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors duration-300 disabled:opacity-50 " +
+                    (selected?.id === f.id ? "bg-default-hover" : "hover:bg-default")
                   }
                 >
                   <span className="truncate font-medium">{f.family}</span>
-                  <span className="shrink-0 text-tiny text-default-500">
+                  <span className="shrink-0 text-xs text-muted">
                     {has(f.family)
                       ? "Added"
                       : `${f.category} · ${f.weights.length} weights${f.variable ? " · variable" : ""}`}
@@ -295,10 +303,10 @@ export function AddGoogleFont({
               </li>
             ))}
             {results.fonts.length === 0 ? (
-              <li className="px-3 py-3 text-small text-default-500">No fonts match.</li>
+              <li className="px-3 py-3 text-sm text-muted">No fonts match.</li>
             ) : null}
           </ul>
-          <div className="flex items-center justify-between border-t border-divider px-3 py-1.5 text-tiny text-default-500">
+          <div className="flex items-center justify-between border-t border-border px-3 py-1.5 text-xs text-muted">
             <span>
               {results.total === 0 ? 0 : offset + 1}–{Math.min(offset + PAGE, results.total)} of{" "}
               {results.total}

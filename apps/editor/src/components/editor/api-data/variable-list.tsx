@@ -54,20 +54,18 @@ export function VariableRow({
         e.preventDefault();
         onPick();
       }}
-      className={`flex cursor-pointer flex-col gap-0.5 rounded-medium px-2.5 py-1.5 ${active ? "bg-default-100" : "hover:bg-default-50"}`}
+      className={`flex cursor-pointer flex-col gap-0.5 rounded-xl px-2.5 py-1.5 ${active ? "bg-default" : "hover:bg-default/40"}`}
     >
       <span className="flex items-center gap-2">
-        <span className="truncate font-mono text-small text-foreground">{variable.name}</span>
+        <span className="truncate font-mono text-sm text-foreground">{variable.name}</span>
         {FROM_LABEL[variable.from] ? (
-          <span className="rounded-full bg-default-100 px-1.5 text-tiny text-default-500">
+          <span className="rounded-full bg-default px-1.5 text-xs text-muted">
             {FROM_LABEL[variable.from]}
           </span>
         ) : null}
-        <span className="ml-auto shrink-0 text-tiny text-primary-600 dark:text-primary-400">
-          {type}
-        </span>
+        <span className="ml-auto shrink-0 text-xs text-accent dark:text-accent">{type}</span>
       </span>
-      <span className="truncate font-mono text-tiny text-default-500">
+      <span className="truncate font-mono text-xs text-muted">
         {variable.from === "server"
           ? "Filled by the server"
           : variable.defaultValue

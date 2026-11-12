@@ -25,7 +25,7 @@ function Transport({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className="flex h-8 w-8 items-center justify-center rounded-full bg-default-100 text-foreground transition-colors duration-300 hover:bg-default-200 disabled:opacity-40"
+      className="flex h-8 w-8 items-center justify-center rounded-full bg-default text-foreground transition-colors duration-300 hover:bg-default-hover disabled:opacity-40"
     >
       <Icon name={icon} width={16} height={16} />
     </button>
@@ -50,12 +50,12 @@ export function TransportBar({
 }) {
   const ready = state.duration > 0;
   return (
-    <div className="pointer-events-auto flex h-12 shrink-0 items-center gap-3 border-b border-divider bg-content1 px-4">
+    <div className="pointer-events-auto flex h-12 shrink-0 items-center gap-3 border-b border-border bg-surface px-4">
       <ActionButton size="sm" tone="ghost" onPress={onClose}>
         <Icon name="ph:arrow-left" width={14} height={14} />
         Back to editor
       </ActionButton>
-      <span className="truncate text-small font-semibold">{timelineName ?? "Animations"}</span>
+      <span className="truncate text-sm font-semibold">{timelineName ?? "Animations"}</span>
       <div className="ml-4 flex items-center gap-2">
         {state.playing ? (
           <Transport label="Pause preview" icon="ph:pause" onClick={onPause} />
@@ -68,7 +68,7 @@ export function TransportBar({
           onClick={onStop}
           disabled={!ready}
         />
-        <span className="font-mono text-small tabular-nums text-default-600" aria-live="off">
+        <span className="font-mono text-sm tabular-nums text-body" aria-live="off">
           {format(state.time)} / {format(state.duration)}s
         </span>
         <InfoTip

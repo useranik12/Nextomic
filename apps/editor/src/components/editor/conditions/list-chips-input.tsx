@@ -26,7 +26,7 @@ function takeChips(text: string): { chips: string[]; rest: string } {
 }
 
 const chipClass =
-  "flex max-w-full items-center gap-0.5 rounded-full bg-default-200 py-0.5 pl-2 pr-0.5 text-tiny text-default-700";
+  "flex max-w-full items-center gap-0.5 rounded-full bg-default-hover py-0.5 pl-2 pr-0.5 text-xs text-body";
 
 export function ListChipsInput({
   label,
@@ -73,14 +73,14 @@ export function ListChipsInput({
 
   return (
     <div className="flex flex-col gap-0.5">
-      <label htmlFor={id} className="pb-0.5 text-tiny font-medium text-default-600">
+      <label htmlFor={id} className="pb-0.5 text-xs font-medium text-body">
         {label}
       </label>
       <div
         onClick={(event) => {
           if (event.target === event.currentTarget) field.current?.focus();
         }}
-        className="flex min-h-8 flex-wrap items-center gap-1 rounded-large border border-default-200 px-2 py-1 transition-colors hover:border-default-400 focus-within:border-default-800 focus-within:ring-1 focus-within:ring-default-800/10"
+        className="flex min-h-8 flex-wrap items-center gap-1 rounded-2xl border border-border px-2 py-1 transition-colors hover:border-default-400 focus-within:border-focus focus-within:ring-1 focus-within:ring-focus/30"
       >
         {items.map((item, index) =>
           editing?.index === index ? (
@@ -102,7 +102,7 @@ export function ListChipsInput({
                   setEditing(null);
                 }
               }}
-              className="rounded-full bg-default-100 px-2 py-0.5 text-tiny text-foreground outline-none ring-1 ring-default-400"
+              className="rounded-full bg-default px-2 py-0.5 text-xs text-foreground outline-none ring-1 ring-default-400"
             />
           ) : (
             <span key={`${index}-${item}`} className={chipClass}>
@@ -116,7 +116,7 @@ export function ListChipsInput({
                     setEditing({ index, text: item });
                   }
                 }}
-                className="truncate rounded-full outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
+                className="truncate rounded-full outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
               >
                 {item}
               </button>
@@ -126,7 +126,7 @@ export function ListChipsInput({
                 // Keep focus in the field: a blur would save the typed text with the old chips.
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => save(items.filter((_, i) => i !== index))}
-                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-default-500 transition-colors hover:bg-default-300 hover:text-foreground"
+                className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-default-300 hover:text-foreground"
               >
                 <Icon name="ph:x" width={10} height={10} />
               </button>
@@ -141,11 +141,11 @@ export function ListChipsInput({
           onChange={(e) => type(e.target.value)}
           onKeyDown={onKey}
           onBlur={commitDraft}
-          className="h-6 min-w-[6rem] flex-1 bg-transparent text-small text-foreground outline-none placeholder:text-default-400"
+          className="h-6 min-w-[6rem] flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-subtle"
         />
         <DynamicBolt label={label} onInsert={(token) => save([...items, tagText(token)])} />
       </div>
-      {description ? <p className="text-tiny text-default-500">{description}</p> : null}
+      {description ? <p className="text-xs text-muted">{description}</p> : null}
     </div>
   );
 }

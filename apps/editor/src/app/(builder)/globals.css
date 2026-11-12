@@ -1,10 +1,8 @@
 /* Builder UI only (never built sites). HeroUI v3 components and tokens; the design rules are in
    docs/ui-reference.md "Builder design rules". Colors come from blueprint/tokens.json through
-   builder-tokens.ts. hero.ts (HeroUI v2) stays only until the last v2 component is migrated. */
+   builder-tokens.ts. */
 @import "tailwindcss";
 @import "@heroui/styles";
-@source "../../../node_modules/@heroui/theme/dist/**/*.{js,mjs}";
-@plugin "../../../hero.ts";
 @plugin "../../../builder-tokens.ts";
 
 @custom-variant dark (&:is(.dark *));
@@ -15,6 +13,16 @@
 @theme inline {
   --color-body: var(--nx-text-body);
   --color-subtle: var(--nx-text-subtle);
+  --color-default-50: var(--nx-neutral-50);
+  --color-default-100: var(--nx-neutral-100);
+  --color-default-200: var(--nx-neutral-200);
+  --color-default-300: var(--nx-neutral-300);
+  --color-default-400: var(--nx-neutral-400);
+  --color-default-500: var(--nx-neutral-500);
+  --color-default-600: var(--nx-neutral-600);
+  --color-default-700: var(--nx-neutral-700);
+  --color-default-800: var(--nx-neutral-800);
+  --color-default-900: var(--nx-neutral-900);
   --ease-nx: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -186,25 +194,25 @@
 /* A field whose {{tags}} are drawn by the expression overlay hides its own glyphs, keeps the caret. */
 [data-expr-mirrored] {
   color: transparent !important;
-  caret-color: hsl(var(--heroui-foreground));
+  caret-color: var(--foreground);
 }
 [data-expr-mirrored]::selection {
   color: transparent;
-  background: hsl(var(--heroui-primary) / 0.35);
+  background: color-mix(in oklab, var(--accent) 35%, transparent);
 }
 .nx-expr-mirror {
-  color: hsl(var(--heroui-default-600));
+  color: var(--nx-text-body);
 }
 /* Tags are white and heavier. The stroke thickens glyphs without changing their width, so the
    overlay stays aligned with the caret of the field underneath. */
 .nx-expr-tag {
-  color: hsl(var(--heroui-foreground));
+  color: var(--foreground);
   -webkit-text-stroke: 0.25px currentColor;
 }
 .nx-expr-bad {
-  color: hsl(var(--heroui-danger));
+  color: var(--danger);
   -webkit-text-stroke: 0.25px currentColor;
-  text-decoration: underline wavy hsl(var(--heroui-danger) / 0.7);
+  text-decoration: underline wavy color-mix(in oklab, var(--danger) 70%, transparent);
   text-underline-offset: 3px;
 }
 

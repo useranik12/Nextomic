@@ -105,7 +105,7 @@ function TooltipBox({ text, anchor }: { text: string; anchor: DOMRect }) {
         top: place?.top ?? 0,
         visibility: place ? "visible" : "hidden"
       }}
-      className="pointer-events-none fixed z-[2000] max-w-64 rounded-medium border border-divider bg-content1 px-2 py-1 text-center text-tiny text-foreground shadow-medium"
+      className="pointer-events-none fixed z-[2000] max-w-64 rounded-xl border border-border bg-surface px-2 py-1 text-center text-xs text-foreground shadow-md"
     >
       {text}
     </div>

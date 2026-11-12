@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip, Spinner } from "@heroui-v2/react";
+import { Chip, Spinner } from "@heroui/react";
 import { Icon } from "@/lib/icons/Icon";
 
 /** Where the Supabase connection stands, checked live with the connection test. */
@@ -15,7 +15,8 @@ export type ConnectionStatus =
 export function ConnectionStatusChip({ status }: { status: ConnectionStatus }) {
   if (status.kind === "checking")
     return (
-      <Chip size="sm" variant="flat" startContent={<Spinner size="sm" className="scale-75" />}>
+      <Chip size="sm" variant="soft">
+        <Spinner size="sm" color="current" />
         Checking
       </Chip>
     );
@@ -50,13 +51,13 @@ export function ConnectionStatusChip({ status }: { status: ConnectionStatus }) {
   return (
     <Chip
       size="sm"
-      variant="flat"
+      variant="soft"
       color={shown.color}
       data-tip={tip}
       aria-label={`${shown.label}. ${tip}`}
       className={status.kind === "none" ? "opacity-70" : undefined}
-      startContent={shown.icon}
     >
+      {shown.icon}
       {shown.label}
     </Chip>
   );

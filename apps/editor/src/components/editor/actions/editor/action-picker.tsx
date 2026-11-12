@@ -12,13 +12,13 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { Icon } from "@/lib/icons/Icon";
 
 const ITEM =
-  "flex w-full items-center justify-between gap-2 rounded-small px-2 py-1.5 text-left text-small transition-colors duration-300 ";
+  "flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors duration-300 ";
 
 function ActionItem({ action, onPick }: { action: ActionDef; onPick: () => void }) {
   const reason = actionDisabledReason(action);
   if (reason) {
     return (
-      <li className={`${ITEM} cursor-not-allowed text-default-400`} aria-disabled="true">
+      <li className={`${ITEM} cursor-not-allowed text-subtle`} aria-disabled="true">
         <span className="truncate">{action.label}</span>
         <InfoTip text={reason} label={`Why ${action.label} is unavailable`} placement="left" />
       </li>
@@ -29,13 +29,11 @@ function ActionItem({ action, onPick }: { action: ActionDef; onPick: () => void 
       <button
         type="button"
         onClick={onPick}
-        className={`${ITEM} text-default-700 hover:bg-default-100 hover:text-foreground`}
+        className={`${ITEM} text-body hover:bg-default hover:text-foreground`}
         title={action.description}
       >
         <span className="truncate">{action.label}</span>
-        <span className="text-tiny text-default-400">
-          {action.runs === "server" ? "Server" : ""}
-        </span>
+        <span className="text-xs text-subtle">{action.runs === "server" ? "Server" : ""}</span>
       </button>
     </li>
   );
@@ -65,7 +63,7 @@ export function ActionPicker({
         placeholder="Search actions"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="h-9 rounded-medium border border-divider bg-transparent px-3 text-small outline-none focus:border-default-400"
+        className="h-9 rounded-xl border border-border bg-transparent px-3 text-sm outline-none focus:border-default-400"
       />
       <ul className="flex flex-col gap-1">
         {ACTION_CATEGORIES.map((category) => {
@@ -87,16 +85,16 @@ export function ActionPicker({
                 aria-expanded={expanded}
                 disabled={Boolean(disabled)}
                 onClick={() => setOpen(expanded ? null : category.id)}
-                className="flex w-full items-center gap-2 rounded-small px-2 py-2 text-left text-small font-semibold text-foreground hover:bg-default-100 disabled:cursor-not-allowed disabled:text-default-400"
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-foreground hover:bg-default disabled:cursor-not-allowed disabled:text-subtle"
               >
                 {expanded ? <Icon name="ph:caret-down" /> : <Icon name="ph:caret-right" />}
                 <span className="flex-1">{category.label}</span>
                 {disabled ? <InfoTip text={disabled} placement="left" /> : null}
               </button>
               {expanded ? (
-                <ul className="ml-4 flex flex-col gap-0.5 border-l border-divider pl-2">
+                <ul className="ml-4 flex flex-col gap-0.5 border-l border-border pl-2">
                   {category.id === "blocks" && blockItems.length === 0 ? (
-                    <li className="px-2 py-1.5 text-tiny text-default-500">
+                    <li className="px-2 py-1.5 text-xs text-muted">
                       No Action Blocks yet. Create one in the Action Blocks tab.
                     </li>
                   ) : null}
@@ -105,7 +103,7 @@ export function ActionPicker({
                       <button
                         type="button"
                         onClick={() => onPickBlock(block.id)}
-                        className={`${ITEM} text-default-700 hover:bg-default-100`}
+                        className={`${ITEM} text-body hover:bg-default`}
                       >
                         <span className="truncate">{block.name}</span>
                       </button>
@@ -121,7 +119,7 @@ export function ActionPicker({
                           type="button"
                           aria-expanded={subOpen}
                           onClick={() => setOpenSub(subOpen ? null : key)}
-                          className="flex w-full items-center gap-2 rounded-small px-2 py-1.5 text-left text-small font-medium text-default-700 hover:bg-default-100"
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-medium text-body hover:bg-default"
                         >
                           {subOpen ? (
                             <Icon name="ph:caret-down" width={12} height={12} />
@@ -131,7 +129,7 @@ export function ActionPicker({
                           {g.subcategory}
                         </button>
                         {subOpen ? (
-                          <ul className="ml-3 border-l border-divider pl-2">
+                          <ul className="ml-3 border-l border-border pl-2">
                             {g.actions.map((a) => (
                               <ActionItem key={a.type} action={a} onPick={() => onPick(a.type)} />
                             ))}

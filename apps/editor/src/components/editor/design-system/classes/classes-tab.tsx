@@ -246,11 +246,11 @@ export function ClassesTab() {
           onDelete={deleteCategory}
         />
         <section
-          className="flex w-72 shrink-0 flex-col border-r border-divider"
+          className="flex w-72 shrink-0 flex-col border-r border-border"
           aria-label="Classes"
         >
-          <div className="flex flex-col gap-1 border-b border-divider px-4 py-3">
-            <h3 className="text-small font-semibold">Classes ({shown.length})</h3>
+          <div className="flex flex-col gap-1 border-b border-border px-4 py-3">
+            <h3 className="text-sm font-semibold">Classes ({shown.length})</h3>
             <ClassImportExport />
             <SelectionBar
               noun="classes"
@@ -265,21 +265,21 @@ export function ClassesTab() {
             <button
               type="button"
               onClick={() => setOnly(null)}
-              className="mx-3 mt-2 flex items-center justify-between gap-2 rounded-medium bg-default-100 px-3 py-1.5 text-left text-tiny hover:bg-default-200"
+              className="mx-3 mt-2 flex items-center justify-between gap-2 rounded-xl bg-default px-3 py-1.5 text-left text-xs hover:bg-default-hover"
             >
               <span className="min-w-0 truncate">{nav.params.classLabel ?? "Filtered"}</span>
               <span aria-label="Show all classes">Show all</span>
             </button>
           ) : null}
           {error ? (
-            <p role="alert" className="px-4 pt-2 text-tiny text-danger">
+            <p role="alert" className="px-4 pt-2 text-xs text-danger">
               {error}
             </p>
           ) : null}
           {others === null && !error ? (
-            <p className="p-4 text-small text-default-500">Loading classes…</p>
+            <p className="p-4 text-sm text-muted">Loading classes…</p>
           ) : shown.length === 0 ? (
-            <p className="p-4 text-small text-default-500">
+            <p className="p-4 text-sm text-muted">
               {include || filter !== "all"
                 ? "No class matches."
                 : "No classes yet. Add one below or from an element."}
@@ -293,10 +293,8 @@ export function ClassesTab() {
               renderRow={(r) => (
                 <div
                   className={
-                    "flex h-full items-center border-b border-divider transition-colors duration-300 " +
-                    (selected === r.name
-                      ? "bg-default-800 text-default-50"
-                      : "hover:bg-default-100")
+                    "flex h-full items-center border-b border-border transition-colors duration-300 " +
+                    (selected === r.name ? "bg-default-hover text-foreground" : "hover:bg-default")
                   }
                 >
                   {r.source === "project" && !r.locked ? (
@@ -310,7 +308,7 @@ export function ClassesTab() {
                         setPicked(next);
                       }}
                       aria-label={`Select .${r.name}`}
-                      className="ml-4 h-4 w-4 shrink-0 cursor-pointer accent-default-800"
+                      className="ml-4 h-4 w-4 shrink-0 cursor-pointer accent-accent"
                     />
                   ) : (
                     <span aria-hidden className="ml-4 h-4 w-4 shrink-0" />
@@ -319,14 +317,14 @@ export function ClassesTab() {
                     type="button"
                     aria-current={selected === r.name}
                     onClick={() => setSelected(r.name)}
-                    className="flex h-full min-w-0 flex-1 items-center gap-2 px-3 text-left font-mono text-small"
+                    className="flex h-full min-w-0 flex-1 items-center gap-2 px-3 text-left font-mono text-sm"
                   >
                     <span className="min-w-0 flex-1 truncate">.{r.name}</span>
                     {r.locked && r.source === "project" ? (
-                      <span className="text-tiny opacity-70">locked</span>
+                      <span className="text-xs opacity-70">locked</span>
                     ) : null}
                     <span
-                      className="text-tiny opacity-70"
+                      className="text-xs opacity-70"
                       title={`${r.used} element${r.used === 1 ? "" : "s"}`}
                     >
                       {r.used}
@@ -337,7 +335,7 @@ export function ClassesTab() {
             />
           )}
           <form
-            className="flex items-center gap-2 border-t border-divider p-2"
+            className="flex items-center gap-2 border-t border-border p-2"
             onSubmit={(e) => {
               e.preventDefault();
               create();
@@ -348,7 +346,7 @@ export function ClassesTab() {
               placeholder="New class name…"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="h-9 min-w-0 flex-1 rounded-medium border border-divider bg-transparent px-3 font-mono text-small outline-none focus-visible:border-default-800"
+              className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-transparent px-3 font-mono text-sm outline-none focus-visible:border-focus"
             />
             <ActionButton size="sm" type="submit" isDisabled={draft.trim() === ""}>
               <Icon name="ph:plus" width={14} height={14} />
@@ -357,7 +355,7 @@ export function ClassesTab() {
           </form>
         </section>
         <section className="min-w-0 flex-1 overflow-y-auto" aria-label="Edit class">
-          <h3 className="border-b border-divider px-4 py-3 text-small font-semibold">
+          <h3 className="border-b border-border px-4 py-3 text-sm font-semibold">
             {row ? `Edit .${row.name}` : "Edit"}
           </h3>
           {row ? (
@@ -375,7 +373,7 @@ export function ClassesTab() {
               onCategory={(c) => setMeta(row.name, { category: c })}
             />
           ) : (
-            <p className="p-4 text-small text-default-500">Select a class to edit its CSS.</p>
+            <p className="p-4 text-sm text-muted">Select a class to edit its CSS.</p>
           )}
         </section>
       </div>

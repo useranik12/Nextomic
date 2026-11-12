@@ -1,23 +1,23 @@
 "use client";
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui-v2/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@/components/ui/menu";
 import { TEMPLATE_TYPE_LABELS } from "@nextomic/schema";
 import { Icon } from "@/lib/icons/Icon";
 import type { LibraryItem, LibraryStatus } from "@/server/library";
 import { STATUS_LABEL } from "./library-filter";
 
 const STATUS_STYLE: Record<LibraryStatus, { chip: string; dot: string }> = {
-  draft: { chip: "bg-default-200 text-default-700", dot: "bg-default-500" },
+  draft: { chip: "bg-default-hover text-body", dot: "bg-default-500" },
   published: { chip: "bg-success/15 text-success-600", dot: "bg-success" },
   modified: { chip: "bg-warning/20 text-warning-700 dark:text-warning", dot: "bg-warning" },
-  scheduled: { chip: "bg-primary/15 text-primary", dot: "bg-primary" }
+  scheduled: { chip: "bg-accent/15 text-accent", dot: "bg-accent" }
 };
 
 export function StatusChip({ status }: { status: LibraryStatus }) {
   const style = STATUS_STYLE[status];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-tiny font-medium ${style.chip}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${style.chip}`}
     >
       <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
       {STATUS_LABEL[status]}
@@ -41,7 +41,7 @@ export const statusActionLabel = (item: LibraryItem): string =>
       : "Publish template";
 
 const ICON_BUTTON =
-  "flex h-8 w-8 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-200 hover:text-foreground disabled:opacity-40";
+  "flex h-8 w-8 items-center justify-center rounded-full text-body transition-colors duration-300 hover:bg-default-hover hover:text-foreground disabled:opacity-40";
 
 /** Edit, status change and delete as icons, for the selected item. */
 export function ActionIcons({
@@ -112,11 +112,19 @@ export function RowMenu({
         aria-label={`Actions for ${item.name}`}
         onAction={(k) => onAction(k as RowAction)}
       >
-        <DropdownItem key="edit">Edit</DropdownItem>
-        <DropdownItem key="duplicate">Duplicate</DropdownItem>
-        <DropdownItem key="status">{statusActionLabel(item)}</DropdownItem>
-        <DropdownItem key="screenshot">Regenerate screenshot</DropdownItem>
-        <DropdownItem key="delete" className="text-danger" color="danger">
+        <DropdownItem key="edit" id="edit">
+          Edit
+        </DropdownItem>
+        <DropdownItem key="duplicate" id="duplicate">
+          Duplicate
+        </DropdownItem>
+        <DropdownItem key="status" id="status">
+          {statusActionLabel(item)}
+        </DropdownItem>
+        <DropdownItem key="screenshot" id="screenshot">
+          Regenerate screenshot
+        </DropdownItem>
+        <DropdownItem key="delete" id="delete" className="text-danger" color="danger">
           Delete
         </DropdownItem>
       </DropdownMenu>

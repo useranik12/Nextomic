@@ -1,6 +1,6 @@
 "use client";
+import { Busy } from "@/components/ui/busy";
 
-import { Spinner } from "@heroui-v2/react";
 import type { RestCall, RestGroup } from "@nextomic/schema";
 import { ActionButton } from "@/components/ui/controls";
 import { ApiList } from "./api-list";
@@ -16,7 +16,7 @@ export function ApiDataPage({ projectId }: { projectId: string }) {
   if (loadError && !data)
     return (
       <div className="flex h-full flex-col items-start gap-3 p-6">
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {loadError}
         </p>
         <ActionButton size="sm" tone="ghost" onPress={() => void model.reload()}>
@@ -27,7 +27,7 @@ export function ApiDataPage({ projectId }: { projectId: string }) {
   if (!data)
     return (
       <div className="flex h-full items-center justify-center">
-        <Spinner size="sm" label="Loading API Data" />
+        <Busy label="Loading API Data" />
       </div>
     );
 
@@ -42,7 +42,7 @@ export function ApiDataPage({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex h-full min-h-0">
-      <aside className="w-80 shrink-0 overflow-y-auto border-r border-divider p-4">
+      <aside className="w-80 shrink-0 overflow-y-auto border-r border-border p-4">
         <ApiList model={model} config={config} />
       </aside>
       <div className="min-w-0 flex-1 overflow-y-auto">
@@ -66,7 +66,7 @@ export function ApiDataPage({ projectId }: { projectId: string }) {
           ) : (
             <div className="flex flex-col gap-1 pt-10 text-center">
               <h1 className="text-xl font-semibold text-foreground">API Data</h1>
-              <p className="text-small text-default-500">
+              <p className="text-sm text-muted">
                 Choose an API call or group on the left, or press + to add one.
               </p>
             </div>

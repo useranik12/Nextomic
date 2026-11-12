@@ -1,6 +1,7 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import {
   VERSION_LIMIT_MAX,
   VERSION_LIMIT_MIN,
@@ -77,7 +78,7 @@ function VersionLimit() {
           isDisabled={globalOff}
           onValueChange={(on) => update({ versionControl: on })}
         >
-          <span className="text-small font-medium text-foreground">
+          <span className="text-sm font-medium text-foreground">
             Enable version history for this page
           </span>
         </Switch>
@@ -92,7 +93,7 @@ function VersionLimit() {
       </div>
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-1.5">
-          <span className="text-small font-medium text-foreground">History limit</span>
+          <span className="text-sm font-medium text-foreground">History limit</span>
           <InfoTip
             label="History limit"
             text={
@@ -129,7 +130,7 @@ function VersionLimit() {
 }
 
 function SectionTitle({ children }: { children: string }) {
-  return <h3 className="text-small font-semibold text-foreground">{children}</h3>;
+  return <h3 className="text-sm font-semibold text-foreground">{children}</h3>;
 }
 
 export function PageSettingsModal({
@@ -201,12 +202,7 @@ export function PageSettingsModal({
   }
 
   return (
-    <Modal
-      isOpen
-      onOpenChange={(open) => !open && onClose()}
-      backdrop="blur"
-      scrollBehavior="inside"
-    >
+    <Modal isOpen onOpenChange={(open) => !open && onClose()} scrollBehavior="inside">
       <ModalContent>
         <ModalHeader>Page settings</ModalHeader>
         <ModalBody className="gap-3">
@@ -325,14 +321,14 @@ export function PageSettingsModal({
             </ActionButton>
           </div>
           {error ? (
-            <p role="alert" className="text-small text-danger">
+            <p role="alert" className="text-sm text-danger">
               {error}
             </p>
           ) : null}
           {pages.length > 1 ? (
             confirmDelete ? (
               <div className="flex items-center gap-2">
-                <span className="text-small text-default-600">Delete this page for good?</span>
+                <span className="text-sm text-body">Delete this page for good?</span>
                 <ActionButton tone="danger" size="sm" onPress={() => void remove()}>
                   Delete page
                 </ActionButton>

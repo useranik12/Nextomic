@@ -28,16 +28,16 @@ export function ConvertToClass({ node }: { node: ElementNode }) {
 
   return (
     <form
-      className="flex flex-col gap-2 rounded-large bg-default-100 p-3"
+      className="flex flex-col gap-2 rounded-2xl bg-default p-3"
       onSubmit={(e) => {
         e.preventDefault();
         submit();
       }}
     >
-      <label htmlFor={`convert-${node.id}`} className="text-small font-semibold text-foreground">
+      <label htmlFor={`convert-${node.id}`} className="text-sm font-semibold text-foreground">
         Convert styles to a class
       </label>
-      <p className="text-tiny text-default-500">
+      <p className="text-xs text-muted">
         Moves this element&apos;s own styles into a new class and adds it to the element. The
         element looks the same.
       </p>
@@ -48,14 +48,14 @@ export function ConvertToClass({ node }: { node: ElementNode }) {
           placeholder="class-name"
           disabled={!hasStyles}
           onChange={(e) => setName(e.target.value)}
-          className="h-9 min-w-0 flex-1 rounded-medium border border-divider bg-transparent px-3 font-mono text-small outline-none focus-visible:border-default-800 disabled:opacity-50"
+          className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-transparent px-3 font-mono text-sm outline-none focus-visible:border-focus disabled:opacity-50"
         />
         <ActionButton size="sm" type="submit" isDisabled={!hasStyles || name.trim() === ""}>
           Convert
         </ActionButton>
       </div>
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}

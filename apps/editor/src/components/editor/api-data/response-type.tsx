@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, Switch } from "@heroui-v2/react";
+import { SwitchField as Switch, CheckboxField as Checkbox } from "@/components/ui/toggles";
 import type { RestCall, RestResponse } from "@nextomic/schema";
 import { SelectField } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -33,17 +33,17 @@ export function ResponseType({
   return (
     <section
       aria-label="Response Type"
-      className="flex flex-col gap-5 rounded-large border border-default-200 p-5"
+      className="flex flex-col gap-5 rounded-2xl border border-border p-5"
     >
-      <h3 className="text-small font-medium text-foreground">Response Type</h3>
-      <div className="flex flex-col gap-3 border-b border-divider pb-5">
+      <h3 className="text-sm font-medium text-foreground">Response Type</h3>
+      <div className="flex flex-col gap-3 border-b border-border pb-5">
         <div className="flex items-center gap-1.5">
           <Switch
             size="sm"
             isSelected={response.parseAsDataType}
             onValueChange={(parseAsDataType) => set({ parseAsDataType })}
           >
-            <span className="text-small">Parse as Data Type</span>
+            <span className="text-sm">Parse as Data Type</span>
           </Switch>
           <InfoTip
             label="Parse as Data Type"
@@ -75,7 +75,7 @@ export function ResponseType({
               isSelected={response.isList}
               onValueChange={(isList) => set({ isList })}
             >
-              <span className="text-small">Is List</span>
+              <span className="text-sm">Is List</span>
             </Checkbox>
           </div>
         ) : null}

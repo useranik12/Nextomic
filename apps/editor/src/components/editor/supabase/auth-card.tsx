@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui-v2/react";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import { useState } from "react";
 import { ActionButton, PasswordInput } from "@/components/ui/controls";
 import { useEditorStore } from "../store/editor-store";
@@ -37,12 +37,12 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
       description="Supabase authentication for the app. Works only if Supabase Authentication is selected in App Settings."
     >
       {!supabaseAuthOn ? (
-        <p className="text-small text-warning">
+        <p className="text-sm text-warning">
           Not in use: turn on authentication with the Supabase method in App Settings.
         </p>
       ) : null}
       {!model.connector ? (
-        <p className="text-small text-default-500">Connect Supabase first.</p>
+        <p className="text-sm text-muted">Connect Supabase first.</p>
       ) : (
         <>
           <Switch
@@ -54,7 +54,7 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
               setNotice(null);
             }}
           >
-            <span className="text-small">Google Authentication</span>
+            <span className="text-sm">Google Authentication</span>
           </Switch>
           {enabled && supabaseAuthOn ? (
             <PasswordInput
@@ -97,12 +97,12 @@ export function AuthCard({ model }: { model: SupabasePageModel }) {
             </div>
           ) : null}
           {error ? (
-            <p role="alert" className="text-small text-danger">
+            <p role="alert" className="text-sm text-danger">
               {error}
             </p>
           ) : null}
           {notice && !dirty ? (
-            <p role="status" className="text-small text-success">
+            <p role="status" className="text-sm text-success">
               {notice}
             </p>
           ) : null}

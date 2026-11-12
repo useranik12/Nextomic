@@ -99,12 +99,12 @@ export function NodeCard({
         setMenuOpen(true);
       }}
       className={
-        "flex w-72 items-center gap-1 rounded-medium border bg-content1 pr-1 transition-colors duration-300 " +
+        "flex w-72 items-center gap-1 rounded-xl border bg-surface pr-1 transition-colors duration-300 " +
         (hasError
           ? "border-danger "
           : selected
-            ? "border-primary "
-            : "border-divider hover:border-default-400 ") +
+            ? "border-accent "
+            : "border-border hover:border-default-400 ") +
         (node.disabled ? "opacity-50" : "")
       }
     >
@@ -112,17 +112,15 @@ export function NodeCard({
         type="button"
         aria-pressed={selected}
         onClick={() => useFlowDraft.getState().select(node.id)}
-        className="flex min-w-0 flex-1 flex-col items-start gap-0.5 px-3 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        className="flex min-w-0 flex-1 flex-col items-start gap-0.5 px-3 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
       >
-        <span className="text-tiny uppercase tracking-wide text-default-500">Action {number}</span>
+        <span className="text-xs uppercase tracking-wide text-muted">Action {number}</span>
         <span
-          className={`truncate text-small font-semibold ${undefinedAction ? "text-danger" : "text-foreground"}`}
+          className={`truncate text-sm font-semibold ${undefinedAction ? "text-danger" : "text-foreground"}`}
         >
           {title}
         </span>
-        {summary ? (
-          <span className="w-full truncate text-tiny text-default-500">{summary}</span>
-        ) : null}
+        {summary ? <span className="w-full truncate text-xs text-muted">{summary}</span> : null}
       </button>
       <div className="flex flex-col">
         <button
@@ -130,7 +128,7 @@ export function NodeCard({
           aria-label="Move up"
           disabled={!canUp}
           onClick={() => move(-1)}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-default-500 hover:bg-default-100 disabled:opacity-30"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-muted hover:bg-default disabled:opacity-30"
         >
           <Icon name="ph:caret-up" width={14} height={14} />
         </button>
@@ -139,7 +137,7 @@ export function NodeCard({
           aria-label="Move down"
           disabled={!canDown}
           onClick={() => move(1)}
-          className="flex h-6 w-6 items-center justify-center rounded-full text-default-500 hover:bg-default-100 disabled:opacity-30"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-muted hover:bg-default disabled:opacity-30"
         >
           <Icon name="ph:caret-down" width={14} height={14} />
         </button>

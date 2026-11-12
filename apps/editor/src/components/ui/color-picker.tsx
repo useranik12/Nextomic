@@ -44,7 +44,7 @@ function NumberBox({
   onChange: (n: number) => void;
 }) {
   return (
-    <label className="flex min-w-0 flex-1 flex-col gap-0.5 text-center text-tiny text-default-500">
+    <label className="flex min-w-0 flex-1 flex-col gap-0.5 text-center text-xs text-muted">
       <input
         type="number"
         min={0}
@@ -54,7 +54,7 @@ function NumberBox({
           const n = parseFloat(e.target.value);
           if (Number.isFinite(n)) onChange(clamp(n, 0, max));
         }}
-        className="h-8 w-full rounded-medium border border-default-200 bg-transparent px-1 text-center text-small text-foreground outline-none focus:border-default-800"
+        className="h-8 w-full rounded-xl border border-border bg-transparent px-1 text-center text-sm text-foreground outline-none focus:border-focus"
       />
       {label}
     </label>
@@ -151,7 +151,7 @@ export function ColorPicker({
         aria-valuetext={`Saturation ${Math.round(hsva.s)} percent, brightness ${Math.round(hsva.v)} percent`}
         aria-valuenow={Math.round(hsva.s)}
         style={{ backgroundColor: hueColor }}
-        className="relative h-36 w-full cursor-crosshair touch-none overflow-hidden rounded-large focus-visible:ring-1 focus-visible:ring-default-800/40"
+        className="relative h-36 w-full cursor-crosshair touch-none overflow-hidden rounded-2xl focus-visible:ring-1 focus-visible:ring-focus/30"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
           moveArea(e.clientX, e.clientY);
@@ -179,7 +179,7 @@ export function ColorPicker({
 
       <div className="flex items-center gap-2">
         <span
-          className={`relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-divider ${CHECKER}`}
+          className={`relative h-9 w-9 shrink-0 overflow-hidden rounded-full border border-border ${CHECKER}`}
         >
           <span className="absolute inset-0" style={{ background: toHex(rgba) }} />
         </span>
@@ -191,7 +191,7 @@ export function ColorPicker({
             value={hsva.h}
             aria-label="Hue"
             onChange={(e) => commit({ ...hsva, h: Number(e.target.value) })}
-            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-800 [&::-webkit-slider-thumb]:shadow"
+            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-hover [&::-webkit-slider-thumb]:shadow"
             style={{
               background: "linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)"
             }}
@@ -203,7 +203,7 @@ export function ColorPicker({
             value={Math.round(hsva.a * 100)}
             aria-label="Alpha"
             onChange={(e) => commit({ ...hsva, a: Number(e.target.value) / 100 })}
-            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-800 [&::-webkit-slider-thumb]:shadow"
+            className="h-2.5 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-default-hover [&::-webkit-slider-thumb]:shadow"
             style={{
               background: `linear-gradient(to right, transparent, ${solid}), repeating-conic-gradient(#d4d4d8 0 25%, #fff 0 50%) 0 0/8px 8px`
             }}
@@ -213,7 +213,7 @@ export function ColorPicker({
           <button
             type="button"
             aria-label="Pick a color from the screen"
-            className="h-8 w-8 shrink-0 rounded-full text-default-600 hover:bg-default-100"
+            className="h-8 w-8 shrink-0 rounded-full text-body hover:bg-default"
             onClick={async () => {
               const Picker = (
                 window as unknown as {
@@ -242,10 +242,8 @@ export function ColorPicker({
             aria-pressed={format === f}
             onClick={() => chooseFormat(f)}
             className={
-              "h-7 rounded-full text-tiny font-medium transition-colors duration-300 " +
-              (format === f
-                ? "bg-default-800 text-default-50"
-                : "text-default-600 hover:bg-default-100")
+              "h-7 rounded-full text-xs font-medium transition-colors duration-300 " +
+              (format === f ? "bg-default-hover text-foreground" : "text-body hover:bg-default")
             }
           >
             {FORMAT_LABEL[f]}
@@ -259,7 +257,7 @@ export function ColorPicker({
           value={cssText}
           spellCheck={false}
           onChange={(e) => applyText(e.target.value)}
-          className="h-8 w-full rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800"
+          className="h-8 w-full rounded-full border border-border bg-transparent px-3 font-mono text-sm outline-none focus:border-focus"
         />
       ) : null}
       {format === "rgb" ? (

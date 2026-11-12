@@ -269,14 +269,14 @@ export function AnimationSettings({
               placeholder='{ "transformOrigin": "center" }'
               onChange={(e) => patch({ vars: e.target.value })}
               className={
-                "w-full resize-y rounded-medium bg-default-100 p-3 font-mono text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30 " +
+                "w-full resize-y rounded-xl bg-default p-3 font-mono text-sm outline-none focus-visible:ring-1 focus-visible:ring-focus/30 " +
                 (varsCheck?.ok === false ? "ring-1 ring-danger" : "")
               }
             />
           </div>
         </TipField>
         {varsCheck?.ok === false ? (
-          <p role="alert" className="text-tiny text-danger">
+          <p role="alert" className="text-xs text-danger">
             {varsCheck.error} It is ignored until it is fixed.
           </p>
         ) : null}

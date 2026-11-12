@@ -55,14 +55,14 @@ function ColumnName({ column }: { column: SupabaseColumn }) {
             data-tip={`Foreign key to ${column.references}`}
             aria-label={`Foreign key to ${column.references}`}
             role="img"
-            className="text-primary"
+            className="text-accent"
           >
             <Icon name="ph:link" width={16} height={16} />
           </span>
         ) : null}
       </span>
       <span className="flex min-w-0 flex-col">
-        <span className="flex items-center gap-0.5 font-mono text-small text-primary">
+        <span className="flex items-center gap-0.5 font-mono text-sm text-accent">
           {column.name}
           {!column.nullable ? (
             <span
@@ -75,7 +75,7 @@ function ColumnName({ column }: { column: SupabaseColumn }) {
           ) : null}
         </span>
         {column.references ? (
-          <span className="font-mono text-tiny text-default-500">{column.references}</span>
+          <span className="font-mono text-xs text-muted">{column.references}</span>
         ) : null}
       </span>
     </span>
@@ -90,8 +90,8 @@ function TableDetail({ table }: { table: SupabaseTable }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="font-mono text-medium font-semibold text-foreground">{table.name}</h3>
-        <span className="rounded-full bg-default-100 px-2 py-0.5 text-tiny text-default-600">
+        <h3 className="font-mono text-base font-semibold text-foreground">{table.name}</h3>
+        <span className="rounded-full bg-default px-2 py-0.5 text-xs text-body">
           {table.kind === "view" ? "View (read only)" : "Table"}
         </span>
         {used.length > 0 ? (
@@ -106,18 +106,16 @@ function TableDetail({ table }: { table: SupabaseTable }) {
           </ActionButton>
         ) : null}
       </div>
-      {table.description ? (
-        <p className="text-small text-default-500">{table.description}</p>
-      ) : null}
+      {table.description ? <p className="text-sm text-muted">{table.description}</p> : null}
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
       <div className="min-h-0 overflow-auto">
         <table className="w-full min-w-[560px] text-left">
           <thead className="sticky top-0 bg-background">
-            <tr className="text-small text-default-500">
+            <tr className="text-sm text-muted">
               <th className="pb-2 font-normal">Field Name</th>
               <th className="pb-2 font-normal">Data Type</th>
               <th className="pb-2 font-normal">PostgreSQL Type</th>
@@ -133,19 +131,19 @@ function TableDetail({ table }: { table: SupabaseTable }) {
               const item = enumOf(column);
               const synced = item ? enumInSync(enums, item) : false;
               return (
-                <tr key={column.name} className="border-b border-divider align-top last:border-b-0">
+                <tr key={column.name} className="border-b border-border align-top last:border-b-0">
                   <td className="py-2 pr-3">
                     <ColumnName column={column} />
                   </td>
-                  <td className="py-2 pr-3 text-small text-default-500">
+                  <td className="py-2 pr-3 text-sm text-muted">
                     {typeLabel(column)}
                     {column.enumValues ? (
-                      <span className="block text-tiny text-default-400">
+                      <span className="block text-xs text-subtle">
                         {column.enumValues.join(", ")}
                       </span>
                     ) : null}
                   </td>
-                  <td className="py-2 pr-3 font-mono text-small text-default-500">
+                  <td className="py-2 pr-3 font-mono text-sm text-muted">
                     {shortPgType(column.pgType)}
                   </td>
                   {used.length > 0 ? (
@@ -187,7 +185,7 @@ function TableList({
   if (tables.length === 0) return null;
   return (
     <div className="flex flex-col gap-0.5">
-      <h4 className="px-4 pb-1 pt-2 text-tiny font-medium uppercase tracking-wide text-default-500">
+      <h4 className="px-4 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted">
         {label} ({tables.length})
       </h4>
       <ul className="flex flex-col gap-0.5" aria-label={label}>
@@ -197,7 +195,7 @@ function TableList({
               type="button"
               aria-current={t.name === current}
               onClick={() => onPick(t.name)}
-              className={`w-full truncate rounded-full px-4 py-2 text-left font-mono text-small transition-colors duration-300 ${t.name === current ? "bg-default-100 text-foreground" : "text-default-600 hover:bg-default-50"}`}
+              className={`w-full truncate rounded-full px-4 py-2 text-left font-mono text-sm transition-colors duration-300 ${t.name === current ? "bg-default text-foreground" : "text-body hover:bg-default/40"}`}
             >
               {t.name}
             </button>
@@ -224,7 +222,7 @@ function SchemaTabs({
     <div
       role="tablist"
       aria-label="Database schemas"
-      className="flex w-fit max-w-full shrink-0 select-none gap-1 overflow-x-auto rounded-full bg-default-100 p-1"
+      className="flex w-fit max-w-full shrink-0 select-none gap-1 overflow-x-auto rounded-full bg-default p-1"
     >
       {schemas.map((s) => (
         <button
@@ -234,10 +232,10 @@ function SchemaTabs({
           aria-selected={s.schema === current}
           onClick={() => onPick(s.schema)}
           className={
-            "shrink-0 whitespace-nowrap rounded-full px-3 py-1 font-mono text-tiny transition-colors duration-300 " +
+            "shrink-0 whitespace-nowrap rounded-full px-3 py-1 font-mono text-xs transition-colors duration-300 " +
             (s.schema === current
               ? "bg-default-300 font-medium text-foreground"
-              : "text-default-600 hover:text-foreground")
+              : "text-body hover:text-foreground")
           }
         >
           {s.schema} ({s.tables.length})
@@ -275,7 +273,7 @@ export function TablesCard({ model }: { model: SupabasePageModel }) {
       className="max-h-[700px]"
     >
       {!structure ? (
-        <p className="text-small text-default-500">Fetch the schema to see the tables and views.</p>
+        <p className="text-sm text-muted">Fetch the schema to see the tables and views.</p>
       ) : (
         <>
           {schemas.length > 1 && entry ? (
@@ -290,7 +288,7 @@ export function TablesCard({ model }: { model: SupabasePageModel }) {
             />
           ) : null}
           {all.length === 0 ? (
-            <p className="text-small text-default-500">
+            <p className="text-sm text-muted">
               The anon key sees no tables or views in this schema. Expose the schema in the Supabase
               API settings and grant the anon role access, then fetch again.
             </p>
@@ -319,7 +317,7 @@ export function TablesCard({ model }: { model: SupabasePageModel }) {
                     onPick={setChosen}
                   />
                   {tables.length + views.length === 0 ? (
-                    <p className="px-4 py-2 text-small text-default-500">Nothing matches.</p>
+                    <p className="px-4 py-2 text-sm text-muted">Nothing matches.</p>
                   ) : null}
                 </div>
               </div>

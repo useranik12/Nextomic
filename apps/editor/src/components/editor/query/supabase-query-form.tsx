@@ -113,7 +113,7 @@ export function SupabaseQueryForm({
       />
       <RowSettings value={value} onChange={patch} />
       <fieldset className="flex flex-col gap-3" disabled={!table}>
-        <legend className="mb-2 text-tiny font-medium text-default-600">
+        <legend className="mb-2 text-xs font-medium text-body">
           {mode.tip("filters") ? (
             <LabelWithTip tip={mode.tip("filters") ?? ""}>Filters</LabelWithTip>
           ) : (
@@ -121,7 +121,7 @@ export function SupabaseQueryForm({
           )}
         </legend>
         {value.filters.length === 0 ? (
-          <p className="text-tiny text-default-500">No filters: every row the anon key can read.</p>
+          <p className="text-xs text-muted">No filters: every row the anon key can read.</p>
         ) : null}
         {value.filters.map((filter) => (
           <QueryFilterRow
@@ -142,7 +142,7 @@ export function SupabaseQueryForm({
         </ActionButton>
       </fieldset>
       <fieldset className="flex flex-col gap-3" disabled={!table}>
-        <legend className="mb-2 text-tiny font-medium text-default-600">
+        <legend className="mb-2 text-xs font-medium text-body">
           {mode.tip("order") ? (
             <LabelWithTip tip={mode.tip("order") ?? ""}>Order by</LabelWithTip>
           ) : (

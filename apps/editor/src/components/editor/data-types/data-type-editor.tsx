@@ -41,11 +41,11 @@ export function DataTypeEditor({
     onChange({ ...value, fields: value.fields.map((f) => (f.id === id ? next : f)) });
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-small font-semibold">Fields</h3>
+      <h3 className="text-sm font-semibold">Fields</h3>
       <div className="overflow-x-auto">
         <div className="min-w-[40rem]">
           <div
-            className={`grid ${GRID} gap-2 border-b border-divider pb-2 text-tiny font-semibold uppercase tracking-wide text-default-500`}
+            className={`grid ${GRID} gap-2 border-b border-border pb-2 text-xs font-semibold uppercase tracking-wide text-muted`}
           >
             <span className="px-1">Name</span>
             <span className="px-1">Type</span>
@@ -53,7 +53,7 @@ export function DataTypeEditor({
             <span className="px-1">Description</span>
           </div>
           {value.fields.length === 0 ? (
-            <p className="py-6 text-small text-default-500">
+            <p className="py-6 text-sm text-muted">
               No fields yet. A data type describes the shape of a value, for example an Address with
               street, city and zip.
             </p>
@@ -62,7 +62,7 @@ export function DataTypeEditor({
               {value.fields.map((field) => (
                 <li
                   key={field.id}
-                  className={`grid ${GRID} items-start gap-2 border-b border-divider py-2 last:border-b-0`}
+                  className={`grid ${GRID} items-start gap-2 border-b border-border py-2 last:border-b-0`}
                 >
                   <IdentifierInput
                     label="Field name"

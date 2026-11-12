@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, type AvatarProps } from "@heroui-v2/react";
+import { Avatar } from "@heroui/react";
 
 /** The first letter of the name, upper-cased; "?" when the name is empty. */
 export function avatarLetter(name: string): string {
@@ -20,20 +20,13 @@ export function UserAvatar({
 }: {
   name: string;
   image: string | null | undefined;
-  size?: AvatarProps["size"];
+  size?: "sm" | "md" | "lg";
   className?: string;
 }) {
   return (
-    <Avatar
-      size={size}
-      src={image ?? undefined}
-      // HeroUI shortens `name` itself; give it the one letter we want and show it as is.
-      name={avatarLetter(name)}
-      getInitials={(letter) => letter}
-      alt={name}
-      showFallback
-      className={className}
-      classNames={{ name: "font-semibold" }}
-    />
+    <Avatar size={size} className={className}>
+      {image ? <Avatar.Image src={image} alt={name} /> : null}
+      <Avatar.Fallback className="font-semibold">{avatarLetter(name)}</Avatar.Fallback>
+    </Avatar>
   );
 }

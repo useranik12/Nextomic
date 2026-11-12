@@ -1,7 +1,6 @@
 "use client";
 
 import { Description, Label, ListBox, Select } from "@heroui/react";
-import { TOP_LAYER } from "./top-layer";
 import { useEffect, useRef, type ReactNode } from "react";
 import { InfoTip } from "./info-tip";
 
@@ -132,7 +131,7 @@ export function SelectField({
       {hideLabel ? null : <FieldLabel label={label} tip={tip} compact={compact} />}
       <Trigger />
       {description ? <Description>{description}</Description> : null}
-      <Select.Popover {...TOP_LAYER} placement="bottom start" offset={6}>
+      <Select.Popover placement="bottom start" offset={6}>
         <ListBox>
           <Items items={items} />
         </ListBox>
@@ -174,7 +173,7 @@ export function MultiSelectField({
       <FieldLabel label={label} tip={tip} compact={compact} />
       <Trigger placeholder={placeholder} />
       {description ? <Description>{description}</Description> : null}
-      <Select.Popover {...TOP_LAYER} placement="bottom start" offset={6}>
+      <Select.Popover placement="bottom start" offset={6}>
         <ListBox selectionMode="multiple">
           <Items items={items} />
         </ListBox>

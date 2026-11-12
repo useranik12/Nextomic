@@ -150,15 +150,15 @@ export function PanelResizer({
         className={
           "absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors duration-300 group-hover:w-0.5 group-focus-visible:w-0.5 " +
           (active
-            ? "w-0.5 bg-primary"
-            : "bg-transparent group-hover:bg-primary group-focus-visible:bg-primary")
+            ? "w-0.5 bg-accent"
+            : "bg-transparent group-hover:bg-accent group-focus-visible:bg-accent")
         }
       />
       <span
         aria-hidden
         className={
-          "absolute left-1/2 top-1/2 flex h-10 w-3 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[3px] rounded-full border border-divider bg-content1 shadow-sm transition-colors duration-300 group-hover:border-primary group-focus-visible:border-primary " +
-          (active ? "border-primary" : "")
+          "absolute left-1/2 top-1/2 flex h-10 w-3 -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-[3px] rounded-full border border-border bg-surface shadow-sm transition-colors duration-300 group-hover:border-accent group-focus-visible:border-accent " +
+          (active ? "border-accent" : "")
         }
       >
         <span className="h-[3px] w-[3px] rounded-full bg-default-500" />

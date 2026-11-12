@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui-v2/react";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import {
   stateNameProblem,
   valueAfterTypeChange,
@@ -60,7 +60,7 @@ function NameCell({
         className={`${compactFieldClass} font-mono ${problem ? "!border-danger" : ""}`}
       />
       {problem ? (
-        <p role="alert" className="mt-0.5 px-2 text-tiny text-danger">
+        <p role="alert" className="mt-0.5 px-2 text-xs text-danger">
           {problem}
         </p>
       ) : null}
@@ -107,7 +107,7 @@ export function StateRow({
   }
 
   return (
-    <li className="border-b border-divider last:border-b-0">
+    <li className="border-b border-border last:border-b-0">
       <div className={`grid ${ROW_GRID[row.kind]} items-start gap-2 py-2`}>
         <NameCell value={v.name} taken={taken} onCommit={onRename} />
         <TypePicker
@@ -157,7 +157,7 @@ export function StateRow({
           aria-label={open ? `Hide details of ${v.name}` : `Show details of ${v.name}`}
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default hover:text-foreground"
         >
           <Icon
             name="ph:caret-right"

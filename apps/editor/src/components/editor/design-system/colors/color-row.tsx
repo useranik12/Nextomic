@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui-v2/react";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import {
   MAX_SHADES,
   UTILITY_PROPS,
@@ -44,14 +44,14 @@ function OptionSwitch({
   below?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-large border border-divider px-4 py-3">
+    <div className="flex flex-col gap-3 rounded-2xl border border-border px-4 py-3">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-small font-semibold">
+          <p className="flex items-center gap-1.5 text-sm font-semibold">
             {label}
             <InfoTip text={tip} />
           </p>
-          {hint ? <p className="truncate text-tiny text-default-500">{hint}</p> : null}
+          {hint ? <p className="truncate text-xs text-muted">{hint}</p> : null}
         </div>
         <div className="flex items-center gap-3">
           {selected ? children : null}
@@ -79,7 +79,7 @@ function Stepper({
 }) {
   const step = (d: number) => onChange(Math.min(max, Math.max(min, value + d)));
   const button =
-    "flex h-7 w-7 items-center justify-center rounded-full border border-divider text-default-700 transition-colors duration-300 hover:bg-default-100 disabled:opacity-40";
+    "flex h-7 w-7 items-center justify-center rounded-full border border-border text-body transition-colors duration-300 hover:bg-default disabled:opacity-40";
   return (
     <div role="group" aria-label={label} className="flex items-center gap-1.5">
       <button
@@ -91,7 +91,7 @@ function Stepper({
       >
         <Icon name="ph:minus" width={14} height={14} />
       </button>
-      <span aria-live="polite" className="w-6 text-center text-small font-semibold tabular-nums">
+      <span aria-live="polite" className="w-6 text-center text-sm font-semibold tabular-nums">
         {value}
       </span>
       <button
@@ -160,10 +160,10 @@ export function ColorRow({
 
   const shadeCount = shadesOf(color.name, options).length;
   return (
-    <li className="rounded-large border border-divider">
+    <li className="rounded-2xl border border-border">
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_auto] items-center gap-2 p-2">
-        <div className="flex min-w-0 items-center gap-1 rounded-full bg-default-100 px-3">
-          <span aria-hidden className="font-mono text-tiny text-default-500">
+        <div className="flex min-w-0 items-center gap-1 rounded-full bg-default px-3">
+          <span aria-hidden className="font-mono text-xs text-muted">
             var(--
           </span>
           <input
@@ -180,9 +180,9 @@ export function ColorRow({
               if (e.key === "Enter") e.currentTarget.blur();
               if (e.key === "Escape") setName(color.name);
             }}
-            className="h-8 min-w-0 flex-1 bg-transparent font-mono text-small outline-none"
+            className="h-8 min-w-0 flex-1 bg-transparent font-mono text-sm outline-none"
           />
-          <span aria-hidden className="font-mono text-tiny text-default-500">
+          <span aria-hidden className="font-mono text-xs text-muted">
             )
           </span>
         </div>
@@ -193,7 +193,7 @@ export function ColorRow({
         />
         <div className="flex items-center gap-0.5">
           <span
-            className="px-1 text-tiny text-default-500"
+            className="px-1 text-xs text-muted"
             title={`${used} use${used === 1 ? "" : "s"} on this page`}
           >
             {used}
@@ -203,7 +203,7 @@ export function ColorRow({
             aria-label={`${open ? "Close" : "Edit"} options of ${color.name}`}
             aria-expanded={open}
             onClick={onToggle}
-            className="rounded-full p-1.5 text-default-600 hover:bg-default-100"
+            className="rounded-full p-1.5 text-body hover:bg-default"
           >
             <Icon name="ph:sliders-horizontal" width={16} height={16} />
           </button>
@@ -215,21 +215,21 @@ export function ColorRow({
                 ? setConfirming(true)
                 : void onChange((fw) => ({ framework: removeColor(fw, color.name) }))
             }
-            className="rounded-full p-1.5 text-default-600 hover:bg-danger/10 hover:text-danger"
+            className="rounded-full p-1.5 text-body hover:bg-danger/10 hover:text-danger"
           >
             <Icon name="ph:trash" width={16} height={16} />
           </button>
         </div>
       </div>
       {nameError ? (
-        <p role="alert" className="px-3 pb-2 text-tiny text-danger">
+        <p role="alert" className="px-3 pb-2 text-xs text-danger">
           {nameError}
         </p>
       ) : null}
       {confirming ? (
         <div
           role="alertdialog"
-          className="mx-2 mb-2 flex items-center gap-2 rounded-large bg-danger/10 p-2 text-small"
+          className="mx-2 mb-2 flex items-center gap-2 rounded-2xl bg-danger/10 p-2 text-sm"
         >
           <span className="min-w-0 flex-1">
             {color.name} is used {used} time{used === 1 ? "" : "s"} on this page. Delete it anyway?
@@ -247,7 +247,7 @@ export function ColorRow({
         </div>
       ) : null}
       {open ? (
-        <div className="flex flex-col gap-2 border-t border-divider p-3">
+        <div className="flex flex-col gap-2 border-t border-border p-3">
           {darkMode ? (
             <>
               <OptionSwitch
@@ -378,12 +378,12 @@ export function ColorRow({
               onValueChange={(g) => void onChange((fw) => moveColor(fw, color.name, g))}
             />
           </div>
-          <section className="flex flex-col gap-2 rounded-large bg-default-100 p-3">
-            <h4 className="flex items-center gap-1.5 text-small font-semibold">
+          <section className="flex flex-col gap-2 rounded-2xl bg-default p-3">
+            <h4 className="flex items-center gap-1.5 text-sm font-semibold">
               Utility classes
-              <InfoTip text="Makes ready-made classes such as bg-primary or text-primary that set this color on an element. Pick the CSS properties you want classes for." />
+              <InfoTip text="Makes ready-made classes such as bg-accent or text-accent that set this color on an element. Pick the CSS properties you want classes for." />
             </h4>
-            <p className="text-tiny text-default-600">
+            <p className="text-xs text-body">
               Choose the CSS properties to generate classes for, for the color and its enabled
               shades ({shadeCount} shade{shadeCount === 1 ? "" : "s"}). They appear in the framework
               classes.
@@ -400,10 +400,10 @@ export function ColorRow({
                   aria-pressed={options.utility.includes(p.property)}
                   onClick={() => toggleUtility(p.property)}
                   className={
-                    "rounded-medium px-2.5 py-1 font-mono text-tiny transition-colors duration-300 " +
+                    "rounded-xl px-2.5 py-1 font-mono text-xs transition-colors duration-300 " +
                     (options.utility.includes(p.property)
-                      ? "bg-default-800 text-default-50"
-                      : "bg-default-200 text-default-700 hover:bg-default-300")
+                      ? "bg-default-hover text-foreground"
+                      : "bg-default-hover text-body hover:bg-default-300")
                   }
                 >
                   {p.property}
@@ -411,7 +411,7 @@ export function ColorRow({
               ))}
             </div>
             {options.utility.length > 0 ? (
-              <p className="font-mono text-tiny text-default-600">
+              <p className="font-mono text-xs text-body">
                 {UTILITY_PROPS.filter((p) => options.utility.includes(p.property))
                   .map((p) => `.${p.prefix}-${color.name}`)
                   .join("  ")}

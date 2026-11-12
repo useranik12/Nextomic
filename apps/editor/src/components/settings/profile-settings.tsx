@@ -77,13 +77,13 @@ export function ProfileSettings({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-large border border-default-100 bg-content1/40 p-5">
+    <div className="flex flex-col gap-4 rounded-2xl border border-separator bg-surface/40 p-5">
       <div className="flex flex-wrap items-center gap-5">
         <UserAvatar
           name={draftName || savedName}
           image={shownImage}
           size="lg"
-          className="h-16 w-16 text-large"
+          className="h-16 w-16 text-lg"
         />
         <div className="flex flex-wrap items-center gap-2">
           <input
@@ -112,7 +112,7 @@ export function ProfileSettings({
             </ActionButton>
           ) : null}
         </div>
-        <p className="w-full text-tiny text-default-500">
+        <p className="w-full text-xs text-muted">
           PNG, JPG, WebP or GIF, up to 2 MB. Without an image, the first letter of your name is
           shown.
         </p>
@@ -125,12 +125,12 @@ export function ProfileSettings({
         className="max-w-md"
       />
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
       {notice && !dirty ? (
-        <p role="status" className="text-small text-success">
+        <p role="status" className="text-sm text-success">
           {notice}
         </p>
       ) : null}
@@ -142,7 +142,7 @@ export function ProfileSettings({
           <ActionButton size="sm" tone="ghost" isDisabled={saving} onPress={discard}>
             Discard
           </ActionButton>
-          <span className="text-tiny text-default-500">Unsaved changes</span>
+          <span className="text-xs text-muted">Unsaved changes</span>
         </div>
       ) : null}
       <EmailChange email={email} />

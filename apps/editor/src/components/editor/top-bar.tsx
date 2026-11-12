@@ -1,6 +1,7 @@
 "use client";
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Tooltip } from "@heroui-v2/react";
+import { Hint } from "@/components/ui/hint";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@/components/ui/menu";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -58,7 +59,7 @@ export const STATUS_DOT: Record<SaveStatus, string> = {
 function ChipFact({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-6">
-      <dt className="text-default-500">{label}</dt>
+      <dt className="text-muted">{label}</dt>
       <dd className="font-medium text-foreground">{value}</dd>
     </div>
   );
@@ -97,7 +98,7 @@ function ChipPopover({
         )
       : [];
   return (
-    <div className="flex max-w-xs flex-col gap-2 px-1 py-2 text-small">
+    <div className="flex max-w-xs flex-col gap-2 px-1 py-2 text-sm">
       <p className="font-medium text-foreground">{doc?.name}</p>
       <dl className="flex flex-col gap-1">
         {isTemplate ? (
@@ -131,10 +132,7 @@ function ChipPopover({
         )}
       </dl>
       {layout ? (
-        <ul
-          className="flex flex-col gap-1 text-tiny text-default-600"
-          aria-label="Why this applies"
-        >
+        <ul className="flex flex-col gap-1 text-xs text-body" aria-label="Why this applies">
           {explainLayout(layout.decisions).map((line) => (
             <li key={line}>{line}</li>
           ))}
@@ -158,7 +156,7 @@ function SaveChip({
   const error = useEditorStore((s) => s.saveError);
   const isTemplate = useEditorStore((s) => s.page?.kind === "template");
   return (
-    <Tooltip
+    <Hint
       content={<ChipPopover status={status} pages={pages} templates={templates} />}
       placement="bottom"
       delay={300}
@@ -167,16 +165,16 @@ function SaveChip({
         tabIndex={0}
         aria-label="Editing context"
         className={
-          "flex items-center gap-2 rounded-full px-3 py-1.5 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30 " +
-          (isTemplate ? "bg-secondary/20" : "bg-default-100")
+          "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm outline-none focus-visible:ring-1 focus-visible:ring-focus/30 " +
+          (isTemplate ? "bg-default" : "bg-default")
         }
       >
-        <span className={isTemplate ? "font-medium text-secondary" : "text-default-500"}>
+        <span className={isTemplate ? "font-medium text-muted" : "text-muted"}>
           {isTemplate ? "Template" : "Page"}
         </span>
         <span className="max-w-[160px] truncate font-medium text-foreground">{doc?.name}</span>
-        {isTemplate ? null : <span className="text-default-400">{doc?.route}</span>}
-        <span role="status" className="flex items-center gap-1.5 text-tiny text-default-600">
+        {isTemplate ? null : <span className="text-subtle">{doc?.route}</span>}
+        <span role="status" className="flex items-center gap-1.5 text-xs text-body">
           <span className={`h-2 w-2 rounded-full ${STATUS_DOT[status]}`} />
           {error && status === "error" ? error : STATUS_LABEL[status]}
         </span>
@@ -186,7 +184,7 @@ function SaveChip({
           </ActionButton>
         ) : null}
       </div>
-    </Tooltip>
+    </Hint>
   );
 }
 
@@ -196,7 +194,7 @@ function UndoRedo() {
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
   const cls =
-    "rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent";
+    "rounded-full p-2 text-body transition-colors duration-300 hover:bg-default hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent";
   return (
     <div className="flex items-center">
       <button type="button" aria-label="Undo" disabled={!canUndo} onClick={undo} className={cls}>
@@ -220,13 +218,13 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
       <div
         role="group"
         aria-label="Breakpoints"
-        className="flex items-center gap-1 rounded-full bg-default-100 p-1"
+        className="flex items-center gap-1 rounded-full bg-default p-1"
       >
         {breakpoints.map((bp) => {
           const active = bp.id === activeId;
           const dot = breakpointHasStyles(doc, bp.id);
           return (
-            <Tooltip
+            <Hint
               key={bp.id}
               content={`${bp.name}${bp.width ? ` (${bp.kind === "down" ? "≤" : "≥"} ${bp.width}px)` : ""}`}
             >
@@ -237,9 +235,7 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
                 onClick={() => setActive(bp.id)}
                 className={
                   "relative flex h-9 w-12 items-center justify-center rounded-full transition-colors duration-300 " +
-                  (active
-                    ? "bg-default-300 text-foreground"
-                    : "text-default-600 hover:bg-default-200")
+                  (active ? "bg-default-300 text-foreground" : "text-body hover:bg-default-hover")
                 }
               >
                 <BreakpointGlyph icon={bp.icon} />
@@ -250,7 +246,7 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
                   />
                 ) : null}
               </button>
-            </Tooltip>
+            </Hint>
           );
         })}
       </div>
@@ -258,7 +254,7 @@ function BreakpointSwitcher({ onManage }: { onManage: () => void }) {
         type="button"
         aria-label="Manage breakpoints"
         onClick={onManage}
-        className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+        className="rounded-full p-2 text-body transition-colors duration-300 hover:bg-default hover:text-foreground"
       >
         <Icon name="ph:dots-three-vertical" width={20} height={20} />
       </button>
@@ -364,6 +360,19 @@ function PublishControl({
     window.setTimeout(() => setMessage(null), 3000);
   }
 
+  const viewButton = (
+    <button
+      type="button"
+      aria-label="View published page"
+      disabled={!publishedAt}
+      onClick={() =>
+        window.open(`/site/${projectId}${route === "/" ? "" : route}`, "_blank", "noopener")
+      }
+      className="rounded-full p-2 text-body transition-colors duration-300 hover:bg-default hover:text-foreground disabled:text-default-300 disabled:hover:bg-transparent"
+    >
+      <Icon name="ph:arrow-square-out" width={20} height={20} />
+    </button>
+  );
   return (
     <div className="flex items-center gap-2">
       {unsaved ? (
@@ -399,7 +408,7 @@ function PublishControl({
           type="button"
           onClick={() => setScheduling(true)}
           title="Change or remove the scheduled publish"
-          className="flex items-center gap-1.5 rounded-full border border-default-200 px-2.5 py-1 text-tiny text-default-600 hover:border-default-400 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs text-body hover:border-default-400 hover:text-foreground"
         >
           <Icon name="ph:calendar-blank" width={12} height={12} />
           Publishes {formatWhen(scheduledAt)}
@@ -408,33 +417,28 @@ function PublishControl({
       {message ? (
         <span
           role="status"
-          className={`text-tiny ${message.tone === "error" ? "text-danger" : "text-success"}`}
+          className={`text-xs ${message.tone === "error" ? "text-danger" : "text-success"}`}
         >
           {message.text}
         </span>
       ) : null}
       {showClock ? <EditorClock /> : null}
-      <Tooltip
+      <Hint
         content={
           publishedAt
             ? "Open the published page"
             : "Not published yet. Only published pages are public."
         }
       >
-        <span>
-          <button
-            type="button"
-            aria-label="View published page"
-            disabled={!publishedAt}
-            onClick={() =>
-              window.open(`/site/${projectId}${route === "/" ? "" : route}`, "_blank", "noopener")
-            }
-            className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground disabled:text-default-300 disabled:hover:bg-transparent"
-          >
-            <Icon name="ph:arrow-square-out" width={20} height={20} />
-          </button>
-        </span>
-      </Tooltip>
+        {publishedAt ? (
+          viewButton
+        ) : (
+          // A disabled button takes no hover or focus, so the span carries the tooltip.
+          <span tabIndex={0} className="inline-flex rounded-full">
+            {viewButton}
+          </span>
+        )}
+      </Hint>
       <div className="relative flex items-center">
         <span
           role="img"
@@ -479,12 +483,14 @@ function PublishControl({
           >
             <DropdownItem
               key="save"
+              id="save"
               description="Saves the draft (Ctrl+S). Only signed-in members see it"
             >
               Save
             </DropdownItem>
             <DropdownItem
               key="schedule"
+              id="schedule"
               description={
                 scheduledAt !== null
                   ? `Publishes ${formatWhen(scheduledAt)}. Change or remove it`
@@ -493,12 +499,19 @@ function PublishControl({
             >
               {scheduledAt !== null ? "Edit schedule" : "Schedule publish"}
             </DropdownItem>
-            <DropdownItem key="preview" description="Opens the saved draft in a new tab">
+            <DropdownItem
+              key="preview"
+              id="preview"
+              description="Opens the saved draft in a new tab"
+            >
               Preview draft
             </DropdownItem>
-            <DropdownItem key="history">Version history</DropdownItem>
+            <DropdownItem key="history" id="history">
+              Version history
+            </DropdownItem>
             <DropdownItem
               key="unpublish"
+              id="unpublish"
               color="danger"
               className="text-danger"
               description="Takes the site offline for everyone"
@@ -529,7 +542,7 @@ function ModePreview({
       type="button"
       aria-label={dark ? "Preview the site in light mode" : "Preview the site in dark mode"}
       onClick={() => onModeChange(dark ? "light" : "dark")}
-      className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+      className="rounded-full p-2 text-body transition-colors duration-300 hover:bg-default hover:text-foreground"
     >
       {dark ? (
         <Icon name="ph:moon" width={20} height={20} />
@@ -580,7 +593,7 @@ export function TopBar({
     <header
       className={
         "grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b bg-background px-3 " +
-        (isTemplate ? "border-secondary" : "border-divider")
+        (isTemplate ? "border-border" : "border-border")
       }
     >
       <div className="flex min-w-0 items-center gap-2">
@@ -617,7 +630,7 @@ export function TopBar({
           type="button"
           aria-label={isTemplate ? "Template settings" : "Page settings"}
           onClick={() => setSettingsOpen(true)}
-          className="rounded-full p-2 text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+          className="rounded-full p-2 text-body transition-colors duration-300 hover:bg-default hover:text-foreground"
         >
           <Icon name="ph:sliders-horizontal" width={20} height={20} />
         </button>

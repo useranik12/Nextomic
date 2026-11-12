@@ -96,7 +96,7 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
         onChange={toggle}
       />
       {error ? (
-        <div role="alert" className="flex items-center gap-2 text-small text-danger">
+        <div role="alert" className="flex items-center gap-2 text-sm text-danger">
           {error}
           <ActionButton size="sm" tone="ghost" onPress={() => void reload()}>
             Retry
@@ -104,7 +104,7 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
         </div>
       ) : null}
       {loading && !data ? (
-        <p className="text-small text-default-500" aria-live="polite">
+        <p className="text-sm text-muted" aria-live="polite">
           Loading data sources...
         </p>
       ) : null}
@@ -164,12 +164,12 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
             </div>
           ) : null}
           {enabled && problems.length === 0 && previewError ? (
-            <p role="status" className="text-tiny text-danger">
+            <p role="status" className="text-xs text-danger">
               Canvas preview: {previewError}
             </p>
           ) : null}
           {enabled && problems.length > 0 ? (
-            <ul role="status" className="flex flex-col gap-1 text-tiny text-warning">
+            <ul role="status" className="flex flex-col gap-1 text-xs text-warning">
               {problems.map((problem) => (
                 <li key={problem}>{problem}</li>
               ))}

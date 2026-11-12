@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { useEffect, useRef, useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -76,14 +76,14 @@ export function DraftScope({
     <div ref={ref} data-draft-scope={label} className={className}>
       {children}
       {asking ? (
-        <Modal isOpen onClose={() => setAsking(false)} backdrop="blur" size="sm">
+        <Modal isOpen onClose={() => setAsking(false)} size="sm">
           <ModalContent>
             <ModalHeader className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-warning" />
               Unsaved changes
             </ModalHeader>
             <ModalBody>
-              <p className="text-small text-default-600">
+              <p className="text-sm text-body">
                 Your changes to {label} are not saved yet. Save them, discard them, or keep editing.
               </p>
             </ModalBody>
@@ -131,12 +131,12 @@ export function DraftActions({
   return (
     <div className="flex items-center gap-2">
       {dirty ? (
-        <span className="flex items-center gap-1.5 text-tiny text-warning">
+        <span className="flex items-center gap-1.5 text-xs text-warning">
           <span className="h-1.5 w-1.5 rounded-full bg-warning" />
           Unsaved changes
         </span>
       ) : (
-        <span className="flex items-center gap-1 text-tiny text-default-400">
+        <span className="flex items-center gap-1 text-xs text-subtle">
           <Icon name="ph:check" width={12} height={12} />
           Saved
         </span>

@@ -41,12 +41,12 @@ export function BlocksList() {
   const open = (id: string | null) => useFlowStore.getState().openBlock(id ?? "new");
 
   if (load.status === "loading") {
-    return <p className="text-small text-default-500">Loading Action Blocks…</p>;
+    return <p className="text-sm text-muted">Loading Action Blocks…</p>;
   }
   if (load.status === "error") {
     return (
       <div className="flex flex-col items-start gap-2">
-        <p className="text-small text-danger">{load.error}</p>
+        <p className="text-sm text-danger">{load.error}</p>
         <ActionButton size="sm" tone="ghost" onPress={() => setAttempt((n) => n + 1)}>
           Try again
         </ActionButton>
@@ -56,7 +56,7 @@ export function BlocksList() {
   return (
     <div className="flex flex-col gap-3">
       {load.blocks.length === 0 ? (
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           Action Blocks are flows you reuse across the project. Editing one changes every use.
         </p>
       ) : (
@@ -66,12 +66,12 @@ export function BlocksList() {
               <button
                 type="button"
                 onClick={() => open(block.id)}
-                className="flex w-full flex-col items-start gap-0.5 rounded-medium border border-divider bg-content1 px-3 py-2.5 text-left transition-colors duration-300 hover:border-default-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className="flex w-full flex-col items-start gap-0.5 rounded-xl border border-border bg-surface px-3 py-2.5 text-left transition-colors duration-300 hover:border-default-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
               >
-                <span className="truncate text-medium font-semibold text-foreground">
+                <span className="truncate text-base font-semibold text-foreground">
                   {block.name}
                 </span>
-                <span className="text-tiny text-default-500">
+                <span className="text-xs text-muted">
                   {block.params.length} {block.params.length === 1 ? "parameter" : "parameters"}
                   {block.returns ? " · returns a value" : ""}
                 </span>

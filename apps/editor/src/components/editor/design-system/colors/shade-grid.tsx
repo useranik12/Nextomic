@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   colorMix,
   darkPercents,
@@ -76,7 +76,7 @@ function ShadeBox({
             type="button"
             aria-label={`Change the shade ${name}-${shade.suffix}`}
             title={`${name}-${shade.suffix}${overridden ? " (set by hand)" : ""}`}
-            className={`absolute inset-0 overflow-hidden rounded-medium border border-divider transition-transform duration-300 hover:scale-[1.04] focus-visible:ring-1 focus-visible:ring-default-800/40 ${CHECKER}`}
+            className={`absolute inset-0 overflow-hidden rounded-xl border border-border transition-transform duration-300 hover:scale-[1.04] focus-visible:ring-1 focus-visible:ring-focus/30 ${CHECKER}`}
           >
             <span className="absolute inset-0" style={{ background: shade.paint }} />
             {overridden ? (
@@ -88,7 +88,7 @@ function ShadeBox({
           </button>
         </PopoverTrigger>
         <PopoverContent className="flex flex-col gap-2 p-3">
-          <p className="font-mono text-tiny text-default-600">
+          <p className="font-mono text-xs text-body">
             {name}-{shade.suffix}
           </p>
           <ColorPicker value={shade.text} onChange={onOverride} />
@@ -96,7 +96,7 @@ function ShadeBox({
             <button
               type="button"
               onClick={() => onOverride(null)}
-              className="self-start rounded-full bg-default-100 px-3 py-1 text-tiny font-medium hover:bg-default-200"
+              className="self-start rounded-full bg-default px-3 py-1 text-xs font-medium hover:bg-default-hover"
             >
               Back to the generated shade
             </button>

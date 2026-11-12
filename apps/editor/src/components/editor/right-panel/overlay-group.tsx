@@ -31,7 +31,7 @@ function NumberField({
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="flex flex-col gap-1 text-tiny font-medium text-default-600">
+    <label className="flex flex-col gap-1 text-xs font-medium text-body">
       {label}
       <input
         type="number"
@@ -64,7 +64,7 @@ export function OverlayGroup({
   return (
     <>
       <section aria-label="Overlay" className="flex flex-col gap-3">
-        <h3 className="text-small text-default-600">Overlay</h3>
+        <h3 className="text-sm text-body">Overlay</h3>
         <SwitchRow
           label="Disable overlay"
           tip="Shows the template without the layer behind it."
@@ -94,7 +94,7 @@ export function OverlayGroup({
         )}
       </section>
       <section aria-label="Stacking" className="flex flex-col gap-3">
-        <h3 className="text-small text-default-600">Stacking</h3>
+        <h3 className="text-sm text-body">Stacking</h3>
         <MultiSelectField
           compact
           label="Show above"
@@ -107,7 +107,7 @@ export function OverlayGroup({
       </section>
       {type === "bottom-sheet" ? (
         <section aria-label="Entrance" className="flex flex-col gap-3">
-          <h3 className="text-small text-default-600">Entrance</h3>
+          <h3 className="text-sm text-body">Entrance</h3>
           <AnimationPicker
             value={entry.animation}
             only={SHEET_ENTRY_ANIMATIONS}

@@ -64,12 +64,12 @@ export function CssEditor({ node }: { node: ElementNode }) {
         onChange={onChange}
       />
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error.line ? `Line ${error.line}: ` : ""}
           {error.message}. The last valid CSS is still applied.
         </p>
       ) : (
-        <p className="text-tiny text-default-500">
+        <p className="text-xs text-muted">
           Edits here and in the controls above stay in sync. Anything the controls cannot show is
           kept as written.
         </p>

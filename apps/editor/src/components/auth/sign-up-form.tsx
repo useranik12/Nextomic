@@ -73,7 +73,7 @@ export function SignUpForm({ policy }: { policy: PasswordPolicy }) {
         <ActionButton type="submit" fullWidth isLoading={isPending} isDisabled={!allowed}>
           Sign up
         </ActionButton>
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           Already have an account? <AuthLink href="/sign-in">Sign in</AuthLink>
         </p>
       </form>

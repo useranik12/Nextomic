@@ -16,7 +16,7 @@ import { VariableFields } from "../variable-editor";
 import type { VarRow } from "./variable-model";
 
 const inputClass =
-  "h-8 min-w-0 flex-1 rounded-full border border-default-200 bg-transparent px-3 font-mono text-small outline-none focus:border-default-800 disabled:opacity-60";
+  "h-8 min-w-0 flex-1 rounded-full border border-border bg-transparent px-3 font-mono text-sm outline-none focus:border-focus disabled:opacity-60";
 
 function RowButton({
   label,
@@ -35,7 +35,7 @@ function RowButton({
       aria-label={label}
       title={label}
       onClick={onPress}
-      className={`rounded-full p-1.5 text-default-600 transition-colors duration-300 ${danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default-100"}`}
+      className={`rounded-full p-1.5 text-body transition-colors duration-300 ${danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default"}`}
     >
       <Icon name={icon} width={15} height={15} />
     </button>
@@ -103,16 +103,16 @@ export function ProjectVariableRow({
   }
 
   return (
-    <li className="border-b border-divider">
+    <li className="border-b border-border">
       <div className="flex items-center gap-2 px-3 py-1.5">
         <input
           type="checkbox"
           checked={checked}
           onChange={(e) => onCheck(e.target.checked)}
           aria-label={`Select ${row.cssName}`}
-          className="h-4 w-4 shrink-0 cursor-pointer accent-default-800"
+          className="h-4 w-4 shrink-0 cursor-pointer accent-accent"
         />
-        <span aria-hidden className="shrink-0 font-mono text-tiny text-default-500">
+        <span aria-hidden className="shrink-0 font-mono text-xs text-muted">
           {VARIABLE_PREFIX}
         </span>
         <input
@@ -127,7 +127,7 @@ export function ProjectVariableRow({
           }}
           className={inputClass}
         />
-        <span aria-hidden className="text-default-400">
+        <span aria-hidden className="text-subtle">
           =
         </span>
         {variable.type === "color" ? (
@@ -147,11 +147,11 @@ export function ProjectVariableRow({
             className={inputClass}
           />
         )}
-        <span className="hidden w-20 shrink-0 text-tiny text-default-500 xl:block">
+        <span className="hidden w-20 shrink-0 text-xs text-muted xl:block">
           {VARIABLE_TYPE_LABEL[variable.type]}
         </span>
         <span
-          className="w-6 shrink-0 text-right text-tiny text-default-500"
+          className="w-6 shrink-0 text-right text-xs text-muted"
           title={`${used} reference${used === 1 ? "" : "s"}`}
         >
           {used}
@@ -182,15 +182,15 @@ export function FrameworkVariableRow({
 }) {
   const nav = useDesignNav();
   return (
-    <li className="flex items-center gap-2 border-b border-divider px-3 py-1.5">
-      <code className="w-48 shrink-0 truncate text-small" title={row.cssName}>
+    <li className="flex items-center gap-2 border-b border-border px-3 py-1.5">
+      <code className="w-48 shrink-0 truncate text-sm" title={row.cssName}>
         {row.cssName}
       </code>
-      <span aria-hidden className="text-default-400">
+      <span aria-hidden className="text-subtle">
         =
       </span>
       {row.readOnly ? (
-        <code className="min-w-0 flex-1 truncate text-tiny text-default-600" title={row.value}>
+        <code className="min-w-0 flex-1 truncate text-xs text-body" title={row.value}>
           {row.value}
         </code>
       ) : row.type === "color" ? (
@@ -210,7 +210,7 @@ export function FrameworkVariableRow({
         />
       )}
       {row.dark ? (
-        <span className="hidden shrink-0 text-tiny text-default-500 xl:block">dark {row.dark}</span>
+        <span className="hidden shrink-0 text-xs text-muted xl:block">dark {row.dark}</span>
       ) : null}
       {row.editIn ? (
         <RowButton

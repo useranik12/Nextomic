@@ -12,7 +12,7 @@ const ROW_HEIGHT = 32;
 const RULER_HEIGHT = 28;
 const MIN_LENGTH = 0.05;
 const METHOD_COLOR: Record<Animation["method"], string> = {
-  to: "bg-primary/70",
+  to: "bg-accent/70",
   from: "bg-success/70",
   fromTo: "bg-warning/70",
   set: "bg-default-500"
@@ -83,9 +83,9 @@ export function TimelineTrack({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col border-t border-divider bg-content1">
+    <div className="flex h-full min-h-0 flex-col border-t border-border bg-surface">
       <div className="flex items-center gap-3 px-4 py-2">
-        <span className="flex items-center gap-1.5 text-small font-semibold">
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
           Animations
           <InfoTip
             text="Each row is one animation. The bar shows when it starts and how long it runs. Drag a bar to change its start, drag its right edge to change its length, and click the ruler to jump to a moment."
@@ -99,7 +99,7 @@ export function TimelineTrack({
           <Icon name="ph:plus" width={14} height={14} />
           Add animation
         </ActionButton>
-        <label className="ml-auto flex items-center gap-2 text-tiny text-default-600">
+        <label className="ml-auto flex items-center gap-2 text-xs text-body">
           Zoom
           <input
             type="range"
@@ -117,21 +117,21 @@ export function TimelineTrack({
         </label>
       </div>
       <div className="flex min-h-0 flex-1 overflow-auto">
-        <div className="sticky left-0 z-10 shrink-0 bg-content1" style={{ width: LABEL_WIDTH }}>
-          <div style={{ height: RULER_HEIGHT }} className="border-b border-divider" />
+        <div className="sticky left-0 z-10 shrink-0 bg-surface" style={{ width: LABEL_WIDTH }}>
+          <div style={{ height: RULER_HEIGHT }} className="border-b border-border" />
           {timeline.animations.map((animation, index) => (
             <div
               key={animation.id}
               style={{ height: ROW_HEIGHT }}
               className={
-                "flex items-center gap-1 border-b border-divider px-2 " +
-                (animation.id === selectedId ? "bg-default-200" : "")
+                "flex items-center gap-1 border-b border-border px-2 " +
+                (animation.id === selectedId ? "bg-default-hover" : "")
               }
             >
               <button
                 type="button"
                 onClick={() => onSelect(animation.id)}
-                className="min-w-0 flex-1 truncate text-left text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/40"
+                className="min-w-0 flex-1 truncate text-left text-sm outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
               >
                 {animation.name || "Animation"}
               </button>
@@ -140,7 +140,7 @@ export function TimelineTrack({
                 aria-label={`Move ${animation.name} up`}
                 disabled={index === 0}
                 onClick={() => animationActions.moveAnimation(timeline.id, animation.id, -1)}
-                className="rounded p-0.5 text-default-500 hover:text-foreground disabled:opacity-30"
+                className="rounded p-0.5 text-muted hover:text-foreground disabled:opacity-30"
               >
                 <Icon name="ph:arrow-up" width={12} height={12} />
               </button>
@@ -149,7 +149,7 @@ export function TimelineTrack({
                 aria-label={`Move ${animation.name} down`}
                 disabled={index === timeline.animations.length - 1}
                 onClick={() => animationActions.moveAnimation(timeline.id, animation.id, 1)}
-                className="rounded p-0.5 text-default-500 hover:text-foreground disabled:opacity-30"
+                className="rounded p-0.5 text-muted hover:text-foreground disabled:opacity-30"
               >
                 <Icon name="ph:arrow-down" width={12} height={12} />
               </button>
@@ -161,7 +161,7 @@ export function TimelineTrack({
                     animationActions.duplicateAnimation(timeline.id, animation.id)?.id ?? null
                   )
                 }
-                className="rounded p-0.5 text-default-500 hover:text-foreground"
+                className="rounded p-0.5 text-muted hover:text-foreground"
               >
                 <Icon name="ph:copy" width={12} height={12} />
               </button>
@@ -172,7 +172,7 @@ export function TimelineTrack({
                   animationActions.removeAnimation(timeline.id, animation.id);
                   if (animation.id === selectedId) onSelect(null);
                 }}
-                className="rounded p-0.5 text-default-500 hover:text-danger"
+                className="rounded p-0.5 text-muted hover:text-danger"
               >
                 <Icon name="ph:trash" width={12} height={12} />
               </button>
@@ -182,7 +182,7 @@ export function TimelineTrack({
         <div className="relative shrink-0" style={{ width }}>
           <div
             style={{ height: RULER_HEIGHT }}
-            className="relative cursor-pointer border-b border-divider"
+            className="relative cursor-pointer border-b border-border"
             onPointerDown={seekFromRuler}
             role="presentation"
           >
@@ -190,7 +190,7 @@ export function TimelineTrack({
               <span
                 key={second}
                 style={{ left: second * pps }}
-                className="absolute top-0 h-full border-l border-divider pl-1 text-tiny text-default-500"
+                className="absolute top-0 h-full border-l border-border pl-1 text-xs text-muted"
               >
                 {second}s
               </span>
@@ -203,7 +203,7 @@ export function TimelineTrack({
               <div
                 key={animation.id}
                 style={{ height: ROW_HEIGHT }}
-                className="relative border-b border-divider"
+                className="relative border-b border-border"
               >
                 <div
                   role="button"
@@ -217,7 +217,7 @@ export function TimelineTrack({
                   }}
                   style={{ left: slot.start * pps, width: Math.max(slot.length * pps, 8) }}
                   className={
-                    "absolute top-1 flex h-6 cursor-grab items-center rounded px-2 text-tiny text-white outline-none focus-visible:ring-1 focus-visible:ring-default-800 " +
+                    "absolute top-1 flex h-6 cursor-grab items-center rounded px-2 text-xs text-white outline-none focus-visible:ring-1 focus-visible:ring-focus/30 " +
                     METHOD_COLOR[animation.method] +
                     (animation.id === selectedId ? " ring-1 ring-foreground" : "")
                   }
@@ -242,7 +242,7 @@ export function TimelineTrack({
         </div>
       </div>
       {timeline.animations.length === 0 ? (
-        <p className="px-4 pb-3 text-small text-default-500">
+        <p className="px-4 pb-3 text-sm text-muted">
           No animations in this timeline yet. Add one to start.
         </p>
       ) : null}

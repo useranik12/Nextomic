@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui-v2/react";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import {
   BLOCK_PARAM_TYPES,
   STATE_TYPE_LABELS,
@@ -30,7 +30,7 @@ function ParamRow({
   onRemove: () => void;
 }) {
   return (
-    <li className="flex flex-col gap-2 rounded-medium border border-divider p-2">
+    <li className="flex flex-col gap-2 rounded-xl border border-border p-2">
       <div className="flex items-end gap-1">
         <FormInput
           compact
@@ -43,7 +43,7 @@ function ParamRow({
           type="button"
           aria-label={`Remove parameter ${param.name}`}
           onClick={onRemove}
-          className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-default-500 hover:bg-default-100 hover:text-danger"
+          className="mb-1 flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-default hover:text-danger"
         >
           <Icon name="ph:trash" />
         </button>
@@ -61,14 +61,14 @@ function ParamRow({
           isSelected={param.isList}
           onValueChange={(isList) => onChange({ ...param, isList })}
         >
-          <span className="text-small">List</span>
+          <span className="text-sm">List</span>
         </Switch>
         <Switch
           size="sm"
           isSelected={param.required}
           onValueChange={(required) => onChange({ ...param, required })}
         >
-          <span className="text-small">Required</span>
+          <span className="text-sm">Required</span>
         </Switch>
       </div>
     </li>
@@ -99,10 +99,8 @@ export function BlockSidebar() {
         onValueChange={(description) => set({ description })}
       />
       <section className="flex flex-col gap-2">
-        <h3 className="text-small font-semibold">Parameters</h3>
-        <p className="text-tiny text-default-500">
-          Nodes inside read them as {"{{ params.name }}"}.
-        </p>
+        <h3 className="text-sm font-semibold">Parameters</h3>
+        <p className="text-xs text-muted">Nodes inside read them as {"{{ params.name }}"}.</p>
         <ul className="flex flex-col gap-2">
           {block.params.map((param) => (
             <ParamRow
@@ -145,7 +143,7 @@ export function BlockSidebar() {
             set({ returns: on ? { type: "string", isList: false, ref: "", value: "" } : undefined })
           }
         >
-          <span className="text-small font-semibold">Returns a value</span>
+          <span className="text-sm font-semibold">Returns a value</span>
         </Switch>
         {block.returns ? (
           <>

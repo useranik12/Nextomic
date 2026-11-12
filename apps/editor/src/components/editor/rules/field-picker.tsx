@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RULE_FIELDS, ruleFieldById, type RuleFieldDef } from "@nextomic/schema";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -54,10 +54,10 @@ export function FieldPicker({
           type="button"
           aria-label={label}
           aria-haspopup="listbox"
-          className="flex min-h-8 w-full min-w-0 items-center justify-between gap-2 rounded-medium border border-default-300 px-2.5 py-1 text-left text-small text-foreground transition-colors duration-300 hover:border-default-400 focus-visible:ring-1 focus-visible:ring-default-800/40"
+          className="flex min-h-8 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-default-300 px-2.5 py-1 text-left text-sm text-foreground transition-colors duration-300 hover:border-default-400 focus-visible:ring-1 focus-visible:ring-focus/30"
         >
           <span className="min-w-0 whitespace-normal break-words">
-            <span className="block text-tiny leading-tight text-default-500">
+            <span className="block text-xs leading-tight text-muted">
               {current?.group ?? "Choose"}
             </span>
             <span className="block leading-tight">{current?.label ?? value}</span>
@@ -71,7 +71,7 @@ export function FieldPicker({
             name="ph:magnifying-glass"
             width={14}
             height={14}
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-default-500"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
           />
           <input
             autoFocus
@@ -79,16 +79,16 @@ export function FieldPicker({
             placeholder="Search conditions"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-8 w-full rounded-medium border border-default-300 bg-transparent pl-8 pr-2 text-small outline-none focus:border-default-500"
+            className="h-8 w-full rounded-xl border border-default-300 bg-transparent pl-8 pr-2 text-sm outline-none focus:border-default-500"
           />
         </div>
         <div role="listbox" aria-label={label} className="max-h-72 overflow-y-auto">
           {groups.length === 0 ? (
-            <p className="px-2 py-3 text-tiny text-default-500">No condition matches.</p>
+            <p className="px-2 py-3 text-xs text-muted">No condition matches.</p>
           ) : (
             groups.map(([group, fields]) => (
               <div key={group} role="group" aria-label={group} className="pb-1">
-                <p className="px-2 pb-0.5 pt-1.5 text-tiny font-medium uppercase tracking-wide text-default-500">
+                <p className="px-2 pb-0.5 pt-1.5 text-xs font-medium uppercase tracking-wide text-muted">
                   {group}
                 </p>
                 {fields.map((field) => (
@@ -103,8 +103,8 @@ export function FieldPicker({
                       setQuery("");
                     }}
                     className={
-                      "flex w-full items-start justify-between gap-2 whitespace-normal break-words rounded-medium px-2 py-1.5 text-left text-small transition-colors duration-300 hover:bg-default-200 " +
-                      (field.id === value ? "bg-default-100 text-foreground" : "text-default-700")
+                      "flex w-full items-start justify-between gap-2 whitespace-normal break-words rounded-xl px-2 py-1.5 text-left text-sm transition-colors duration-300 hover:bg-default-hover " +
+                      (field.id === value ? "bg-default text-foreground" : "text-body")
                     }
                   >
                     {field.label}

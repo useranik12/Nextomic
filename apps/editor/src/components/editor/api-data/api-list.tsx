@@ -1,6 +1,6 @@
 "use client";
 
-import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@heroui-v2/react";
+import { Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from "@/components/ui/menu";
 import { newRestCall, newRestGroup, type RestCall, type RestConfig } from "@nextomic/schema";
 import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -8,7 +8,7 @@ import { MethodBadge } from "./method-badge";
 import type { ApiDataModel } from "./use-api-data";
 
 const ROW =
-  "flex w-full items-center justify-between gap-2 rounded-full px-4 py-2 text-left text-small transition-colors duration-300 ";
+  "flex w-full items-center justify-between gap-2 rounded-full px-4 py-2 text-left text-sm transition-colors duration-300 ";
 
 function CallRow({
   call,
@@ -27,7 +27,7 @@ function CallRow({
         type="button"
         aria-current={current}
         onClick={onPick}
-        className={`${ROW}${nested ? "pl-9 " : ""}${current ? "bg-default-100 text-foreground" : "text-default-600 hover:bg-default-50"}`}
+        className={`${ROW}${nested ? "pl-9 " : ""}${current ? "bg-default text-foreground" : "text-body hover:bg-default/40"}`}
       >
         <span className="truncate">{call.name}</span>
         <MethodBadge method={call.method} active={call.active} />
@@ -63,13 +63,13 @@ export function ApiList({ model, config }: { model: ApiDataModel; config: RestCo
   return (
     <nav aria-label="API Calls" className="flex min-h-0 flex-col gap-3">
       <div className="flex items-center justify-between px-2">
-        <h2 className="text-medium font-semibold text-foreground">API Calls</h2>
+        <h2 className="text-base font-semibold text-foreground">API Calls</h2>
         <Dropdown placement="bottom-end">
           <DropdownTrigger>
             <button
               type="button"
               aria-label="Add API call or group"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-default-600 hover:bg-default-100 hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-body hover:bg-default hover:text-foreground"
             >
               <Icon name="ph:plus-circle" width={20} height={20} />
             </button>
@@ -78,13 +78,17 @@ export function ApiList({ model, config }: { model: ApiDataModel; config: RestCo
             aria-label="Add"
             onAction={(key) => add(key === "group" ? "group" : "call")}
           >
-            <DropdownItem key="call">New API Call</DropdownItem>
-            <DropdownItem key="group">New API Group</DropdownItem>
+            <DropdownItem key="call" id="call">
+              New API Call
+            </DropdownItem>
+            <DropdownItem key="group" id="group">
+              New API Group
+            </DropdownItem>
           </DropdownMenu>
         </Dropdown>
       </div>
       {config.groups.length === 0 && config.calls.length === 0 ? (
-        <p className="px-2 text-small text-default-500">
+        <p className="px-2 text-sm text-muted">
           No API calls yet. Press + to add a call or a group.
         </p>
       ) : null}
@@ -95,14 +99,14 @@ export function ApiList({ model, config }: { model: ApiDataModel; config: RestCo
           return (
             <li key={group.id} className="flex flex-col gap-1">
               <div
-                className={`flex items-center rounded-full ${isCurrent("group", group.id) ? "bg-default-100" : "hover:bg-default-50"}`}
+                className={`flex items-center rounded-full ${isCurrent("group", group.id) ? "bg-default" : "hover:bg-default/40"}`}
               >
                 <button
                   type="button"
                   aria-label={open ? `Collapse ${group.name}` : `Expand ${group.name}`}
                   aria-expanded={open}
                   onClick={() => toggle(group.id)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-default-500 hover:text-foreground"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted hover:text-foreground"
                 >
                   {open ? (
                     <Icon name="ph:caret-down" width={14} height={14} />
@@ -114,7 +118,7 @@ export function ApiList({ model, config }: { model: ApiDataModel; config: RestCo
                   type="button"
                   aria-current={isCurrent("group", group.id)}
                   onClick={() => model.select({ kind: "group", id: group.id })}
-                  className="min-w-0 flex-1 truncate py-2 pr-4 text-left text-small text-foreground"
+                  className="min-w-0 flex-1 truncate py-2 pr-4 text-left text-sm text-foreground"
                 >
                   {group.name}
                 </button>
@@ -131,7 +135,7 @@ export function ApiList({ model, config }: { model: ApiDataModel; config: RestCo
                     />
                   ))}
                   {calls.length === 0 ? (
-                    <li className="pl-9 text-tiny text-default-500">No calls in this group.</li>
+                    <li className="pl-9 text-xs text-muted">No calls in this group.</li>
                   ) : null}
                 </ul>
               ) : null}

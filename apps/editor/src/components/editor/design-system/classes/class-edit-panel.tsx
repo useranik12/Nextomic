@@ -68,8 +68,8 @@ export function ClassEditPanel({
   return (
     <div className="flex flex-col gap-4 p-4">
       <section className="flex flex-col gap-2">
-        <h4 className="flex items-center gap-2 text-small font-semibold">
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary" />
+        <h4 className="flex items-center gap-2 text-sm font-semibold">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />
           {framework ? "Framework CSS" : "Custom CSS"}
         </h4>
         {framework ? (
@@ -89,11 +89,11 @@ export function ClassEditPanel({
           />
         )}
         {cssError ? (
-          <p role="alert" className="text-tiny text-danger">
+          <p role="alert" className="text-xs text-danger">
             {cssError}
           </p>
         ) : (
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             {framework
               ? "This class comes from the theme framework and cannot be edited here."
               : row.locked
@@ -134,7 +134,7 @@ export function ClassEditPanel({
       </div>
 
       {!framework ? (
-        <section className="flex flex-col gap-3 rounded-large border border-divider p-3">
+        <section className="flex flex-col gap-3 rounded-2xl border border-border p-3">
           <div className="flex items-end gap-2">
             <div className="min-w-0 flex-1">
               <FormInput
@@ -158,7 +158,7 @@ export function ClassEditPanel({
             </ActionButton>
           </div>
           {nameError ? (
-            <p role="alert" className="text-tiny text-danger">
+            <p role="alert" className="text-xs text-danger">
               {nameError}
             </p>
           ) : null}
@@ -172,7 +172,7 @@ export function ClassEditPanel({
             ]}
             onValueChange={(c) => onCategory(c === UNCATEGORIZED ? null : c)}
           />
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Used by {row.used} element{row.used === 1 ? "" : "s"}. Renames and deletes also update
             your other saved pages when you save.
           </p>

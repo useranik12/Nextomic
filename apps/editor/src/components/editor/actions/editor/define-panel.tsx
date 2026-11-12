@@ -49,8 +49,8 @@ function ActionSettings({ node, update }: { node: Of<"action">; update: (n: Flow
     <div className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-medium font-semibold">{action.label}</p>
-          <p className="text-tiny text-default-500">{action.description}</p>
+          <p className="text-base font-semibold">{action.label}</p>
+          <p className="text-xs text-muted">{action.description}</p>
         </div>
         <ActionButton
           size="sm"
@@ -121,7 +121,7 @@ export function DefinePanel() {
     if (flow && trigger?.fields?.length) {
       return (
         <div className="flex flex-col gap-3">
-          <h3 className="text-medium font-semibold">{trigger.label} settings</h3>
+          <h3 className="text-base font-semibold">{trigger.label} settings</h3>
           <ParamFields
             fields={trigger.fields}
             params={flow.settings}
@@ -130,7 +130,7 @@ export function DefinePanel() {
         </div>
       );
     }
-    return <p className="text-small text-default-500">Select a node to define it.</p>;
+    return <p className="text-sm text-muted">Select a node to define it.</p>;
   }
   const { node } = found;
   return (
@@ -147,7 +147,7 @@ export function DefinePanel() {
         <NodeMenu nodeId={node.id} />
       </div>
       {node.disabled ? (
-        <p className="rounded-small bg-warning-50 px-2 py-1 text-tiny text-warning-700">
+        <p className="rounded-lg bg-warning-50 px-2 py-1 text-xs text-warning-700">
           This node is disabled and is skipped.
         </p>
       ) : null}

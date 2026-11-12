@@ -27,7 +27,7 @@ function IconButton({
       title={label}
       onClick={onClick}
       className={
-        "rounded p-1 text-default-500 outline-none focus-visible:ring-1 focus-visible:ring-default-800/40 " +
+        "rounded p-1 text-muted outline-none focus-visible:ring-1 focus-visible:ring-focus/30 " +
         (danger ? "hover:text-danger" : "hover:text-foreground")
       }
     >
@@ -50,23 +50,21 @@ function TimelineRow({
   return (
     <li
       className={
-        "group flex items-center gap-1 rounded-medium pr-1 " +
-        (selected ? "bg-default-200" : "hover:bg-default-100")
+        "group flex items-center gap-1 rounded-xl pr-1 " +
+        (selected ? "bg-default-hover" : "hover:bg-default")
       }
     >
       <button
         type="button"
         onClick={() => onSelect(timeline.id)}
         aria-current={selected ? "true" : undefined}
-        className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/40"
+        className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-sm outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
       >
-        <Icon name="ph:timer" width={14} height={14} className="shrink-0 text-default-500" />
-        <span className={"truncate " + (timeline.enabled ? "" : "text-default-400 line-through")}>
+        <Icon name="ph:timer" width={14} height={14} className="shrink-0 text-muted" />
+        <span className={"truncate " + (timeline.enabled ? "" : "text-subtle line-through")}>
           {timeline.name}
         </span>
-        <span className="ml-auto shrink-0 text-tiny text-default-400">
-          {timeline.animations.length}
-        </span>
+        <span className="ml-auto shrink-0 text-xs text-subtle">{timeline.animations.length}</span>
       </button>
       <IconButton
         label={timeline.enabled ? `Turn off ${timeline.name}` : `Turn on ${timeline.name}`}
@@ -102,7 +100,7 @@ function FolderHeader({ folder }: { folder: AnimationFolder }) {
     setEditing(false);
   }
   return (
-    <div className="flex items-center gap-1 px-1 pt-2 text-tiny font-semibold uppercase tracking-wide text-default-500">
+    <div className="flex items-center gap-1 px-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted">
       <Icon name="ph:folder" width={14} height={14} />
       {editing ? (
         <input
@@ -116,7 +114,7 @@ function FolderHeader({ folder }: { folder: AnimationFolder }) {
             if (e.key === "Enter") commit();
             if (e.key === "Escape") setEditing(false);
           }}
-          className="min-w-0 flex-1 rounded bg-default-100 px-1.5 py-0.5 text-small normal-case text-foreground outline-none"
+          className="min-w-0 flex-1 rounded bg-default px-1.5 py-0.5 text-sm normal-case text-foreground outline-none"
         />
       ) : (
         <span className="min-w-0 flex-1 truncate">{folder.name}</span>
@@ -181,8 +179,8 @@ export function TimelinesSidebar({
   );
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-divider bg-content1">
-      <div className="flex items-center gap-1.5 px-4 pb-2 pt-3 text-small font-semibold">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-surface">
+      <div className="flex items-center gap-1.5 px-4 pb-2 pt-3 text-sm font-semibold">
         Timelines
         <InfoTip
           text="A timeline is a sequence of animations that plays together on one trigger, like scrolling to a section or clicking a button. Keep related timelines in folders."
@@ -201,7 +199,7 @@ export function TimelinesSidebar({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
         {settings.timelines.length === 0 && settings.folders.length === 0 ? (
-          <p className="px-1 text-small text-default-500">
+          <p className="px-1 text-sm text-muted">
             No timelines yet. Create one, then add animations to it.
           </p>
         ) : null}
@@ -214,7 +212,7 @@ export function TimelinesSidebar({
                 <button
                   type="button"
                   onClick={() => onSelect(animationActions.addTimeline(folder.id).id)}
-                  className="px-2.5 py-1 text-tiny text-default-500 hover:text-foreground"
+                  className="px-2.5 py-1 text-xs text-muted hover:text-foreground"
                 >
                   + Add timeline here
                 </button>
@@ -224,7 +222,7 @@ export function TimelinesSidebar({
         ))}
         {loose.length > 0 ? <ul className="mt-2 flex flex-col gap-0.5">{loose.map(row)}</ul> : null}
       </div>
-      <div className="flex items-center gap-2 border-t border-divider px-3 py-2.5">
+      <div className="flex items-center gap-2 border-t border-border px-3 py-2.5">
         <ActionButton size="sm" tone="ghost" onPress={() => fileRef.current?.click()}>
           <Icon name="ph:upload-simple" width={14} height={14} />
           Import

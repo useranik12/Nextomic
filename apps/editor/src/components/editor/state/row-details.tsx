@@ -33,7 +33,7 @@ function PersistOptions({
         className="max-w-60"
       />
       {variable.storage === "cookie" ? (
-        <p className={`text-tiny ${tooBig ? "text-danger" : "text-default-500"}`}>
+        <p className={`text-xs ${tooBig ? "text-danger" : "text-muted"}`}>
           A cookie is sent with every request and holds about 4 KB.
           {tooBig ? " This default value is already larger than that." : ""} Use it only for small
           values the server needs while rendering, such as a language choice.
@@ -61,11 +61,11 @@ export function RowDetails({
 }) {
   const v = row.variable;
   return (
-    <div className="mb-3 grid grid-cols-1 gap-4 rounded-large border border-divider bg-content1/40 p-4 lg:grid-cols-2">
+    <div className="mb-3 grid grid-cols-1 gap-4 rounded-2xl border border-border bg-surface/40 p-4 lg:grid-cols-2">
       <div className="flex flex-col gap-3">
         {row.kind === "app" ? (
           <label className="flex flex-col gap-1">
-            <span className="text-tiny font-medium text-default-600">Description</span>
+            <span className="text-xs font-medium text-body">Description</span>
             <input
               value={v.description}
               maxLength={300}
@@ -78,33 +78,33 @@ export function RowDetails({
         {row.kind === "app" && row.variable.persist ? (
           <PersistOptions variable={row.variable} onChange={onChange} />
         ) : row.kind === "app" ? (
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Not persisted: the value starts from the default on every visit.
           </p>
         ) : (
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Constants are fixed. Actions can read them but never change them.
           </p>
         )}
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="text-tiny font-medium text-default-600">
+        <span className="text-xs font-medium text-body">
           Where used ({places.reduce((n, p) => n + p.count, 0)})
         </span>
         {places.length === 0 ? (
-          <p className="text-tiny text-default-500">Not used on any page or template yet.</p>
+          <p className="text-xs text-muted">Not used on any page or template yet.</p>
         ) : (
           <ul className="flex flex-col gap-1">
             {places.map((p) => (
-              <li key={p.id} className="flex items-center gap-2 text-small">
+              <li key={p.id} className="flex items-center gap-2 text-sm">
                 <Icon
                   name={p.kind === "page" ? "ph:file-text" : "ph:layout"}
                   width={14}
                   height={14}
-                  className="text-default-500"
+                  className="text-muted"
                 />
                 <span className="min-w-0 truncate">{p.name}</span>
-                <span className="text-tiny text-default-500">×{p.count}</span>
+                <span className="text-xs text-muted">×{p.count}</span>
               </li>
             ))}
           </ul>

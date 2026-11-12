@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import {
   TEMPLATE_TYPES,
   TEMPLATE_TYPE_LABELS,
@@ -46,7 +46,7 @@ export function NewTemplateModal({
   }
 
   return (
-    <Modal isOpen onOpenChange={(open) => !open && onClose()} backdrop="blur">
+    <Modal isOpen onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <form
           onSubmit={(event) => {

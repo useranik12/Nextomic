@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 
@@ -22,11 +22,11 @@ export function ClassDeleteDialog({
 }) {
   const [choice, setChoice] = useState(REMOVE);
   return (
-    <Modal isOpen onClose={onCancel} backdrop="blur">
+    <Modal isOpen onClose={onCancel}>
       <ModalContent>
         <ModalHeader>Delete .{name}</ModalHeader>
         <ModalBody>
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             {used === 0
               ? "No element uses this class. Its styles are deleted."
               : `${used} element${used === 1 ? "" : "s"} use this class. Its styles are deleted; choose what the elements get instead.`}

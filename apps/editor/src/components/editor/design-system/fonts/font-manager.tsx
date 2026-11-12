@@ -74,8 +74,8 @@ function NewCustomFont({
         void create();
       }}
     >
-      <h4 className="text-small font-semibold">Add a custom font</h4>
-      <p className="text-tiny text-default-500">
+      <h4 className="text-sm font-semibold">Add a custom font</h4>
+      <p className="text-xs text-muted">
         Name the font first. This is the name you pick it by in the Design tab. You add its faces
         (weights and styles) on the next screen.
       </p>
@@ -95,7 +95,7 @@ function NewCustomFont({
         onValueChange={setCategory}
       />
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}
@@ -111,9 +111,7 @@ function NewCustomFont({
 
 function Chip({ children }: { children: string }) {
   return (
-    <span className="rounded-full bg-default-200 px-2 py-0.5 text-tiny text-default-700">
-      {children}
-    </span>
+    <span className="rounded-full bg-default-hover px-2 py-0.5 text-xs text-body">{children}</span>
   );
 }
 
@@ -154,14 +152,14 @@ export function FontManager({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex flex-wrap items-center gap-3 border-b border-divider p-4">
-        <h3 className="text-medium font-semibold">Font manager</h3>
+      <header className="flex flex-wrap items-center gap-3 border-b border-border p-4">
+        <h3 className="text-base font-semibold">Font manager</h3>
         <div className="relative ml-auto w-64">
           <Icon
             name="ph:magnifying-glass"
             width={16}
             height={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-default-500"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
           />
           <input
             type="search"
@@ -169,14 +167,14 @@ export function FontManager({
             placeholder="Search fonts"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-9 w-full rounded-medium border border-default-200 bg-transparent pl-9 pr-3 text-small outline-none focus:border-default-800"
+            className="h-9 w-full rounded-xl border border-border bg-transparent pl-9 pr-3 text-sm outline-none focus:border-focus"
           />
         </div>
         <div role="group" aria-label="Add a font" className="flex gap-1">
           <ActionButton
             size="sm"
             tone={adding === "google" ? "primary" : "ghost"}
-            className="border border-default-200"
+            className="border border-border"
             onPress={() => setAdding(adding === "google" ? null : "google")}
           >
             Google font
@@ -184,7 +182,7 @@ export function FontManager({
           <ActionButton
             size="sm"
             tone={adding === "custom" ? "primary" : "ghost"}
-            className="border border-default-200"
+            className="border border-border"
             onPress={() => setAdding(adding === "custom" ? null : "custom")}
           >
             <Icon name="ph:plus" width={14} height={14} />
@@ -195,7 +193,7 @@ export function FontManager({
       <div className="flex min-h-0 flex-1">
         <nav
           aria-label="Font categories"
-          className="flex w-52 shrink-0 flex-col gap-1 border-r border-divider p-3"
+          className="flex w-52 shrink-0 flex-col gap-1 border-r border-border p-3"
         >
           {CATEGORIES.map((c) => (
             <button
@@ -207,14 +205,14 @@ export function FontManager({
                 setAdding(null);
               }}
               className={
-                "flex items-center justify-between rounded-medium px-3 py-2 text-small transition-colors duration-300 " +
+                "flex items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors duration-300 " +
                 (category === c.id && adding === null
-                  ? "bg-default-200 font-medium"
-                  : "text-default-600 hover:bg-default-100")
+                  ? "bg-default-hover font-medium"
+                  : "text-body hover:bg-default")
               }
             >
               <span>{c.label}</span>
-              <span className="text-tiny text-default-500">{count(c.id)}</span>
+              <span className="text-xs text-muted">{count(c.id)}</span>
             </button>
           ))}
         </nav>
@@ -224,16 +222,16 @@ export function FontManager({
           {adding === null && category === "standard" ? (
             <ul aria-label="Standard fonts" className="flex flex-col gap-2 p-4">
               {standard.length === 0 ? (
-                <li className="text-small text-default-500">No standard font matches.</li>
+                <li className="text-sm text-muted">No standard font matches.</li>
               ) : null}
               {standard.map((s) => (
                 <li
                   key={s.label}
-                  className="flex items-center gap-3 rounded-large bg-default-100 px-4 py-3"
+                  className="flex items-center gap-3 rounded-2xl bg-default px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-small font-medium">{s.label}</p>
-                    <p style={{ fontFamily: s.value }} className="truncate text-medium">
+                    <p className="text-sm font-medium">{s.label}</p>
+                    <p style={{ fontFamily: s.value }} className="truncate text-base">
                       {SAMPLE}
                     </p>
                   </div>
@@ -244,7 +242,7 @@ export function FontManager({
           ) : null}
           {adding === null && category !== "standard" ? (
             visible.length === 0 ? (
-              <div className="flex flex-col items-start gap-2 p-6 text-small text-default-500">
+              <div className="flex flex-col items-start gap-2 p-6 text-sm text-muted">
                 <p>
                   {query
                     ? "No font matches your search."
@@ -266,7 +264,7 @@ export function FontManager({
                 {visible.map((f) => (
                   <li
                     key={f.id}
-                    className="flex items-center gap-2 rounded-large bg-default-100 pr-3 transition-colors duration-300 hover:bg-default-200"
+                    className="flex items-center gap-2 rounded-2xl bg-default pr-3 transition-colors duration-300 hover:bg-default-hover"
                   >
                     <button
                       type="button"
@@ -274,18 +272,18 @@ export function FontManager({
                       className="flex min-w-0 flex-1 flex-col gap-1 px-4 py-3 text-left"
                     >
                       <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-small font-medium">{f.family}</span>
+                        <span className="text-sm font-medium">{f.family}</span>
                         <Chip>{f.source === "google" ? "Google" : "Custom"}</Chip>
                         {f.active ? null : <Chip>Off</Chip>}
                         {f.rights ? null : <Chip>Rights not confirmed</Chip>}
-                        <span className="text-tiny text-default-500">Styles: {f.files.length}</span>
+                        <span className="text-xs text-muted">Styles: {f.files.length}</span>
                       </span>
                       <span
                         style={{
                           fontFamily: `"${f.family}", sans-serif`,
                           fontWeight: previewWeight(f)
                         }}
-                        className="truncate text-medium"
+                        className="truncate text-base"
                       >
                         {SAMPLE}
                       </span>
@@ -301,7 +299,7 @@ export function FontManager({
                       onClick={() => onToggleFavorite(f)}
                       className={
                         "rounded-full p-2 hover:bg-default-300/40 " +
-                        (f.favorite ? "text-danger" : "text-default-600")
+                        (f.favorite ? "text-danger" : "text-body")
                       }
                     >
                       {f.favorite ? (

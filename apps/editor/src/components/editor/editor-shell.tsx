@@ -176,7 +176,7 @@ export function EditorShell({
     return (
       <div
         role="status"
-        className="flex h-screen items-center justify-center bg-background text-default-500"
+        className="flex h-screen items-center justify-center bg-background text-muted"
       >
         Loading editor…
       </div>
@@ -211,7 +211,7 @@ export function EditorShell({
         />
         <div className="relative flex min-h-0 flex-1">
           <div
-            className={`${collapsed ? "w-14" : "w-52"} shrink-0 border-r border-divider transition-[width] duration-300`}
+            className={`${collapsed ? "w-14" : "w-52"} shrink-0 border-r border-border transition-[width] duration-300`}
           >
             <LeftRail
               active={rail}
@@ -277,7 +277,7 @@ export function EditorShell({
           ) : null}
           <div
             hidden={fullPage}
-            className="relative shrink-0 border-r border-divider"
+            className="relative shrink-0 border-r border-border"
             style={{ width: rail === "navigator" ? navigatorWidth.width : LEFT_PANEL_WIDTH }}
           >
             {rail === "navigator" ? (
@@ -306,14 +306,12 @@ export function EditorShell({
               <AppSettings pages={pages} onPagesChange={setPages} />
             ) : (
               <div className="p-4">
-                <h2 className="text-small font-medium">{railLabel}</h2>
-                <p className="mt-2 text-small text-default-500">
-                  This section is built in a later phase.
-                </p>
+                <h2 className="text-sm font-medium">{railLabel}</h2>
+                <p className="mt-2 text-sm text-muted">This section is built in a later phase.</p>
               </div>
             )}
           </div>
-          <main hidden={fullPage} className="min-w-0 flex-1 bg-content1/20">
+          <main hidden={fullPage} className="min-w-0 flex-1 bg-surface/20">
             <CanvasFrame mode={mode} />
           </main>
           {animationsOpen ? (
@@ -321,7 +319,7 @@ export function EditorShell({
           ) : null}
           <div
             hidden={fullPage}
-            className="relative shrink-0 border-l border-divider"
+            className="relative shrink-0 border-l border-border"
             style={{ width: rightWidth.width }}
           >
             <PanelResizer

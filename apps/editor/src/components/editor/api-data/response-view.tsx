@@ -1,6 +1,6 @@
 "use client";
+import { Busy } from "@/components/ui/busy";
 
-import { Spinner } from "@heroui-v2/react";
 import { jsonPathValues, type RestCall } from "@nextomic/schema";
 import { useState } from "react";
 import { Tabs } from "./tabs";
@@ -14,11 +14,11 @@ export function CodeView({ text, label }: { text: string; label: string }) {
       role="region"
       aria-label={label}
       tabIndex={0}
-      className="flex max-h-[420px] min-h-[200px] overflow-auto rounded-medium border border-default-200 bg-default-50 font-mono text-tiny leading-5"
+      className="flex max-h-[420px] min-h-[200px] overflow-auto rounded-xl border border-border bg-default/40 font-mono text-xs leading-5"
     >
       <div
         aria-hidden
-        className="sticky left-0 select-none bg-default-100 px-2 py-2.5 text-right text-default-500"
+        className="sticky left-0 select-none bg-default px-2 py-2.5 text-right text-muted"
       >
         {lines.map((_, i) => (
           <div key={i}>{i + 1}</div>
@@ -57,15 +57,15 @@ const RESPONSE_TABS = [
 export function ResponseView({ test, call }: { test: CallTestModel; call: RestCall }) {
   const [view, setView] = useState<(typeof RESPONSE_TABS)[number]["id"]>("json");
   const { result, json } = test;
-  if (test.running) return <Spinner size="sm" label="Calling the API" className="self-start" />;
+  if (test.running) return <Busy label="Calling the API" className="self-start" />;
   if (test.error)
     return (
-      <p role="alert" className="text-small text-danger">
+      <p role="alert" className="text-sm text-danger">
         {test.error}
       </p>
     );
   if (!result)
-    return <p className="text-small text-default-500">Press Test API Call to see the response.</p>;
+    return <p className="text-sm text-muted">Press Test API Call to see the response.</p>;
   return (
     <>
       <div className="self-end">
@@ -80,12 +80,12 @@ export function ResponseView({ test, call }: { test: CallTestModel; call: RestCa
       {view === "json" ? (
         <>
           {test.shown.size > 0 && json !== null ? (
-            <p className="flex flex-wrap items-center gap-2 text-tiny text-default-500">
+            <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
               Showing {test.shown.size} picked JSON path{test.shown.size === 1 ? "" : "s"}.
               <button
                 type="button"
                 onClick={test.showAll}
-                className="text-primary-600 underline-offset-2 hover:underline dark:text-primary-400"
+                className="text-accent underline-offset-2 hover:underline dark:text-accent"
               >
                 Show whole response
               </button>
@@ -98,7 +98,7 @@ export function ResponseView({ test, call }: { test: CallTestModel; call: RestCa
       ) : (
         <CodeView label="Response headers" text={headerText(result.responseHeaders)} />
       )}
-      <p role="status" className={`text-small ${result.ok ? "text-success" : "text-danger"}`}>
+      <p role="status" className={`text-sm ${result.ok ? "text-success" : "text-danger"}`}>
         Status: {result.status} ({result.ok ? "Success" : "Failure"}) · {result.latencyMs} ms
         {result.truncated ? " · body cut at 1 MB" : ""}
       </p>

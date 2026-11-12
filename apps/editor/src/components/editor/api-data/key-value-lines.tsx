@@ -109,10 +109,10 @@ export function KeyValueLines({
   return (
     <section
       aria-label={title}
-      className="flex flex-col gap-3 rounded-large border border-default-200 p-5"
+      className="flex flex-col gap-3 rounded-2xl border border-border p-5"
     >
-      <h3 className="text-small font-medium text-foreground">{title}</h3>
-      {description ? <p className="-mt-2 text-tiny text-default-500">{description}</p> : null}
+      <h3 className="text-sm font-medium text-foreground">{title}</h3>
+      {description ? <p className="-mt-2 text-xs text-muted">{description}</p> : null}
       {items.map((item, i) => (
         <Line
           key={`${i}-${item.key}`}

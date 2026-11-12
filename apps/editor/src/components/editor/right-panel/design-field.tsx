@@ -115,12 +115,12 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
               data-effective={own === undefined && effective === o ? "true" : undefined}
               onClick={() => set(own === o ? null : o)}
               className={
-                "flex h-10 items-center justify-center rounded-medium outline-none transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-default-800/50 " +
+                "flex h-10 items-center justify-center rounded-xl outline-none transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-focus/30 " +
                 (own === o
                   ? "bg-default-300 text-foreground"
                   : effective === o
-                    ? "bg-default-200 text-foreground ring-1 ring-inset ring-default-400"
-                    : "bg-default-100 text-default-600 hover:bg-default-200")
+                    ? "bg-default-hover text-foreground ring-1 ring-inset ring-default-400"
+                    : "bg-default text-body hover:bg-default-hover")
               }
             >
               <DesignIcon id={property.icons?.[o] ?? ""} />
@@ -174,7 +174,7 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
               {property.suggestions && focused ? (
                 <ul
                   aria-label={`${property.label} options`}
-                  className="absolute inset-x-0 top-full z-30 mt-1 flex flex-wrap gap-1 rounded-medium border border-divider bg-content1 p-2 shadow-lg"
+                  className="absolute inset-x-0 top-full z-30 mt-1 flex flex-wrap gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg"
                 >
                   {property.suggestions.map((option) => (
                     <li key={option}>
@@ -185,8 +185,8 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
                         onClick={() => set(option)}
                         aria-pressed={own === option}
                         className={
-                          "rounded-full px-2.5 py-1 font-mono text-tiny transition-colors hover:bg-default-300 " +
-                          (own === option ? "bg-default-300" : "bg-default-100")
+                          "rounded-full px-2.5 py-1 font-mono text-xs transition-colors hover:bg-default-300 " +
+                          (own === option ? "bg-default-300" : "bg-default")
                         }
                       >
                         {option}

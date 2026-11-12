@@ -1,19 +1,13 @@
 "use client";
 
-import {
-  Button,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownSection,
-  DropdownTrigger,
-  Tooltip
-} from "@heroui-v2/react";
+import { buttonVariants, Dropdown, Label, Separator } from "@heroui/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getBrandAsset } from "@/lib/assets";
 import { Icon } from "@/lib/icons/Icon";
+import { ActionButton } from "@/components/ui/controls";
+import { Hint } from "@/components/ui/hint";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { authClient } from "@/lib/auth-client";
 
@@ -22,6 +16,9 @@ export interface DashboardHeaderProps {
   userEmail: string;
   userImage?: string | null;
 }
+
+const ICON_TRIGGER =
+  buttonVariants({ variant: "ghost", size: "sm", isIconOnly: true }) + " h-9 w-9 rounded-full";
 
 const SHORTCUTS = [
   { key: "new-project", label: "New Project", href: "/projects?new=1" },
@@ -40,7 +37,7 @@ export function DashboardHeader({ userName, userEmail, userImage }: DashboardHea
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-divider px-8 py-4">
+    <header className="flex items-center justify-between border-b border-border px-8 py-4">
       <div className="flex items-center gap-3">
         <Link href="/dashboard" aria-label="Dashboard home">
           <Image
@@ -63,81 +60,77 @@ export function DashboardHeader({ userName, userEmail, userImage }: DashboardHea
         <h1 className="text-lg font-semibold text-foreground">Welcome {firstName}</h1>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Tooltip content="Search projects">
-          <Button
+      <div className="flex items-center gap-1">
+        <Hint content="Search projects">
+          <ActionButton
+            tone="ghost"
             isIconOnly
-            variant="light"
-            as={Link}
             href="/projects"
             aria-label="Search projects"
+            className="rounded-full"
           >
             <Icon name="ph:magnifying-glass" label="Search" />
-          </Button>
-        </Tooltip>
+          </ActionButton>
+        </Hint>
 
         <Dropdown>
-          <DropdownTrigger>
-            <Button isIconOnly variant="light" aria-label="Shortcuts">
-              <Icon name="ph:squares-four" label="Shortcuts" />
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu aria-label="Shortcuts" items={SHORTCUTS}>
-            {(item) => (
-              <DropdownItem key={item.key} href={item.href}>
-                {item.label}
-              </DropdownItem>
-            )}
-          </DropdownMenu>
+          <Dropdown.Trigger aria-label="Shortcuts" className={ICON_TRIGGER}>
+            <Icon name="ph:squares-four" label="Shortcuts" />
+          </Dropdown.Trigger>
+          <Dropdown.Popover placement="bottom end" className="min-w-44">
+            <Dropdown.Menu aria-label="Shortcuts" onAction={(key) => router.push(String(key))}>
+              {SHORTCUTS.map((item) => (
+                <Dropdown.Item key={item.key} id={item.href} textValue={item.label}>
+                  <Label>{item.label}</Label>
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown.Popover>
         </Dropdown>
 
-        <Tooltip content="Settings">
-          <Button isIconOnly variant="light" as={Link} href="/settings" aria-label="Settings">
+        <Hint content="Settings">
+          <ActionButton
+            tone="ghost"
+            isIconOnly
+            href="/settings"
+            aria-label="Settings"
+            className="rounded-full"
+          >
             <Icon name="ph:gear-six" label="Settings" />
-          </Button>
-        </Tooltip>
+          </ActionButton>
+        </Hint>
 
         <Dropdown>
-          <DropdownTrigger>
-            <Button isIconOnly variant="light" aria-label="Account menu" className="rounded-full">
-              <UserAvatar name={userName} image={userImage} />
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu aria-label="Account" disabledKeys={["profile"]}>
-            <DropdownSection showDivider aria-label="Signed in as">
-              <DropdownItem
-                key="profile"
-                textValue={`${userName} ${userEmail}`}
-                className="cursor-default opacity-100"
-                classNames={{ base: "data-[disabled=true]:opacity-100" }}
-                startContent={<UserAvatar name={userName} image={userImage} size="md" />}
-              >
-                <span className="block max-w-56 truncate text-small font-semibold text-foreground">
+          <Dropdown.Trigger aria-label="Account menu" className={ICON_TRIGGER}>
+            <UserAvatar name={userName} image={userImage} />
+          </Dropdown.Trigger>
+          <Dropdown.Popover placement="bottom end" className="min-w-60">
+            <div className="flex items-center gap-3 px-3 py-2.5">
+              <UserAvatar name={userName} image={userImage} size="md" />
+              <div className="min-w-0">
+                <span className="block max-w-48 truncate text-sm font-semibold text-foreground">
                   {userName}
                 </span>
-                <span className="block max-w-56 truncate text-tiny text-default-500">
-                  {userEmail}
-                </span>
-              </DropdownItem>
-            </DropdownSection>
-            <DropdownSection aria-label="Actions">
-              <DropdownItem
-                key="settings"
-                href="/settings"
-                startContent={<Icon name="ph:gear-six" />}
-              >
-                Settings
-              </DropdownItem>
-              <DropdownItem
-                key="sign-out"
-                color="danger"
-                startContent={<Icon name="ph:sign-out" />}
-                onPress={handleSignOut}
-              >
-                Sign out
-              </DropdownItem>
-            </DropdownSection>
-          </DropdownMenu>
+                <span className="block max-w-48 truncate text-xs text-muted">{userEmail}</span>
+              </div>
+            </div>
+            <Separator />
+            <Dropdown.Menu
+              aria-label="Account"
+              onAction={(key) =>
+                key === "sign-out" ? void handleSignOut() : router.push("/settings")
+              }
+            >
+              <Dropdown.Item id="settings" textValue="Settings">
+                <Icon name="ph:gear-six" className="text-muted" />
+                <Label>Settings</Label>
+              </Dropdown.Item>
+              <Dropdown.Item id="sign-out" textValue="Sign out" variant="danger">
+                <Icon name="ph:sign-out" />
+                <Label>Sign out</Label>
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown.Popover>
         </Dropdown>
       </div>
     </header>

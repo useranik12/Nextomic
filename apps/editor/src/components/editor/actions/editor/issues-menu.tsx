@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { getTrigger, triggerLabel } from "@nextomic/schema";
 import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -12,7 +12,7 @@ export function IssuesMenu({ issues }: { issues: readonly EditorIssue[] }) {
   const owner = useFlowDraft((s) => (s.target?.mode === "flows" ? s.target.owner : null));
   const [open, setOpen] = useState(false);
   if (issues.length === 0) {
-    return <span className="text-tiny text-success">No issues</span>;
+    return <span className="text-xs text-success">No issues</span>;
   }
   const errors = issues.filter((i) => i.severity === "error").length;
 
@@ -28,7 +28,7 @@ export function IssuesMenu({ issues }: { issues: readonly EditorIssue[] }) {
       <PopoverTrigger>
         <button
           type="button"
-          className={`flex h-8 items-center gap-1 rounded-full px-3 text-tiny font-medium ${errors > 0 ? "bg-danger-50 text-danger" : "bg-warning-50 text-warning"}`}
+          className={`flex h-8 items-center gap-1 rounded-full px-3 text-xs font-medium ${errors > 0 ? "bg-danger-50 text-danger" : "bg-warning-50 text-warning"}`}
         >
           <Icon name="ph:warning" width={14} height={14} />
           {issues.length} {issues.length === 1 ? "issue" : "issues"}
@@ -43,15 +43,15 @@ export function IssuesMenu({ issues }: { issues: readonly EditorIssue[] }) {
                 <button
                   type="button"
                   onClick={() => jump(issue)}
-                  className="flex w-full flex-col items-start gap-0.5 rounded-medium px-3 py-2 text-left hover:bg-default-100"
+                  className="flex w-full flex-col items-start gap-0.5 rounded-xl px-3 py-2 text-left hover:bg-default"
                 >
                   <span
-                    className={`text-small ${issue.severity === "error" ? "text-danger" : "text-warning"}`}
+                    className={`text-sm ${issue.severity === "error" ? "text-danger" : "text-warning"}`}
                   >
                     {issue.message}
                   </span>
                   {def && owner ? (
-                    <span className="text-tiny text-default-500">{triggerLabel(def, owner)}</span>
+                    <span className="text-xs text-muted">{triggerLabel(def, owner)}</span>
                   ) : null}
                 </button>
               </li>

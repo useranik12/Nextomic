@@ -61,7 +61,7 @@ function PropertyRow({
   return (
     <div className="flex items-end gap-2">
       <div className="min-w-0 flex-1">
-        <span className="mb-1 flex items-center gap-1.5 text-tiny font-medium text-default-600">
+        <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-body">
           {name}
           <InfoTip
             text={
@@ -81,7 +81,7 @@ function PropertyRow({
         type="button"
         aria-label={`Remove ${name}`}
         onClick={onRemove}
-        className="mb-1 rounded p-1 text-default-500 hover:text-danger"
+        className="mb-1 rounded p-1 text-muted hover:text-danger"
       >
         <Icon name="ph:trash" width={14} height={14} />
       </button>
@@ -113,7 +113,7 @@ export function PropertyEditor({
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="flex items-center gap-1.5 text-tiny font-semibold uppercase tracking-wide text-default-500">
+      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
         {title}
         <InfoTip text={tip} label={title} />
       </span>
@@ -127,7 +127,7 @@ export function PropertyEditor({
         />
       ))}
       {Object.keys(values).length === 0 ? (
-        <p className="text-small text-default-500">No properties yet. Add one below.</p>
+        <p className="text-sm text-muted">No properties yet. Add one below.</p>
       ) : null}
       <SelectField
         compact
@@ -164,7 +164,7 @@ export function PropertyEditor({
             add(custom, 0);
             setCustom("");
           }}
-          className="rounded-full bg-default-100 px-3 py-1.5 text-tiny font-medium hover:bg-default-200 disabled:opacity-40"
+          className="rounded-full bg-default px-3 py-1.5 text-xs font-medium hover:bg-default-hover disabled:opacity-40"
         >
           Add
         </button>

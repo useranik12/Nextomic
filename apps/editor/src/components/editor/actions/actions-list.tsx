@@ -39,12 +39,12 @@ export function ActionsList({ node }: { node: ElementNode }) {
     useFlowStore.getState().openEditor({ nodeId: node.id, trigger });
 
   if (status === "loading" || status === "idle") {
-    return <p className="text-small text-default-500">Loading actions…</p>;
+    return <p className="text-sm text-muted">Loading actions…</p>;
   }
   if (status === "error") {
     return (
       <div className="flex flex-col items-start gap-2">
-        <p className="text-small text-danger">{error ?? "Could not load actions."}</p>
+        <p className="text-sm text-danger">{error ?? "Could not load actions."}</p>
         <ActionButton size="sm" tone="ghost" onPress={() => void fetchFlows()}>
           Try again
         </ActionButton>
@@ -52,11 +52,7 @@ export function ActionsList({ node }: { node: ElementNode }) {
     );
   }
   if (!saved) {
-    return (
-      <p className="text-small text-default-500">
-        Save the page to add actions to this new element.
-      </p>
-    );
+    return <p className="text-sm text-muted">Save the page to add actions to this new element.</p>;
   }
 
   const run = async (flow: TriggerFlow, command: CardCommand) => {
@@ -88,9 +84,9 @@ export function ActionsList({ node }: { node: ElementNode }) {
   return (
     <div className="flex flex-col gap-3">
       {flows.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-medium border border-dashed border-divider px-4 py-6 text-center">
-          <Icon name="ph:lightning" width={22} height={22} className="text-default-400" />
-          <p className="text-small text-default-500">No actions on this element yet.</p>
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-4 py-6 text-center">
+          <Icon name="ph:lightning" width={22} height={22} className="text-subtle" />
+          <p className="text-sm text-muted">No actions on this element yet.</p>
           <ActionButton size="sm" onPress={() => open(null)}>
             Add action
           </ActionButton>

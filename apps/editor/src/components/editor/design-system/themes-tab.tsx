@@ -33,7 +33,7 @@ function Section({
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="flex items-center gap-1.5 text-small font-semibold text-foreground">
+      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
         {title}
         {tip ? <InfoTip text={tip} /> : null}
       </h3>
@@ -101,8 +101,8 @@ export function ThemesTab() {
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="flex w-64 shrink-0 flex-col border-r border-divider">
-        <div className="flex flex-col gap-2 border-b border-divider p-3">
+      <div className="flex w-64 shrink-0 flex-col border-r border-border">
+        <div className="flex flex-col gap-2 border-b border-border p-3">
           <FormInput
             compact
             aria-label="New theme name"
@@ -126,29 +126,29 @@ export function ThemesTab() {
                 aria-current={selected?.id === t.id}
                 onClick={() => setSelectedId(t.id)}
                 className={
-                  "flex w-full flex-col rounded-medium px-3 py-2 text-left transition-colors duration-300 " +
-                  (selected?.id === t.id ? "bg-default-200" : "hover:bg-default-100")
+                  "flex w-full flex-col rounded-xl px-3 py-2 text-left transition-colors duration-300 " +
+                  (selected?.id === t.id ? "bg-default-hover" : "hover:bg-default")
                 }
               >
-                <span className="flex items-center gap-2 text-small font-medium">
+                <span className="flex items-center gap-2 text-sm font-medium">
                   <span className="truncate">{t.name}</span>
                   {t.active ? null : (
-                    <span className="rounded-full bg-default-200 px-2 text-tiny text-default-700">
+                    <span className="rounded-full bg-default-hover px-2 text-xs text-body">
                       Off
                     </span>
                   )}
                   {t.isDefault ? (
-                    <span className="rounded-full bg-default-800 px-2 text-tiny text-default-50">
+                    <span className="rounded-full bg-default-hover px-2 text-xs text-foreground">
                       Default
                     </span>
                   ) : null}
                 </span>
-                <span className="text-tiny text-default-500">{conditionSummary(t)}</span>
+                <span className="text-xs text-muted">{conditionSummary(t)}</span>
               </button>
             </li>
           ))}
           {themes.length === 0 ? (
-            <li className="p-2 text-small text-default-500">
+            <li className="p-2 text-sm text-muted">
               No themes yet. The first one you create applies to every page and template.
             </li>
           ) : null}
@@ -156,14 +156,14 @@ export function ThemesTab() {
       </div>
       <div className="min-w-0 flex-1 overflow-y-auto p-4">
         {error ? (
-          <p role="alert" className="pb-2 text-tiny text-danger">
+          <p role="alert" className="pb-2 text-xs text-danger">
             {error}
           </p>
         ) : null}
         {selected ? (
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="truncate text-medium font-medium">{selected.name}</h2>
+              <h2 className="truncate text-base font-medium">{selected.name}</h2>
               <div className="flex gap-1">
                 <ActionButton size="sm" tone="ghost" onPress={() => duplicate(selected)}>
                   <Icon name="ph:copy" width={14} height={14} />
@@ -185,7 +185,7 @@ export function ThemesTab() {
                 value={selected.name}
                 onValueChange={(v) => patch(selected.id, { name: v })}
               />
-              <p className="text-tiny text-default-500">
+              <p className="text-xs text-muted">
                 Used in CSS as <code>[data-nxt-theme=&quot;{selected.slug}&quot;]</code>
               </p>
               <SwitchRow
@@ -201,7 +201,7 @@ export function ThemesTab() {
                 onChange={(darkMode) => patch(selected.id, { darkMode })}
               />
               {selected.darkMode ? (
-                <div className="flex flex-col gap-3 rounded-large border border-divider p-3">
+                <div className="flex flex-col gap-3 rounded-2xl border border-border p-3">
                   <SelectField
                     compact
                     label="Color mode a visitor sees first"
@@ -265,7 +265,7 @@ export function ThemesTab() {
               tip="Rules choose which pages use this theme, the same rules templates use. A page can also pick a theme by hand in its settings, which always wins."
             >
               {selected.isDefault ? (
-                <p className="text-small text-default-500">
+                <p className="text-sm text-muted">
                   The default theme applies to every page that matches no other theme. Give another
                   theme conditions, or make another theme the default, to change that.
                 </p>
@@ -288,7 +288,7 @@ export function ThemesTab() {
             </Section>
           </div>
         ) : (
-          <p className="text-small text-default-500">
+          <p className="text-sm text-muted">
             Themes style the whole site with their own variable values and light/dark modes. Create
             one on the left.
           </p>

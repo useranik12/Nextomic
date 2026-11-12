@@ -39,9 +39,9 @@ export function ImportFramework({
 
   return (
     <div className="flex flex-col gap-3 p-3">
-      <label className="flex cursor-pointer flex-col items-center gap-1 rounded-large border border-dashed border-default-300 px-4 py-6 text-center focus-within:ring-1 focus-within:ring-default-800/40 hover:border-default-500">
-        <span className="text-small font-medium">Choose a .css file</span>
-        <span className="text-tiny text-default-500">
+      <label className="flex cursor-pointer flex-col items-center gap-1 rounded-2xl border border-dashed border-default-300 px-4 py-6 text-center focus-within:ring-1 focus-within:ring-focus/30 hover:border-default-500">
+        <span className="text-sm font-medium">Choose a .css file</span>
+        <span className="text-xs text-muted">
           or paste the CSS below. Up to 2 MB. This replaces the theme framework.
         </span>
         <input
@@ -58,12 +58,12 @@ export function ImportFramework({
       <FormInput compact label="Framework name" value={name} onValueChange={setName} />
       <CssCodeEditor label="CSS" value={css} onChange={setCss} />
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}
       {report ? (
-        <div role="status" className="rounded-large bg-default-100 p-3 text-tiny">
+        <div role="status" className="rounded-2xl bg-default p-3 text-xs">
           Imported {report.variables} variables ({report.darkVariables} with dark values),{" "}
           {report.classes} classes
           {report.scales.length > 0 ? `, scales: ${report.scales.join(", ")}` : ""}.

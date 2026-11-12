@@ -18,7 +18,7 @@ export function SpacingTab() {
       {(props) => (
         <div className="flex h-full min-h-0 flex-col">
           <div
-            className="flex items-center gap-1 border-b border-divider px-3 py-2"
+            className="flex items-center gap-1 border-b border-border px-3 py-2"
             role="group"
             aria-label="Scale"
           >
@@ -29,10 +29,10 @@ export function SpacingTab() {
                 aria-pressed={kind === k.id}
                 onClick={() => setKind(k.id)}
                 className={
-                  "rounded-full px-3 py-1 text-small transition-colors duration-300 " +
+                  "rounded-full px-3 py-1 text-sm transition-colors duration-300 " +
                   (kind === k.id
-                    ? "bg-default-800 text-default-50"
-                    : "text-default-600 hover:bg-default-100")
+                    ? "bg-default-hover text-foreground"
+                    : "text-body hover:bg-default")
                 }
               >
                 {k.label}

@@ -70,7 +70,7 @@ export function ClassImportExport() {
       {message ? (
         <p
           role={message.error ? "alert" : "status"}
-          className={"text-tiny " + (message.error ? "text-danger" : "text-default-500")}
+          className={"text-xs " + (message.error ? "text-danger" : "text-muted")}
         >
           {message.text}
         </p>
