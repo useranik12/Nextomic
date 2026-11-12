@@ -2,7 +2,9 @@
 
 import {
   countRules,
+  darkModeLocked,
   newTheme,
+  stopFollowing,
   themeListSchema,
   uniqueThemeSlug,
   type Theme
@@ -14,6 +16,7 @@ import { useEditorStore } from "../store/editor-store";
 import { InfoTip, LabelWithTip } from "@/components/ui/info-tip";
 import { SwitchRow } from "@/components/ui/switch-row";
 import { RuleBuilder } from "../rules/rule-builder";
+import { FollowPrimary } from "./follow-primary";
 import { ThemeVariables } from "./theme-variables";
 
 function conditionSummary(theme: Theme): string {
@@ -54,6 +57,7 @@ export function ThemesTab() {
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const selected = themes.find((t) => t.id === selectedId) ?? themes[0] ?? null;
+  const locked = selected ? darkModeLocked(selected, themes) : false;
 
   function commit(next: Theme[]) {
     const parsed = themeListSchema.safeParse(next);
@@ -91,9 +95,10 @@ export function ThemesTab() {
       return;
     const rest = themes.filter((t) => t.id !== theme.id);
     const first = rest[0];
+    // The new primary keeps the look it has now; a follower would lose its framework otherwise.
     commit(
       theme.isDefault && first
-        ? rest.map((t) => (t === first ? { ...t, isDefault: true } : t))
+        ? rest.map((t) => (t === first ? { ...stopFollowing(t, themes), isDefault: true } : t))
         : rest
     );
     setSelectedId(null);
@@ -194,13 +199,26 @@ export function ThemesTab() {
                 selected={selected.active}
                 onChange={(active) => patch(selected.id, { active })}
               />
+              {selected.isDefault ? null : (
+                <FollowPrimary
+                  theme={selected}
+                  themes={themes}
+                  primaryName={themes.find((t) => t.isDefault)?.name ?? "the primary theme"}
+                  onChange={(next) => commit(themes.map((t) => (t.id === next.id ? next : t)))}
+                />
+              )}
               <SwitchRow
                 label="Dark mode for the whole site"
-                tip="Gives the whole site a dark version. Pages on this theme can then show light or dark colors. Off: the site is light only and the dark color options are hidden."
-                selected={selected.darkMode}
+                tip={
+                  locked
+                    ? "The primary theme has a dark mode, so this theme has one too while it follows the primary. Turn off Follow the primary theme to decide for this theme alone."
+                    : "Gives the whole site a dark version. Pages on this theme can then show light or dark colors. Off: the site is light only and the dark color options are hidden."
+                }
+                selected={locked || selected.darkMode}
+                disabled={locked}
                 onChange={(darkMode) => patch(selected.id, { darkMode })}
               />
-              {selected.darkMode ? (
+              {locked || selected.darkMode ? (
                 <div className="flex flex-col gap-3 rounded-2xl border border-border p-3">
                   <SelectField
                     compact
@@ -248,7 +266,13 @@ export function ThemesTab() {
                       size="sm"
                       tone="ghost"
                       onPress={() =>
-                        commit(themes.map((t) => ({ ...t, isDefault: t.id === selected.id })))
+                        commit(
+                          themes.map((t) =>
+                            t.id === selected.id
+                              ? { ...stopFollowing(t, themes), isDefault: true }
+                              : { ...t, isDefault: false }
+                          )
+                        )
                       }
                     >
                       Make default

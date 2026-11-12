@@ -13,7 +13,7 @@ import {
   collectElementAnimations,
   customCssFor,
   elementAnimationCss,
-  resolveTheme,
+  resolveRenderTheme,
   timelinesForPage
 } from "@nextomic/schema";
 import type { Metadata } from "next";
@@ -275,7 +275,7 @@ export default async function PreviewPage({
     dynamic,
     execute: asVisitor(editorExecutor(caller), visitor?.accessToken)
   });
-  const { theme } = resolveTheme(settings.themes, {
+  const { theme } = resolveRenderTheme(settings.themes, {
     pageId: page.id,
     route: page.route,
     forcedThemeId: page.settings.themeId,

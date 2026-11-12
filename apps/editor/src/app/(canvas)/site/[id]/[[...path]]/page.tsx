@@ -4,7 +4,7 @@ import {
   collectElementAnimations,
   customCssFor,
   elementAnimationCss,
-  resolveTheme,
+  resolveRenderTheme,
   timelinesForPage
 } from "@nextomic/schema";
 import type { Metadata } from "next";
@@ -138,7 +138,7 @@ export default async function PublishedPage({
     : {};
   const hasLoops = Object.keys(loopRows).length > 0;
   const realtime = hasLoops && usesRealtime(tree) ? await realtimeConnection(id) : null;
-  const { theme } = resolveTheme(settings.themes, {
+  const { theme } = resolveRenderTheme(settings.themes, {
     pageId,
     route: page.route,
     forcedThemeId: page.settings.themeId,

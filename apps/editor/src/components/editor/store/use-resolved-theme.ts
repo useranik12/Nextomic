@@ -1,4 +1,4 @@
-import { resolveTheme, themeDefaultMode, themeModes, type Theme } from "@nextomic/schema";
+import { resolveRenderTheme, themeDefaultMode, themeModes, type Theme } from "@nextomic/schema";
 import { useMemo } from "react";
 import { useEditorStore } from "./editor-store";
 
@@ -9,7 +9,7 @@ export function useResolvedTheme(): Theme | null {
   const route = useEditorStore((s) => s.doc?.route ?? "/");
   const forcedThemeId = useEditorStore((s) => s.doc?.settings.themeId ?? null);
   return useMemo(
-    () => resolveTheme(themes, { pageId, route, forcedThemeId }).theme,
+    () => resolveRenderTheme(themes, { pageId, route, forcedThemeId }).theme,
     [themes, pageId, route, forcedThemeId]
   );
 }

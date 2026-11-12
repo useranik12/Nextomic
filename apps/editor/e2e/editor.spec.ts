@@ -630,6 +630,49 @@ test("themes: light and dark only, conditions are rules, custom CSS formats", as
   await expect(css).toHaveValue(".a {\n  color: red;\n}");
 });
 
+test("themes: follow the primary theme asks first, locks dark mode, and can be undone", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Design System" }).click();
+  await page.getByRole("button", { name: /^Themes/ }).click();
+  await page.getByRole("switch", { name: /Dark mode for the whole site/ }).check({ force: true });
+  // One theme only: nothing to follow.
+  await expect(page.getByRole("switch", { name: /Follow the primary theme/ })).toHaveCount(0);
+
+  await page.getByLabel("New theme name").fill("Night");
+  await page.getByRole("button", { name: "New theme" }).click();
+  const follow = page.getByRole("switch", { name: /Follow the primary theme/ });
+  await expect(follow).toBeVisible();
+
+  // Cancel keeps the theme as it was.
+  await follow.click({ force: true });
+  await expect(page.getByRole("dialog", { name: /^Follow / })).toBeVisible();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(follow).not.toBeChecked();
+
+  // Confirm: it follows, and dark mode is on and locked because the primary has it.
+  await follow.click({ force: true });
+  await page.getByRole("button", { name: "Replace and follow" }).click({ force: true });
+  await expect(follow).toBeChecked();
+  const dark = page.getByRole("switch", { name: /Dark mode for the whole site/ });
+  await expect(dark).toBeChecked();
+  await expect(dark).toBeDisabled();
+
+  // The framework screens say names follow the primary.
+  await page.getByRole("button", { name: /^Framework/ }).click();
+  await page.locator("button", { hasText: /^Main/ }).first().click();
+  await page.getByRole("option", { name: "Night" }).click();
+  await expect(page.getByText(/You can change values here/)).toBeVisible();
+
+  // Off again: the theme keeps what it showed and decides dark mode itself.
+  await page.getByRole("button", { name: /^Themes/ }).click();
+  await page.getByRole("button", { name: /^Night/ }).click();
+  await follow.uncheck({ force: true });
+  await expect(follow).not.toBeChecked();
+  await expect(dark).toBeEnabled();
+});
+
 test("Pages & Templates: manager, marking, header template on the site, default 404", async ({
   page,
   request

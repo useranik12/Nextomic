@@ -2,7 +2,7 @@
 
 import {
   frameworkVariableMeta,
-  resolveTheme,
+  resolveRenderTheme,
   variableCssName,
   variableRef,
   type VariableType
@@ -45,7 +45,7 @@ export function useDesignVariables(): DesignVariable[] {
       value: v.value,
       source: "project"
     }));
-    const theme = resolveTheme(themes, { pageId: "", route: "/" }).theme;
+    const theme = resolveRenderTheme(themes, { pageId: "", route: "/" }).theme;
     const framework = (theme?.framework?.variables ?? []).map<DesignVariable>((v) => {
       const m = frameworkVariableMeta(v);
       return {

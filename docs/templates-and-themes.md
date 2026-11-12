@@ -67,6 +67,21 @@ interface Theme {
 
 Design System page, Themes tab: list (name, condition summary, priority, default badge), create/duplicate/delete, theme editor with sections Variables, Element defaults, Fonts, Custom CSS, Conditions, and Preview. Previewing: the moon/sun switch in the editor top bar previews the active theme's color modes in the canvas (it never changes the builder UI), and the Page Settings dialog lets you force a theme for the page. Fonts for each theme come from the project's fonts (see `fonts-and-icons.md`).
 
+### 3.4 Follow the primary theme (owner design 2026-11-13)
+
+One set of names serves every theme: the same variable, class, ID and color names, with values that differ per theme. A theme that is not the primary (default) theme has a **Follow the primary theme** switch (default off) in its General settings.
+
+- **Offered** only when two or more themes are active (the Active switch). A theme that already follows keeps showing the switch so it can be turned off. The primary never follows.
+- **On (live):** the theme reads the primary's framework (variables, color palettes, fluid scales, classes) and the primary's project-variable overrides live. It stores only what differs: `Theme.overrides.variables` (value and dark value per framework variable), `Theme.overrides.scales` (the numbers of a scale per prefix, never its steps) and its own `variables`. `Theme.framework` is null. A change in the primary reaches the follower unless the follower overrides that value; an edit back to the primary's value drops the override. Overrides naming something the primary no longer has are ignored.
+- **Locked:** names, classes, colors and scale steps cannot change in a follower (the edit is refused with a message and a banner on the Colors, Typography, Spacing, Variables and Framework tabs says so); Import and Remove are hidden. Values and dark values can change.
+- **Dark mode:** while following, dark mode is on and locked if the primary has it; otherwise the theme's own Dark mode switch decides. Default color mode, visitor switch and device setting stay the theme's own.
+- **Turning on** asks first (dialog): it replaces the theme's own framework (variables, classes, scales) and variable overrides. Nothing is written until Save in the Design System (it is a draft), so closing or discarding keeps the old look.
+- **Turning off** keeps the look: what the theme showed becomes its own framework and variables.
+- **Make default / Delete the primary:** the new primary keeps the look it has now (it is materialized first); other followers then follow the new primary.
+- **Code:** `packages/schema/src/theme-follow.ts` (`effectiveTheme`, `effectiveFramework`, `diffFollower`, `withFramework`, `startFollowing`, `stopFollowing`). Output and display read `resolveRenderTheme` / `effectiveTheme`; `resolveTheme` stays raw so nothing writes derived data back.
+- **Set Theme action:** enabled only when the primary and at least one active follower exist (`canSwitchThemes`); it lists those themes (see `dynamic-data-and-actions.md`).
+- **Known limit:** each follower still gets its own scoped copy of the primary's class CSS.
+
 ## 4. Templates
 
 ### 4.1 Types
