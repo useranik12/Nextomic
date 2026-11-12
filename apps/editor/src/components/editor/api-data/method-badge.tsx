@@ -5,7 +5,7 @@ import { Icon } from "@/lib/icons/Icon";
 
 /** GET green, POST purple, PUT orange, PATCH amber, DELETE red, OPTIONS sky, QUERY teal. */
 const METHOD_CLASSES: Record<RestMethod, string> = {
-  GET: "bg-success-500/15 text-success-600 dark:text-success-400",
+  GET: "bg-[#17c964]/15 text-[#12a150] dark:text-[#45d483]",
   POST: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
   PUT: "bg-orange-500/15 text-orange-600 dark:text-orange-400",
   PATCH: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
