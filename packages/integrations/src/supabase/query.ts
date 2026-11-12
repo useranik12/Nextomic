@@ -69,7 +69,14 @@ export const supabaseRequestSchema = z.discriminatedUnion("op", [
   z.object({
     op: z.literal("insert"),
     schema,
-    values: z.union([row, z.array(row).min(1).max(1000)])
+    values: z.union([row, z.array(row).min(1).max(1000)]),
+    // Upsert: a row that clashes on the conflict columns (the primary key when none) is updated.
+    upsert: z.boolean().default(false),
+    onConflict: z
+      .string()
+      .max(500)
+      .regex(/^[A-Za-z_][A-Za-z0-9_]*(,[A-Za-z_][A-Za-z0-9_]*)*$/, "List column names with commas.")
+      .optional()
   }),
   // Updates and deletes need at least one filter so a missing condition never hits every row.
   z.object({ op: z.literal("update"), schema, values: row, filters: filters.min(1) }),
@@ -143,6 +150,8 @@ export function tableQuery(request: SupabaseRequest): URLSearchParams {
     if (request.limit !== undefined) params.set("limit", String(request.limit));
     if (request.offset !== undefined) params.set("offset", String(request.offset));
   }
+  if (request.op === "insert" && request.upsert && request.onConflict)
+    params.set("on_conflict", request.onConflict);
   if (request.op === "insert" || request.op === "update" || request.op === "delete") {
     // Ask PostgREST to send back the rows it changed.
     if (!params.has("select")) params.set("select", "*");

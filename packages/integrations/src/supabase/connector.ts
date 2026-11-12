@@ -326,7 +326,14 @@ async function execute(
   const response = await call(scoped, secrets, ctx, path, {
     method: TABLE_METHODS[request.op],
     ...(request.op === "insert" || request.op === "update" ? { body: request.values } : {}),
-    ...(request.op === "select" ? {} : { prefer: "return=representation" })
+    ...(request.op === "select"
+      ? {}
+      : {
+          prefer:
+            request.op === "insert" && request.upsert
+              ? "resolution=merge-duplicates,return=representation"
+              : "return=representation"
+        })
   });
   if (response.status >= 400) throw upstreamError(response, "Supabase refused the request.");
   return { status: response.status, data: parseJson(response) };

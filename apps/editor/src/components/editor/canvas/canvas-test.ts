@@ -148,6 +148,15 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
         note("Rebuild element", `Would redraw ${id} from the server on the preview and live site.`);
         return true;
       },
+      // The server runs only saved actions (a visitor cannot send one). Test uses the unsaved
+      // draft, so it reports what would run; Preview runs the saved action for real.
+      runServer: async (nodeId, values) => {
+        note(
+          "Server action",
+          `Would run action ${nodeId} on the server${values.length > 0 ? ` with values ${JSON.stringify(values)}` : ""}. Save the flow and use Preview to run it for real.`
+        );
+        return null;
+      },
       refreshLoop: async (id, _node, values) => {
         note(
           "Refresh query",

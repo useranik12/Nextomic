@@ -1,4 +1,10 @@
-import { toText } from "@nextomic/schema";
+import {
+  SERVER_ACTION_TYPES,
+  actionSlots,
+  getAction,
+  operandValue,
+  toText
+} from "@nextomic/schema";
 import { browserActionHandlers } from "./browser-actions";
 import { FlowError, numberParam, type ActionHandler, type RunLogEntry } from "./engine";
 import { htmlPropsHandlers, type ElementEditStore } from "./html-props";
@@ -46,6 +52,11 @@ export interface HandlerDeps {
    * slot values (null: the loop's own query); false when it cannot be redrawn alone.
    */
   refreshLoop: (id: string, nodeId: string, values: string[] | null) => Promise<boolean>;
+  /**
+   * Runs the saved server action `nodeId` (Supabase rows, Supabase RPC, API Data call) on the
+   * server with the filled values of its {{ tag }} fields; returns what it answered.
+   */
+  runServer: (nodeId: string, values: string[]) => Promise<unknown>;
   /** A page URL of this site (live or preview). */
   hrefFor: (route: string, query: URLSearchParams) => string;
   /** Leaves or reloads the page; the editor's Test only reports where it would go. */
@@ -114,7 +125,22 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
     if (templateId && deps.overlays.isOpen(templateId)) deps.overlays.close(type, templateId);
     else await showOverlay(type, p);
   };
+  const serverHandlers: Record<string, ActionHandler> = Object.fromEntries(
+    SERVER_ACTION_TYPES.map((type) => [
+      type,
+      (_params: Record<string, unknown>, ctx: Parameters<ActionHandler>[1]) => {
+        const def = getAction(type);
+        if (!def) throw new FlowError("unknown-action", `Unknown action "${type}".`);
+        // The server takes the action itself from the saved flow; only tag values leave the page.
+        const values = actionSlots(def, ctx.node.params).map((slot) =>
+          toText(operandValue(slot, ctx.scope))
+        );
+        return deps.runServer(ctx.node.id, values);
+      }
+    ])
+  );
   return {
+    ...serverHandlers,
     ...htmlPropsHandlers({ edits: deps.edits, touched: deps.touched }),
     ...browserActionHandlers(deps.navigation),
     "element.rebuild": async (p) => {

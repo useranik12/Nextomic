@@ -56,7 +56,10 @@ type Row = typeof connectors.$inferSelect;
 export type ConnectorRequest = { resourceId: string; params: Record<string, unknown> };
 export type Executor = (row: Row, request: ConnectorRequest) => Promise<ExecuteResult>;
 
-async function projectConnector(projectId: string, type: "supabase" | "rest"): Promise<Row | null> {
+export async function projectConnector(
+  projectId: string,
+  type: "supabase" | "rest"
+): Promise<Row | null> {
   const [row] = await getDb()
     .select()
     .from(connectors)
@@ -65,7 +68,7 @@ async function projectConnector(projectId: string, type: "supabase" | "rest"): P
   return row ?? null;
 }
 
-async function savedStructure(connectorId: string): Promise<unknown> {
+export async function savedStructure(connectorId: string): Promise<unknown> {
   const [row] = await getDb()
     .select({ structure: connectorSchemas.structure })
     .from(connectorSchemas)

@@ -16,6 +16,8 @@ import type { FragmentRequest, FragmentResponse, RuntimePayload } from "./payloa
 export interface RuntimeOptions {
   fetchFragments: (request: FragmentRequest) => Promise<FragmentResponse>;
   hrefFor: (route: string, query: URLSearchParams) => string;
+  /** Runs a saved server action; resolves to what it answered, rejects with a readable message. */
+  runServerAction: (request: { node: string; values: string[] }) => Promise<unknown>;
   persist: PersistEnv | null;
   /** A flow failed with no Try/Catch around the failing node. */
   onError?: (message: string) => void;
@@ -125,6 +127,16 @@ export function startActionRuntime(
     edits,
     touched: (names) => onChange(names),
     redrawElement: async (id) => (await redraw([id])).includes(id),
+    runServer: async (nodeId, values) => {
+      try {
+        return await options.runServerAction({ node: nodeId, values });
+      } catch (error) {
+        throw new FlowError(
+          "server-action",
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+    },
     refreshLoop: async (id, nodeId, values) => {
       refreshes[id] = { node: nodeId, values };
       return (await redraw([id])).includes(id);
