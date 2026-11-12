@@ -12,7 +12,12 @@ import {
   QueryInputError,
   type FlowNode,
   type SupabaseColumn,
-  type SupabaseTable
+  type SupabaseTable,
+  cleanStoragePath,
+  fileAccepted,
+  storageActionCall,
+  storagePaths,
+  uploadTarget
 } from "../index";
 
 const column = (name: string, type: SupabaseColumn["type"], extra: Partial<SupabaseColumn> = {}) =>
@@ -213,5 +218,41 @@ describe("actionRunRequestSchema", () => {
   it("rejects a bad mode or empty node", () => {
     expect(actionRunRequestSchema.safeParse({ mode: "x", node: "a1" }).success).toBe(false);
     expect(actionRunRequestSchema.safeParse({ mode: "live", node: "" }).success).toBe(false);
+  });
+});
+
+describe("storage helpers", () => {
+  it("cleans paths and refuses escapes", () => {
+    expect(cleanStoragePath("/a/b.png")).toBe("a/b.png");
+    for (const bad of ["", "a/../b", "a//b", "./a"])
+      expect(() => cleanStoragePath(bad)).toThrow(QueryInputError);
+  });
+  it("reads a list of paths as JSON or lines", () => {
+    expect(storagePaths('["a.png","b.png"]')).toEqual(["a.png", "b.png"]);
+    expect(storagePaths(["a.png", "b.png"].join(String.fromCharCode(10)))).toEqual([
+      "a.png",
+      "b.png"
+    ]);
+    expect(() => storagePaths("[oops")).toThrow(QueryInputError);
+  });
+  it("matches accepted types by extension, exact type and wildcard", () => {
+    expect(fileAccepted("", "x.bin", "")).toBe(true);
+    expect(fileAccepted("image/*,.pdf", "a.PDF", "application/pdf")).toBe(true);
+    expect(fileAccepted("image/*", "a.png", "image/png")).toBe(true);
+    expect(fileAccepted("image/*", "a.exe", "application/x-msdownload")).toBe(false);
+  });
+  it("caps the upload size and defaults the folder", () => {
+    const t = uploadTarget({ bucket: "b", path: "/u/1/", maxSizeMb: "9999" });
+    expect(t.folder).toBe("u/1");
+    expect(t.maxBytes).toBe(50 * 1024 * 1024);
+    expect(uploadTarget({ bucket: "b" }).maxBytes).toBe(10 * 1024 * 1024);
+  });
+  it("builds the delete and download calls", () => {
+    expect(storageActionCall("file.delete", { bucket: "b", paths: "a.png" }).resourceId).toBe(
+      "bucket:b"
+    );
+    expect(storageActionCall("file.download", { bucket: "b", path: "a.png" }).params).toMatchObject(
+      { op: "storage.sign", path: "a.png", expiresIn: 60 }
+    );
   });
 });

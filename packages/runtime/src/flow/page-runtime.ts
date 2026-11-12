@@ -4,6 +4,7 @@ import { outermost, swapParts } from "./dom";
 import { ElementEditStore } from "./html-props";
 import { FlowError, runFlow, type ActionHandler, type RunLogEntry } from "./engine";
 import { browserNavigation, starterHandlers, type Navigation } from "./handlers";
+import type { UploadedFile } from "./files";
 import { LiveState } from "./live-state";
 import { createOverlayLayer } from "./overlays";
 import { createToastStack } from "./toasts";
@@ -38,6 +39,8 @@ export interface RuntimeOptions {
   hrefFor: (route: string, query: URLSearchParams) => string;
   /** Runs a saved server action; resolves to what it answered, rejects with a readable message. */
   runServerAction: (request: { node: string; values: string[] }) => Promise<ServerActionResult>;
+  /** Stores one picked file with the saved upload node; resolves where it went, rejects with a readable message. */
+  uploadFile: (request: { node: string; values: string[]; file: File }) => Promise<UploadedFile>;
   persist: PersistEnv | null;
   /** A flow failed with no Try/Catch around the failing node. */
   onError?: (message: string) => void;
@@ -177,6 +180,13 @@ export function startActionRuntime(
           error instanceof ServerActionError ? error.code : "server-action",
           error instanceof Error ? error.message : String(error)
         );
+      }
+    },
+    uploadFile: async (nodeId, values, file) => {
+      try {
+        return await options.uploadFile({ node: nodeId, values, file });
+      } catch (error) {
+        throw new FlowError("upload", error instanceof Error ? error.message : String(error));
       }
     },
     refreshLoop: async (id, nodeId, values) => {

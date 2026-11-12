@@ -90,16 +90,31 @@ async function call(
   secrets: SupabaseSecrets,
   ctx: ConnectorContext,
   path: string,
-  init: { method?: string; body?: unknown; prefer?: string; userToken?: string } = {}
+  init: {
+    method?: string;
+    body?: unknown;
+    prefer?: string;
+    userToken?: string;
+    /** A file's bytes with their media type (Storage uploads); replaces the JSON body. */
+    file?: { bytes: Buffer; contentType: string; upsert: boolean };
+  } = {}
 ): Promise<SafeResponse> {
   const write = init.method !== undefined && init.method !== "GET";
   const requestHeaders = headers(cfg, secrets, write, init.userToken);
   if (init.body !== undefined) requestHeaders["content-type"] = "application/json";
+  if (init.file) {
+    requestHeaders["content-type"] = init.file.contentType;
+    requestHeaders["x-upsert"] = String(init.file.upsert);
+  }
   if (init.prefer) requestHeaders.prefer = init.prefer;
   return safeFetch(`${cfg.projectUrl}${path}`, {
     method: init.method ?? "GET",
     headers: requestHeaders,
-    ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
+    ...(init.file
+      ? { body: init.file.bytes }
+      : init.body !== undefined
+        ? { body: JSON.stringify(init.body) }
+        : {}),
     allowPrivateHosts: ctx.allowPrivateHosts,
     signal: ctx.signal
   });
@@ -209,7 +224,8 @@ async function signObject(
   ctx: ConnectorContext,
   bucket: string,
   path: string,
-  expiresIn: number
+  expiresIn: number,
+  userToken?: string
 ): Promise<{ url: string }> {
   const objectPath = path.split("/").map(encodeURIComponent).join("/");
   const response = await call(
@@ -217,13 +233,56 @@ async function signObject(
     secrets,
     ctx,
     `/storage/v1/object/sign/${encodeURIComponent(bucket)}/${objectPath}`,
-    { method: "POST", body: { expiresIn } }
+    { method: "POST", body: { expiresIn }, userToken }
   );
   if (response.status !== 200) throw upstreamError(response, "Could not sign the file URL.");
   const parsed = z.object({ signedURL: z.string().startsWith("/") }).safeParse(parseJson(response));
   if (!parsed.success)
     throw new ConnectorError("upstream", "Supabase sent an unexpected signed URL.");
   return { url: `${cfg.projectUrl}/storage/v1${parsed.data.signedURL}` };
+}
+
+const objectPathOf = (path: string) => path.split("/").map(encodeURIComponent).join("/");
+
+/** Stores one file in a bucket; the visitor's token makes the bucket's policies see them. */
+async function uploadObject(
+  cfg: SupabaseConfig,
+  secrets: SupabaseSecrets,
+  ctx: ConnectorContext,
+  bucket: string,
+  file: { path: string; bytes: Buffer; contentType: string; upsert: boolean },
+  userToken?: string
+): Promise<{ path: string; size: number }> {
+  const response = await call(
+    cfg,
+    secrets,
+    ctx,
+    `/storage/v1/object/${encodeURIComponent(bucket)}/${objectPathOf(file.path)}`,
+    { method: "POST", file, userToken }
+  );
+  if (response.status >= 400) throw upstreamError(response, "Could not store the file.");
+  return { path: file.path, size: file.bytes.length };
+}
+
+/** Deletes objects of a bucket, as the visitor when signed in. */
+async function removeObjects(
+  cfg: SupabaseConfig,
+  secrets: SupabaseSecrets,
+  ctx: ConnectorContext,
+  bucket: string,
+  paths: string[],
+  userToken?: string
+): Promise<{ removed: number }> {
+  const response = await call(
+    cfg,
+    secrets,
+    ctx,
+    `/storage/v1/object/${encodeURIComponent(bucket)}`,
+    { method: "DELETE", body: { prefixes: paths }, userToken }
+  );
+  if (response.status >= 400) throw upstreamError(response, "Could not delete the files.");
+  const parsed = z.array(z.unknown()).safeParse(parseJson(response));
+  return { removed: parsed.success ? parsed.data.length : 0 };
 }
 
 async function test(
@@ -296,13 +355,48 @@ async function execute(
   // A request may name another exposed schema; storage has no schema.
   const scoped = "schema" in request && request.schema ? { ...cfg, schema: request.schema } : cfg;
 
-  if (request.op === "storage.list" || request.op === "storage.sign") {
+  if (
+    request.op === "storage.list" ||
+    request.op === "storage.sign" ||
+    request.op === "storage.upload" ||
+    request.op === "storage.remove"
+  ) {
     if (resource.kind !== "bucket")
       throw new ConnectorError("invalid_request", "Storage requests need a bucket.");
     if (request.op === "storage.sign")
       return {
         status: 200,
-        data: await signObject(cfg, secrets, ctx, resource.name, request.path, request.expiresIn)
+        data: await signObject(
+          cfg,
+          secrets,
+          ctx,
+          resource.name,
+          request.path,
+          request.expiresIn,
+          req.userToken
+        )
+      };
+    if (request.op === "storage.upload")
+      return {
+        status: 200,
+        data: await uploadObject(
+          cfg,
+          secrets,
+          ctx,
+          resource.name,
+          {
+            path: request.path,
+            bytes: Buffer.from(request.data, "base64"),
+            contentType: request.contentType,
+            upsert: request.upsert
+          },
+          req.userToken
+        )
+      };
+    if (request.op === "storage.remove")
+      return {
+        status: 200,
+        data: await removeObjects(cfg, secrets, ctx, resource.name, request.paths, req.userToken)
       };
     const entries = await listObjects(cfg, secrets, ctx, resource.name, request.prefix, 1000);
     return { status: 200, data: entries };

@@ -7,7 +7,8 @@ import {
   type FragmentRequest,
   type FragmentResponse,
   type RuntimePayload,
-  type ServerActionResult
+  type ServerActionResult,
+  type UploadedFile
 } from "@nextomic/runtime";
 import { useEffect } from "react";
 import { overlaySchema, sheetEntrySchema } from "@nextomic/schema";
@@ -100,6 +101,46 @@ async function runServerAction(
   return { data: answer.data ?? null, go: answer.go, after: answer.after };
 }
 
+const uploadAnswerSchema = z.object({
+  data: z.object({
+    name: z.string(),
+    size: z.number(),
+    type: z.string(),
+    bucket: z.string(),
+    path: z.string()
+  })
+});
+
+async function uploadFile(
+  payload: RuntimePayload,
+  request: { node: string; values: string[]; file: File }
+): Promise<UploadedFile> {
+  const query = new URLSearchParams({
+    mode: payload.mode,
+    node: request.node,
+    name: request.file.name,
+    route: payload.route,
+    search: payload.search
+  });
+  const response = await fetch(
+    `/api/site/${encodeURIComponent(payload.projectId)}/upload?${query.toString()}`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": request.file.type || "application/octet-stream",
+        "x-nx-values": encodeURIComponent(JSON.stringify(request.values))
+      },
+      body: request.file
+    }
+  );
+  const body: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const parsed = actionErrorSchema.safeParse(body);
+    throw new Error(parsed.success ? parsed.data.error : `Upload failed (${response.status}).`);
+  }
+  return uploadAnswerSchema.parse(body).data;
+}
+
 export function ActionRuntime({ payload }: { payload: RuntimePayload }) {
   useEffect(() => {
     const persist = browserPersistEnv(
@@ -110,6 +151,7 @@ export function ActionRuntime({ payload }: { payload: RuntimePayload }) {
       fetchFragments: (request) => fetchFragments(payload, request),
       hrefFor: (route, query) => hrefFor(payload, route, query),
       runServerAction: (request) => runServerAction(payload, request),
+      uploadFile: (request) => uploadFile(payload, request),
       // A failed flow is reported to the page owner in preview; visitors of the live site see nothing.
       onError: (message) => {
         if (payload.mode === "preview") console.error(`[Nextomic actions] ${message}`);

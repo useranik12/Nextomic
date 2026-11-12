@@ -157,6 +157,13 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
         );
         return null;
       },
+      uploadFile: async (nodeId, _values, file) => {
+        note(
+          "Server action",
+          `Would upload ${file.name} with action ${nodeId}. Save the flow and use Preview to upload for real.`
+        );
+        return { name: file.name, size: file.size, type: file.type, bucket: "", path: "" };
+      },
       refreshLoop: async (id, _node, values) => {
         note(
           "Refresh query",

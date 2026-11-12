@@ -6,6 +6,8 @@ import {
   toText
 } from "@nextomic/schema";
 import { browserActionHandlers } from "./browser-actions";
+import { fileHandlers } from "./file-handlers";
+import { FileStore, type UploadedFile } from "./files";
 import { FlowError, numberParam, type ActionHandler, type RunLogEntry } from "./engine";
 import { htmlPropsHandlers, type ElementEditStore } from "./html-props";
 import type { LiveState, StateUpdate } from "./live-state";
@@ -57,6 +59,8 @@ export interface HandlerDeps {
    * server with the filled values of its {{ tag }} fields; returns what it answered.
    */
   runServer: (nodeId: string, values: string[]) => Promise<unknown>;
+  /** Stores one picked file with the saved Pick File(s) / Upload File node `nodeId`. */
+  uploadFile: (nodeId: string, values: string[], file: File) => Promise<UploadedFile>;
   /** A page URL of this site (live or preview). */
   hrefFor: (route: string, query: URLSearchParams) => string;
   /** Leaves or reloads the page; the editor's Test only reports where it would go. */
@@ -139,8 +143,10 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
       }
     ])
   );
+  const files = new FileStore();
   return {
     ...serverHandlers,
+    ...fileHandlers({ store: files, upload: deps.uploadFile, runServer: deps.runServer }),
     ...htmlPropsHandlers({ edits: deps.edits, touched: deps.touched }),
     ...browserActionHandlers(deps.navigation),
     "element.rebuild": async (p) => {
