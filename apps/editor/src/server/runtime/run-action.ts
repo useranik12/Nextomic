@@ -2,6 +2,7 @@ import { ConnectorError, type RestCallResult } from "@nextomic/integrations";
 import {
   QueryInputError,
   findTable,
+  storageActionCall,
   supabaseActionCall,
   supabaseStructureSchema,
   type ActionDef,
@@ -30,6 +31,12 @@ export async function runServerAction(input: {
   const { projectId, def, params, execute } = input;
   try {
     if (def.type === "rest.call") return await runRestCall(input);
+    if (def.type === "file.delete" || def.type === "file.download") {
+      const row = await projectConnector(projectId, "supabase");
+      if (!row) throw new ConnectorError("not_found", "Connect Supabase first.");
+      const result = await execute(row, storageActionCall(def.type, params));
+      return result.data ?? null;
+    }
     const row = await projectConnector(projectId, "supabase");
     if (!row) throw new ConnectorError("not_found", "Connect Supabase first.");
     const structure = supabaseStructureSchema.safeParse(await savedStructure(row.id));

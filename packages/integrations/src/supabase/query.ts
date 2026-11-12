@@ -83,6 +83,18 @@ export const supabaseRequestSchema = z.discriminatedUnion("op", [
   z.object({ op: z.literal("delete"), schema, filters: filters.min(1) }),
   z.object({ op: z.literal("rpc"), schema, args: z.record(z.unknown()).default({}) }),
   z.object({ op: z.literal("storage.list"), prefix: z.string().max(1024).default("") }),
+  // Stores one file (base64 bytes) at a path of a bucket. The bucket's policies decide who may.
+  z.object({
+    op: z.literal("storage.upload"),
+    path: z.string().min(1).max(1024),
+    data: z.string().max(80_000_000),
+    contentType: z.string().min(1).max(200).default("application/octet-stream"),
+    upsert: z.boolean().default(false)
+  }),
+  z.object({
+    op: z.literal("storage.remove"),
+    paths: z.array(z.string().min(1).max(1024)).min(1).max(100)
+  }),
   // A short-lived signed URL for one object of a private bucket (the anon role needs read access).
   z.object({
     op: z.literal("storage.sign"),
