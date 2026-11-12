@@ -3,7 +3,7 @@ import { restorePersisted, type PersistEnv } from "../persisted-state";
 import { outermost, swapParts } from "./dom";
 import { ElementEditStore } from "./html-props";
 import { FlowError, runFlow, type ActionHandler, type RunLogEntry } from "./engine";
-import { browserNavigation, starterHandlers } from "./handlers";
+import { browserNavigation, starterHandlers, type Navigation } from "./handlers";
 import { LiveState } from "./live-state";
 import { createOverlayLayer } from "./overlays";
 import { createToastStack } from "./toasts";
@@ -13,11 +13,31 @@ import type { FragmentRequest, FragmentResponse, RuntimePayload } from "./payloa
 // page's triggers, runs their flows, keeps app and page state, and redraws the elements that read
 // changed state through server fragments.
 
+/** A server action's answer. `go` leaves at once; `after` runs when the flow ends and nothing else navigated. */
+export interface ServerActionResult {
+  data: unknown;
+  /** An absolute address to open now (an OAuth provider's sign-in page). */
+  go?: string;
+  /** A route of this site to open, or null to reload so the page shows the new session. */
+  after?: { redirect: string | null };
+}
+
+/** A server action failed; `code` is the standard code of sign-in failures (invalid_credentials ...). */
+export class ServerActionError extends Error {
+  constructor(
+    message: string,
+    readonly code: string
+  ) {
+    super(message);
+    this.name = "ServerActionError";
+  }
+}
+
 export interface RuntimeOptions {
   fetchFragments: (request: FragmentRequest) => Promise<FragmentResponse>;
   hrefFor: (route: string, query: URLSearchParams) => string;
   /** Runs a saved server action; resolves to what it answered, rejects with a readable message. */
-  runServerAction: (request: { node: string; values: string[] }) => Promise<unknown>;
+  runServerAction: (request: { node: string; values: string[] }) => Promise<ServerActionResult>;
   persist: PersistEnv | null;
   /** A flow failed with no Try/Catch around the failing node. */
   onError?: (message: string) => void;
@@ -118,21 +138,43 @@ export function startActionRuntime(
   const toasts = createToastStack();
   stops.push(overlays.destroy, toasts.destroy);
 
+  // Sign-in actions change the session: when the flow ends and nothing navigated, the page goes to
+  // the route the server named, or reloads, so {{ user.* }} and protected content match.
+  let navigated = false;
+  let afterFlow: { redirect: string | null } | null = null;
+  const navigation: Navigation = {
+    open: (href, replace) => {
+      navigated = true;
+      browserNavigation.open(href, replace);
+    },
+    openTab: browserNavigation.openTab,
+    back: () => {
+      navigated = true;
+      browserNavigation.back();
+    },
+    reload: () => {
+      navigated = true;
+      browserNavigation.reload();
+    }
+  };
   const handlers: Record<string, ActionHandler> = starterHandlers({
     payload,
     state: live,
     log: options.log,
     hrefFor: options.hrefFor,
-    navigation: browserNavigation,
+    navigation,
     edits,
     touched: (names) => onChange(names),
     redrawElement: async (id) => (await redraw([id])).includes(id),
     runServer: async (nodeId, values) => {
       try {
-        return await options.runServerAction({ node: nodeId, values });
+        const result = await options.runServerAction({ node: nodeId, values });
+        if (result.after) afterFlow = result.after;
+        if (result.go) navigation.open(result.go, false);
+        return result.data;
       } catch (error) {
         throw new FlowError(
-          "server-action",
+          error instanceof ServerActionError ? error.code : "server-action",
           error instanceof Error ? error.message : String(error)
         );
       }
@@ -161,14 +203,25 @@ export function startActionRuntime(
     }
   });
 
-  const run = (nodeId: string | null, nodes: readonly FlowNode[], log = options.log) =>
-    runFlow(nodes, {
+  const run = async (nodeId: string | null, nodes: readonly FlowNode[], log = options.log) => {
+    navigated = false;
+    afterFlow = null;
+    await runFlow(nodes, {
       baseScope: () => live.scope(),
       handlers,
       blocks: payload.blocks,
       elementId: nodeId && !roots.has(nodeId) ? nodeId : null,
       log
     });
+    const after = afterFlow as { redirect: string | null } | null;
+    afterFlow = null;
+    if (!after || navigated) return;
+    if (after.redirect === null) navigation.reload();
+    else {
+      const target = new URL(after.redirect, "http://site.invalid");
+      navigation.open(options.hrefFor(target.pathname, target.searchParams), false);
+    }
+  };
   const fire = (nodeId: string, flow: TriggerFlow) => {
     run(nodeId, flow.nodes).catch((e: unknown) =>
       options.onError?.(e instanceof Error ? e.message : String(e))

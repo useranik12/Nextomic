@@ -25,7 +25,8 @@ import { getServerSession } from "@/lib/session";
 import { currentNextomicUser } from "@/server/nextomic-user";
 import { getPageByRoute, getProjectSettings, listPages, type StoredPage } from "@/server/pages";
 import type { ProxyCaller } from "@/server/connectors/proxy";
-import { editorExecutor, pageLoopRows } from "@/server/queries/run-query";
+import { asVisitor, editorExecutor, pageLoopRows } from "@/server/queries/run-query";
+import { dynamicUser, visitorState } from "@/server/runtime/auth-session";
 import { requestFacts } from "@/server/request-facts";
 import { previewPayload } from "@/server/runtime/page-runtime";
 import {
@@ -219,6 +220,13 @@ export default async function PreviewPage({
     if (key !== "path" && typeof value === "string") values[key] = value;
   }
   const incoming = await headers();
+  // A visitor session that ran out is renewed by a route that can write cookies, then the preview returns.
+  const sessionState = await visitorState("preview", id, incoming, settings.appAuth);
+  if (sessionState.kind === "expired") {
+    const here = `${page.route}${Object.keys(values).length > 0 ? `?${new URLSearchParams(values)}` : ""}`;
+    redirect(`/api/site/${id}/auth/refresh?mode=preview&next=${encodeURIComponent(here)}`);
+  }
+  const visitor = sessionState.kind === "signedIn" ? sessionState.visitor : null;
   const request = requestFacts(incoming, page.route, new URLSearchParams(values).toString());
   const draftTemplates = await getDraftTemplates(id);
   const templateId = typeof search.template === "string" ? search.template : null;
@@ -252,7 +260,8 @@ export default async function PreviewPage({
       request,
       mode: "preview",
       creatorName: "",
-      projectId: id
+      projectId: id,
+      user: dynamicUser(visitor, settings.appAuth)
     });
   const { tree, dynamic } = laid;
   // Template previews (sample content around a header or footer) run no actions.
@@ -264,7 +273,7 @@ export default async function PreviewPage({
     projectId: id,
     tree,
     dynamic,
-    execute: editorExecutor(caller)
+    execute: asVisitor(editorExecutor(caller), visitor?.accessToken)
   });
   const { theme } = resolveTheme(settings.themes, {
     pageId: page.id,

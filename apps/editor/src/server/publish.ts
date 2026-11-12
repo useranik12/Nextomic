@@ -237,15 +237,19 @@ export interface PublishedView {
   settings: ProjectSettings;
   /** Page id to route of every live page (Navigate To). */
   routes: Record<string, string>;
+  /** The page needs a signed-in visitor; whoever serves the view must check the session. */
+  requiresAuth: boolean;
 }
 
 /**
- * Public read. `route` null means the home page. Pages that require sign-in are not served
- * publicly until end-user authentication exists (docs/app-auth.md).
+ * Public read. `route` null means the home page. A page that requires sign-in is returned only
+ * with `includeProtected`, and then the caller must check the visitor (`gatedView`); without it
+ * such a page is not served at all.
  */
 export async function getPublishedView(
   projectId: string,
-  route: string | null
+  route: string | null,
+  options: { includeProtected?: boolean } = {}
 ): Promise<PublishedView | null> {
   await runDuePublish(projectId);
   const db = getDb();
@@ -293,14 +297,11 @@ export async function getPublishedView(
   if (!found) return null;
   const settings = projectSettingsSchema.safeParse(project.settings);
   if (!settings.success) return null;
-  // Pages behind sign-in are not served until the built-app auth runtime exists.
-  if (
-    pageRequiresAuth(settings.data.appAuth, {
-      id: found.id,
-      requiresAuth: found.settings.requiresAuth
-    })
-  )
-    return null;
+  const requiresAuth = pageRequiresAuth(settings.data.appAuth, {
+    id: found.id,
+    requiresAuth: found.settings.requiresAuth
+  });
+  if (requiresAuth && !options.includeProtected) return null;
   return {
     publishedAt: project.publishedAt,
     pageId: found.id,
@@ -313,7 +314,8 @@ export async function getPublishedView(
       flows: flowsByNodeSchema.safeParse(found.flows ?? {}).data ?? {}
     },
     settings: settings.data,
-    routes: Object.fromEntries(snapshots.map((p) => [p.id, p.route]))
+    routes: Object.fromEntries(snapshots.map((p) => [p.id, p.route])),
+    requiresAuth
   };
 }
 

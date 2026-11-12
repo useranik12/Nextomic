@@ -10,12 +10,15 @@ import {
 import { z } from "zod";
 import { headersOf, previewMember, sameOrigin, visitorKey } from "@/server/runtime/site-request";
 import {
+  asVisitor,
   editorExecutor,
   pageLoopRows,
   projectWorkspaceId,
   siteExecutor,
   type Executor
 } from "@/server/queries/run-query";
+import { getProjectSettings } from "@/server/pages";
+import { renewSession } from "@/server/runtime/auth-session";
 import { createRateLimiter } from "@/server/rate-limit";
 import {
   MAX_FRAGMENT_IDS,
@@ -65,7 +68,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   }
   const id = typeof request.query.id === "string" ? request.query.id : "";
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) return fail(404, "Not found.");
-  const headers = headersOf(request);
+  let headers = headersOf(request);
   // Same-origin only: pages call this from their own origin.
   if (!sameOrigin(headers)) return fail(403, "Cross-origin requests are not allowed.");
   if (!PER_VISITOR.take(`${id}:${visitorKey(headers)}`).ok || !PER_PROJECT.take(id).ok) {
@@ -77,6 +80,15 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
   const member = body.mode === "preview" ? await previewMember(id, headers) : null;
   if (body.mode === "preview" && !member) return fail(404, "Not found.");
+  // An expired visitor session is renewed here, where the cookie can be written.
+  const renewed = await renewSession(
+    body.mode,
+    id,
+    headers,
+    (await getProjectSettings(id)).appAuth
+  );
+  headers = renewed.headers;
+  if (renewed.setCookies.length > 0) response.setHeader("set-cookie", renewed.setCookies);
   const laid =
     body.mode === "live"
       ? await liveView(id, body.route, body.search, headers)
@@ -95,7 +107,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
         ? editorExecutor({ userId: member.id, projectId: id, workspaceId })
         : siteExecutor(id, workspaceId);
     }
-    return executor(row, request);
+    return asVisitor(executor, laid.visitor?.accessToken)(row, request);
   };
   // Refresh Query: the query comes from the saved flow (published or draft), never the browser.
   let savedQuery: ((nodeId: string, loopId: string) => ElementQuery | null) | undefined;

@@ -6,14 +6,33 @@ import { getAction, type ActionDef } from "./catalog";
 import { PARAM_TEXT_MAX, isRowsField, type Params } from "./fields";
 import { walkFlow, type FlowNode } from "./flow";
 
-// Server actions that run today (Supabase rows, Supabase RPC, API Data calls). The browser never
+// Server actions that run today (Supabase rows, Supabase RPC, API Data calls, sign-in actions). The browser never
 // sends what to run: it names the saved action node and sends the filled values of the fields that
 // hold a {{ tag }} (`actionSlots`). The server finds the node in the saved flows, keeps every fixed
 // field as saved, builds the connector request and runs it with the project's connector. Like
 // Refresh Query, a visitor can change only the values a tag fills, never the table, columns,
 // operator, function or call. Never rely on a value to protect rows: use Row Level Security.
 
+/** Sign-in actions of built apps (docs/app-auth.md section 5): they also read or set the session cookie. */
+export const AUTH_ACTION_TYPES = [
+  "auth.login",
+  "auth.verifyOtp",
+  "auth.register",
+  "auth.logout",
+  "auth.sendPasswordReset",
+  "auth.updatePassword",
+  "auth.updateEmail",
+  "auth.updatePhone",
+  "auth.updateUser",
+  "auth.resendVerification"
+] as const;
+export type AuthActionType = (typeof AUTH_ACTION_TYPES)[number];
+
+export const isAuthAction = (type: string): type is AuthActionType =>
+  (AUTH_ACTION_TYPES as readonly string[]).includes(type);
+
 export const SERVER_ACTION_TYPES = [
+  ...AUTH_ACTION_TYPES,
   "supabase.query",
   "supabase.insert",
   "supabase.upsert",

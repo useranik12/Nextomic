@@ -28,6 +28,8 @@ export interface Resource {
 export interface ExecuteRequest {
   resourceId: string;
   params: Record<string, unknown>;
+  /** The signed-in visitor's access token: Supabase runs the request as them (RLS). Server-set. */
+  userToken?: string;
 }
 
 export interface ExecuteResult {

@@ -142,6 +142,8 @@ export interface PageLayoutInput {
   projectId: string;
   /** The builder account viewing a preview, for {{nextomic.user.*}}; absent on live sites. */
   nextomicUser?: NextomicUser | null;
+  /** The signed-in visitor of the built app, for {{user.*}}; null when signed out. */
+  user?: DynamicContext["user"];
 }
 
 /** Template parameters (their defaults: nothing passes them) next to the page's own. */
@@ -177,7 +179,8 @@ export function layoutForPage(input: PageLayoutInput): {
     paramValues: input.params,
     query: input.request.query,
     globals: input.settings,
-    nextomicUser: input.nextomicUser ?? null
+    nextomicUser: input.nextomicUser ?? null,
+    user: input.user ?? null
   });
   const ctx = serverRuleContext({
     kind: "page",

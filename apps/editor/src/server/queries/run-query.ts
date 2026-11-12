@@ -53,7 +53,12 @@ import { platformKeyring } from "../keyring";
 // connector directly, because no builder member is involved.
 
 type Row = typeof connectors.$inferSelect;
-export type ConnectorRequest = { resourceId: string; params: Record<string, unknown> };
+export type ConnectorRequest = {
+  resourceId: string;
+  params: Record<string, unknown>;
+  /** The signed-in visitor's access token (Supabase runs the request as them). */
+  userToken?: string;
+};
 export type Executor = (row: Row, request: ConnectorRequest) => Promise<ExecuteResult>;
 
 export async function projectConnector(
@@ -100,6 +105,15 @@ export const siteExecutor =
         keyring: platformKeyring
       }
     )) as ExecuteResult;
+
+/** Runs every Supabase request as the signed-in visitor (their token), so Row Level Security sees them. */
+export const asVisitor =
+  (execute: Executor, accessToken: string | undefined): Executor =>
+  (row, request) =>
+    execute(
+      row,
+      accessToken && !request.userToken ? { ...request, userToken: accessToken } : request
+    );
 
 export interface RunQueryInput {
   projectId: string;
@@ -182,6 +196,12 @@ export async function querySources(projectId: string): Promise<{
   };
 }
 
+/** The `jwt` an API call gets for the signed-in visitor (empty when signed out). */
+const visitorBuiltIns = (dynamic: DynamicContext) => ({
+  jwt: dynamic.user?.accessToken ?? "",
+  user_ip: ""
+});
+
 /** Most query loop runs one page render makes (nested loops run once per outer row). */
 export const MAX_LOOP_RUNS = 100;
 
@@ -205,6 +225,7 @@ export async function pageLoopRows(input: {
         projectId: input.projectId,
         query: instance.query,
         fill,
+        builtIns: visitorBuiltIns(input.dynamic),
         execute: input.execute
       }),
     MAX_LOOP_RUNS,
@@ -266,6 +287,7 @@ export async function loopPage(input: {
           query: q,
           fill: fillWith(withLoopScope(serverScope, frames)),
           offset,
+          builtIns: visitorBuiltIns(input.dynamic),
           execute: input.execute
         });
 
@@ -295,6 +317,7 @@ export async function loopPage(input: {
         projectId: input.projectId,
         query: instance.query,
         fill,
+        builtIns: visitorBuiltIns(input.dynamic),
         execute: input.execute
       }),
     MAX_LOOP_RUNS,
