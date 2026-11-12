@@ -3,7 +3,7 @@ import {
   collectElementAnimations,
   defaultProjectSettings,
   elementAnimationCss,
-  resolveTheme
+  resolveRenderTheme
 } from "@nextomic/schema";
 import { headers } from "next/headers";
 import { AnimationPlayer } from "@/components/runtime/animation-player";
@@ -37,7 +37,7 @@ export default async function SiteNotFound() {
     mode: "live",
     projectId
   });
-  const { theme } = resolveTheme(settings.themes, {
+  const { theme } = resolveRenderTheme(settings.themes, {
     pageId: "",
     route: "",
     forcedThemeId: themeId,

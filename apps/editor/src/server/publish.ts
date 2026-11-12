@@ -3,6 +3,7 @@ import {
   pageTreeSchema,
   isLive,
   pageRequiresAuth,
+  effectiveTheme,
   themeCss,
   usedClassNames,
   pageSettingsSchema,
@@ -357,7 +358,10 @@ export async function getPublishedThemeCss(
   for (const row of templateRows) {
     if (row.snapshot) for (const name of usedClassNames(row.snapshot.tree)) used.add(name);
   }
-  return { css: themeCss(theme, used), publishedAt: project.publishedAt };
+  return {
+    css: themeCss(effectiveTheme(theme, settings.data.themes), used),
+    publishedAt: project.publishedAt
+  };
 }
 
 /** Public read: the project settings of the live site, or null when nothing is published. */

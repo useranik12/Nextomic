@@ -31,6 +31,7 @@ export * from "./framework";
 export * from "./framework-color-ops";
 export * from "./main-framework";
 export * from "./theme";
+export * from "./theme-follow";
 export * from "./taxonomy";
 export * from "./rules";
 export * from "./template";

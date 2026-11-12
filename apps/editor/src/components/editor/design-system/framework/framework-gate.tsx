@@ -11,11 +11,14 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { useEditorStore } from "../../store/editor-store";
+import { FollowBanner } from "./follow-banner";
 import { useFramework } from "./use-framework";
 
 export interface GateProps {
   theme: Theme;
   framework: Framework;
+  /** True when the theme follows the primary: values can change, names and structure cannot. */
+  follows: boolean;
   /** Replaces the theme's framework. Returns an error message, or null when it was applied. */
   update: (next: Framework) => string | null;
 }
@@ -31,7 +34,7 @@ export function FrameworkGate({
   title: string;
   children: (props: GateProps) => ReactNode;
 }) {
-  const { themes, theme, framework, setSelectedId, setFramework } = useFramework();
+  const { themes, theme, follows, framework, setSelectedId, setFramework } = useFramework();
   const [error, setError] = useState<string | null>(null);
 
   if (!theme) {
@@ -91,12 +94,17 @@ export function FrameworkGate({
           <span className="pb-1.5 text-xs text-muted">Theme: {theme.name}</span>
         )}
       </div>
+      {follows ? (
+        <FollowBanner primary={themes.find((t) => t.isDefault)?.name ?? "the primary theme"} />
+      ) : null}
       {error ? (
         <p role="alert" className="px-3 pt-2 text-xs text-danger">
           {error}
         </p>
       ) : null}
-      <div className="min-h-0 flex-1 overflow-y-auto">{children({ theme, framework, update })}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {children({ theme, framework, follows, update })}
+      </div>
     </div>
   );
 }

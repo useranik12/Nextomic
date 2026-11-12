@@ -9,6 +9,7 @@ import {
   type RuleGroup
 } from "./rules";
 import { frameworkSchema, frameworkVariablesCss, scopeFrameworkCss } from "./framework";
+import { effectiveTheme, followOverridesSchema } from "./theme-follow";
 import { frameworkStylesheet } from "./main-framework";
 import { SAFE_VALUE, VARIABLE_NAME_PATTERN, variableCssName } from "./variables";
 
@@ -108,6 +109,10 @@ export const themeSchema = z.object({
   allowModeSwitch: z.boolean().default(true),
   // The CSS framework this theme runs on (docs/design-system.md). Null: variables and classes only.
   framework: frameworkSchema.nullable().default(null),
+  // On (never on the default theme): the theme reads the default theme's framework live and keeps
+  // only its own values in `overrides` (theme-follow.ts). Its own framework is then null.
+  followPrimary: z.boolean().default(false),
+  overrides: followOverridesSchema.default({ variables: {}, scales: {} }),
   // Overrides of project variables, by variable name then mode id.
   variables: z
     .record(
@@ -137,6 +142,9 @@ export const themeListSchema = z
   })
   .refine((l) => l.length === 0 || l.filter((t) => t.isDefault).length === 1, {
     message: "Exactly one theme must be the default."
+  })
+  .refine((l) => l.every((t) => !(t.isDefault && t.followPrimary)), {
+    message: "The default theme cannot follow itself."
   })
   .refine((l) => l.every((t) => t.modes.some((m) => m.id === t.defaultMode)), {
     message: "Default mode must be one of the theme's modes."
@@ -223,6 +231,15 @@ export function resolveTheme(themes: readonly Theme[], ctx: ThemeContext): Theme
   if (best) return { theme: best, reason: "condition" };
   const fallback = usable.find((t) => t.isDefault);
   return fallback ? { theme: fallback, reason: "default" } : { theme: null, reason: "none" };
+}
+
+/**
+ * Like `resolveTheme`, but the theme comes back as it renders (a follower resolved against the
+ * primary). For output and display only: never write the result back to the project.
+ */
+export function resolveRenderTheme(themes: readonly Theme[], ctx: ThemeContext): ThemeResolution {
+  const found = resolveTheme(themes, ctx);
+  return found.theme ? { ...found, theme: effectiveTheme(found.theme, themes) } : found;
 }
 
 /** The modes a theme really has: without site-wide dark mode the dark mode does not exist. */

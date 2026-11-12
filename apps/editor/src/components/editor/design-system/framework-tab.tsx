@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { useEditorStore } from "../store/editor-store";
+import { FollowBanner } from "./framework/follow-banner";
 import { FrameworkClasses } from "./framework/framework-classes";
 import { FrameworkVariables } from "./framework/framework-variables";
 import { ImportFramework } from "./framework/import-framework";
@@ -35,7 +36,7 @@ function download(fw: Framework, siteUid: string) {
 
 /** Design System > Framework: the CSS framework each theme runs on (variables, scales, classes). */
 export function FrameworkTab() {
-  const { themes, theme, framework, setSelectedId, setFramework } = useFramework();
+  const { themes, theme, follows, framework, setSelectedId, setFramework } = useFramework();
   const siteUid = useEditorStore((s) => s.projectId);
   const [view, setView] = useState<View>("variables");
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export function FrameworkTab() {
           role="group"
           aria-label="Framework views"
         >
-          {VIEWS.map((v) => (
+          {VIEWS.filter((v) => !(follows && v.id === "import")).map((v) => (
             <button
               key={v.id}
               type="button"
@@ -110,18 +111,23 @@ export function FrameworkTab() {
             >
               Export CSS
             </ActionButton>
-            <ActionButton
-              size="sm"
-              tone="danger-ghost"
-              onPress={() => {
-                if (window.confirm(`Remove "${framework.name}" from "${theme.name}"?`)) run(null);
-              }}
-            >
-              Remove
-            </ActionButton>
+            {follows ? null : (
+              <ActionButton
+                size="sm"
+                tone="danger-ghost"
+                onPress={() => {
+                  if (window.confirm(`Remove "${framework.name}" from "${theme.name}"?`)) run(null);
+                }}
+              >
+                Remove
+              </ActionButton>
+            )}
           </>
         ) : null}
       </div>
+      {follows ? (
+        <FollowBanner primary={themes.find((t) => t.isDefault)?.name ?? "the primary theme"} />
+      ) : null}
       {error ? (
         <p role="alert" className="px-3 pt-2 text-xs text-danger">
           {error}
