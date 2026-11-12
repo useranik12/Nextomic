@@ -3,6 +3,7 @@
 import {
   activeQuery,
   tableByRef,
+  switchableThemes,
   walkElements,
   type FieldKind,
   type ParamField,
@@ -107,7 +108,7 @@ export function usePickerOptions(): {
       appState: project.appState.map((v) => ({ value: v.name, label: v.name })),
       pageState: (doc?.settings.state ?? []).map((v) => ({ value: v.name, label: v.name })),
       timelines: project.animations.timelines.map((t) => ({ value: t.id, label: t.name })),
-      themes: project.themes.map((t) => ({ value: t.id, label: t.name }))
+      themes: switchableThemes(project.themes).map((t) => ({ value: t.id, label: t.name }))
     };
   }, [doc, project, sources.data]);
 

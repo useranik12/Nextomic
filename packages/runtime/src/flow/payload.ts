@@ -4,6 +4,7 @@ import type {
   DynamicContext,
   FlowsByNode,
   ElementEdits,
+  ThemeChoice,
   Overlay,
   OverlayTemplateType,
   RefreshRequest,
@@ -28,6 +29,8 @@ export interface RuntimePayload {
   appState: AppStateVariable[];
   /** Page id to route, for Navigate To. */
   routes: Record<string, string>;
+  /** Themes a visitor can switch to on this page (its own included); empty when it cannot switch. */
+  themes: ThemeChoice[];
 }
 
 /** One redrawn element from the fragment endpoint. */

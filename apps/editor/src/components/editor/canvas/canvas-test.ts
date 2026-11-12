@@ -120,7 +120,8 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
       rootIds: [],
       dynamic: render.dynamic,
       appState: message.appState,
-      routes: message.routes
+      routes: message.routes,
+      themes: message.themes
     };
     const live = new LiveState(payload, {}, null, () => {
       if (controller === own) setOverride({ app: { ...live.app }, state: { ...live.state } });
@@ -138,6 +139,24 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
         back: () => note("Navigation", "Would go back; Test stays in the editor."),
         reload: () => note("Navigation", "Would reload the page; Test stays in the editor.")
       },
+      // A picker needs the visitor's click, so Test hands back the start value (or a sample).
+      pick: async ({ type, value }) => {
+        const now = new Date();
+        const p2 = (n: number) => String(n).padStart(2, "0");
+        const day = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`;
+        const sample =
+          type === "date"
+            ? day
+            : type === "time"
+              ? "12:00"
+              : type === "color"
+                ? "#000000"
+                : `${day}T12:00`;
+        note("Picker", `Would open the browser's ${type} picker; Test uses ${value || sample}.`);
+        return value || sample;
+      },
+      setTheme: (choice) =>
+        note("Set Theme", `Would switch the page to "${choice.name}" and remember the choice.`),
       // The canvas re-renders from state on its own.
       rebuild: async () => {},
       // Class, ID and attribute changes show on the canvas element itself; conditions and loops

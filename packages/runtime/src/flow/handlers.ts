@@ -3,9 +3,12 @@ import {
   actionSlots,
   getAction,
   operandValue,
-  toText
+  toText,
+  type ThemeChoice
 } from "@nextomic/schema";
 import { browserActionHandlers } from "./browser-actions";
+import { pickerHandlers, pickValue } from "./pickers";
+import { themeHandlers } from "./theme-actions";
 import { fileHandlers } from "./file-handlers";
 import { chooseFiles, FileStore, type UploadedFile } from "./files";
 import { FlowError, numberParam, type ActionHandler, type RunLogEntry } from "./engine";
@@ -63,6 +66,10 @@ export interface HandlerDeps {
   uploadFile: (nodeId: string, values: string[], file: File) => Promise<UploadedFile>;
   /** Replaces the browser's file chooser (the editor's Test reports instead). */
   chooseFiles?: typeof chooseFiles;
+  /** Replaces the browser's date, time and color pickers (the editor's Test reports instead). */
+  pick?: typeof pickValue;
+  /** Replaces the theme switch (the editor's Test reports instead). */
+  setTheme?: (choice: ThemeChoice) => void;
   /** A page URL of this site (live or preview). */
   hrefFor: (route: string, query: URLSearchParams) => string;
   /** Leaves or reloads the page; the editor's Test only reports where it would go. */
@@ -154,6 +161,8 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
       upload: deps.uploadFile,
       runServer: deps.runServer
     }),
+    ...pickerHandlers({ pick: deps.pick ?? pickValue }),
+    ...themeHandlers(deps.payload.themes, deps.setTheme),
     ...htmlPropsHandlers({ edits: deps.edits, touched: deps.touched }),
     ...browserActionHandlers(deps.navigation),
     "element.rebuild": async (p) => {

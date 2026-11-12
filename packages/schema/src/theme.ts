@@ -9,7 +9,12 @@ import {
   type RuleGroup
 } from "./rules";
 import { frameworkSchema, frameworkVariablesCss, scopeFrameworkCss } from "./framework";
-import { effectiveTheme, followOverridesSchema } from "./theme-follow";
+import {
+  effectiveTheme,
+  followOverridesSchema,
+  switchableThemes,
+  type ThemeChoice
+} from "./theme-follow";
 import { frameworkStylesheet } from "./main-framework";
 import { SAFE_VALUE, VARIABLE_NAME_PATTERN, variableCssName } from "./variables";
 
@@ -261,7 +266,12 @@ export function themeDefaultMode(theme: Theme): string {
  * Variable overrides of a theme, one rule per mode. The default mode also applies before any
  * `data-nxt-mode` is set, so a page without scripting still gets the default look.
  */
-export function themeCss(theme: Theme, usedClasses?: ReadonlySet<string>): string {
+export function themeCss(
+  theme: Theme,
+  usedClasses?: ReadonlySet<string>,
+  // Off for a theme shipped next to the page's own theme: only one may answer when no mode is set.
+  fallback = true
+): string {
   const root = `:root[data-nxt-theme="${theme.slug}"]`;
   const rules: string[] = [];
   const defaultMode = themeDefaultMode(theme);
@@ -274,7 +284,7 @@ export function themeCss(theme: Theme, usedClasses?: ReadonlySet<string>): strin
       .join(";");
     if (!body) continue;
     const selector =
-      mode.id === defaultMode
+      mode.id === defaultMode && fallback
         ? `${root}[data-nxt-mode="${mode.id}"],:root:not([data-nxt-mode])`
         : `${root}[data-nxt-mode="${mode.id}"]`;
     rules.push(`${selector}{${body}}`);
@@ -297,7 +307,8 @@ export function themeCss(theme: Theme, usedClasses?: ReadonlySet<string>): strin
 }
 
 /** Blocking script: sets theme and mode on <html> before first paint (saved choice wins). */
-export function themeBootScript(theme: Theme): string {
+export function themeBootScript(theme: Theme, others: readonly Theme[] = []): string {
+  if (others.length > 0) return themeChoiceBootScript(theme, others);
   const modes = JSON.stringify(themeModes(theme).map((m) => m.id));
   const system = theme.respectSystemPreference
     ? 'if(!v&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches&&m.indexOf("dark")>-1)v="dark";'
@@ -311,3 +322,44 @@ export function themeBootScript(theme: Theme): string {
     `d.setAttribute("data-nxt-theme",${JSON.stringify(theme.slug)});d.setAttribute("data-nxt-mode",v)})()`
   );
 }
+
+/**
+ * Boot script for a page that can switch themes: the visitor's saved theme (cookie `nxt-theme`)
+ * wins when it is one of the shipped themes, else the page's own theme. Mode rules are the chosen
+ * theme's own.
+ */
+function themeChoiceBootScript(theme: Theme, others: readonly Theme[]): string {
+  const config = Object.fromEntries(
+    [theme, ...others].map((t) => [
+      t.slug,
+      {
+        m: themeModes(t).map((m) => m.id),
+        f: themeDefaultMode(t),
+        a: t.allowModeSwitch ? 1 : 0,
+        s: t.allowModeSwitch && t.respectSystemPreference ? 1 : 0
+      }
+    ])
+  );
+  return (
+    `(function(){var d=document.documentElement,C=${JSON.stringify(config)},t=${JSON.stringify(theme.slug)},v=null;` +
+    "try{var c=document.cookie.match(/(?:^|; )nxt-theme=([^;]*)/);if(c&&Object.prototype.hasOwnProperty.call(C,c[1]))t=c[1]}catch(e){}" +
+    "var k=C[t];" +
+    'if(k.a){try{v=localStorage.getItem("nxt-mode")}catch(e){}' +
+    'if(!v&&k.s&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches&&k.m.indexOf("dark")>-1)v="dark"}' +
+    "if(k.m.indexOf(v)<0)v=k.f;" +
+    'd.setAttribute("data-nxt-theme",t);d.setAttribute("data-nxt-mode",v)})()'
+  );
+}
+
+/** A shipped theme as the runtime needs it to switch a visitor to it (theme as rendered). */
+export const themeChoiceOf = (t: Theme): ThemeChoice => ({
+  id: t.id,
+  slug: t.slug,
+  name: t.name,
+  modes: themeModes(t).map((m) => m.id),
+  defaultMode: themeDefaultMode(t)
+});
+
+/** Every theme a visitor can be switched to (the primary and active followers), as rendered. */
+export const themeChoices = (themes: readonly Theme[]): ThemeChoice[] =>
+  switchableThemes(themes).map((t) => themeChoiceOf(effectiveTheme(t, themes)));

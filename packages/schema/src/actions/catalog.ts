@@ -1,4 +1,6 @@
 import type { StateType } from "../state";
+import type { Theme } from "../theme";
+import { canSwitchThemes } from "../theme-follow";
 import { ACTIONS } from "./catalog-actions";
 import type { ParamField, Params } from "./fields";
 
@@ -75,11 +77,24 @@ export function actionsByCategory(category: ActionCategory): {
   return [...groups].map(([subcategory, actions]) => ({ subcategory, actions }));
 }
 
-/** Why an action cannot be used now (its own reason or its category's), or null. */
-export function actionDisabledReason(action: ActionDef): string | null {
+export const SET_THEME_UNAVAILABLE =
+  "Set Theme needs two or more active themes, with Follow the primary theme turned on in at least one of them (Design System, Themes).";
+
+/**
+ * Why an action cannot be used now (its own reason or its category's), or null. With the project's
+ * themes, Set Theme is also unavailable until a theme follows the primary.
+ */
+export function actionDisabledReason(
+  action: ActionDef,
+  project?: { themes: readonly Theme[] }
+): string | null {
   const category = categoryOf(action.category);
   const categoryReason = category && "disabled" in category ? category.disabled : undefined;
-  return action.disabled ?? categoryReason ?? null;
+  const own = action.disabled ?? categoryReason ?? null;
+  if (own) return own;
+  if (action.type === "theme.set" && project && !canSwitchThemes(project.themes))
+    return SET_THEME_UNAVAILABLE;
+  return null;
 }
 
 /** Whether this action, with these params, returns a list. */

@@ -14,6 +14,8 @@ import {
   customCssFor,
   elementAnimationCss,
   resolveRenderTheme,
+  themeChoiceOf,
+  themeSwitching,
   timelinesForPage
 } from "@nextomic/schema";
 import type { Metadata } from "next";
@@ -281,6 +283,13 @@ export default async function PreviewPage({
     forcedThemeId: page.settings.themeId,
     rules: laid.rules
   });
+  const otherThemes = themeSwitching(settings.themes, theme, Boolean(page.settings.themeId));
+  const runtime = actions
+    ? {
+        ...actions,
+        themes: theme && otherThemes.length > 0 ? [theme, ...otherThemes].map(themeChoiceOf) : []
+      }
+    : null;
   return (
     <>
       <style>{BASE_CSS + elementAnimationCss(tree)}</style>
@@ -296,14 +305,15 @@ export default async function PreviewPage({
         fonts={settings.fonts}
         fontBase={`/fonts/${id}`}
         theme={theme}
+        otherThemes={otherThemes}
         customCss={customCssFor(settings.cssFiles, page.id)}
         dynamic={dynamic}
         loopRows={loopRows}
         bootScript
         pruneUnusedClasses
-        liveSlots={actions !== null}
+        liveSlots={runtime !== null}
       />
-      {actions ? <ActionRuntime payload={actions} /> : null}
+      {runtime ? <ActionRuntime payload={runtime} /> : null}
     </>
   );
 }

@@ -13,6 +13,7 @@ import {
   elementNodeSchema,
   styleMapSchema,
   timelineSchema,
+  themeChoiceSchema,
   type BreakpointDef,
   type ElementNode,
   type ProjectVariable,
@@ -85,6 +86,7 @@ export const hostMessageSchema = z.discriminatedUnion("type", [
     blocks: z.array(actionBlockSchema).max(500),
     appState: z.array(appStateVariableSchema).max(500),
     routes: z.record(z.string().max(64), z.string().max(2000)),
+    themes: z.array(themeChoiceSchema).max(50),
     // Modal and bottom sheet templates that can show, by id.
     overlays: z
       .record(

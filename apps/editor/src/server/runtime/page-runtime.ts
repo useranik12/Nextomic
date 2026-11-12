@@ -85,7 +85,9 @@ export function runtimePayload(input: PayloadInput): RuntimePayload | null {
     rootIds: input.rootIds,
     dynamic: { ...input.dynamic, user, exposeAccessToken: false },
     appState: input.settings.appState,
-    routes: input.routes
+    routes: input.routes,
+    // The page sets these once its theme is resolved (themeSwitching).
+    themes: []
   };
 }
 

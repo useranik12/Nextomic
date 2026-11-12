@@ -3,7 +3,8 @@ import {
   collectElementAnimations,
   defaultProjectSettings,
   elementAnimationCss,
-  resolveRenderTheme
+  resolveRenderTheme,
+  themeSwitching
 } from "@nextomic/schema";
 import { headers } from "next/headers";
 import { AnimationPlayer } from "@/components/runtime/animation-player";
@@ -43,6 +44,7 @@ export default async function SiteNotFound() {
     forcedThemeId: themeId,
     rules
   });
+  const otherThemes = themeSwitching(settings.themes, theme, Boolean(themeId));
   return (
     <>
       <style>{BASE_CSS + elementAnimationCss(tree)}</style>
@@ -55,6 +57,10 @@ export default async function SiteNotFound() {
         fonts={settings.fonts}
         fontBase={`/fonts/${projectId}`}
         theme={theme}
+        otherThemes={otherThemes}
+        themeStylesheetFor={(slug) =>
+          site ? `/theme-css/${projectId}/${slug}.css?v=${site.publishedAt.getTime()}` : ""
+        }
         themeStylesheet={
           theme && site
             ? `/theme-css/${projectId}/${theme.slug}.css?v=${site.publishedAt.getTime()}`

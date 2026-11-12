@@ -1,5 +1,5 @@
 import type { RunLogEntry } from "@nextomic/runtime";
-import { findFlowNode, type FlowNode } from "@nextomic/schema";
+import { findFlowNode, themeChoices, type FlowNode } from "@nextomic/schema";
 import { create } from "zustand";
 import { testContextAction } from "@/app/(builder)/editor/[id]/action-flow-actions";
 import { canTest, onTestEvent, sendTest } from "@/components/editor/canvas/test-bridge";
@@ -78,6 +78,7 @@ export const useFlowTest = create<FlowTestState>((set, get) => ({
       blocks: draft.blocks,
       appState: project.appState,
       routes: context.data.routes,
+      themes: themeChoices(project.themes),
       overlays: context.data.overlays
     });
   },

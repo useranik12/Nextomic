@@ -10,12 +10,14 @@ import {
 import { useState } from "react";
 import { InfoTip } from "@/components/ui/info-tip";
 import { Icon } from "@/lib/icons/Icon";
+import { useEditorStore } from "../../store/editor-store";
 
 const ITEM =
   "flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors duration-300 ";
 
 function ActionItem({ action, onPick }: { action: ActionDef; onPick: () => void }) {
-  const reason = actionDisabledReason(action);
+  const themes = useEditorStore((s) => s.project.themes);
+  const reason = actionDisabledReason(action, { themes });
   if (reason) {
     return (
       <li className={`${ITEM} cursor-not-allowed text-subtle`} aria-disabled="true">
