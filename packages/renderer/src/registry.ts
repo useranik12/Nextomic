@@ -1,4 +1,4 @@
-import type { ElementNode, PropValue } from "@nextomic/schema";
+import type { ElementNode, MediaKind, PropValue } from "@nextomic/schema";
 import type { ReactNode } from "react";
 import type { ZodObject, ZodRawShape } from "zod";
 
@@ -12,6 +12,8 @@ export interface ControlDef {
   kind: ControlKind;
   options?: { value: string; label: string }[];
   placeholder?: string;
+  /** Adds a "Choose from Media" button; the picker only lists these kinds of file. */
+  pick?: MediaKind[];
 }
 
 // `true`: accepts static text mixed with dynamic tokens. `{ reason }`: opted out, with a written reason.
