@@ -162,6 +162,32 @@ describe("supabase requests", () => {
     );
   });
 
+  it("builds an upsert with conflict columns and refuses bad ones", () => {
+    const request = supabaseRequestSchema.parse({
+      op: "insert",
+      values: { id: 1, title: "A" },
+      upsert: true,
+      onConflict: "id,slug"
+    });
+    expect(tableQuery(request).toString()).toBe("on_conflict=id%2Cslug&select=*");
+    expect(supabaseRequestSchema.parse({ op: "insert", values: { a: 1 } })).toMatchObject({
+      upsert: false
+    });
+    expect(
+      tableQuery(
+        supabaseRequestSchema.parse({ op: "insert", values: { a: 1 }, upsert: true })
+      ).toString()
+    ).toBe("select=*");
+    expect(
+      supabaseRequestSchema.safeParse({
+        op: "insert",
+        values: { a: 1 },
+        upsert: true,
+        onConflict: "id;drop"
+      }).success
+    ).toBe(false);
+  });
+
   it("accepts a schema per table request and a storage sign request", () => {
     expect(supabaseRequestSchema.parse({ op: "select", schema: "billing" })).toMatchObject({
       schema: "billing"

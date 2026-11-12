@@ -298,3 +298,69 @@ test("Refresh Query shows the loop's Supabase settings with tips and dynamic dat
   ).toBeVisible();
   await page.screenshot({ path: "C:/Users/zaynt/.claude/jobs/63a9e151/tmp/supa.png" });
 });
+
+test("a saved Query Row(s) action runs on the server from the preview and refuses unknown nodes", async ({
+  page
+}) => {
+  test.setTimeout(150_000);
+  await openEditor(page);
+  await page.getByRole("button", { name: "Supabase", exact: true }).click();
+  await page.getByLabel("Supabase URL").fill(url ?? "");
+  await page.getByLabel("Anon Key/Publishable Key").fill(anonKey ?? "");
+  await page.getByRole("button", { name: "Fetch Schema" }).click();
+  await expect(page.getByText("Schema fetched.")).toBeVisible({ timeout: 60_000 });
+  const firstTable = page.getByRole("list", { name: "Tables" }).getByRole("button").first();
+  const tableName = (await firstTable.innerText()).trim().split("\n")[0] ?? "";
+
+  // The editor reads the table list when it loads, so reload after the fetch.
+  await page.reload();
+  await page.getByRole("button", { name: "Navigator", exact: true }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Button", exact: true }).click();
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 15_000
+  });
+  await page.getByRole("tab", { name: /action/i }).click();
+  await page.getByRole("button", { name: "Add action" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByRole("button", { name: "Choose a trigger" }).click();
+  await page.locator("[role=menuitem]", { hasText: /^On Click$/ }).click();
+  await modal.getByRole("button", { name: "Add Action", exact: true }).click();
+  await modal.getByLabel("Search actions").fill("Query Row");
+  await modal.getByRole("button", { name: "Query Row(s)" }).click();
+  await modal
+    .getByRole("button", { name: /^Table/ })
+    .first()
+    .click();
+  await page.locator("[role=option]", { hasText: tableName }).first().click();
+  await modal.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(modal.getByText("Unsaved changes")).toBeHidden({ timeout: 10_000 });
+  await modal.getByRole("button", { name: "Close the Action Flow Editor" }).click();
+
+  const projectId = /\/editor\/([^/?#]+)/.exec(page.url())?.[1] ?? "";
+  const direct = await page.request.get(`${url}/rest/v1/${tableName}?select=*&limit=100`, {
+    headers: { apikey: anonKey ?? "", Authorization: `Bearer ${anonKey ?? ""}` }
+  });
+  const expected: unknown = direct.ok() ? await direct.json() : [];
+
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const answered = preview.waitForResponse((r) =>
+    r.url().includes(`/api/site/${projectId}/action`)
+  );
+  await preview.getByRole("button").first().click();
+  const response = await answered;
+  expect(response.status()).toBe(200);
+  const body = (await response.json()) as { data: unknown };
+  expect(Array.isArray(body.data) ? body.data.length : -1).toBe(
+    Array.isArray(expected) ? expected.length : 0
+  );
+
+  // Only saved action nodes run: an invented node id is refused.
+  const refused = await preview.request.post(`/api/site/${projectId}/action`, {
+    data: { mode: "preview", node: "not-a-node", values: [], route: "/" },
+    headers: { origin: new URL(preview.url()).origin }
+  });
+  expect(refused.status()).toBe(404);
+});

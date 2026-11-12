@@ -65,6 +65,30 @@ async function fetchFragments(
   return responseSchema.parse(body);
 }
 
+const answerSchema = z.object({ data: z.unknown() });
+
+async function runServerAction(
+  payload: RuntimePayload,
+  request: { node: string; values: string[] }
+): Promise<unknown> {
+  const response = await fetch(`/api/site/${encodeURIComponent(payload.projectId)}/action`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      mode: payload.mode,
+      route: payload.route,
+      search: payload.search,
+      ...request
+    })
+  });
+  const body: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const parsed = errorSchema.safeParse(body);
+    throw new Error(parsed.success ? parsed.data.error : `Request failed (${response.status}).`);
+  }
+  return answerSchema.parse(body).data;
+}
+
 export function ActionRuntime({ payload }: { payload: RuntimePayload }) {
   useEffect(() => {
     const persist = browserPersistEnv(
@@ -74,6 +98,7 @@ export function ActionRuntime({ payload }: { payload: RuntimePayload }) {
       persist,
       fetchFragments: (request) => fetchFragments(payload, request),
       hrefFor: (route, query) => hrefFor(payload, route, query),
+      runServerAction: (request) => runServerAction(payload, request),
       // A failed flow is reported to the page owner in preview; visitors of the live site see nothing.
       onError: (message) => {
         if (payload.mode === "preview") console.error(`[Nextomic actions] ${message}`);
