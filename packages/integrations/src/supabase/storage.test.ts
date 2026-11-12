@@ -83,6 +83,24 @@ describe("supabase storage uploads and deletes", () => {
     ).rejects.toThrow();
   });
 
+  it("reads the real status Storage puts in the body of a 400", async () => {
+    reply = {
+      status: 400,
+      body: {
+        statusCode: "403",
+        error: "Unauthorized",
+        message: "new row violates row-level security policy"
+      }
+    };
+    await expect(
+      run({ op: "storage.upload", path: "a.png", data: "AQ==", contentType: "image/png" })
+    ).rejects.toMatchObject({ status: 403 });
+    reply = { status: 400, body: { statusCode: "404", message: "Bucket not found" } };
+    await expect(
+      run({ op: "storage.upload", path: "a.png", data: "AQ==", contentType: "image/png" })
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
   it("deletes a list of paths", async () => {
     seen = [];
     reply = { status: 200, body: [{ name: "a.png" }, { name: "b.png" }] };
