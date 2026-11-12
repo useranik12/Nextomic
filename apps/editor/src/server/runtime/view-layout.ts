@@ -1,7 +1,7 @@
 import type { NextomicUser } from "@nextomic/schema";
 import { getPageByRoute, getProjectSettings, listPages, type StoredPage } from "@/server/pages";
-import { publishedLayout } from "@/server/published-layout";
-import { getPublishedView } from "@/server/publish";
+import { gatedView, publishedLayout } from "@/server/published-layout";
+import { currentVisitor, dynamicUser } from "@/server/runtime/auth-session";
 import { requestFacts } from "@/server/request-facts";
 import { layoutForPage } from "@/server/site-layout";
 import { getDraftTemplates } from "@/server/templates";
@@ -17,12 +17,24 @@ const valuesOf = (search: string) => {
   return values;
 };
 
-/** The published page at a route, laid out for this request; null when nothing is published there. */
+/**
+ * The published page at a route, laid out for this request; null when nothing is published there
+ * or the page needs a signed-in visitor and there is none. Callers that can write cookies renew an
+ * expired session first (`renewSession`).
+ */
 export async function liveView(projectId: string, route: string, search: string, headers: Headers) {
-  const view = await getPublishedView(projectId, route === "/" ? null : route);
-  if (!view) return null;
-  const laid = await publishedLayout(projectId, view, valuesOf(search), headers);
-  return { ...laid, settings: view.settings, pageId: view.pageId, pageFlows: view.page.flows };
+  const gate = await gatedView(projectId, route === "/" ? null : route, headers);
+  if (!gate || gate.state === "login" || (gate.state === "expired" && gate.view.requiresAuth))
+    return null;
+  const { view, visitor } = gate;
+  const laid = await publishedLayout(projectId, view, valuesOf(search), headers, visitor);
+  return {
+    ...laid,
+    settings: view.settings,
+    pageId: view.pageId,
+    pageFlows: view.page.flows,
+    visitor
+  };
 }
 
 /** The saved draft of a page (home when the route is unknown), laid out for the owner preview. */
@@ -42,6 +54,7 @@ export async function draftView(
   }
   if (!page) return null;
   const values = valuesOf(search);
+  const visitor = await currentVisitor("preview", projectId, headers, settings.appAuth);
   const laid = layoutForPage({
     tree: page.tree,
     templates: await getDraftTemplates(projectId),
@@ -67,7 +80,8 @@ export async function draftView(
     request: requestFacts(headers, page.route, new URLSearchParams(values).toString()),
     mode: "preview",
     creatorName: "",
-    projectId
+    projectId,
+    user: dynamicUser(visitor, settings.appAuth)
   });
-  return { ...laid, settings, page };
+  return { ...laid, settings, page, visitor };
 }

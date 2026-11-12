@@ -117,6 +117,8 @@ Design sources are in `blueprint/` (see `ui-reference.md` for the index, coverag
 6. Rendering defaults for archive and single pages (static vs server) before Phase 11.
 7. State Management, Data Types, the expression suggestion panel and Page Settings have no visual design; owner approves the first build.
 
+- 2026-11-12 Phase 5d-1 built-app auth (owner chose full scope incl. OAuth and magic link): Supabase Auth is called over its REST API (GoTrue) with the anon key from `packages/integrations/src/supabase/auth.ts` instead of adding `@supabase/supabase-js`/`ssr`, so only the connector touches Supabase, the dependency list stays unchanged and refresh is serialized by us (single-use refresh tokens). Sessions live in project-scoped httpOnly cookies (live and preview apart), every token is checked against Supabase, redirect flows use PKCE with one callback route that must be in the Supabase redirect allow-list, protected pages are served only to signed-in visitors and the fragment, loop and action endpoints refuse them otherwise. Preview runs real sign-in with its own cookie (the older "mock user only" idea in `app-auth.md` section 8 is not built). Details: `app-auth.md` section 11.
+
 ## Glossary
 
 Project, Page, Template, Theme, Color mode, Element (node), Class, Variable, Query, Loop, Binding, Condition, Action flow, Connector, Auth provider, Dynamic data, Scope.

@@ -1586,3 +1586,70 @@ test("flow editor Test runs the unsaved trigger on the canvas and lists each ste
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.locator("[data-nx-toast]")).toContainText("Hello");
 });
+
+test("a page behind sign-in is never served, redrawn or looped to a signed-out visitor", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await page.getByRole("switch", { name: "Use authentication" }).click({ force: true });
+  await expect(page.getByLabel("New pages require authentication")).toBeEnabled();
+  await page.getByRole("button", { name: "Navigator" }).click();
+  const requires = page.getByLabel("Requires Authentication");
+  await expect(requires).toBeEnabled();
+  await requires.check({ force: true });
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  await page.getByLabel("Text", { exact: true }).fill("Members only");
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Published" })).toBeVisible();
+
+  // The page itself, the redraw endpoint and the loop endpoint all refuse a visitor with no session.
+  const site = await page.request.get(`/site/${projectId}`);
+  expect(site.status()).toBe(404);
+  expect(await site.text()).not.toContain("Members only");
+  const json = { "content-type": "application/json" };
+  const redraw = await page.request.post(`/api/site/${projectId}/fragment`, {
+    headers: json,
+    data: { mode: "live", route: "/", search: "", ids: ["x"], app: {}, state: {} }
+  });
+  expect(redraw.status()).toBe(404);
+  const loop = await page.request.post(`/api/site/${projectId}/loop`, {
+    headers: json,
+    data: { route: "/", search: "", key: "x", offset: 0 }
+  });
+  expect(loop.status()).toBe(404);
+  const act = await page.request.post(`/api/site/${projectId}/action`, {
+    headers: json,
+    data: { mode: "live", node: "x", values: [], route: "/", search: "" }
+  });
+  expect(act.status()).toBe(404);
+
+  // A forged session cookie does not sign anyone in: Supabase is not connected, so nothing checks out.
+  const forged = Buffer.from(
+    JSON.stringify({ a: "a.b.c", r: "r", e: Math.floor(Date.now() / 1000) + 3600 })
+  ).toString("base64url");
+  const withCookie = await page.request.get(`/site/${projectId}`, {
+    headers: { cookie: `nxs_l_${projectId}=${forged}` }
+  });
+  expect(withCookie.status()).toBe(404);
+
+  // The auth routes never send a visitor off the site and set no session without a pending sign-in.
+  const callback = await page.request.get(
+    `/api/site/${projectId}/auth/callback?code=abc&next=https://evil.example`,
+    { maxRedirects: 0 }
+  );
+  expect(callback.status()).toBe(303);
+  expect(callback.headers().location).toMatch(new RegExp(`^/site/${projectId}`));
+  expect(callback.headers()["set-cookie"] ?? "").not.toContain(`nxs_l_${projectId}=ey`);
+  const refresh = await page.request.get(
+    `/api/site/${projectId}/auth/refresh?next=//evil.example`,
+    { maxRedirects: 0 }
+  );
+  expect(refresh.status()).toBe(303);
+  expect(refresh.headers().location).toBe(`/site/${projectId}`);
+});

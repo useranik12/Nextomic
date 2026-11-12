@@ -4,6 +4,7 @@ import { ConnectorError } from "../errors";
 import { registerConnector } from "../registry";
 import { safeFetch, type SafeResponse } from "../safe-fetch";
 import type { Connector, ConnectorContext, ExecuteResult, Resource, TestResult } from "../types";
+import { AUTH_RESOURCE_ID, runAuth } from "./auth";
 import { openApiSchema, readFunctions, readTables } from "./openapi";
 import { parseResourceId, supabaseRequestSchema, TABLE_METHODS, tableQuery } from "./query";
 
@@ -44,10 +45,11 @@ export type SupabaseSecrets = z.infer<typeof supabaseSecretsSchema>;
 /** Top-level entries counted per bucket when the schema is fetched; more shows as "1000+". */
 export const BUCKET_COUNT_CAP = 1000;
 
-function headers(cfg: SupabaseConfig, secrets: SupabaseSecrets, write = false) {
+function headers(cfg: SupabaseConfig, secrets: SupabaseSecrets, write = false, userToken = "") {
   const out: Record<string, string> = {
     apikey: secrets.anonKey,
-    authorization: `Bearer ${secrets.anonKey}`,
+    // A signed-in visitor's own token makes RLS see them; the apikey stays the anon key.
+    authorization: `Bearer ${userToken || secrets.anonKey}`,
     accept: "application/json"
   };
   if (cfg.schema !== "public") {
@@ -88,10 +90,10 @@ async function call(
   secrets: SupabaseSecrets,
   ctx: ConnectorContext,
   path: string,
-  init: { method?: string; body?: unknown; prefer?: string } = {}
+  init: { method?: string; body?: unknown; prefer?: string; userToken?: string } = {}
 ): Promise<SafeResponse> {
   const write = init.method !== undefined && init.method !== "GET";
-  const requestHeaders = headers(cfg, secrets, write);
+  const requestHeaders = headers(cfg, secrets, write, init.userToken);
   if (init.body !== undefined) requestHeaders["content-type"] = "application/json";
   if (init.prefer) requestHeaders.prefer = init.prefer;
   return safeFetch(`${cfg.projectUrl}${path}`, {
@@ -273,9 +275,11 @@ async function listResources(
 async function execute(
   cfg: SupabaseConfig,
   secrets: SupabaseSecrets,
-  req: { resourceId: string; params: Record<string, unknown> },
+  req: { resourceId: string; params: Record<string, unknown>; userToken?: string },
   ctx: ConnectorContext
 ): Promise<ExecuteResult> {
+  if (req.resourceId === AUTH_RESOURCE_ID)
+    return { status: 200, data: await runAuth(cfg, secrets, ctx, req.params, req.userToken) };
   let resource: ReturnType<typeof parseResourceId>;
   try {
     resource = parseResourceId(req.resourceId);
@@ -313,7 +317,8 @@ async function execute(
       `/rest/v1/rpc/${encodeURIComponent(resource.name)}`,
       {
         method: "POST",
-        body: request.args
+        body: request.args,
+        userToken: req.userToken
       }
     );
     if (response.status >= 400) throw upstreamError(response, "The function call failed.");
@@ -324,6 +329,7 @@ async function execute(
   const query = tableQuery(request).toString();
   const path = `/rest/v1/${encodeURIComponent(resource.name)}${query ? `?${query}` : ""}`;
   const response = await call(scoped, secrets, ctx, path, {
+    userToken: req.userToken,
     method: TABLE_METHODS[request.op],
     ...(request.op === "insert" || request.op === "update" ? { body: request.values } : {}),
     ...(request.op === "select"

@@ -104,7 +104,8 @@ describe("findServerAction", () => {
   });
   it("isServerAction matches the supported types", () => {
     expect(isServerAction("rest.call")).toBe(true);
-    expect(isServerAction("auth.login")).toBe(false);
+    expect(isServerAction("auth.login")).toBe(true);
+    expect(isServerAction("navigate")).toBe(false);
   });
 });
 

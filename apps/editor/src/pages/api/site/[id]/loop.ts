@@ -3,8 +3,10 @@ import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
-import { getPublishedView, publishedLayout } from "@/server/published-layout";
-import { loopPage, projectWorkspaceId, siteExecutor } from "@/server/queries/run-query";
+import { getProjectSettings } from "@/server/pages";
+import { gatedView, publishedLayout } from "@/server/published-layout";
+import { asVisitor, loopPage, projectWorkspaceId, siteExecutor } from "@/server/queries/run-query";
+import { renewSession } from "@/server/runtime/auth-session";
 import { createRateLimiter } from "@/server/rate-limit";
 
 // Public endpoint of published sites (docs/dynamic-data-and-actions.md section 3): the next page
@@ -49,7 +51,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   }
   const id = typeof request.query.id === "string" ? request.query.id : "";
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) return fail(404, "Not found.");
-  const headers = headersOf(request);
+  let headers = headersOf(request);
   const visitor = PER_VISITOR.take(`${id}:${visitorKey(headers)}`);
   const project = PER_PROJECT.take(id);
   if (!visitor.ok || !project.ok) return fail(429, "Too many requests. Try again shortly.");
@@ -58,20 +60,26 @@ export default async function handler(request: NextApiRequest, response: NextApi
   if (!parsed.success) return fail(400, "Invalid request.");
   const body = parsed.data;
 
-  const view = await getPublishedView(id, body.route === "/" ? null : body.route);
+  const renewed = await renewSession("live", id, headers, (await getProjectSettings(id)).appAuth);
+  headers = renewed.headers;
+  if (renewed.setCookies.length > 0) response.setHeader("set-cookie", renewed.setCookies);
+  const gate = await gatedView(id, body.route === "/" ? null : body.route, headers);
+  const view = gate?.view;
   const workspaceId = view ? await projectWorkspaceId(id) : null;
-  if (!view || !workspaceId) return fail(404, "Not found.");
+  // A page behind sign-in gives nothing to a visitor who is not signed in.
+  if (!gate || !view || !workspaceId || (view.requiresAuth && gate.state !== "ok"))
+    return fail(404, "Not found.");
 
   const values: Record<string, string> = {};
   for (const [key, value] of new URLSearchParams(body.search)) values[key] ??= value;
-  const { tree, dynamic } = await publishedLayout(id, view, values, headers);
+  const { tree, dynamic } = await publishedLayout(id, view, values, headers, gate.visitor);
 
   try {
     const page = await loopPage({
       projectId: id,
       tree,
       dynamic,
-      execute: siteExecutor(id, workspaceId),
+      execute: asVisitor(siteExecutor(id, workspaceId), gate.visitor?.accessToken),
       key: body.key,
       offset: body.offset
     });

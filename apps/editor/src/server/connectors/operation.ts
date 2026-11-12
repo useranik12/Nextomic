@@ -22,7 +22,8 @@ export const operationSchema = z.discriminatedUnion("op", [
     op: z.literal("execute"),
     request: z.object({
       resourceId: z.string().min(1).max(200),
-      params: z.record(z.unknown())
+      params: z.record(z.unknown()),
+      userToken: z.string().max(16_384).optional()
     })
   })
 ]);

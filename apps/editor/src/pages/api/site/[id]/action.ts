@@ -2,12 +2,17 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import {
   actionRunRequestSchema,
   findServerAction,
+  isAuthAction,
   withActionValues,
   type NextomicUser
 } from "@nextomic/schema";
-import { ConnectorError } from "@nextomic/integrations";
+import { AuthError, ConnectorError } from "@nextomic/integrations";
 import { z } from "zod";
+import { getProjectSettings } from "@/server/pages";
+import { renewSession } from "@/server/runtime/auth-session";
+import { runAuthAction } from "@/server/runtime/auth-action";
 import {
+  asVisitor,
   editorExecutor,
   projectWorkspaceId,
   siteExecutor,
@@ -34,6 +39,12 @@ const bodySchema = actionRunRequestSchema.extend({
   search: z.string().max(4000).default("")
 });
 
+const AUTH_STATUS: Record<string, number> = {
+  invalid_credentials: 401,
+  not_signed_in: 401,
+  rate_limited: 429
+};
+
 const STATUS: Record<string, number> = {
   invalid_request: 400,
   not_found: 404,
@@ -50,7 +61,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   }
   const id = typeof request.query.id === "string" ? request.query.id : "";
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) return fail(404, "Not found.");
-  const headers = headersOf(request);
+  let headers = headersOf(request);
   if (!sameOrigin(headers)) return fail(403, "Cross-origin requests are not allowed.");
   if (!PER_VISITOR.take(`${id}:${visitorKey(headers)}`).ok || !PER_PROJECT.take(id).ok) {
     return fail(429, "Too many requests. Try again shortly.");
@@ -62,6 +73,19 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const member: NextomicUser | null =
     body.mode === "preview" ? await previewMember(id, headers) : null;
   if (body.mode === "preview" && !member) return fail(404, "Not found.");
+  // An expired visitor session is renewed here, where the cookie can be written.
+  const renewed = await renewSession(
+    body.mode,
+    id,
+    headers,
+    (await getProjectSettings(id)).appAuth
+  );
+  headers = renewed.headers;
+  const setCookies = [...renewed.setCookies];
+  const send = () => {
+    if (setCookies.length > 0) response.setHeader("set-cookie", setCookies);
+  };
+  send();
   const laid =
     body.mode === "live"
       ? await liveView(id, body.route, body.search, headers)
@@ -83,19 +107,47 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
   const workspaceId = await projectWorkspaceId(id);
   if (!workspaceId) return fail(404, "Not found.");
-  const execute: Executor = member
-    ? editorExecutor({ userId: member.id, projectId: id, workspaceId })
-    : siteExecutor(id, workspaceId);
+  const execute: Executor = asVisitor(
+    member
+      ? editorExecutor({ userId: member.id, projectId: id, workspaceId })
+      : siteExecutor(id, workspaceId),
+    laid.visitor?.accessToken
+  );
+  const params = withActionValues(saved.def, saved.params, body.values);
   try {
+    if (isAuthAction(saved.def.type)) {
+      // Auth always runs on the site's own executor; the visitor's token is passed by the action.
+      const authExecute = siteExecutor(id, workspaceId);
+      const outcome = await runAuthAction({
+        projectId: id,
+        mode: body.mode,
+        def: saved.def,
+        params,
+        headers,
+        execute: authExecute,
+        settings: laid.settings.appAuth,
+        visitor: laid.visitor,
+        search: body.search
+      });
+      setCookies.push(...outcome.setCookies);
+      send();
+      return response
+        .status(200)
+        .json({ data: outcome.data, go: outcome.go, after: outcome.after });
+    }
     const data = await runServerAction({
       projectId: id,
       def: saved.def,
-      params: withActionValues(saved.def, saved.params, body.values),
+      params,
       execute,
       userIp: visitorKey(headers)
     });
     return response.status(200).json({ data });
   } catch (error) {
+    if (error instanceof AuthError)
+      return response
+        .status(AUTH_STATUS[error.authCode] ?? 400)
+        .json({ error: error.message, code: error.authCode });
     if (error instanceof ConnectorError) return fail(STATUS[error.code] ?? 400, error.message);
     return fail(500, "The action failed.");
   }

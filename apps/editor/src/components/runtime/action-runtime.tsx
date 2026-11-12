@@ -2,10 +2,12 @@
 
 import {
   browserPersistEnv,
+  ServerActionError,
   startActionRuntime,
   type FragmentRequest,
   type FragmentResponse,
-  type RuntimePayload
+  type RuntimePayload,
+  type ServerActionResult
 } from "@nextomic/runtime";
 import { useEffect } from "react";
 import { overlaySchema, sheetEntrySchema } from "@nextomic/schema";
@@ -65,12 +67,17 @@ async function fetchFragments(
   return responseSchema.parse(body);
 }
 
-const answerSchema = z.object({ data: z.unknown() });
+const answerSchema = z.object({
+  data: z.unknown(),
+  go: z.string().url().optional(),
+  after: z.object({ redirect: z.string().nullable() }).optional()
+});
+const actionErrorSchema = z.object({ error: z.string(), code: z.string().optional() });
 
 async function runServerAction(
   payload: RuntimePayload,
   request: { node: string; values: string[] }
-): Promise<unknown> {
+): Promise<ServerActionResult> {
   const response = await fetch(`/api/site/${encodeURIComponent(payload.projectId)}/action`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -83,10 +90,14 @@ async function runServerAction(
   });
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const parsed = errorSchema.safeParse(body);
-    throw new Error(parsed.success ? parsed.data.error : `Request failed (${response.status}).`);
+    const parsed = actionErrorSchema.safeParse(body);
+    const message = parsed.success ? parsed.data.error : `Request failed (${response.status}).`;
+    throw parsed.success && parsed.data.code
+      ? new ServerActionError(message, parsed.data.code)
+      : new Error(message);
   }
-  return answerSchema.parse(body).data;
+  const answer = answerSchema.parse(body);
+  return { data: answer.data ?? null, go: answer.go, after: answer.after };
 }
 
 export function ActionRuntime({ payload }: { payload: RuntimePayload }) {
