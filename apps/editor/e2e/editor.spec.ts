@@ -633,7 +633,7 @@ test("themes: light and dark only, conditions are rules, custom CSS formats", as
 test("themes: follow the primary theme asks first, locks dark mode, and can be undone", async ({
   page
 }) => {
-  await signUpAndCreateProject(page);
+  const projectId = await signUpAndCreateProject(page);
   await page.getByRole("button", { name: "Design System" }).click();
   await page.getByRole("button", { name: /^Themes/ }).click();
   await page.getByRole("switch", { name: /Dark mode for the whole site/ }).check({ force: true });
@@ -655,6 +655,22 @@ test("themes: follow the primary theme asks first, locks dark mode, and can be u
   await follow.click({ force: true });
   await page.getByRole("button", { name: "Replace and follow" }).click({ force: true });
   await expect(follow).toBeChecked();
+  await page.getByRole("button", { name: "Close the Design System" }).click();
+  await page.getByRole("button", { name: "Save and close" }).click();
+
+  // The preview ships both themes; a visitor's saved choice picks the follower before first paint.
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  await expect(preview.locator("html")).toHaveAttribute("data-nxt-theme", "main");
+  await preview
+    .context()
+    .addCookies([{ name: "nxt-theme", value: "night", url: new URL(preview.url()).origin }]);
+  await preview.reload();
+  await expect(preview.locator("html")).toHaveAttribute("data-nxt-theme", "night");
+  await preview.close();
+  await page.getByRole("button", { name: "Design System" }).click();
+  await page.getByRole("button", { name: /^Themes/ }).click();
+  await page.getByRole("button", { name: /^Night/ }).click();
   const dark = page.getByRole("switch", { name: /Dark mode for the whole site/ });
   await expect(dark).toBeChecked();
   await expect(dark).toBeDisabled();

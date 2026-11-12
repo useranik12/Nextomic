@@ -53,6 +53,13 @@ export interface RenderOptions {
    * instead of writing it into the page. The editor canvas and the preview keep it inline.
    */
   themeStylesheet?: string;
+  /**
+   * Other themes a visitor can switch to (as rendered, never the page's own). Their CSS ships with
+   * the page and the boot script picks the visitor's saved one.
+   */
+  otherThemes?: readonly Theme[];
+  /** The stylesheet URL of another theme, for published sites that link theme files. */
+  themeStylesheetFor?: (slug: string) => string;
   /** Built pages set theme and mode on <html> before first paint; the editor canvas sets them itself. */
   bootScript?: boolean;
   /**
@@ -290,12 +297,15 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
     ? new Set([...usedClassNames(tree), ...(options.keepClasses ?? [])])
     : undefined;
   const linkTheme = Boolean(options.theme && options.themeStylesheet);
+  const others = options.otherThemes ?? [];
+  const linkOthers = Boolean(options.themeStylesheetFor);
   // The cascade is fonts, variables, theme, custom CSS files, classes, elements. With the theme in
   // its own file the page style splits around the link so the order stays the same.
   const head =
     fontsCss(options.fonts ?? [], fontBase) +
     variablesCss(options.variables ?? []) +
-    (options.theme && !linkTheme ? themeCss(options.theme, used) : "");
+    (options.theme && !linkTheme ? themeCss(options.theme, used) : "") +
+    (linkOthers ? "" : others.map((t) => themeCss(t, used, false)).join(""));
   const tail =
     (options.customCss ?? "") +
     pageCss(tree, options.breakpoints, options.classes, options.resolveToken);
@@ -303,7 +313,7 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
   return (
     <>
       {options.theme && options.bootScript ? (
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript(options.theme) }} />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript(options.theme, others) }} />
       ) : null}
       {options.bootScript
         ? fontPreloads(options.fonts ?? [], fontBase).map((p) => (
@@ -312,6 +322,11 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
         : null}
       {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
       {linkTheme ? <link rel="stylesheet" href={options.themeStylesheet} /> : null}
+      {options.themeStylesheetFor
+        ? others.map((t) => (
+            <link key={t.slug} rel="stylesheet" href={options.themeStylesheetFor?.(t.slug)} />
+          ))
+        : null}
       {linkTheme && tail ? <style dangerouslySetInnerHTML={{ __html: tail }} /> : null}
       {renderNode(tree, options)}
     </>

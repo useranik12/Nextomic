@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { mainFramework } from "./main-framework";
 import { applyScale, scaleKind, type Framework } from "./framework";
-import { themeCss, themeListSchema, newTheme, type Theme } from "./theme";
+import {
+  themeBootScript,
+  themeChoices,
+  themeCss,
+  themeListSchema,
+  newTheme,
+  type Theme
+} from "./theme";
+import { actionDisabledReason, getAction, SET_THEME_UNAVAILABLE } from "./actions";
 import {
   canSwitchThemes,
   darkModeLocked,
@@ -11,6 +19,7 @@ import {
   startFollowing,
   stopFollowing,
   switchableThemes,
+  themeSwitching,
   withFramework,
   STRUCTURE_FOLLOWS
 } from "./theme-follow";
@@ -164,5 +173,61 @@ describe("follow primary", () => {
     expect(canSwitchThemes([main])).toBe(false);
     expect(canSwitchThemes([main, { ...alt, active: false }])).toBe(false);
     expect(canSwitchThemes([main, { ...alt, followPrimary: false }])).toBe(false);
+  });
+});
+
+describe("switching on a page", () => {
+  it("ships the other switchable themes unless the page forces its theme", () => {
+    const { main, alt, themes } = setup();
+    expect(themeSwitching(themes, main, false).map((t) => t.id)).toEqual(["b"]);
+    expect(themeSwitching(themes, alt, false).map((t) => t.id)).toEqual(["a"]);
+    expect(themeSwitching(themes, main, true)).toEqual([]);
+  });
+
+  it("ships nothing for a theme that is neither the primary nor a follower", () => {
+    const { main, alt } = setup();
+    const own: Theme = { ...newTheme("c", "Own", [main, alt]), isDefault: false };
+    expect(themeSwitching([main, alt, own], own, false)).toEqual([]);
+    expect(themeSwitching([main], main, false)).toEqual([]);
+  });
+
+  it("hands the others as rendered (a follower carries the primary framework)", () => {
+    const { main, themes } = setup();
+    expect(themeSwitching(themes, main, false)[0]?.framework).toEqual(main.framework);
+  });
+
+  it("lists choices with their modes", () => {
+    const { themes } = setup(true);
+    expect(themeChoices(themes)).toEqual([
+      { id: "a", slug: "main", name: "Main", modes: ["light", "dark"], defaultMode: "light" },
+      { id: "b", slug: "alt", name: "Alt", modes: ["light", "dark"], defaultMode: "light" }
+    ]);
+  });
+
+  it("only the switch-ready project makes Set Theme available", () => {
+    const { main, alt, themes } = setup();
+    const set = getAction("theme.set")!;
+    expect(actionDisabledReason(set, { themes })).toBeNull();
+    expect(actionDisabledReason(set, { themes: [main] })).toBe(SET_THEME_UNAVAILABLE);
+    expect(actionDisabledReason(set, { themes: [main, { ...alt, followPrimary: false }] })).toBe(
+      SET_THEME_UNAVAILABLE
+    );
+    expect(actionDisabledReason(set)).toBeNull();
+  });
+
+  it("the boot script reads the visitor's cookie only among shipped themes", () => {
+    const { main, alt, themes } = setup();
+    const plain = themeBootScript(main);
+    expect(plain).not.toContain("document.cookie");
+    const choice = themeBootScript(main, themeSwitching(themes, main, false));
+    expect(choice).toContain("nxt-theme=");
+    expect(choice).toContain("hasOwnProperty");
+    expect(choice).toContain(JSON.stringify(alt.slug));
+  });
+
+  it("a switched-in theme leaves the no-mode fallback to the page's own theme", () => {
+    const main = { ...setup().main, variables: { brand: { light: "red" } } };
+    expect(themeCss(main)).toContain(":root:not([data-nxt-mode])");
+    expect(themeCss(main, undefined, false)).not.toContain(":root:not([data-nxt-mode])");
   });
 });

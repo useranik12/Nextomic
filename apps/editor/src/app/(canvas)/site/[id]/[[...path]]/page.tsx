@@ -5,6 +5,8 @@ import {
   customCssFor,
   elementAnimationCss,
   resolveRenderTheme,
+  themeChoiceOf,
+  themeSwitching,
   timelinesForPage
 } from "@nextomic/schema";
 import type { Metadata } from "next";
@@ -144,6 +146,13 @@ export default async function PublishedPage({
     forcedThemeId: page.settings.themeId,
     rules
   });
+  const otherThemes = themeSwitching(settings.themes, theme, Boolean(page.settings.themeId));
+  const runtime = actions
+    ? {
+        ...actions,
+        themes: theme && otherThemes.length > 0 ? [theme, ...otherThemes].map(themeChoiceOf) : []
+      }
+    : null;
   return (
     <>
       <style>{BASE_CSS + elementAnimationCss(tree)}</style>
@@ -159,6 +168,8 @@ export default async function PublishedPage({
         fonts={settings.fonts}
         fontBase={`/fonts/${id}`}
         theme={theme}
+        otherThemes={otherThemes}
+        themeStylesheetFor={(slug) => `/theme-css/${id}/${slug}.css?v=${publishedAt.getTime()}`}
         themeStylesheet={
           theme ? `/theme-css/${id}/${theme.slug}.css?v=${publishedAt.getTime()}` : undefined
         }
@@ -168,9 +179,9 @@ export default async function PublishedPage({
         loopMarkers
         bootScript
         pruneUnusedClasses
-        liveSlots={actions !== null}
+        liveSlots={runtime !== null}
       />
-      {actions ? <ActionRuntime payload={actions} /> : null}
+      {runtime ? <ActionRuntime payload={runtime} /> : null}
       {hasLoops ? <LoopRuntime projectId={id} route={page.route} realtime={realtime} /> : null}
     </>
   );

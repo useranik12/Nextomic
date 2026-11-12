@@ -238,3 +238,29 @@ export function withFramework(
   const edit = diffFollower(theme, themes, next);
   return edit.ok ? { ...theme, overrides: edit.overrides } : edit.error;
 }
+
+/** What the runtime needs to switch a visitor to a theme. */
+export const themeChoiceSchema = z.object({
+  id: z.string().max(64),
+  slug: z.string().max(48),
+  name: z.string().max(64),
+  modes: z.array(z.string().max(32)).max(6),
+  defaultMode: z.string().max(32)
+});
+export type ThemeChoice = z.infer<typeof themeChoiceSchema>;
+
+/**
+ * The other themes a page ships so a visitor can switch to them (as rendered). Empty when the
+ * page's theme is forced in page settings, is not the primary or a follower, or the project cannot
+ * switch themes.
+ */
+export function themeSwitching(
+  themes: readonly Theme[],
+  resolved: Theme | null,
+  forced: boolean
+): Theme[] {
+  if (!resolved || forced || !canSwitchThemes(themes)) return [];
+  const all = switchableThemes(themes);
+  if (!all.some((t) => t.id === resolved.id)) return [];
+  return all.filter((t) => t.id !== resolved.id).map((t) => effectiveTheme(t, themes));
+}
