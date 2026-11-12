@@ -110,7 +110,7 @@ export function CallEditor({
     >
       <header className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-foreground">Define API Call</h1>
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           Provide the API name, authentication and other details. Save settings and go to the Test
           API tab to save the response for dynamic data.
         </p>
@@ -160,11 +160,11 @@ export function CallEditor({
         </>
       )}
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : problems.length > 0 ? (
-        <p className="text-small text-warning">{problems[0]}</p>
+        <p className="text-sm text-warning">{problems[0]}</p>
       ) : null}
       <EditorFooter
         deleteLabel="Delete API"

@@ -61,11 +61,11 @@ export function FontRoles({ font, use }: { font: ProjectFont; use: FontUse }) {
 
   return (
     <section aria-label="Use as" className="flex flex-col gap-2">
-      <h4 className="flex items-center gap-1.5 text-small font-medium">
+      <h4 className="flex items-center gap-1.5 text-sm font-medium">
         Use as a font variable
         <InfoTip text="A font variable such as --nxt-font-heading holds a font name. Set it to this font and any text that uses the variable switches to it, so you can change a site font in one place." />
       </h4>
-      <p className="text-tiny text-default-500">
+      <p className="text-xs text-muted">
         Sets <code>--nxt-font-*</code> to this font. Click again to undo. Nothing is kept until you
         save.
       </p>
@@ -79,10 +79,10 @@ export function FontRoles({ font, use }: { font: ProjectFont; use: FontUse }) {
               aria-pressed={on}
               onClick={() => toggle(r.name)}
               className={
-                "h-8 rounded-full px-4 text-small font-medium transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-default-800/40 " +
+                "h-8 rounded-full px-4 text-sm font-medium transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-focus/30 " +
                 (on
-                  ? "bg-default-800 text-default-50"
-                  : "border border-default-200 text-default-700 hover:bg-default-100")
+                  ? "bg-default-hover text-foreground"
+                  : "border border-border text-body hover:bg-default")
               }
             >
               {on ? `${r.label} ✓` : `Set as ${r.label}`}
@@ -90,7 +90,7 @@ export function FontRoles({ font, use }: { font: ProjectFont; use: FontUse }) {
           );
         })}
       </div>
-      <p className="text-tiny text-default-600" role="status">
+      <p className="text-xs text-body" role="status">
         {classNames.length === 0 ? (
           "No classes use this font yet."
         ) : (
@@ -103,7 +103,7 @@ export function FontRoles({ font, use }: { font: ProjectFont; use: FontUse }) {
             .{" "}
             <button
               type="button"
-              className="font-medium text-primary underline-offset-2 hover:underline"
+              className="font-medium text-accent underline-offset-2 hover:underline"
               onClick={() =>
                 nav.go("classes", { classNames, classLabel: `Classes that use ${font.family}` })
               }

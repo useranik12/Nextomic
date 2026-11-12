@@ -1,6 +1,6 @@
 "use client";
+import { Busy } from "@/components/ui/busy";
 
-import { Spinner } from "@heroui-v2/react";
 import { useCallback, useEffect, useState } from "react";
 import { ActionButton, FormInput } from "@/components/ui/controls";
 import { authClient } from "@/lib/auth-client";
@@ -58,8 +58,8 @@ export function PasskeySettings() {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col">
-          <span className="text-small font-medium text-foreground">Passkeys</span>
-          <span className="text-small text-default-500">
+          <span className="text-sm font-medium text-foreground">Passkeys</span>
+          <span className="text-sm text-muted">
             Sign in with your fingerprint, face or device PIN.
           </span>
         </div>
@@ -88,18 +88,18 @@ export function PasskeySettings() {
         </div>
       ) : null}
       {rows === null && !error ? (
-        <Spinner size="sm" label="Loading passkeys" className="self-start" />
+        <Busy label="Loading passkeys" className="self-start" />
       ) : rows && rows.length > 0 ? (
         <ul className="flex flex-col">
           {rows.map((row) => (
             <li
               key={row.id}
-              className="flex items-center justify-between gap-2 border-b border-divider py-2 last:border-b-0"
+              className="flex items-center justify-between gap-2 border-b border-border py-2 last:border-b-0"
             >
-              <span className="flex items-center gap-2 text-small text-foreground">
-                <Icon name="ph:key" width={14} height={14} className="text-default-500" />
+              <span className="flex items-center gap-2 text-sm text-foreground">
+                <Icon name="ph:key" width={14} height={14} className="text-muted" />
                 {row.name || "Passkey"}
-                <span className="text-tiny text-default-500">{when(row.createdAt)}</span>
+                <span className="text-xs text-muted">{when(row.createdAt)}</span>
               </span>
               <ActionButton
                 size="sm"
@@ -114,10 +114,10 @@ export function PasskeySettings() {
           ))}
         </ul>
       ) : rows ? (
-        <p className="text-small text-default-500">No passkeys yet.</p>
+        <p className="text-sm text-muted">No passkeys yet.</p>
       ) : null}
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}

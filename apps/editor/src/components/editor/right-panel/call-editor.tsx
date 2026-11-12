@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icon } from "@/lib/icons/Icon";
 import {
   FILTER_FIELDS,
@@ -41,16 +41,16 @@ export function CallEditorButton({
           title={`${label} editor`}
           className={
             "flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-300 hover:bg-default-300 " +
-            (active ? "text-warning-600" : "text-default-600")
+            (active ? "text-warning-600" : "text-body")
           }
         >
           <Icon name="ph:sliders-horizontal" width={16} height={16} />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-72 items-stretch gap-3 p-3">
-        <p className="text-small font-semibold text-foreground">{label}</p>
+        <p className="text-sm font-semibold text-foreground">{label}</p>
         {calls === null ? (
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             This value uses CSS the editor cannot split into sliders. Edit the text, or clear it to
             start with sliders.
           </p>
@@ -69,7 +69,7 @@ export function CallEditorButton({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="self-start rounded-medium px-2 py-1 text-small text-default-600 hover:bg-default-100 hover:text-foreground"
+          className="self-start rounded-xl px-2 py-1 text-sm text-body hover:bg-default hover:text-foreground"
         >
           Clear all
         </button>
@@ -90,7 +90,7 @@ function FieldRow({
   const shown = value ?? field.neutral;
   return (
     <li className="flex flex-col gap-1">
-      <span className="text-tiny font-medium text-default-600">{field.label}</span>
+      <span className="text-xs font-medium text-body">{field.label}</span>
       <div className="flex items-center gap-2">
         <input
           type="range"
@@ -101,7 +101,7 @@ function FieldRow({
           value={Math.min(field.max, Math.max(field.min, shown))}
           onChange={(e) => onChange(Number(e.target.value))}
           style={{ background: field.track }}
-          className="h-2.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full ring-1 ring-inset ring-default-300 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-default-800 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-default-800 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
+          className="h-2.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full ring-1 ring-inset ring-default-300 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-focus [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-focus [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow"
         />
         <input
           type="number"
@@ -111,9 +111,9 @@ function FieldRow({
           step={field.step}
           value={shown}
           onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-          className="h-8 w-16 rounded-medium bg-default-100 px-2 text-right text-small text-foreground outline-none focus:bg-default-200 focus:ring-1 focus:ring-default-800/30"
+          className="h-8 w-16 rounded-xl bg-default px-2 text-right text-sm text-foreground outline-none focus:bg-default-hover focus:ring-1 focus:ring-focus/30"
         />
-        <span className="w-7 text-tiny text-default-500">{field.unit}</span>
+        <span className="w-7 text-xs text-muted">{field.unit}</span>
       </div>
     </li>
   );

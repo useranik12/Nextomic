@@ -459,7 +459,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onAuxClick={(event) => event.preventDefault()}
-      className={`relative h-full w-full overflow-hidden bg-content1/40 ${panning ? "cursor-grabbing" : ""}`}
+      className={`relative h-full w-full overflow-hidden bg-surface/40 ${panning ? "cursor-grabbing" : ""}`}
     >
       <div
         style={{
@@ -477,7 +477,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
           sandbox="allow-scripts"
           scrolling="no"
           style={{ width: frameWidth, height: frameHeight }}
-          className="block rounded-medium border-0 bg-white shadow-lg"
+          className="block rounded-xl border-0 bg-white shadow-lg"
         />
         {dragActive ? <div aria-hidden className="absolute inset-0" /> : null}
       </div>

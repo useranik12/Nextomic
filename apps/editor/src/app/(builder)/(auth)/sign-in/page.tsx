@@ -1,6 +1,7 @@
 "use client";
 
-import { Checkbox, Divider } from "@heroui-v2/react";
+import { Separator } from "@heroui/react";
+import { CheckboxField as Checkbox } from "@/components/ui/toggles";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthCard, AuthError, AuthLink, AuthNotice } from "@/components/auth/auth-ui";
@@ -97,7 +98,7 @@ export default function SignInPage() {
         />
         <div className="flex items-center justify-between">
           <Checkbox size="sm" isSelected={rememberMe} onValueChange={setRememberMe}>
-            <span className="text-small text-default-600">Remember me</span>
+            <span className="text-sm text-body">Remember me</span>
           </Checkbox>
           <AuthLink href="/forgot-password">Forgot password?</AuthLink>
         </div>
@@ -111,10 +112,10 @@ export default function SignInPage() {
         >
           Sign in
         </ActionButton>
-        <div className="flex items-center gap-3 text-tiny text-default-400">
-          <Divider className="flex-1" />
+        <div className="flex items-center gap-3 text-xs text-subtle">
+          <Separator className="flex-1" />
           or
-          <Divider className="flex-1" />
+          <Separator className="flex-1" />
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <ActionButton
@@ -136,7 +137,7 @@ export default function SignInPage() {
             Use a passkey
           </ActionButton>
         </div>
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           New to Nextomic? <AuthLink href="/sign-up">Create an account</AuthLink>
         </p>
       </form>

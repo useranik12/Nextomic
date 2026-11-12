@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { VariableType } from "@nextomic/schema";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -77,12 +77,12 @@ export function VariablePicker({
             placeholder="Search variables"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="h-8 w-full rounded-medium bg-default-100 px-2.5 text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
+            className="h-8 w-full rounded-xl bg-default px-2.5 text-sm outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
           />
         ) : null}
         <ul className="max-h-64 overflow-y-auto">
           {list.length === 0 ? (
-            <li className="p-2 text-small text-default-500">
+            <li className="p-2 text-sm text-muted">
               {variables.length === 0
                 ? "No variables yet. Create them in the Design System."
                 : "No variable fits this property."}
@@ -98,17 +98,17 @@ export function VariablePicker({
                     setOpen(false);
                   }}
                   {...previewProps(preview, v.ref)}
-                  className="flex w-full items-center gap-2 rounded-medium px-2 py-1.5 text-left hover:bg-default-100"
+                  className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left hover:bg-default"
                 >
                   {v.type === "color" ? (
                     <span
                       aria-hidden
                       style={{ background: v.value }}
-                      className="h-4 w-4 shrink-0 rounded border border-divider"
+                      className="h-4 w-4 shrink-0 rounded border border-border"
                     />
                   ) : null}
-                  <span className="min-w-0 flex-1 truncate font-mono text-small">{v.name}</span>
-                  <span className="max-w-[90px] truncate font-mono text-tiny text-default-500">
+                  <span className="min-w-0 flex-1 truncate font-mono text-sm">{v.name}</span>
+                  <span className="max-w-[90px] truncate font-mono text-xs text-muted">
                     {v.value}
                   </span>
                 </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { DateTimeField } from "@/components/ui/date-time-field";
@@ -38,20 +38,20 @@ export function ScheduleDialog({
   }
 
   return (
-    <Modal isOpen onClose={onClose} backdrop="blur" size="sm">
+    <Modal isOpen onClose={onClose} size="sm">
       <ModalContent>
         <ModalHeader className="flex items-center gap-2">
-          <Icon name="ph:calendar-blank" width={18} height={18} className="text-default-500" />
+          <Icon name="ph:calendar-blank" width={18} height={18} className="text-muted" />
           Schedule publish
         </ModalHeader>
         <ModalBody className="gap-3">
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             The saved draft goes live for everyone at this time. Changes you save before then are
             included.
           </p>
           <DateTimeField label="Publish at" value={value} onChange={setValue} future />
           {error ? (
-            <p role="alert" className="text-tiny text-danger">
+            <p role="alert" className="text-xs text-danger">
               {error}
             </p>
           ) : null}
@@ -94,14 +94,14 @@ export function ReplaceScheduleDialog({
     timeStyle: "short"
   });
   return (
-    <Modal isOpen onClose={onCancel} backdrop="blur" size="sm">
+    <Modal isOpen onClose={onCancel} size="sm">
       <ModalContent>
         <ModalHeader className="flex items-center gap-2">
-          <Icon name="ph:calendar-blank" width={18} height={18} className="text-default-500" />A
-          publish is scheduled
+          <Icon name="ph:calendar-blank" width={18} height={18} className="text-muted" />A publish
+          is scheduled
         </ModalHeader>
         <ModalBody>
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             The project is scheduled to publish on {when}. It can only have one publish state, so
             publishing now removes the schedule.
           </p>

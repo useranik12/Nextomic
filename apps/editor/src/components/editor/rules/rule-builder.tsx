@@ -80,10 +80,8 @@ function ExcludeToggle({
       title={on ? "Excluding: applies where this does NOT match" : "Exclude where this matches"}
       onClick={() => onChange(!on)}
       className={
-        "flex h-7 shrink-0 items-center rounded-full px-2.5 text-tiny font-medium transition-colors duration-300 " +
-        (on
-          ? "bg-danger/15 text-danger"
-          : "text-default-600 hover:bg-default-200 hover:text-foreground")
+        "flex h-7 shrink-0 items-center rounded-full px-2.5 text-xs font-medium transition-colors duration-300 " +
+        (on ? "bg-danger/15 text-danger" : "text-body hover:bg-default-hover hover:text-foreground")
       }
     >
       Excluding
@@ -107,7 +105,7 @@ function RuleRow({
   const valueless = VALUELESS_OPS.includes(rule.op);
   const n = index + 1;
   return (
-    <li className="flex flex-col gap-2 rounded-large border border-divider p-2">
+    <li className="flex flex-col gap-2 rounded-2xl border border-border p-2">
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <FieldPicker
@@ -134,7 +132,7 @@ function RuleRow({
           type="button"
           aria-label={`Remove rule ${n}`}
           onClick={onRemove}
-          className="rounded-full p-1.5 text-default-500 hover:bg-danger/10 hover:text-danger"
+          className="rounded-full p-1.5 text-muted hover:bg-danger/10 hover:text-danger"
         >
           <Icon name="ph:trash" width={14} height={14} />
         </button>
@@ -167,7 +165,7 @@ function RuleRow({
         )}
       </div>
       {def?.browserOnly ? (
-        <p className="text-tiny text-default-500">
+        <p className="text-xs text-muted">
           This is only known in the visitor&apos;s browser, so it does not match until browser rules
           are available.
         </p>
@@ -177,7 +175,7 @@ function RuleRow({
 }
 
 const SMALL_BUTTON =
-  "flex h-7 items-center gap-1 rounded-full px-2.5 text-tiny font-medium text-default-700 transition-colors duration-300 hover:bg-default-200 hover:text-foreground disabled:opacity-40";
+  "flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-body transition-colors duration-300 hover:bg-default-hover hover:text-foreground disabled:opacity-40";
 
 function GroupView({
   group,
@@ -198,8 +196,8 @@ function GroupView({
   return (
     <div
       className={
-        "flex flex-col gap-2 rounded-large p-2 " +
-        (depth > 1 ? "border border-divider bg-default-50" : "")
+        "flex flex-col gap-2 rounded-2xl p-2 " +
+        (depth > 1 ? "border border-border bg-default/40" : "")
       }
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -255,7 +253,7 @@ function GroupView({
         ) : null}
       </div>
       {group.items.length === 0 ? (
-        <p className="px-1 text-tiny text-default-500">No rules: this applies everywhere.</p>
+        <p className="px-1 text-xs text-muted">No rules: this applies everywhere.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {group.items.map((item, index) =>
@@ -299,13 +297,13 @@ export function RuleBuilder({
   return (
     <section aria-label="Conditions" className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <h3 className="text-small text-default-600">Conditions</h3>
+        <h3 className="text-sm text-body">Conditions</h3>
         <button
           type="button"
           aria-label={open ? "Collapse conditions" : "Expand conditions"}
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="rounded p-1 text-default-600 hover:text-foreground"
+          className="rounded p-1 text-body hover:text-foreground"
         >
           {open ? (
             <Icon name="ph:minus-circle" width={16} height={16} />
@@ -318,7 +316,7 @@ export function RuleBuilder({
         <>
           <GroupView group={value} depth={1} onChange={onChange} />
           {needsBrowser(value) ? (
-            <p className="text-tiny text-default-500">
+            <p className="text-xs text-muted">
               Some rules need the visitor&apos;s browser and are not applied on the server yet.
             </p>
           ) : null}

@@ -109,9 +109,7 @@ export function VariableFields({
               }}
             />
           ))}
-          <p className="col-span-2 break-all font-mono text-tiny text-default-500">
-            {variable.value}
-          </p>
+          <p className="col-span-2 break-all font-mono text-xs text-muted">{variable.value}</p>
         </div>
       ) : (
         <div className="flex items-end gap-2">

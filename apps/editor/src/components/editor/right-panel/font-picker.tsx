@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SYSTEM_FONT_STACKS, fontStack, isFontUsable } from "@nextomic/schema";
 import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
@@ -11,7 +11,7 @@ import { previewProps, useStylePreview } from "./design-field-tools";
 export const OPEN_DESIGN_SYSTEM_EVENT = "nxt:open-design-system";
 
 const rowClass =
-  "flex w-full items-center justify-between gap-2 rounded-medium px-2 py-1.5 text-left hover:bg-default-100";
+  "flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left hover:bg-default";
 
 /** The font button beside Font family: project fonts and system stacks, plus "Add font…". */
 export function FontPicker({
@@ -45,7 +45,7 @@ export function FontPicker({
           type="button"
           aria-label="Pick a project font"
           title="Pick a project font"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-300 hover:text-foreground"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default-300 hover:text-foreground"
         >
           <Icon name="ph:text-aa" width={14} height={14} />
         </button>
@@ -60,10 +60,10 @@ export function FontPicker({
                 onClick={() => choose(fontStack(f))}
                 {...previewProps(preview, fontStack(f))}
               >
-                <span style={{ fontFamily: fontStack(f) }} className="truncate text-small">
+                <span style={{ fontFamily: fontStack(f) }} className="truncate text-sm">
                   {f.family}
                 </span>
-                <span className="text-tiny text-default-500">
+                <span className="text-xs text-muted">
                   {f.source === "upload" ? "uploaded" : "Google"}
                 </span>
               </button>
@@ -77,15 +77,15 @@ export function FontPicker({
                 onClick={() => choose(s.value)}
                 {...previewProps(preview, s.value)}
               >
-                <span className="truncate text-small">{s.label}</span>
-                <span className="text-tiny text-default-500">system</span>
+                <span className="truncate text-sm">{s.label}</span>
+                <span className="text-xs text-muted">system</span>
               </button>
             </li>
           ))}
         </ul>
         <button
           type="button"
-          className={rowClass + " border-t border-divider text-small font-medium"}
+          className={rowClass + " border-t border-border text-sm font-medium"}
           onClick={() => {
             setOpen(false);
             window.dispatchEvent(new CustomEvent(OPEN_DESIGN_SYSTEM_EVENT, { detail: "fonts" }));

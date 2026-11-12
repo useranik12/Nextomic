@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import {
   BASE_BREAKPOINT_ID,
   BREAKPOINT_ICONS,
@@ -116,12 +116,11 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
       onOpenChange={(open) => !open && onClose()}
       size="2xl"
       scrollBehavior="inside"
-      backdrop="blur"
     >
       <ModalContent>
         <ModalHeader>Breakpoints</ModalHeader>
         <ModalBody className="gap-4">
-          <p className="text-small text-default-500">
+          <p className="text-sm text-muted">
             Desktop is the base. Breakpoints order themselves by width, larger screens on the left.
             Canvas width is only used while editing.
           </p>
@@ -131,7 +130,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
               return (
                 <li
                   key={bp.id}
-                  className="grid grid-cols-[1fr_1fr] gap-3 rounded-large border border-default-200 p-3 sm:grid-cols-[1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto]"
+                  className="grid grid-cols-[1fr_1fr] gap-3 rounded-2xl border border-border p-3 sm:grid-cols-[1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto]"
                 >
                   <FormInput
                     compact
@@ -186,7 +185,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
                       aria-label={`Delete ${bp.name}`}
                       disabled={isBase}
                       onClick={() => remove(index)}
-                      className="rounded p-1.5 text-default-500 hover:text-danger disabled:opacity-30"
+                      className="rounded p-1.5 text-muted hover:text-danger disabled:opacity-30"
                     >
                       <Icon name="ph:trash" width={16} height={16} />
                     </button>
@@ -209,7 +208,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
             />
           ))}
           {error ? (
-            <p role="alert" className="text-small text-danger">
+            <p role="alert" className="text-sm text-danger">
               {error}
             </p>
           ) : null}

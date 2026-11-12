@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { savePageAction } from "@/app/(builder)/editor/[id]/actions";
 import { useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
@@ -36,17 +36,17 @@ export function ConflictDialog() {
   }
 
   return (
-    <Modal isOpen isDismissable={false} hideCloseButton backdrop="blur">
+    <Modal isOpen isDismissable={false} hideCloseButton>
       <ModalContent>
         <ModalHeader>This page was changed elsewhere</ModalHeader>
         <ModalBody>
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             Someone saved a newer version (v{conflict.page.version}) while you were editing. Keep
             your changes to overwrite it, or load the newer version and drop what you changed here.
             Either way the other version stays in Version History.
           </p>
           {error ? (
-            <p role="alert" className="text-small text-danger">
+            <p role="alert" className="text-sm text-danger">
               {error}
             </p>
           ) : null}

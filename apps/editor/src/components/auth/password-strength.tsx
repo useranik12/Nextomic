@@ -8,14 +8,8 @@ import {
   type PasswordPolicy
 } from "@/lib/password-policy";
 
-const SCORE_COLOR = ["bg-default-200", "bg-danger", "bg-warning", "bg-primary", "bg-success"];
-const SCORE_TEXT = [
-  "text-default-500",
-  "text-danger",
-  "text-warning",
-  "text-primary",
-  "text-success"
-];
+const SCORE_COLOR = ["bg-default-hover", "bg-danger", "bg-warning", "bg-accent", "bg-success"];
+const SCORE_TEXT = ["text-muted", "text-danger", "text-warning", "text-accent", "text-success"];
 
 /**
  * A coloured four-step strength bar and the policy's checklist (AUTH_PASSWORD_POLICY). The
@@ -45,11 +39,11 @@ export function PasswordStrength({
           {[1, 2, 3, 4].map((step) => (
             <span
               key={step}
-              className={`h-1.5 rounded-full transition-colors duration-300 ${score >= step ? SCORE_COLOR[score] : "bg-default-200"}`}
+              className={`h-1.5 rounded-full transition-colors duration-300 ${score >= step ? SCORE_COLOR[score] : "bg-default-hover"}`}
             />
           ))}
         </div>
-        <span className={`w-14 text-right text-tiny font-medium ${SCORE_TEXT[score]}`}>
+        <span className={`w-14 text-right text-xs font-medium ${SCORE_TEXT[score]}`}>
           {SCORE_LABELS[score]}
         </span>
       </div>
@@ -57,7 +51,7 @@ export function PasswordStrength({
         {rules.map((rule) => (
           <li
             key={rule.label}
-            className={`flex items-center gap-1 text-tiny ${rule.met ? "text-success" : "text-default-500"}`}
+            className={`flex items-center gap-1 text-xs ${rule.met ? "text-success" : "text-muted"}`}
           >
             {rule.met ? (
               <Icon name="ph:check-circle" width={12} height={12} />

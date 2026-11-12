@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, Switch } from "@heroui-v2/react";
+import { SwitchField as Switch, CheckboxField as Checkbox } from "@/components/ui/toggles";
 import type { AppAuthSettings, ProjectSettings } from "@nextomic/schema";
 import { SelectField, type SelectOption } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -37,9 +37,9 @@ export function AppAuthSettingsGroup({
   return (
     <section
       aria-labelledby="app-auth-heading"
-      className="flex flex-col gap-3 border-t border-divider pt-4"
+      className="flex flex-col gap-3 border-t border-border pt-4"
     >
-      <h3 id="app-auth-heading" className="text-small font-medium text-foreground">
+      <h3 id="app-auth-heading" className="text-sm font-medium text-foreground">
         Authentication
       </h3>
       <div className="flex items-center gap-1.5">
@@ -49,7 +49,7 @@ export function AppAuthSettingsGroup({
           isDisabled={saving}
           onValueChange={(on) => set({ enabled: on })}
         >
-          <span className="text-small text-foreground">Use authentication</span>
+          <span className="text-sm text-foreground">Use authentication</span>
         </Switch>
         <InfoTip
           label="Use authentication"
@@ -93,7 +93,7 @@ export function AppAuthSettingsGroup({
           isDisabled={off}
           onValueChange={(on) => set({ requireByDefault: on })}
         >
-          <span className="text-small">New pages require authentication</span>
+          <span className="text-sm">New pages require authentication</span>
         </Checkbox>
         <div className="flex items-center gap-1.5">
           <Checkbox
@@ -102,7 +102,7 @@ export function AppAuthSettingsGroup({
             isDisabled={off}
             onValueChange={(on) => set({ tokenClaims: on })}
           >
-            <span className="text-small">Keep token data as dynamic data</span>
+            <span className="text-sm">Keep token data as dynamic data</span>
           </Checkbox>
           <InfoTip
             label="Keep token data as dynamic data"
@@ -116,10 +116,10 @@ export function AppAuthSettingsGroup({
             isDisabled={off}
             onValueChange={(on) => set({ exposeAccessToken: on })}
           >
-            <span className="text-small">Expose the raw access token to the page</span>
+            <span className="text-sm">Expose the raw access token to the page</span>
           </Checkbox>
           {auth.exposeAccessToken ? (
-            <p role="note" className="pl-7 text-tiny text-warning">
+            <p role="note" className="pl-7 text-xs text-warning">
               For debugging during development only: turn this off before releasing to production.
               Any script on the page can read {"{{ user.accessToken }}"} and act as the user until
               it expires. Query settings and API calls ([jwt]) get the token from the server even

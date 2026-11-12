@@ -59,25 +59,25 @@ export function ItemEditor({
       <div className="flex flex-col gap-5 px-5 py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="rounded-full bg-default-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-default-500">
+            <span className="rounded-full bg-default px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
               {isType ? "Data type" : "Enum"}
             </span>
-            <h2 className="truncate font-mono text-medium font-semibold text-foreground">
+            <h2 className="truncate font-mono text-base font-semibold text-foreground">
               {item.name}
             </h2>
           </div>
           <div className="flex items-center gap-2">
             <DraftActions label={label} dirty={dirty} onSave={save} onDiscard={discard} />
-            <span className="h-5 w-px bg-divider" />
+            <span className="h-5 w-px bg-border" />
             <ActionButton size="sm" tone="danger-ghost" className="h-7 px-2.5" onPress={onDelete}>
               <Icon name="ph:trash" width={14} height={14} />
               Delete
             </ActionButton>
           </div>
         </div>
-        <section className="grid gap-3 rounded-large border border-default-100 bg-content1/40 p-4 md:grid-cols-[minmax(12rem,20rem)_1fr]">
+        <section className="grid gap-3 rounded-2xl border border-separator bg-surface/40 p-4 md:grid-cols-[minmax(12rem,20rem)_1fr]">
           <label className="flex flex-col gap-1">
-            <span className="text-tiny font-medium text-default-500">Name</span>
+            <span className="text-xs font-medium text-muted">Name</span>
             <IdentifierInput
               label={isType ? "Data type name" : "Enum name"}
               value={item.name}
@@ -86,7 +86,7 @@ export function ItemEditor({
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-tiny font-medium text-default-500">Description</span>
+            <span className="text-xs font-medium text-muted">Description</span>
             <input
               value={item.description}
               maxLength={300}
@@ -97,11 +97,11 @@ export function ItemEditor({
           </label>
         </section>
         {error ? (
-          <p role="alert" className="text-tiny text-danger">
+          <p role="alert" className="text-xs text-danger">
             {error}
           </p>
         ) : null}
-        <section className="rounded-large border border-default-100 bg-content1/40 p-4">
+        <section className="rounded-2xl border border-separator bg-surface/40 p-4">
           {"fields" in item ? (
             <DataTypeEditor value={item} onChange={setDraft} />
           ) : (

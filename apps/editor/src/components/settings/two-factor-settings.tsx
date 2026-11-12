@@ -1,6 +1,6 @@
 "use client";
 
-import { Chip } from "@heroui-v2/react";
+import { Chip } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { renderSVG } from "uqr";
@@ -79,13 +79,13 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col">
-          <span className="flex items-center gap-2 text-small font-medium text-foreground">
+          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
             Two-factor authentication
-            <Chip size="sm" variant="flat" color={on ? "success" : "default"}>
+            <Chip size="sm" variant="soft" color={on ? "success" : "default"}>
               {on ? "On" : "Off"}
             </Chip>
           </span>
-          <span className="text-small text-default-500">
+          <span className="text-sm text-muted">
             Ask for a code from an authenticator app after your password.
           </span>
         </div>
@@ -154,14 +154,14 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
             alt="QR code for your authenticator app"
             width={160}
             height={160}
-            className="rounded-medium bg-white p-1"
+            className="rounded-xl bg-white p-1"
           />
           <div className="flex max-w-sm flex-col gap-3">
-            <p className="text-small text-default-600">
+            <p className="text-sm text-body">
               Scan the code with an authenticator app (Google Authenticator, 1Password, Authy), or
               enter this key:
             </p>
-            <code className="break-all rounded-medium bg-default-100 px-2 py-1 text-tiny">
+            <code className="break-all rounded-xl bg-default px-2 py-1 text-xs">
               {new URL(step.uri).searchParams.get("secret")}
             </code>
             <div className="flex flex-wrap items-end gap-2">
@@ -195,11 +195,11 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
 
       {step.kind === "codes" ? (
         <div className="flex max-w-md flex-col gap-2">
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             Save these backup codes somewhere safe. Each works once if you lose your authenticator.
             They are not shown again.
           </p>
-          <ul className="grid grid-cols-2 gap-1 rounded-medium bg-default-100 p-3 font-mono text-small">
+          <ul className="grid grid-cols-2 gap-1 rounded-xl bg-default p-3 font-mono text-sm">
             {step.backupCodes.map((c) => (
               <li key={c}>{c}</li>
             ))}
@@ -220,7 +220,7 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
       ) : null}
 
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}

@@ -28,7 +28,7 @@ export function GsapCodeView({ timeline }: { timeline: Timeline }) {
   return (
     <div className="flex flex-col gap-3 p-4">
       <div className="flex items-center gap-2">
-        <span className="flex items-center gap-1.5 text-small font-semibold">
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
           GSAP Code
           <InfoTip
             text="The same animation written as plain GSAP code, for reading, learning or using in your own scripts. It is generated from the settings, so it cannot be edited here."
@@ -46,7 +46,7 @@ export function GsapCodeView({ timeline }: { timeline: Timeline }) {
       <pre
         tabIndex={0}
         aria-label="GSAP code of the timeline"
-        className="max-h-[60vh] overflow-auto rounded-medium bg-default-100 p-3 font-mono text-tiny leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-default-800/30"
+        className="max-h-[60vh] overflow-auto rounded-xl bg-default p-3 font-mono text-xs leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
       >
         {code}
       </pre>

@@ -31,17 +31,17 @@ export function EnumEditor({
   };
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-small font-semibold">Values</h3>
+      <h3 className="text-sm font-semibold">Values</h3>
       {value.values.length === 0 ? (
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           No values yet. An enum is a fixed list of choices, such as small, medium and large.
         </p>
       ) : (
         <ol className="flex flex-col gap-1.5">
           {value.values.map((v, i) => (
             <li key={v} className="flex items-center gap-2">
-              <span className="w-6 text-right text-tiny text-default-500">{i + 1}</span>
-              <span className="min-w-0 flex-1 truncate rounded-full border border-default-200 px-3 py-1 font-mono text-small">
+              <span className="w-6 text-right text-xs text-muted">{i + 1}</span>
+              <span className="min-w-0 flex-1 truncate rounded-full border border-border px-3 py-1 font-mono text-sm">
                 {v}
               </span>
               <button
@@ -49,7 +49,7 @@ export function EnumEditor({
                 aria-label={`Move ${v} up`}
                 disabled={i === 0}
                 onClick={() => move(i, -1)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-100 disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default disabled:opacity-30"
               >
                 <Icon name="ph:caret-up" width={14} height={14} />
               </button>
@@ -58,7 +58,7 @@ export function EnumEditor({
                 aria-label={`Move ${v} down`}
                 disabled={i === value.values.length - 1}
                 onClick={() => move(i, 1)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-100 disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default disabled:opacity-30"
               >
                 <Icon name="ph:caret-down" width={14} height={14} />
               </button>
@@ -88,7 +88,7 @@ export function EnumEditor({
             className={`${compactFieldClass} font-mono ${duplicate ? "!border-danger" : ""}`}
           />
           {duplicate ? (
-            <p role="alert" className="mt-0.5 px-2 text-tiny text-danger">
+            <p role="alert" className="mt-0.5 px-2 text-xs text-danger">
               That value is already in the list.
             </p>
           ) : null}

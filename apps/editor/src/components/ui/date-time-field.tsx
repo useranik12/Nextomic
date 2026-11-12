@@ -1,7 +1,6 @@
 "use client";
 
 import { Calendar, DateField, DatePicker, Label } from "@heroui/react";
-import { TOP_LAYER } from "./top-layer";
 import { fromDate, getLocalTimeZone, now, type ZonedDateTime } from "@internationalized/date";
 
 const toValue = (iso: string | null): ZonedDateTime | null => {
@@ -46,7 +45,7 @@ export function DateTimeField({
           </DatePicker.Trigger>
         </DateField.Suffix>
       </DateField.Group>
-      <DatePicker.Popover {...TOP_LAYER}>
+      <DatePicker.Popover>
         <Calendar aria-label={label}>
           <Calendar.Header>
             <Calendar.YearPickerTrigger>

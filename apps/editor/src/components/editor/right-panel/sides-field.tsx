@@ -25,12 +25,12 @@ type Link = "free" | "pairs" | "all";
 // The value cells blend into the box: no fill of their own, even while focused; a thin underline
 // marks the focused cell instead.
 const CELL_FIELD =
-  "h-7 w-9 min-w-0 bg-transparent px-0.5 text-center text-small text-foreground outline-none placeholder:text-default-400 focus:shadow-[inset_0_-1px_0_currentColor]";
+  "h-7 w-9 min-w-0 bg-transparent px-0.5 text-center text-sm text-foreground outline-none placeholder:text-subtle focus:shadow-[inset_0_-1px_0_currentColor]";
 
 // The variable and dynamic data buttons of a cell float above it on hover or focus, so the cell
 // itself is only the value and its unit and fits between the frame lines.
 const CELL_TOOLS =
-  "pointer-events-none absolute bottom-full left-1/2 z-10 flex -translate-x-1/2 items-center rounded-full bg-default-200 px-0.5 opacity-0 shadow-small transition-opacity duration-200 " +
+  "pointer-events-none absolute bottom-full left-1/2 z-10 flex -translate-x-1/2 items-center rounded-full bg-default-hover px-0.5 opacity-0 shadow-sm transition-opacity duration-200 " +
   "group-hover/cell:pointer-events-auto group-hover/cell:opacity-100 group-focus-within/cell:pointer-events-auto group-focus-within/cell:opacity-100 has-[[aria-expanded=true]]:pointer-events-auto has-[[aria-expanded=true]]:opacity-100";
 
 const LINK_LABEL: Record<Link, string> = {
@@ -48,10 +48,10 @@ function LinkButton({ link, active, onPick }: { link: Link; active: boolean; onP
       title={LINK_LABEL[link]}
       onClick={onPick}
       className={
-        "flex h-6 w-6 items-center justify-center rounded-medium transition-colors duration-300 " +
+        "flex h-6 w-6 items-center justify-center rounded-xl transition-colors duration-300 " +
         (active
           ? "bg-warning/25 text-warning-600"
-          : "text-default-500 hover:bg-default-200 hover:text-foreground")
+          : "text-muted hover:bg-default-hover hover:text-foreground")
       }
     >
       {link === "free" ? (
@@ -189,7 +189,7 @@ export function SidesField({
         {corners ? (
           <div
             aria-hidden
-            className="absolute inset-0 rounded-large border border-dashed border-default-300 bg-default-100"
+            className="absolute inset-0 rounded-2xl border border-dashed border-default-300 bg-default"
           />
         ) : (
           <BoxFrame />

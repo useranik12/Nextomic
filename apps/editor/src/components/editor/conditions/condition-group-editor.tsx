@@ -54,7 +54,7 @@ export function ConditionGroupEditor({
     <div
       className={
         "flex flex-col gap-2 " +
-        (depth > 1 ? "rounded-large border border-dashed border-default-300 p-2.5" : "")
+        (depth > 1 ? "rounded-2xl border border-dashed border-default-300 p-2.5" : "")
       }
     >
       <div className="flex items-center gap-1">
@@ -73,7 +73,7 @@ export function ConditionGroupEditor({
             type="button"
             aria-label="Remove group"
             onClick={onRemove}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-100 hover:text-danger"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default hover:text-danger"
           >
             <Icon name="ph:trash" width={14} height={14} />
           </button>
@@ -134,7 +134,7 @@ export function ConditionGroupEditor({
         ) : null}
       </div>
       {full && depth === 1 ? (
-        <p role="status" className="text-tiny text-warning">
+        <p role="status" className="text-xs text-warning">
           {countConditions(group)} conditions is the most an element can have.
         </p>
       ) : null}

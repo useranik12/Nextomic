@@ -57,7 +57,7 @@ function NameCell({
         className={`${compactFieldClass} font-mono ${problem ? "!border-danger" : ""}`}
       />
       {problem ? (
-        <p role="alert" className="mt-0.5 px-2 text-tiny text-danger">
+        <p role="alert" className="mt-0.5 px-2 text-xs text-danger">
           {problem}
         </p>
       ) : null}
@@ -87,11 +87,11 @@ export function VariablesTab({
   return (
     <section aria-label="Variables" data-no-vars className="flex flex-col gap-3">
       <div>
-        <h3 className="text-small font-medium text-foreground">Variables</h3>
-        <p className="text-small text-default-500">{description}</p>
+        <h3 className="text-sm font-medium text-foreground">Variables</h3>
+        <p className="text-sm text-muted">{description}</p>
       </div>
       {variables.length > 0 ? (
-        <div className={`${GRID} text-small text-default-500`}>
+        <div className={`${GRID} text-sm text-muted`}>
           <span>Name</span>
           <span>Type</span>
           <span>Is List</span>
@@ -100,7 +100,7 @@ export function VariablesTab({
           <span className="sr-only">Delete</span>
         </div>
       ) : (
-        <p className="text-small text-default-500">No variables yet.</p>
+        <p className="text-sm text-muted">No variables yet.</p>
       )}
       {variables.map((v) => (
         <div key={v.id} className={GRID}>
@@ -145,7 +145,7 @@ export function VariablesTab({
             aria-label={`${v.name} is usually bound to dynamic data`}
             data-tip="Usually bound to dynamic data where the call is used"
             onClick={() => update(v.id, { dynamic: !v.dynamic })}
-            className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-default-100 ${v.dynamic ? "text-yellow-500 dark:text-yellow-400" : "text-default-400"}`}
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-default ${v.dynamic ? "text-yellow-500 dark:text-yellow-400" : "text-subtle"}`}
           >
             <Icon name="ph:lightning" width={16} height={16} />
           </button>

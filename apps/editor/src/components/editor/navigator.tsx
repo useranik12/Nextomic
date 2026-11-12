@@ -95,15 +95,15 @@ const NavigatorRow = memo(function NavigatorRow({
         openContextMenu(event.clientX, event.clientY, node.id);
       }}
       className={
-        "group relative flex h-8 items-center gap-1 rounded-medium pr-1 text-small transition-colors duration-300 " +
-        (selected ? "bg-default-200 text-foreground" : "text-default-600 hover:bg-default-100") +
+        "group relative flex h-8 items-center gap-1 rounded-xl pr-1 text-sm transition-colors duration-300 " +
+        (selected ? "bg-default-hover text-foreground" : "text-body hover:bg-default") +
         (draggable.isDragging ? " opacity-40" : node.hidden ? " opacity-50" : "") +
-        (dropZone === "inside" ? " ring-1 ring-primary" : "")
+        (dropZone === "inside" ? " ring-1 ring-accent" : "")
       }
     >
       {dropZone === "before" || dropZone === "after" ? (
         <span
-          className={`pointer-events-none absolute inset-x-1 h-0.5 rounded bg-primary ${dropZone === "before" ? "top-0" : "bottom-0"}`}
+          className={`pointer-events-none absolute inset-x-1 h-0.5 rounded bg-accent ${dropZone === "before" ? "top-0" : "bottom-0"}`}
         />
       ) : null}
       <button
@@ -127,7 +127,7 @@ const NavigatorRow = memo(function NavigatorRow({
             node={node}
             fallback={label}
             autoFocus
-            className="text-small text-foreground"
+            className="text-sm text-foreground"
             onDone={() => setRenaming(false)}
           />
         </div>
@@ -135,7 +135,7 @@ const NavigatorRow = memo(function NavigatorRow({
         <button
           type="button"
           onClick={() => select(node.id)}
-          className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-1 focus-visible:ring-default-800"
+          className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
           {...draggable.attributes}
           {...draggable.listeners}
         >
@@ -151,7 +151,7 @@ const NavigatorRow = memo(function NavigatorRow({
               role="img"
               aria-label={conditionHidden ? "Has conditions: hidden now" : "Has conditions"}
               title={conditionHidden ? "Hidden by its conditions" : "Shown by its conditions"}
-              className={"shrink-0 " + (conditionHidden ? "text-warning" : "text-default-500")}
+              className={"shrink-0 " + (conditionHidden ? "text-warning" : "text-muted")}
             >
               <Icon name="ph:git-fork" width={12} height={12} />
             </span>
@@ -175,7 +175,7 @@ const NavigatorRow = memo(function NavigatorRow({
           aria-label={`Open the query loop of ${label}: ${QUERY_SOURCE_LABELS[query.source]}`}
           title={`Query loop: ${QUERY_SOURCE_LABELS[query.source]}`}
           onClick={() => useEditorStore.getState().openSection(node.id, "query")}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-orange-500 hover:bg-default-100 dark:text-orange-400"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-orange-500 hover:bg-default dark:text-orange-400"
         >
           <Icon name="ph:database" width={14} height={14} />
         </button>
@@ -190,7 +190,7 @@ const NavigatorRow = memo(function NavigatorRow({
             const first = store.flowsOf(node.id)[0];
             store.openEditor({ nodeId: node.id, trigger: first?.trigger ?? null });
           }}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sky-500 hover:bg-default-100 dark:text-sky-400"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sky-500 hover:bg-default dark:text-sky-400"
         >
           <Icon name="ph:lightning" width={14} height={14} />
         </button>
@@ -200,7 +200,7 @@ const NavigatorRow = memo(function NavigatorRow({
           type="button"
           aria-label={`Duplicate ${label}`}
           onClick={() => duplicate(node.id)}
-          className="rounded p-1 text-default-500 hover:text-foreground"
+          className="rounded p-1 text-muted hover:text-foreground"
         >
           <Icon name="ph:copy" width={14} height={14} />
         </button>
@@ -208,7 +208,7 @@ const NavigatorRow = memo(function NavigatorRow({
           type="button"
           aria-label={`Rename ${label}`}
           onClick={() => setRenaming(true)}
-          className="rounded p-1 text-default-500 hover:text-foreground"
+          className="rounded p-1 text-muted hover:text-foreground"
         >
           <Icon name="ph:pencil-simple" width={14} height={14} />
         </button>
@@ -216,7 +216,7 @@ const NavigatorRow = memo(function NavigatorRow({
           type="button"
           aria-label={`Delete ${label}`}
           onClick={() => remove(node.id)}
-          className="rounded p-1 text-default-500 hover:text-danger"
+          className="rounded p-1 text-muted hover:text-danger"
         >
           <Icon name="ph:trash" width={14} height={14} />
         </button>
@@ -291,7 +291,7 @@ export function Navigator({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between px-3 py-2">
-        <h2 className="text-small font-medium text-foreground">Navigator</h2>
+        <h2 className="text-sm font-medium text-foreground">Navigator</h2>
         <div className="flex items-center gap-0.5">
           <button
             type="button"
@@ -299,7 +299,7 @@ export function Navigator({
             title={allCollapsed ? "Expand all elements" : "Collapse all elements"}
             disabled={foldable.length === 0}
             onClick={() => setCollapsed(allCollapsed ? new Set() : new Set(foldable))}
-            className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground disabled:opacity-40"
+            className="rounded-xl p-1.5 text-body hover:bg-default hover:text-foreground disabled:opacity-40"
           >
             {allCollapsed ? (
               <Icon name="ph:arrows-out-line-vertical" width={16} height={16} />
@@ -312,7 +312,7 @@ export function Navigator({
             aria-label="Reset side panel sizes"
             title="Reset the width of the side panels"
             onClick={onResetSizes}
-            className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground"
+            className="rounded-xl p-1.5 text-body hover:bg-default hover:text-foreground"
           >
             <Icon name="ph:arrows-in-line-horizontal" width={16} height={16} />
           </button>
@@ -320,7 +320,7 @@ export function Navigator({
             type="button"
             aria-label="Add element"
             onClick={onOpenElements}
-            className="rounded-medium p-1.5 text-default-600 hover:bg-default-100 hover:text-foreground"
+            className="rounded-xl p-1.5 text-body hover:bg-default hover:text-foreground"
           >
             <Icon name="ph:plus" width={16} height={16} />
           </button>
@@ -349,8 +349,8 @@ export function Navigator({
         <div
           ref={rootEnd.setNodeRef}
           className={
-            "mt-1 flex min-h-16 items-center justify-center rounded-medium border border-dashed text-tiny text-default-500 " +
-            (drop?.id === ROOT_END_ID ? "border-primary text-primary" : "border-default-200")
+            "mt-1 flex min-h-16 items-center justify-center rounded-xl border border-dashed text-xs text-muted " +
+            (drop?.id === ROOT_END_ID ? "border-accent text-accent" : "border-border")
           }
         >
           {rows.length === 0 ? "Click + or drag an element here" : "Drop here to add at the end"}

@@ -118,18 +118,18 @@ export function AnimationsEditor({
             />
           </div>
         ) : (
-          <div className="pointer-events-auto border-t border-divider bg-content1 p-6 text-small text-default-500">
+          <div className="pointer-events-auto border-t border-border bg-surface p-6 text-sm text-muted">
             Create or pick a timeline on the left to start.
           </div>
         )}
       </div>
       <aside
         aria-label="Animation settings"
-        className="pointer-events-auto flex h-full w-96 shrink-0 flex-col border-l border-divider bg-content1"
+        className="pointer-events-auto flex h-full w-96 shrink-0 flex-col border-l border-border bg-surface"
       >
         {timeline ? (
           <>
-            <div role="tablist" className="flex shrink-0 gap-1 border-b border-divider px-3 py-2">
+            <div role="tablist" className="flex shrink-0 gap-1 border-b border-border px-3 py-2">
               {TABS.map((item) => (
                 <button
                   key={item.id}
@@ -139,10 +139,10 @@ export function AnimationsEditor({
                   disabled={item.id === "animation" && !animation}
                   onClick={() => setTab(item.id)}
                   className={
-                    "rounded-full px-3 py-1.5 text-small transition-colors duration-300 disabled:opacity-40 " +
+                    "rounded-full px-3 py-1.5 text-sm transition-colors duration-300 disabled:opacity-40 " +
                     (activeTab === item.id
-                      ? "bg-default-800 text-default-50"
-                      : "text-default-600 hover:bg-default-100")
+                      ? "bg-default-hover text-foreground"
+                      : "text-body hover:bg-default")
                   }
                 >
                   {item.label}
@@ -160,7 +160,7 @@ export function AnimationsEditor({
             </div>
           </>
         ) : (
-          <p className="p-4 text-small text-default-500">
+          <p className="p-4 text-sm text-muted">
             Settings appear here when a timeline is selected.
           </p>
         )}

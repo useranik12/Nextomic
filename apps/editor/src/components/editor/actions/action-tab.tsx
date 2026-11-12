@@ -18,7 +18,7 @@ export function ActionTab({ node }: { node: ElementNode }) {
       <div
         role="tablist"
         aria-label="Action settings"
-        className="flex gap-1 rounded-medium bg-default-100 p-1"
+        className="flex gap-1 rounded-xl bg-default p-1"
       >
         {TABS.map(({ id, label }) => (
           <button
@@ -28,10 +28,8 @@ export function ActionTab({ node }: { node: ElementNode }) {
             aria-selected={tab === id}
             onClick={() => setTab(id)}
             className={
-              "h-8 flex-1 rounded-small px-2 text-small font-medium transition-colors duration-300 " +
-              (tab === id
-                ? "bg-default-300 text-foreground"
-                : "text-default-500 hover:text-foreground")
+              "h-8 flex-1 rounded-lg px-2 text-sm font-medium transition-colors duration-300 " +
+              (tab === id ? "bg-default-300 text-foreground" : "text-muted hover:text-foreground")
             }
           >
             {label}

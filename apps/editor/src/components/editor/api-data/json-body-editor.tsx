@@ -19,7 +19,7 @@ const COLORS = {
   string: "text-[#a31515] dark:text-[#ce9178]",
   number: "text-[#098658] dark:text-[#b5cea8]",
   literal: "text-[#0000ff] dark:text-[#569cd6]",
-  placeholder: "text-primary-600 dark:text-primary-400 font-semibold"
+  placeholder: "text-accent dark:text-accent font-semibold"
 };
 
 /** Colors a string literal, keeping placeholders inside it highlighted. */
@@ -66,7 +66,7 @@ function highlight(source: string): ReactNode[] {
 }
 
 const LINE = 20;
-const BOX = "px-3 py-2.5 font-mono text-tiny leading-5 whitespace-pre";
+const BOX = "px-3 py-2.5 font-mono text-xs leading-5 whitespace-pre";
 
 export function JsonBodyEditor({
   value,
@@ -97,12 +97,12 @@ export function JsonBodyEditor({
     <div className="flex flex-col gap-1.5">
       <div
         style={{ height }}
-        className={`relative flex overflow-hidden rounded-medium bg-default-100 focus-within:ring-1 focus-within:ring-default-800/30 ${problem ? "ring-1 ring-danger/60" : ""}`}
+        className={`relative flex overflow-hidden rounded-xl bg-default focus-within:ring-1 focus-within:ring-focus/30 ${problem ? "ring-1 ring-danger/60" : ""}`}
       >
         <div
           ref={gutter}
           aria-hidden
-          className="w-10 shrink-0 select-none overflow-hidden bg-default-200/60 py-2.5 text-right font-mono text-tiny leading-5 text-default-500"
+          className="w-10 shrink-0 select-none overflow-hidden bg-default-hover/60 py-2.5 text-right font-mono text-xs leading-5 text-muted"
         >
           {Array.from({ length: lines }, (_, i) => (
             <div key={i} className={`pr-2 ${problem?.line === i + 1 ? "text-danger" : ""}`}>
@@ -141,7 +141,7 @@ export function JsonBodyEditor({
               }
               if (gutter.current) gutter.current.scrollTop = scrollTop;
             }}
-            className={`absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none placeholder:text-default-400 ${BOX}`}
+            className={`absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none placeholder:text-subtle ${BOX}`}
           />
         </div>
         <button
@@ -149,14 +149,14 @@ export function JsonBodyEditor({
           onClick={format}
           aria-label="Format JSON"
           data-tip="Format JSON"
-          className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-medium border border-default-300 bg-background text-default-600 hover:text-foreground"
+          className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-xl border border-default-300 bg-background text-body hover:text-foreground"
         >
           <Icon name="ph:text-align-left" width={16} height={16} />
         </button>
       </div>
       <p
         id="json-body-help"
-        className={`text-tiny ${problem || formatError ? "text-danger" : "text-default-500"}`}
+        className={`text-xs ${problem || formatError ? "text-danger" : "text-muted"}`}
       >
         {problem
           ? `Line ${problem.line}: ${problem.message}`

@@ -48,10 +48,10 @@ function ConditionSettings({
       {node.branches.map((branch, i) => (
         <section
           key={branch.id}
-          className="flex flex-col gap-2 rounded-medium border border-divider p-2"
+          className="flex flex-col gap-2 rounded-xl border border-border p-2"
         >
           <div className="flex items-center justify-between">
-            <h4 className="text-small font-semibold">{i === 0 ? "If" : "Else if"}</h4>
+            <h4 className="text-sm font-semibold">{i === 0 ? "If" : "Else if"}</h4>
             {i > 0 ? (
               <button
                 type="button"
@@ -59,7 +59,7 @@ function ConditionSettings({
                 onClick={() =>
                   update({ ...node, branches: node.branches.filter((b) => b.id !== branch.id) })
                 }
-                className="flex h-7 w-7 items-center justify-center rounded-full text-default-500 hover:bg-default-100 hover:text-danger"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-default hover:text-danger"
               >
                 <Icon name="ph:trash" />
               </button>
@@ -186,7 +186,7 @@ function ParallelSettings({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-small text-default-500">
+      <p className="text-sm text-muted">
         Lanes run at the same time; the next node starts when every lane has finished.
       </p>
       <div className="flex flex-wrap gap-2">
@@ -240,9 +240,9 @@ export function ContainerSettings({
         />
       );
     case "break":
-      return <p className="text-small text-default-500">Leaves the loop around this node.</p>;
+      return <p className="text-sm text-muted">Leaves the loop around this node.</p>;
     case "continue":
-      return <p className="text-small text-default-500">Skips to the next round of the loop.</p>;
+      return <p className="text-sm text-muted">Skips to the next round of the loop.</p>;
     default:
       return null;
   }

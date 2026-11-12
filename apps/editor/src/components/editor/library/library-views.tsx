@@ -36,8 +36,8 @@ export function LibraryGrid({
             <div
               data-library-item
               className={
-                "flex flex-col overflow-hidden rounded-large border bg-content1 transition-colors duration-300 " +
-                (selected ? "border-default-800" : "border-divider hover:border-default-400")
+                "flex flex-col overflow-hidden rounded-2xl border bg-surface transition-colors duration-300 " +
+                (selected ? "border-focus" : "border-border hover:border-default-400")
               }
             >
               <button
@@ -46,19 +46,19 @@ export function LibraryGrid({
                 aria-label={`Select ${item.name}`}
                 onClick={() => onSelect(item.id)}
                 onDoubleClick={() => onOpen(item)}
-                className="block aspect-[8/5] w-full overflow-hidden text-left outline-none focus-visible:ring-1 focus-visible:ring-default-800"
+                className="block aspect-[8/5] w-full overflow-hidden text-left outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
               >
                 <Thumb projectId={projectId} item={item} className="h-full w-full" />
               </button>
               <div className="flex flex-col gap-1.5 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate text-small font-medium text-foreground">{item.name}</p>
-                    <p className="truncate text-tiny text-default-500">{itemSubtitle(item)}</p>
+                    <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
+                    <p className="truncate text-xs text-muted">{itemSubtitle(item)}</p>
                   </div>
                   <StatusChip status={item.status} />
                 </div>
-                <p className="truncate text-tiny text-default-500">
+                <p className="truncate text-xs text-muted">
                   {item.createdBy || "Unknown"} · Updated {formatDate(item.updatedAt)}
                 </p>
                 <div className="flex h-8 items-center">
@@ -92,7 +92,7 @@ export function LibraryTable({
     <div role="table" aria-label="Items" className="flex min-h-0 flex-1 flex-col">
       <div
         role="row"
-        className={`${COLUMNS} h-10 border-b border-divider text-tiny font-medium text-default-500`}
+        className={`${COLUMNS} h-10 border-b border-border text-xs font-medium text-muted`}
       >
         <span role="columnheader">ID</span>
         <span role="columnheader" className="sr-only">
@@ -122,23 +122,15 @@ export function LibraryTable({
               onClick={() => onSelect(item.id)}
               onDoubleClick={() => onOpen(item)}
               className={
-                `${COLUMNS} h-full cursor-default border-b border-divider text-small transition-colors duration-300 ` +
-                (selected ? "bg-default-100" : "hover:bg-default-50")
+                `${COLUMNS} h-full cursor-default border-b border-border text-sm transition-colors duration-300 ` +
+                (selected ? "bg-default" : "hover:bg-default/40")
               }
             >
-              <span
-                role="cell"
-                className="truncate font-mono text-tiny text-default-500"
-                title={item.id}
-              >
+              <span role="cell" className="truncate font-mono text-xs text-muted" title={item.id}>
                 {item.id.slice(0, 8)}
               </span>
               <span role="cell">
-                <Thumb
-                  projectId={projectId}
-                  item={item}
-                  className="h-[60px] w-[60px] rounded-medium"
-                />
+                <Thumb projectId={projectId} item={item} className="h-[60px] w-[60px] rounded-xl" />
               </span>
               <span role="cell" className="min-w-0">
                 <button
@@ -151,17 +143,15 @@ export function LibraryTable({
                 >
                   {item.name}
                 </button>
-                <span className="block truncate text-tiny text-default-500">
-                  {itemSubtitle(item)}
-                </span>
+                <span className="block truncate text-xs text-muted">{itemSubtitle(item)}</span>
               </span>
-              <span role="cell" className="truncate text-default-600">
+              <span role="cell" className="truncate text-body">
                 {item.createdBy || "Unknown"}
               </span>
-              <span role="cell" className="text-default-600">
+              <span role="cell" className="text-body">
                 {formatDate(item.publishedAt)}
               </span>
-              <span role="cell" className="text-default-600">
+              <span role="cell" className="text-body">
                 {formatDate(item.updatedAt)}
               </span>
               <span role="cell">

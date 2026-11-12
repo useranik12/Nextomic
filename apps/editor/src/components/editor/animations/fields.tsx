@@ -10,7 +10,7 @@ import { Icon } from "@/lib/icons/Icon";
 
 export function FieldLabel({ label, tip }: { label: string; tip: string }) {
   return (
-    <span className="mb-1 flex items-center gap-1.5 text-tiny font-medium text-default-600">
+    <span className="mb-1 flex items-center gap-1.5 text-xs font-medium text-body">
       {label}
       <InfoTip text={tip} label={label} />
     </span>
@@ -98,7 +98,7 @@ export function NumberField({
         step={step}
         value={text}
         isInvalid={!valid}
-        endContent={unit ? <span className="text-tiny text-default-500">{unit}</span> : undefined}
+        endContent={unit ? <span className="text-xs text-muted">{unit}</span> : undefined}
         onValueChange={(next) => {
           setText(next);
           const n = Number(next);
@@ -150,13 +150,13 @@ export function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="border-b border-divider">
+    <section className="border-b border-border">
       <div className="flex items-center gap-1.5 px-4 py-2.5">
         <button
           type="button"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
-          className="flex flex-1 items-center gap-2 text-left text-small font-semibold outline-none focus-visible:ring-1 focus-visible:ring-default-800/40"
+          className="flex flex-1 items-center gap-2 text-left text-sm font-semibold outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
         >
           <Icon
             name="ph:caret-right"

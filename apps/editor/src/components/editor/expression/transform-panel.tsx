@@ -99,20 +99,20 @@ export function TransformPanel({
           type="button"
           onClick={onBack}
           aria-label="Back to the dynamic tags"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-100 hover:text-foreground"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-body transition-colors duration-300 hover:bg-default hover:text-foreground"
         >
           <Icon name="ph:arrow-left" width={16} height={16} />
         </button>
         <div className="min-w-0">
-          <p className="truncate text-small font-medium text-foreground">{label ?? "Transform"}</p>
-          <p className="truncate font-mono text-tiny text-default-500">{tagText(chain.base)}</p>
+          <p className="truncate text-sm font-medium text-foreground">{label ?? "Transform"}</p>
+          <p className="truncate font-mono text-xs text-muted">{tagText(chain.base)}</p>
         </div>
-        <span className="ml-auto shrink-0 rounded-full bg-default-100 px-3 py-1 text-tiny text-default-600">
+        <span className="ml-auto shrink-0 rounded-full bg-default px-3 py-1 text-xs text-body">
           Starts as {KIND_LABELS[start]}
         </span>
       </div>
       {chain.steps.length === 0 ? (
-        <p className="text-tiny text-default-500">
+        <p className="text-xs text-muted">
           No transforms yet. Add one to change how the value shows, like rounding a price or
           formatting a date.
         </p>
@@ -159,17 +159,15 @@ export function TransformPanel({
           onValueChange={(fallback) => setChain({ ...chain, fallback })}
         />
       </div>
-      <div className="flex flex-col gap-1 rounded-large border border-default-200 p-3">
-        <span className="text-tiny font-medium text-default-600">
-          Preview ({KIND_LABELS[outKind]})
-        </span>
+      <div className="flex flex-col gap-1 rounded-2xl border border-border p-3">
+        <span className="text-xs font-medium text-body">Preview ({KIND_LABELS[outKind]})</span>
         <output
           aria-live="polite"
-          className={"break-all text-small " + (result.error ? "text-danger" : "text-foreground")}
+          className={"break-all text-sm " + (result.error ? "text-danger" : "text-foreground")}
         >
           {result.text}
         </output>
-        <code className="break-all font-mono text-tiny text-default-500">{tagText(code)}</code>
+        <code className="break-all font-mono text-xs text-muted">{tagText(code)}</code>
       </div>
       <div className="flex justify-end gap-2">
         <ActionButton tone="ghost" size="sm" onPress={onBack}>

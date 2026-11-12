@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui-v2/react";
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import { useState, type ReactNode } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -31,7 +31,7 @@ export function EditorFooter({
 }) {
   const [confirm, setConfirm] = useState(false);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-divider pt-4">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
       <ActionButton
         size="sm"
         tone="danger-ghost"
@@ -55,7 +55,7 @@ export function EditorFooter({
       <Modal isOpen={confirm} onOpenChange={setConfirm} size="md">
         <ModalContent>
           <ModalHeader>{confirmTitle}</ModalHeader>
-          <ModalBody className="text-small text-default-600">{confirmText}</ModalBody>
+          <ModalBody className="text-sm text-body">{confirmText}</ModalBody>
           <ModalFooter>
             <ActionButton size="sm" tone="ghost" onPress={() => setConfirm(false)}>
               Cancel

@@ -29,7 +29,7 @@ export function AccordionSection({
   return (
     <section
       data-accordion={id}
-      className="border-b border-divider pb-3 last:border-b-0"
+      className="border-b border-border pb-3 last:border-b-0"
       aria-label={title}
     >
       <button
@@ -37,9 +37,9 @@ export function AccordionSection({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => onToggle(id)}
-        className="flex h-10 w-full items-center gap-2 rounded-medium px-1 text-left text-small font-medium text-foreground outline-none transition-colors duration-300 hover:bg-default-100 focus-visible:ring-1 focus-visible:ring-default-800/50"
+        className="flex h-10 w-full items-center gap-2 rounded-xl px-1 text-left text-sm font-medium text-foreground outline-none transition-colors duration-300 hover:bg-default focus-visible:ring-1 focus-visible:ring-focus/30"
       >
-        <span className="flex shrink-0 text-default-600">{icon}</span>
+        <span className="flex shrink-0 text-body">{icon}</span>
         {title}
         {changed ? (
           <span

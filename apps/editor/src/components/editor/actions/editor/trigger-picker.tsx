@@ -6,7 +6,7 @@ import {
   DropdownMenu,
   DropdownSection,
   DropdownTrigger
-} from "@heroui-v2/react";
+} from "@/components/ui/menu";
 import { defaultParams, triggerLabel, triggersFor, type TriggerDef } from "@nextomic/schema";
 import { ActionButton } from "@/components/ui/controls";
 import { InfoTip } from "@/components/ui/info-tip";
@@ -39,7 +39,7 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
   const disabledKeys = triggers.filter((t) => t.disabled || used.includes(t.id)).map((t) => t.id);
   return (
     // As wide as the longest trigger name, not a fixed width.
-    <Dropdown placement="bottom" classNames={{ content: "w-max min-w-0 p-1" }}>
+    <Dropdown placement="bottom">
       <DropdownTrigger>
         {variant === "large" ? (
           <ActionButton size="sm" endContent={<Icon name="ph:caret-down" />}>
@@ -49,7 +49,7 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
           <button
             type="button"
             aria-label="Add a trigger"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-default-500 hover:bg-default-100 hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-default hover:text-foreground"
           >
             <Icon name="ph:plus" />
           </button>
@@ -72,10 +72,11 @@ export function TriggerPicker({ variant }: { variant: "large" | "icon" }) {
               .map((t) => (
                 <DropdownItem
                   key={t.id}
+                  id={t.id}
                   textValue={triggerLabel(t, target.owner)}
                   endContent={
                     used.includes(t.id) ? (
-                      <span className="text-tiny text-default-400">Added</span>
+                      <span className="text-xs text-subtle">Added</span>
                     ) : t.description && !t.disabled ? (
                       <InfoTip
                         text={t.description}

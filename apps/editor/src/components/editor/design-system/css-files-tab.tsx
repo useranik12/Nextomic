@@ -62,15 +62,15 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
 
   return (
     <div className="flex h-full min-h-0">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-divider" aria-label="CSS files">
-        <div className="flex flex-col gap-2 border-b border-divider p-3">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-border" aria-label="CSS files">
+        <div className="flex flex-col gap-2 border-b border-border p-3">
           <ActionButton size="sm" onPress={add} isDisabled={files.length >= CSS_FILE_MAX_COUNT}>
             <Icon name="ph:plus" width={14} height={14} />
             New CSS file
           </ActionButton>
         </div>
         {files.length === 0 ? (
-          <p className="p-3 text-small text-default-500">
+          <p className="p-3 text-sm text-muted">
             No CSS files yet. Add one for rules that apply across the site.
           </p>
         ) : (
@@ -81,16 +81,16 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
                 <li
                   key={file.id}
                   className={
-                    "flex items-center gap-1 rounded-medium pr-1 " +
-                    (file.id === selected?.id ? "bg-default-200" : "hover:bg-default-100")
+                    "flex items-center gap-1 rounded-xl pr-1 " +
+                    (file.id === selected?.id ? "bg-default-hover" : "hover:bg-default")
                   }
                 >
                   <button
                     type="button"
                     onClick={() => setSelectedId(file.id)}
-                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-small outline-none focus-visible:ring-1 focus-visible:ring-default-800/50"
+                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-sm outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
                   >
-                    <span className={"truncate " + (file.enabled ? "" : "text-default-400")}>
+                    <span className={"truncate " + (file.enabled ? "" : "text-subtle")}>
                       {file.name}
                     </span>
                     {valid ? null : (
@@ -108,7 +108,7 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
                     aria-label={`Move ${file.name} up`}
                     disabled={index === 0}
                     onClick={() => move(index, -1)}
-                    className="rounded p-1 text-default-500 hover:text-foreground disabled:opacity-30"
+                    className="rounded p-1 text-muted hover:text-foreground disabled:opacity-30"
                   >
                     <Icon name="ph:arrow-up" width={14} height={14} />
                   </button>
@@ -117,7 +117,7 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
                     aria-label={`Move ${file.name} down`}
                     disabled={index === files.length - 1}
                     onClick={() => move(index, 1)}
-                    className="rounded p-1 text-default-500 hover:text-foreground disabled:opacity-30"
+                    className="rounded p-1 text-muted hover:text-foreground disabled:opacity-30"
                   >
                     <Icon name="ph:arrow-down" width={14} height={14} />
                   </button>
@@ -178,9 +178,9 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
             </div>
             {selected.scope === "pages" ? (
               <fieldset className="flex flex-col gap-2">
-                <legend className="mb-1 text-small font-semibold text-foreground">Pages</legend>
+                <legend className="mb-1 text-sm font-semibold text-foreground">Pages</legend>
                 {pages.length === 0 ? (
-                  <p className="text-small text-default-500">This project has no pages yet.</p>
+                  <p className="text-sm text-muted">This project has no pages yet.</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {pages.map((page) => {
@@ -192,10 +192,10 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
                           aria-pressed={on}
                           onClick={() => togglePage(selected, page.id)}
                           className={
-                            "rounded-full px-3 py-1.5 text-small transition-colors duration-300 " +
+                            "rounded-full px-3 py-1.5 text-sm transition-colors duration-300 " +
                             (on
-                              ? "bg-default-800 text-default-50"
-                              : "bg-default-100 text-default-600 hover:bg-default-200")
+                              ? "bg-default-hover text-foreground"
+                              : "bg-default text-body hover:bg-default-hover")
                           }
                         >
                           {page.name}
@@ -215,19 +215,19 @@ export function CssFilesTab({ pages }: { pages: readonly PageSummary[] }) {
                 onChange={(css) => patch(selected.id, { css })}
               />
               {check && !check.ok ? (
-                <p role="alert" className="text-tiny text-danger">
+                <p role="alert" className="text-xs text-danger">
                   {check.line ? `Line ${check.line}: ` : ""}
                   {check.error} This file is skipped until it is fixed.
                 </p>
               ) : (
-                <p className="text-tiny text-default-500">
+                <p className="text-xs text-muted">
                   Rules here come after the theme and before classes and element styles.
                 </p>
               )}
             </div>
           </>
         ) : (
-          <p className="text-small text-default-500">Select or add a CSS file.</p>
+          <p className="text-sm text-muted">Select or add a CSS file.</p>
         )}
       </section>
     </div>

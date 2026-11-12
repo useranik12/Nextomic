@@ -1,7 +1,7 @@
 "use client";
 
 import { ColorField } from "@/components/ui/color-field";
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { previewProps, useStylePreview } from "./design-field-tools";
@@ -136,7 +136,7 @@ export function ColorPalette({
           type="button"
           aria-label={`Color palette for ${label}`}
           title="Color palette"
-          className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-default-500 transition-colors duration-300 hover:bg-default-300 hover:text-foreground"
+          className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-muted transition-colors duration-300 hover:bg-default-300 hover:text-foreground"
         >
           {shown ? (
             <span
@@ -158,10 +158,10 @@ export function ColorPalette({
             aria-haspopup="listbox"
             aria-expanded={menu}
             onClick={() => setMenu(!menu)}
-            className="flex h-9 w-full items-center justify-between rounded-xl bg-default-100 px-3 text-small font-medium transition-colors hover:bg-default-200"
+            className="flex h-9 w-full items-center justify-between rounded-xl bg-default px-3 text-sm font-medium transition-colors hover:bg-default-hover"
           >
             <span className="flex items-center gap-2">
-              <span className="text-tiny font-normal text-default-500">Color palette</span>
+              <span className="text-xs font-normal text-muted">Color palette</span>
               {name}
             </span>
             <Icon
@@ -175,7 +175,7 @@ export function ColorPalette({
             <ul
               role="listbox"
               aria-label="Color palettes"
-              className="absolute inset-x-0 top-10 z-10 max-h-48 overflow-y-auto rounded-xl border border-default-200 bg-content1 p-1 shadow-xl"
+              className="absolute inset-x-0 top-10 z-10 max-h-48 overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-xl"
             >
               {palettes.map(([g, list]) => (
                 <li key={g} role="option" aria-selected={g === name}>
@@ -186,14 +186,14 @@ export function ColorPalette({
                       setMenu(false);
                     }}
                     className={
-                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-small transition-colors " +
+                      "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors " +
                       (g === name
                         ? "bg-warning/20 font-medium text-warning-700 dark:text-warning"
-                        : "hover:bg-default-100")
+                        : "hover:bg-default")
                     }
                   >
                     {g}
-                    <span className="text-tiny text-default-500">{list.length}</span>
+                    <span className="text-xs text-muted">{list.length}</span>
                   </button>
                 </li>
               ))}
@@ -222,9 +222,9 @@ export function ColorPalette({
                     setHovered(null);
                   }}
                   className={
-                    "relative block aspect-square w-full overflow-hidden rounded-lg border border-black/10 transition-transform hover:z-[1] hover:scale-110 focus-visible:ring-1 focus-visible:ring-default-800/60 dark:border-white/15 " +
+                    "relative block aspect-square w-full overflow-hidden rounded-lg border border-black/10 transition-transform hover:z-[1] hover:scale-110 focus-visible:ring-1 focus-visible:ring-focus/30 dark:border-white/15 " +
                     CHECKER +
-                    (selected ? " ring-1 ring-default-800 dark:ring-default-700" : "")
+                    (selected ? " ring-1 ring-focus/30 dark:ring-default-700" : "")
                   }
                 >
                   <span aria-hidden style={{ background: s.color }} className="absolute inset-0" />
@@ -242,16 +242,14 @@ export function ColorPalette({
           })}
         </ul>
 
-        <p className="flex min-h-5 items-center justify-between gap-2 text-tiny" aria-live="polite">
+        <p className="flex min-h-5 items-center justify-between gap-2 text-xs" aria-live="polite">
           <span className="truncate font-medium">
             {footer?.name ?? (value ? "Custom color" : "No color set")}
           </span>
-          <span className="shrink-0 font-mono text-default-500">
-            {footer?.color ?? shown ?? ""}
-          </span>
+          <span className="shrink-0 font-mono text-muted">{footer?.color ?? shown ?? ""}</span>
         </p>
 
-        <div className="flex items-center gap-2 border-t border-divider pt-3">
+        <div className="flex items-center gap-2 border-t border-border pt-3">
           <ColorField
             className="min-w-0 flex-1"
             label="Custom color"
@@ -263,7 +261,7 @@ export function ColorPalette({
             <button
               type="button"
               onClick={() => pick(null)}
-              className="h-8 rounded-full bg-default-100 px-3 text-tiny font-medium transition-colors hover:bg-default-200"
+              className="h-8 rounded-full bg-default px-3 text-xs font-medium transition-colors hover:bg-default-hover"
             >
               Clear
             </button>

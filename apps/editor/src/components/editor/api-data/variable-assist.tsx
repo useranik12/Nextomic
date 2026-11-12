@@ -176,9 +176,9 @@ export function VariableFields({
       <div
         data-var-popup
         style={{ left: place.left, top: place.top, width: SIZE.width, maxHeight: height }}
-        className="fixed z-[70] flex flex-col overflow-hidden rounded-large border border-default-200 bg-content1 shadow-large"
+        className="fixed z-[70] flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-lg"
       >
-        <p className="border-b border-divider px-3 py-1.5 text-tiny text-default-500">
+        <p className="border-b border-border px-3 py-1.5 text-xs text-muted">
           Variables · ↑↓ to move, Enter to insert
         </p>
         <ul

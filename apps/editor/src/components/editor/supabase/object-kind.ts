@@ -36,7 +36,7 @@ export const CHIP_CLASSES: Record<ObjectKind, string> = {
   video: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400",
   audio: "bg-lime-500/15 text-lime-600 dark:text-lime-400",
   pdf: "bg-red-400/15 text-red-500 dark:text-red-300",
-  other: "bg-default-100 text-default-600"
+  other: "bg-default text-body"
 };
 
 export function formatBytes(size: number | null): string {

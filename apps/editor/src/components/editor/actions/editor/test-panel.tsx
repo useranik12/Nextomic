@@ -35,13 +35,11 @@ function Step({ entry }: { entry: RunLogEntry }) {
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-small">{entry.label}</span>
-          <span className="shrink-0 text-tiny text-default-500">{entry.ms} ms</span>
+          <span className="truncate text-sm">{entry.label}</span>
+          <span className="shrink-0 text-xs text-muted">{entry.ms} ms</span>
         </div>
         {detail ? (
-          <p
-            className={`break-words font-mono text-tiny ${ok ? "text-default-500" : "text-danger"}`}
-          >
+          <p className={`break-words font-mono text-xs ${ok ? "text-muted" : "text-danger"}`}>
             {detail}
           </p>
         ) : null}
@@ -63,36 +61,36 @@ export function TestPanel() {
   return (
     <section
       aria-label="Test run"
-      className="fixed bottom-4 right-4 z-50 flex max-h-[60vh] w-96 flex-col rounded-large border border-divider bg-content1 shadow-large"
+      className="fixed bottom-4 right-4 z-50 flex max-h-[60vh] w-96 flex-col rounded-2xl border border-border bg-surface shadow-lg"
     >
-      <header className="flex items-center justify-between gap-2 border-b border-divider px-3 py-2">
-        <h2 className="flex items-center gap-2 text-small font-medium">
+      <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <h2 className="flex items-center gap-2 text-sm font-medium">
           <Icon name="ph:play" width={16} height={16} />
           Test · {scope}
         </h2>
-        <span role="status" className="text-tiny text-default-500">
+        <span role="status" className="text-xs text-muted">
           {STATUS_TEXT[status]}
         </span>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-1">
         {entries.length === 0 && !error ? (
-          <p className="py-2 text-small text-default-500">
+          <p className="py-2 text-sm text-muted">
             {busy ? "Waiting for the first step…" : "No steps ran."}
           </p>
         ) : (
-          <ol aria-label="Test steps" className="divide-y divide-divider">
+          <ol aria-label="Test steps" className="divide-y divide-border">
             {entries.map((entry, index) => (
               <Step key={`${entry.nodeId}-${index}`} entry={entry} />
             ))}
           </ol>
         )}
         {error ? (
-          <p role="alert" className="py-2 text-small text-danger">
+          <p role="alert" className="py-2 text-sm text-danger">
             {error}
           </p>
         ) : null}
       </div>
-      <footer className="flex justify-end gap-2 border-t border-divider px-3 py-2">
+      <footer className="flex justify-end gap-2 border-t border-border px-3 py-2">
         <ActionButton
           size="sm"
           tone="ghost"

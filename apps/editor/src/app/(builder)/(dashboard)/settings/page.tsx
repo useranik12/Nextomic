@@ -36,12 +36,12 @@ export default async function SettingsPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold text-foreground">Security</h2>
-        <div className="flex flex-col gap-5 rounded-large border border-default-100 bg-content1/40 p-5">
+        <div className="flex flex-col gap-5 rounded-2xl border border-separator bg-surface/40 p-5">
           <PasswordChange email={sessionData.user.email} policy={passwordPolicy} />
-          <div className="border-t border-divider pt-5">
+          <div className="border-t border-border pt-5">
             <TwoFactorSettings enabled={Boolean(sessionData.user.twoFactorEnabled)} />
           </div>
-          <div className="border-t border-divider pt-5">
+          <div className="border-t border-border pt-5">
             <PasskeySettings />
           </div>
         </div>

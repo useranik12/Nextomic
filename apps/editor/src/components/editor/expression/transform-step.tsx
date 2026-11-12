@@ -14,7 +14,7 @@ import { Icon } from "@/lib/icons/Icon";
 // remove it. A step whose input no longer fits (an earlier step changed the kind) is flagged.
 
 const ICON_BUTTON =
-  "flex h-7 w-7 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-200 hover:text-foreground disabled:opacity-30";
+  "flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default-hover hover:text-foreground disabled:opacity-30";
 
 function ParamField({
   param,
@@ -83,14 +83,14 @@ export function TransformStepCard({
   if (!def) return null;
   const params = def.params.filter((p) => !p.when || p.when(step.values));
   return (
-    <li className="flex flex-col gap-3 rounded-large bg-default-100 p-3">
+    <li className="flex flex-col gap-3 rounded-2xl bg-default p-3">
       <div className="flex items-center gap-2">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-default-200 text-tiny text-default-600">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-default-hover text-xs text-body">
           {index + 1}
         </span>
-        <span className="min-w-0 flex-1 truncate text-small font-medium text-foreground">
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
           {def.label}
-          <span className="ml-2 text-tiny font-normal text-default-500">{def.group}</span>
+          <span className="ml-2 text-xs font-normal text-muted">{def.group}</span>
         </span>
         <button
           type="button"
@@ -120,7 +120,7 @@ export function TransformStepCard({
         </button>
       </div>
       {!fits ? (
-        <p role="status" className="text-tiny text-warning">
+        <p role="status" className="text-xs text-warning">
           The value going into this step is not a {def.accepts.join(" or ")}.
         </p>
       ) : null}

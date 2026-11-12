@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui-v2/react";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import { REST_METHODS, type RestCall, type RestGroup, type RestMethod } from "@nextomic/schema";
 import { FormInput, SelectField } from "@/components/ui/controls";
 
@@ -22,16 +22,16 @@ export function CallConnection({
   return (
     <section
       aria-label="Connection"
-      className="flex flex-col gap-4 rounded-large border border-default-200 p-5"
+      className="flex flex-col gap-4 rounded-2xl border border-border p-5"
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-small font-medium text-foreground">Connection</h2>
+        <h2 className="text-sm font-medium text-foreground">Connection</h2>
         <Switch
           size="sm"
           isSelected={call.active}
           onValueChange={(active) => onChange({ ...call, active })}
         >
-          <span className="text-small">Active</span>
+          <span className="text-sm">Active</span>
         </Switch>
       </div>
       <div className="grid gap-4 sm:grid-cols-[2fr_1fr]">
@@ -64,8 +64,8 @@ export function CallConnection({
         />
         {group ? (
           <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-tiny font-medium text-default-600">Group Base URL</span>
-            <span className="truncate py-1.5 text-small text-default-600" title={group.baseUrl}>
+            <span className="text-xs font-medium text-body">Group Base URL</span>
+            <span className="truncate py-1.5 text-sm text-body" title={group.baseUrl}>
               {group.baseUrl || "No base URL set on the group."}
             </span>
           </div>

@@ -49,7 +49,7 @@ export function FrameworkTab() {
   if (!theme) {
     return (
       <div className="flex flex-col items-start gap-3 p-4">
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           This project has no theme yet. The Main theme runs on the Main framework: modern colors,
           fluid scales and utility classes.
         </p>
@@ -68,7 +68,7 @@ export function FrameworkTab() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-end gap-3 border-b border-divider p-3">
+      <div className="flex flex-wrap items-end gap-3 border-b border-border p-3">
         <div className="w-48">
           <SelectField
             compact
@@ -90,10 +90,8 @@ export function FrameworkTab() {
               aria-pressed={view === v.id}
               onClick={() => setView(v.id)}
               className={
-                "rounded-full px-3 py-1 text-small transition-colors duration-300 " +
-                (view === v.id
-                  ? "bg-default-800 text-default-50"
-                  : "text-default-600 hover:bg-default-100")
+                "rounded-full px-3 py-1 text-sm transition-colors duration-300 " +
+                (view === v.id ? "bg-default-hover text-foreground" : "text-body hover:bg-default")
               }
             >
               {v.label}
@@ -125,7 +123,7 @@ export function FrameworkTab() {
         ) : null}
       </div>
       {error ? (
-        <p role="alert" className="px-3 pt-2 text-tiny text-danger">
+        <p role="alert" className="px-3 pt-2 text-xs text-danger">
           {error}
         </p>
       ) : null}
@@ -134,7 +132,7 @@ export function FrameworkTab() {
           <ImportFramework onImport={run} onCancel={() => setView("variables")} />
         ) : !framework ? (
           <div className="flex flex-col items-start gap-3 p-4">
-            <p className="text-small text-default-500">
+            <p className="text-sm text-muted">
               {theme.name} has no framework. Start from the Main framework or import your own.
             </p>
             <div className="flex gap-2">

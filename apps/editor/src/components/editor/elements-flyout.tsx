@@ -27,7 +27,7 @@ function Tile({ definition, onInsert }: { definition: ElementDefinition; onInser
       type="button"
       onClick={onInsert}
       className={
-        "flex h-[78px] flex-col items-center justify-center gap-1.5 rounded-large bg-default-100 text-small text-default-600 outline-none transition-colors duration-300 hover:bg-default-200 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800 " +
+        "flex h-[78px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-default text-sm text-body outline-none transition-colors duration-300 hover:bg-default-hover hover:text-foreground focus-visible:ring-1 focus-visible:ring-focus/30 " +
         (isDragging ? "opacity-40" : "")
       }
       {...attributes}
@@ -58,7 +58,7 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
       aria-label="Elements"
       onKeyDown={(event) => event.key === "Escape" && onClose()}
       className={
-        "absolute left-full top-3 ml-2 z-30 flex max-h-[calc(100%-24px)] w-[304px] flex-col rounded-large bg-content1 p-4 shadow-xl transition-opacity duration-150" +
+        "absolute left-full top-3 ml-2 z-30 flex max-h-[calc(100%-24px)] w-[304px] flex-col rounded-2xl bg-surface p-4 shadow-xl transition-opacity duration-150" +
         (dragging ? " pointer-events-none opacity-0" : "")
       }
     >
@@ -67,7 +67,7 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
           name="ph:magnifying-glass"
           width={16}
           height={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-default-500"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
         />
         <input
           autoFocus
@@ -75,19 +75,19 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search elements"
           aria-label="Search elements"
-          className="h-9 w-full rounded-full border border-default-200 bg-transparent pl-9 pr-3 text-small text-foreground outline-none transition-colors placeholder:text-default-400 hover:border-default-400 focus:border-default-800"
+          className="h-9 w-full rounded-full border border-border bg-transparent pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-subtle hover:border-default-400 focus:border-focus"
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
         {definitions.length === 0 ? (
-          <p className="py-6 text-center text-small text-default-500">No elements match.</p>
+          <p className="py-6 text-center text-sm text-muted">No elements match.</p>
         ) : (
           GROUPS.map((group) => {
             const items = definitions.filter((d) => d.category === group.id);
             if (items.length === 0) return null;
             return (
               <section key={group.id} className="mb-4">
-                <h3 className="mb-2 text-small font-semibold text-foreground">{group.label}</h3>
+                <h3 className="mb-2 text-sm font-semibold text-foreground">{group.label}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {items.map((definition) => (
                     <Tile

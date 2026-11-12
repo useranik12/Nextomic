@@ -123,21 +123,19 @@ export function StateTable({ group, usage }: { group: StateGroup; usage: StateUs
                 name="ph:magnifying-glass"
                 width={14}
                 height={14}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-default-500"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
               />
               <input
                 aria-label={group === "app" ? "Search app state" : "Search constants"}
                 placeholder="Search variables"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="h-8 w-full rounded-full border border-default-200 bg-transparent pl-8 pr-3 text-small outline-none transition-colors hover:border-default-400 focus:border-default-800"
+                className="h-8 w-full rounded-full border border-border bg-transparent pl-8 pr-3 text-sm outline-none transition-colors hover:border-default-400 focus:border-focus"
               />
             </div>
-            {usage.loading ? (
-              <span className="text-tiny text-default-500">Finding where used…</span>
-            ) : null}
+            {usage.loading ? <span className="text-xs text-muted">Finding where used…</span> : null}
             {usage.error ? (
-              <span role="alert" className="text-tiny text-danger">
+              <span role="alert" className="text-xs text-danger">
                 {usage.error}
               </span>
             ) : null}
@@ -150,14 +148,14 @@ export function StateTable({ group, usage }: { group: StateGroup; usage: StateUs
           />
         </div>
         {error ? (
-          <p role="alert" className="text-tiny text-danger">
+          <p role="alert" className="text-xs text-danger">
             {error}
           </p>
         ) : null}
-        <div className="overflow-x-auto rounded-large border border-default-100 bg-content1/40">
+        <div className="overflow-x-auto rounded-2xl border border-separator bg-surface/40">
           <div className="min-w-[54rem] px-3">
             <div
-              className={`grid ${ROW_GRID[group]} gap-2 border-b border-divider py-2.5 text-tiny font-semibold uppercase tracking-wide text-default-500`}
+              className={`grid ${ROW_GRID[group]} gap-2 border-b border-border py-2.5 text-xs font-semibold uppercase tracking-wide text-muted`}
             >
               {HEADERS[group].map((h) => (
                 <span key={h} className={h === "Persist" ? "" : "px-1"}>
@@ -166,13 +164,13 @@ export function StateTable({ group, usage }: { group: StateGroup; usage: StateUs
               ))}
             </div>
             {list.length === 0 ? (
-              <p className="py-8 text-small text-default-500">
+              <p className="py-8 text-sm text-muted">
                 {group === "app"
                   ? "No app state yet. App state holds values any page can read and actions can change, such as a cart count or a chosen language."
                   : "No constants yet. Constants hold fixed values any page can read, such as a support email or a tax rate."}
               </p>
             ) : shown.length === 0 ? (
-              <p className="py-8 text-small text-default-500">No variable matches “{query}”.</p>
+              <p className="py-8 text-sm text-muted">No variable matches “{query}”.</p>
             ) : (
               <ul>
                 {shown.map((v) => (

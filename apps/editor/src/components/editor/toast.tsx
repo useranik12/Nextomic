@@ -25,7 +25,7 @@ export function Toast() {
       {toast ? (
         <p
           key={toast.id}
-          className="max-w-[80vw] truncate rounded-full border border-divider bg-content1 px-4 py-2 text-small text-foreground shadow-lg"
+          className="max-w-[80vw] truncate rounded-full border border-border bg-surface px-4 py-2 text-sm text-foreground shadow-lg"
         >
           {toast.message}
         </p>

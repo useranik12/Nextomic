@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@heroui-v2/react";
+import { CheckboxField as Checkbox } from "@/components/ui/toggles";
 import {
   parseJsonPath,
   readJsonPath,
@@ -44,7 +44,7 @@ function PathRow({
           onChange={(e) => onChange({ path: e.target.value })}
           className={`${compactFieldClass} font-mono ${error ? "!border-danger" : ""}`}
         />
-        {error ? <p className="mt-0.5 px-2 text-tiny text-danger">{error}</p> : null}
+        {error ? <p className="mt-0.5 px-2 text-xs text-danger">{error}</p> : null}
       </div>
       <input
         aria-label="Name"
@@ -102,14 +102,14 @@ export function JsonPaths({
 
   return (
     <div className="flex flex-col gap-3">
-      <h4 className="text-small font-medium text-foreground">JSON Paths</h4>
-      <p className="text-tiny text-default-500">
+      <h4 className="text-sm font-medium text-foreground">JSON Paths</h4>
+      <p className="text-xs text-muted">
         $ is the response. Write .name for a field, [0] for an item and [:] for every item (that
         gives a list). Saved paths are used by name in actions and query loops; the eye shows a path
         in the response viewer.
       </p>
       {paths.length > 0 ? (
-        <div className={`${GRID} text-tiny text-default-500`}>
+        <div className={`${GRID} text-xs text-muted`}>
           <span>JSON Path</span>
           <span>Name</span>
           <span>Response Preview</span>
@@ -135,12 +135,12 @@ export function JsonPaths({
         Add JSON Path
       </ActionButton>
       {recommended.length > 0 ? (
-        <div className="flex flex-col gap-2 border-t border-divider pt-4">
+        <div className="flex flex-col gap-2 border-t border-border pt-4">
           <button
             type="button"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="flex w-fit items-center gap-1 text-small font-medium text-foreground"
+            className="flex w-fit items-center gap-1 text-sm font-medium text-foreground"
           >
             Recommended
             {open ? (
@@ -155,7 +155,7 @@ export function JsonPaths({
                   key={path}
                   className="grid grid-cols-[minmax(8rem,1fr)_minmax(10rem,2fr)_2rem_auto] items-center gap-3"
                 >
-                  <span className="font-mono text-small text-foreground">{path}</span>
+                  <span className="font-mono text-sm text-foreground">{path}</span>
                   <ValuePreview value={readJsonPath(json, path)} />
                   <EyeButton
                     shown={shown.has(`rec:${path}`)}

@@ -99,3 +99,22 @@ export function CheckField({
     label
   );
 }
+
+// Drop-in names for call sites that pass their label as children and use `onValueChange`.
+interface ChildToggleProps extends Omit<ToggleBase, "label" | "onChange"> {
+  children?: ReactNode;
+  onValueChange: (on: boolean) => void;
+  size?: "sm" | "md";
+}
+
+export function SwitchField({ children, onValueChange, size, ...rest }: ChildToggleProps) {
+  return <Toggle {...rest} size={size} label={children} onChange={onValueChange} />;
+}
+
+export function CheckboxField({
+  children,
+  onValueChange,
+  ...rest
+}: Omit<ChildToggleProps, "size"> & { size?: "sm" | "md" }) {
+  return <CheckField {...rest} label={children} onChange={onValueChange} />;
+}

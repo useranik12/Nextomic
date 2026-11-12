@@ -36,11 +36,11 @@ export function TargetParamsInput({
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-small font-medium text-default-700">{field.label}</legend>
+      <legend className="mb-1 text-sm font-medium text-body">{field.label}</legend>
       {!id ? (
-        <p className="text-tiny text-default-500">Choose a {noun} to see its parameters.</p>
+        <p className="text-xs text-muted">Choose a {noun} to see its parameters.</p>
       ) : defs.length === 0 ? (
-        <p className="text-tiny text-default-500">This {noun} has no parameters.</p>
+        <p className="text-xs text-muted">This {noun} has no parameters.</p>
       ) : (
         defs.map((def) => (
           <BoltInput

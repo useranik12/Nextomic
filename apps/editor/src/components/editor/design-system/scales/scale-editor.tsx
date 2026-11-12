@@ -76,8 +76,8 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 border-b border-divider p-3 last:border-b-0">
-      <h3 className="flex items-center gap-1.5 text-tiny font-semibold uppercase text-default-500">
+    <section className="flex flex-col gap-3 border-b border-border p-3 last:border-b-0">
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted">
         {title}
         <InfoTip text={tip} />
       </h3>
@@ -93,25 +93,25 @@ function Row({ scale, kind, index }: { scale: ScaleSettings; kind: ScaleKind; in
   const max = Math.max(...scaleSteps(scale).map((s) => s.max));
   return (
     <li
-      className={`grid grid-cols-[110px_1fr] items-center gap-3 px-4 py-3 ${base ? "bg-primary/10" : ""}`}
+      className={`grid grid-cols-[110px_1fr] items-center gap-3 px-4 py-3 ${base ? "bg-accent/10" : ""}`}
     >
       <div>
-        <p className="font-mono text-small">--{step.variable}</p>
+        <p className="font-mono text-sm">--{step.variable}</p>
         {base ? (
-          <span className="rounded-medium bg-primary px-1.5 py-0.5 text-tiny text-white">Base</span>
+          <span className="rounded-xl bg-accent px-1.5 py-0.5 text-xs text-white">Base</span>
         ) : null}
       </div>
       {COPY[kind].sample ? (
         <div className="grid grid-cols-[72px_20px_1fr] items-baseline gap-x-2 gap-y-1 overflow-hidden">
-          <span className="text-right text-tiny text-default-600">{step.min}px</span>
+          <span className="text-right text-xs text-body">{step.min}px</span>
           <Icon name="ph:device-mobile" width={14} height={14} />
           <span
             style={{ fontSize: Math.min(step.min, 96) }}
-            className="truncate leading-tight text-default-500"
+            className="truncate leading-tight text-muted"
           >
             Minimum
           </span>
-          <span className="text-right text-tiny text-default-600">{step.max}px</span>
+          <span className="text-right text-xs text-body">{step.max}px</span>
           <Icon name="ph:desktop" width={14} height={14} />
           <span style={{ fontSize: Math.min(step.max, 96) }} className="truncate leading-tight">
             Maximum
@@ -119,7 +119,7 @@ function Row({ scale, kind, index }: { scale: ScaleSettings; kind: ScaleKind; in
         </div>
       ) : (
         <div className="grid grid-cols-[72px_20px_1fr] items-center gap-x-2 gap-y-1">
-          <span className="text-right text-tiny text-default-600">{step.min}px</span>
+          <span className="text-right text-xs text-body">{step.min}px</span>
           <Icon name="ph:device-mobile" width={14} height={14} />
           <span
             aria-hidden
@@ -127,9 +127,9 @@ function Row({ scale, kind, index }: { scale: ScaleSettings; kind: ScaleKind; in
               width: `${(step.min / max) * 100}%`,
               borderRadius: kind === "radius" ? step.min : 2
             }}
-            className="block h-3 bg-primary/50"
+            className="block h-3 bg-accent/50"
           />
-          <span className="text-right text-tiny text-default-600">{step.max}px</span>
+          <span className="text-right text-xs text-body">{step.max}px</span>
           <Icon name="ph:desktop" width={14} height={14} />
           <span
             aria-hidden
@@ -137,7 +137,7 @@ function Row({ scale, kind, index }: { scale: ScaleSettings; kind: ScaleKind; in
               width: `${(step.max / max) * 100}%`,
               borderRadius: kind === "radius" ? step.max : 2
             }}
-            className="block h-3 bg-primary"
+            className="block h-3 bg-accent"
           />
         </div>
       )}
@@ -162,7 +162,7 @@ export function ScaleEditor({
     const fallback = DEFAULT_SCALES.find((s) => s.prefix === kind);
     return (
       <div className="flex flex-col items-start gap-3 p-4">
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           This framework has no {copy.title.toLowerCase()} scale. Variables named like{" "}
           <code>--{kind}-m</code> written as clamp() values become one when you import a framework.
         </p>
@@ -193,7 +193,7 @@ export function ScaleEditor({
 
   return (
     <div className="grid h-full min-h-0 grid-cols-[270px_minmax(0,1fr)]">
-      <div className="min-h-0 overflow-y-auto border-r border-divider">
+      <div className="min-h-0 overflow-y-auto border-r border-border">
         <Panel
           title="Base settings"
           tip="The name every step starts with, for example text makes text-m and text-l. Renaming renames the variables too."
@@ -279,13 +279,13 @@ export function ScaleEditor({
       <div className="flex min-h-0 flex-col">
         <ul
           aria-label={`${copy.title} steps`}
-          className="min-h-0 flex-1 divide-y divide-divider overflow-y-auto"
+          className="min-h-0 flex-1 divide-y divide-border overflow-y-auto"
         >
           {scale.names.map((n, i) => (
             <Row key={n} scale={scale} kind={kind} index={i} />
           ))}
         </ul>
-        <div className="flex flex-wrap items-center gap-2 border-t border-divider p-3">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border p-3">
           <ActionButton
             size="sm"
             tone="outline"

@@ -91,7 +91,7 @@ export function TemplateSettingsFields() {
   return (
     <div className="flex flex-col gap-6">
       <section aria-label="Template" className="flex flex-col gap-3">
-        <p className="text-small text-default-600">
+        <p className="text-sm text-body">
           Type: <span className="text-foreground">{TEMPLATE_TYPE_LABELS[type]}</span>
         </p>
         <BoltInput
@@ -106,7 +106,7 @@ export function TemplateSettingsFields() {
           tip="A draft template is never used on a page. Scheduled templates apply from their time."
         />
         {type === "error-404" ? null : (
-          <label className="flex flex-col gap-1 text-tiny text-default-600">
+          <label className="flex flex-col gap-1 text-xs text-body">
             Priority
             <input
               type="number"
@@ -120,7 +120,7 @@ export function TemplateSettingsFields() {
               }
               className={compactFieldClass}
             />
-            <span className="text-tiny text-default-500">
+            <span className="text-xs text-muted">
               When several templates of this type match a page, the highest number wins.
             </span>
           </label>
@@ -138,7 +138,7 @@ export function TemplateSettingsFields() {
       </section>
       {type === "error-404" ? (
         <section aria-label="Layout" className="flex flex-col gap-3">
-          <h3 className="text-small text-default-600">Header and footer</h3>
+          <h3 className="text-sm text-body">Header and footer</h3>
           <HeaderFooterFields
             header={settings.header}
             footer={settings.footer}
@@ -149,7 +149,7 @@ export function TemplateSettingsFields() {
       ) : (
         <div className="flex flex-col gap-2">
           {settings.rules.items.length === 0 ? (
-            <p role="note" className="text-tiny text-warning">
+            <p role="note" className="text-xs text-warning">
               No conditions: this template never shows. Add Whole site to use it everywhere.
             </p>
           ) : null}
@@ -181,7 +181,7 @@ export function TemplateOptions() {
         tagIds={settings.tagIds}
         onChange={(change) => update(change)}
       />
-      <p className="text-tiny text-default-500">
+      <p className="text-xs text-muted">
         Status, conditions and other template settings are under the settings icon in the top bar.
       </p>
     </div>

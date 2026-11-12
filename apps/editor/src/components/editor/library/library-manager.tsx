@@ -150,7 +150,7 @@ export function LibraryManager({
   const body = (() => {
     if (loadError) {
       return (
-        <div role="alert" className="flex flex-col items-start gap-2 p-6 text-small text-danger">
+        <div role="alert" className="flex flex-col items-start gap-2 p-6 text-sm text-danger">
           {loadError}
           <button type="button" onClick={() => void reload()} className="underline">
             Try again
@@ -160,14 +160,14 @@ export function LibraryManager({
     }
     if (items === null) {
       return (
-        <p role="status" className="p-6 text-small text-default-500">
+        <p role="status" className="p-6 text-sm text-muted">
           Loading…
         </p>
       );
     }
     if (shown.length === 0) {
       return (
-        <p role="status" className="p-6 text-small text-default-500">
+        <p role="status" className="p-6 text-sm text-muted">
           {(query.tab === "pages" ? counts.pages : counts.templates) === 0
             ? `No ${query.tab} yet. Use the New button to make one.`
             : `No ${query.tab} match these filters.`}
@@ -199,7 +199,7 @@ export function LibraryManager({
         counts={counts}
         onCreate={() => setCreating(true)}
       />
-      <div className="flex min-h-9 items-center justify-between gap-3 border-b border-divider px-4 text-tiny text-default-500">
+      <div className="flex min-h-9 items-center justify-between gap-3 border-b border-border px-4 text-xs text-muted">
         <span role="status">
           {shown.length} shown
           {screenshots && queue.busy ? " · Making screenshots…" : ""}

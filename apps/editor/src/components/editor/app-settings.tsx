@@ -1,6 +1,6 @@
 "use client";
 
-import { Switch } from "@heroui-v2/react";
+import { SwitchField as Switch } from "@/components/ui/toggles";
 import type { ProjectSettings } from "@nextomic/schema";
 import { useState } from "react";
 import { saveProjectSettingsAction, setHomePageAction } from "@/app/(builder)/editor/[id]/actions";
@@ -63,7 +63,7 @@ export function AppSettings({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto">
-      <h2 className="px-3 py-2 text-small font-medium text-foreground">App Settings</h2>
+      <h2 className="px-3 py-2 text-sm font-medium text-foreground">App Settings</h2>
       <div className="flex flex-col gap-5 px-3 pb-3">
         <SelectField
           label="Home page"
@@ -84,9 +84,9 @@ export function AppSettings({
             isDisabled={saving}
             onValueChange={(on) => void change({ generateElementIds: on })}
           >
-            <span className="text-small text-foreground">Generate element ID automatically</span>
+            <span className="text-sm text-foreground">Generate element ID automatically</span>
           </Switch>
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Gives every element a unique <code>nxtomc-</code> ID. Turning it on also adds an ID to
             every element that has none. Applies to the whole app, not to a single element.
           </p>
@@ -98,7 +98,7 @@ export function AppSettings({
               isDisabled={saving}
               onValueChange={(on) => void change({ versionControl: on })}
             >
-              <span className="text-small text-foreground">Version control</span>
+              <span className="text-sm text-foreground">Version control</span>
             </Switch>
             <InfoTip
               label="Version control"
@@ -112,9 +112,9 @@ export function AppSettings({
             isDisabled={saving}
             onValueChange={(on) => void change({ generateScreenshots: on })}
           >
-            <span className="text-small text-foreground">Generate Screenshots</span>
+            <span className="text-sm text-foreground">Generate Screenshots</span>
           </Switch>
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Makes a small picture of every page and template for Pages &amp; Templates. A new
             picture replaces the old one, so only one is kept per item. Screenshots are private to
             people who can open this project.
@@ -126,9 +126,9 @@ export function AppSettings({
             isDisabled={saving}
             onValueChange={(on) => void change({ hideEditBorder: on })}
           >
-            <span className="text-small text-foreground">Hide edit border while editing</span>
+            <span className="text-sm text-foreground">Hide edit border while editing</span>
           </Switch>
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Hides the blue outline of the selected element while you edit its Border settings, so
             you see the real border.
           </p>
@@ -139,15 +139,15 @@ export function AppSettings({
             isDisabled={saving}
             onValueChange={(on) => void change({ showClock: on })}
           >
-            <span className="text-small text-foreground">Show time in the editor</span>
+            <span className="text-sm text-foreground">Show time in the editor</span>
           </Switch>
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Shows a running clock (hh:mm:ss, AM or PM) in the top bar, left of the open page link.
           </p>
         </div>
         <AppAuthSettingsGroup pages={pages} saving={saving} change={change} />
         {error ? (
-          <p role="alert" className="text-small text-danger">
+          <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         ) : null}

@@ -36,7 +36,7 @@ export function StatusField({
           onChange({ status: s, scheduledAt: s === "scheduled" ? start : scheduledAt });
         }}
       />
-      {tip ? <p className="text-tiny text-default-500">{tip}</p> : null}
+      {tip ? <p className="text-xs text-muted">{tip}</p> : null}
       {status === "scheduled" ? (
         <>
           <DateTimeField
@@ -44,7 +44,7 @@ export function StatusField({
             value={scheduledAt}
             onChange={(iso) => onChange({ status: "scheduled", scheduledAt: iso })}
           />
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             {scheduledAt === null
               ? "Pick the date and time it goes live."
               : waiting

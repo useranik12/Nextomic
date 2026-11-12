@@ -38,8 +38,8 @@ function IconButton({
       aria-pressed={pressed}
       onClick={onPress}
       className={
-        "flex h-9 w-9 items-center justify-center rounded-medium border border-divider transition-colors duration-300 " +
-        (danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default-100") +
+        "flex h-9 w-9 items-center justify-center rounded-xl border border-border transition-colors duration-300 " +
+        (danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default") +
         (pressed ? " text-danger" : "")
       }
     >
@@ -104,7 +104,7 @@ export function FontEditor({
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
           }}
-          className="h-9 min-w-0 flex-1 rounded-medium border border-default-200 bg-transparent px-3 text-small outline-none focus:border-default-800 disabled:opacity-70"
+          className="h-9 min-w-0 flex-1 rounded-xl border border-border bg-transparent px-3 text-sm outline-none focus:border-focus disabled:opacity-70"
         />
         <IconButton
           label={font.favorite ? "Remove from favorites" : "Add to favorites"}
@@ -119,20 +119,20 @@ export function FontEditor({
           onPress={() => setConfirming(true)}
         />
       </header>
-      <p className="text-tiny text-default-500">
+      <p className="text-xs text-muted">
         {font.source === "google" ? "Google Fonts" : "Custom font"} ·{" "}
         {font.license || "License not set"}
         {font.sourceNote ? ` · ${font.sourceNote}` : ""}
       </p>
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}
       {confirming ? (
         <div
           role="alertdialog"
-          className="flex flex-wrap items-center gap-2 rounded-large bg-danger/10 p-3 text-small"
+          className="flex flex-wrap items-center gap-2 rounded-2xl bg-danger/10 p-3 text-sm"
         >
           {inUse ? (
             <span className="min-w-0 flex-1">
@@ -162,7 +162,7 @@ export function FontEditor({
 
       <FontRoles font={font} use={use} />
 
-      <section aria-label="Loading" className="flex flex-col gap-2 border-t border-divider pt-3">
+      <section aria-label="Loading" className="flex flex-col gap-2 border-t border-border pt-3">
         <SwitchRow
           label="Use this font on the site"
           tip="On: the font files are included in your site so text can use this font. Off: the font stays in your list but is not added to the site, so text falls back to another font."
@@ -177,13 +177,13 @@ export function FontEditor({
           onChange={(preload) => onChange({ ...font, preload })}
         />
         {over ? (
-          <p role="status" className="text-tiny text-warning">
+          <p role="status" className="text-xs text-warning">
             Fonts in use total {weight.files} files, {kb(weight.bytes)}. More than{" "}
             {FONT_SOFT_LIMIT_FILES} files or {kb(FONT_SOFT_LIMIT_BYTES)} slows the first view. Turn
             off fonts you do not use.
           </p>
         ) : (
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Fonts in use: {weight.files} files, {kb(weight.bytes)}.
           </p>
         )}

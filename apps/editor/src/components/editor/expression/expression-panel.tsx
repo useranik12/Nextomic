@@ -5,9 +5,9 @@ import { Fragment, useEffect, useRef } from "react";
 import { Icon } from "@/lib/icons/Icon";
 
 const KIND_BADGE: Record<Completion["kind"], { text: string; tone: string }> = {
-  field: { text: "F", tone: "bg-primary/15 text-primary" },
-  method: { text: "M", tone: "bg-secondary/15 text-secondary" },
-  property: { text: "P", tone: "bg-secondary/15 text-secondary" },
+  field: { text: "F", tone: "bg-accent/15 text-accent" },
+  method: { text: "M", tone: "bg-default text-muted" },
+  property: { text: "P", tone: "bg-default text-muted" },
   function: { text: "ƒ", tone: "bg-warning/15 text-warning" },
   namespace: { text: "N", tone: "bg-warning/15 text-warning" },
   variable: { text: "V", tone: "bg-success/15 text-success" }
@@ -58,24 +58,19 @@ export function ExpressionPanel({
       onMouseDown={(e) => {
         if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
       }}
-      className="fixed z-[1900] flex w-[34rem] max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-large border border-default-200 bg-content1 text-small shadow-2xl"
+      className="fixed z-[1900] flex w-[34rem] max-w-[calc(100vw-16px)] flex-col overflow-hidden rounded-2xl border border-border bg-surface text-sm shadow-2xl"
     >
-      <div className="flex items-center gap-2 border-b border-divider bg-content2/60 px-2 py-1.5">
-        <Icon
-          name="ph:magnifying-glass"
-          width={12}
-          height={12}
-          className="shrink-0 text-default-400"
-        />
+      <div className="flex items-center gap-2 border-b border-border bg-surface-secondary/60 px-2 py-1.5">
+        <Icon name="ph:magnifying-glass" width={12} height={12} className="shrink-0 text-subtle" />
         <input
           aria-label="Search suggestions"
           placeholder="Search methods and names"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           onKeyDown={onSearchKey}
-          className="h-6 min-w-0 flex-1 bg-transparent text-tiny text-default-700 outline-none placeholder:text-default-400"
+          className="h-6 min-w-0 flex-1 bg-transparent text-xs text-body outline-none placeholder:text-subtle"
         />
-        <span className="shrink-0 text-[10px] text-default-400">{items.length} results</span>
+        <span className="shrink-0 text-[10px] text-subtle">{items.length} results</span>
       </div>
       {items.length > 0 ? (
         <div className="flex max-h-72 min-h-0">
@@ -83,14 +78,14 @@ export function ExpressionPanel({
             ref={list}
             role="listbox"
             aria-label="Suggestions"
-            className="w-56 shrink-0 overflow-y-auto border-r border-divider pb-1"
+            className="w-56 shrink-0 overflow-y-auto border-r border-border pb-1"
           >
             {items.map((item, i) => (
               <Fragment key={`${item.group}-${item.kind}-${item.label}`}>
                 {item.group !== items[i - 1]?.group ? (
                   <li
                     role="presentation"
-                    className="sticky top-0 z-10 bg-content1/95 px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-default-400 backdrop-blur"
+                    className="sticky top-0 z-10 bg-surface/95 px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-subtle backdrop-blur"
                   >
                     {item.group}
                   </li>
@@ -102,10 +97,10 @@ export function ExpressionPanel({
                   onMouseEnter={() => onHover(i)}
                   onClick={() => onPick(i)}
                   className={
-                    "mx-1 flex cursor-pointer items-center gap-2 rounded-medium px-2 py-1 font-mono text-tiny transition-colors " +
+                    "mx-1 flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1 font-mono text-xs transition-colors " +
                     (i === active
-                      ? "bg-default-200 text-foreground"
-                      : "text-default-600 hover:bg-default-100")
+                      ? "bg-default-hover text-foreground"
+                      : "text-body hover:bg-default")
                   }
                 >
                   <span
@@ -119,47 +114,43 @@ export function ExpressionPanel({
             ))}
           </ul>
           {current ? (
-            <div className="min-w-0 flex-1 overflow-y-auto bg-content2/40 p-3">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-default-400">
+            <div className="min-w-0 flex-1 overflow-y-auto bg-surface-secondary/40 p-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-subtle">
                 {current.group}
               </p>
-              <p className="mt-1 break-words font-mono text-tiny text-foreground">
+              <p className="mt-1 break-words font-mono text-xs text-foreground">
                 {current.label}
-                <span className="text-default-500">
-                  {current.detail ? ` ${current.detail}` : ""}
-                </span>
+                <span className="text-muted">{current.detail ? ` ${current.detail}` : ""}</span>
               </p>
               {current.description ? (
-                <p className="mt-2 text-tiny leading-relaxed text-default-600">
-                  {current.description}
-                </p>
+                <p className="mt-2 text-xs leading-relaxed text-body">{current.description}</p>
               ) : null}
               {current.example ? (
-                <pre className="mt-3 whitespace-pre-wrap break-words rounded-medium border border-default-200 bg-content1 p-2 font-mono text-[11px] text-default-700">
+                <pre className="mt-3 whitespace-pre-wrap break-words rounded-xl border border-border bg-surface p-2 font-mono text-[11px] text-body">
                   {current.example}
                 </pre>
               ) : null}
-              <p className="mt-3 text-[10px] text-default-400">
+              <p className="mt-3 text-[10px] text-subtle">
                 ↑ ↓ move · Enter or Tab insert · Esc close
               </p>
             </div>
           ) : null}
         </div>
       ) : (
-        <p className="px-3 py-3 text-tiny text-default-500">
+        <p className="px-3 py-3 text-xs text-muted">
           {search ? `Nothing matches “${search}”.` : "No suggestions here."}
         </p>
       )}
       {result ? (
         <div
           className={
-            "flex gap-2 border-t border-divider bg-content2/60 px-3 py-1.5 font-mono text-tiny " +
-            (result.error ? "text-danger" : "text-default-700")
+            "flex gap-2 border-t border-border bg-surface-secondary/60 px-3 py-1.5 font-mono text-xs " +
+            (result.error ? "text-danger" : "text-body")
           }
         >
-          <span className="shrink-0 text-default-400">Result</span>
+          <span className="shrink-0 text-subtle">Result</span>
           <span className="min-w-0 break-words">
-            {result.text || <span className="text-default-400">(empty)</span>}
+            {result.text || <span className="text-subtle">(empty)</span>}
           </span>
         </div>
       ) : null}

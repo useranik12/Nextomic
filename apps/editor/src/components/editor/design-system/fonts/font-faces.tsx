@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox } from "@heroui-v2/react";
+import { CheckboxField as Checkbox } from "@/components/ui/toggles";
 import { fontStack, sortFontFiles, type FontFile, type ProjectFont } from "@nextomic/schema";
 import { useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
@@ -46,8 +46,8 @@ function IconAction({
       disabled={disabled}
       onClick={onPress}
       className={
-        "flex h-8 w-8 items-center justify-center rounded-medium border border-divider text-default-700 transition-colors duration-300 disabled:opacity-40 " +
-        (danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default-100")
+        "flex h-8 w-8 items-center justify-center rounded-xl border border-border text-body transition-colors duration-300 disabled:opacity-40 " +
+        (danger ? "hover:bg-danger/10 hover:text-danger" : "hover:bg-default")
       }
     >
       {children}
@@ -74,7 +74,7 @@ function WeightAndStyle({
     <>
       <div className="w-44">
         {weightMax ? (
-          <p className="px-1 text-small">{weightLabel({ weight, weightMax })}</p>
+          <p className="px-1 text-sm">{weightLabel({ weight, weightMax })}</p>
         ) : (
           <SelectField
             compact
@@ -220,7 +220,7 @@ export function FontFaces({
   return (
     <section aria-label="Font variations" className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-1.5 text-small font-semibold uppercase">
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold uppercase">
           Font variations ({faces.length})
           <InfoTip text="A font is a group of faces that share one name. Each face is one file for one weight and style, such as Bold or Light Italic." />
         </h3>
@@ -255,7 +255,7 @@ export function FontFaces({
         </Checkbox>
       ) : null}
       {editable && !rights ? (
-        <p role="status" className="text-tiny text-warning">
+        <p role="status" className="text-xs text-warning">
           Not confirmed: this font is not used on the site. Text that names it falls back to the
           next font until you tick the box.
         </p>
@@ -286,12 +286,12 @@ export function FontFaces({
         }}
       />
       {error ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="text-tiny text-default-600">
+        <p role="status" className="text-xs text-body">
           {notice}
         </p>
       ) : null}
@@ -300,16 +300,16 @@ export function FontFaces({
         {faces.map((f, i) => (
           <li
             key={`${fileKey(f)}-${f.file}`}
-            className="flex flex-wrap items-center gap-3 rounded-large bg-default-100 px-4 py-3"
+            className="flex flex-wrap items-center gap-3 rounded-2xl bg-default px-4 py-3"
           >
             <div className="min-w-0 flex-1">
               <p
                 style={{ fontFamily: stack, fontWeight: f.weight, fontStyle: f.style }}
-                className="truncate text-medium"
+                className="truncate text-base"
               >
                 {SAMPLE}
               </p>
-              <p className="truncate text-tiny text-default-500">
+              <p className="truncate text-xs text-muted">
                 {f.file} · {f.subset} · {kb(f.bytes)}
               </p>
             </div>
@@ -323,7 +323,7 @@ export function FontFaces({
                 onStyle={(style) => change(i, { style })}
               />
             ) : (
-              <p className="px-1 text-small text-default-600">
+              <p className="px-1 text-sm text-body">
                 {weightLabel(f)} · {f.style}
               </p>
             )}
@@ -345,25 +345,25 @@ export function FontFaces({
           </li>
         ))}
         {faces.length === 0 && pending === null ? (
-          <li className="rounded-large border border-dashed border-default-300 p-4 text-small text-default-500">
+          <li className="rounded-2xl border border-dashed border-default-300 p-4 text-sm text-muted">
             {editable
               ? "This font has no faces yet. Tick the box above, then use Add fontface or Upload font files."
               : "This font has no faces."}
           </li>
         ) : null}
         {pending ? (
-          <li className="flex flex-wrap items-center gap-3 rounded-large border border-dashed border-default-400 px-4 py-3">
+          <li className="flex flex-wrap items-center gap-3 rounded-2xl border border-dashed border-default-400 px-4 py-3">
             <div className="min-w-0 flex-1">
-              <p className="truncate text-small font-medium">
+              <p className="truncate text-sm font-medium">
                 {pending.file ? pending.file.name : "New fontface"}
               </p>
-              <p className="text-tiny text-default-500">
+              <p className="text-xs text-muted">
                 {pending.file
                   ? "Weight and style were read from the file. Change them if they are wrong."
                   : "Choose a font file, or set them first."}
               </p>
               {clash ? (
-                <p role="alert" className="text-tiny text-warning">
+                <p role="alert" className="text-xs text-warning">
                   A face with this weight and style exists. Adding replaces its file.
                 </p>
               ) : null}

@@ -27,11 +27,11 @@ export function StateManager() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6">
         <header className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold">State Management</h1>
-          <p className="text-small text-default-500">
+          <p className="text-sm text-muted">
             Values every page and template can read with the bolt icon: write{" "}
-            <code className="text-default-700">{"{{app.name}}"}</code> for app state and{" "}
-            <code className="text-default-700">{"{{const.name}}"}</code> for constants. Page state
-            lives in the page settings panel.
+            <code className="text-body">{"{{app.name}}"}</code> for app state and{" "}
+            <code className="text-body">{"{{const.name}}"}</code> for constants. Page state lives in
+            the page settings panel.
           </p>
         </header>
         <div role="tablist" aria-label="State" className="flex gap-1">
@@ -45,20 +45,20 @@ export function StateManager() {
               aria-controls={`state-panel-${t.id}`}
               onClick={() => setTab(t.id)}
               className={
-                "flex items-center gap-2 rounded-full px-4 py-1.5 text-small transition-colors duration-300 " +
+                "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-colors duration-300 " +
                 (tab === t.id
-                  ? "bg-default-200 font-medium text-foreground"
-                  : "text-default-600 hover:bg-default-100")
+                  ? "bg-default-hover font-medium text-foreground"
+                  : "text-body hover:bg-default")
               }
             >
               {t.label}
-              <span className="rounded-full bg-default-100 px-1.5 text-tiny text-default-600">
+              <span className="rounded-full bg-default px-1.5 text-xs text-body">
                 {counts[t.id]}
               </span>
             </button>
           ))}
         </div>
-        <div className="flex items-start gap-2 rounded-large border border-warning/40 bg-warning/10 p-3 text-small text-default-700">
+        <div className="flex items-start gap-2 rounded-2xl border border-warning/40 bg-warning/10 p-3 text-sm text-body">
           <Icon name="ph:warning" width={16} height={16} className="mt-0.5 shrink-0 text-warning" />
           <p>
             {tab === "app"
@@ -70,7 +70,7 @@ export function StateManager() {
           role="tabpanel"
           id={`state-panel-${tab}`}
           aria-labelledby={`state-tab-${tab}`}
-          className="rounded-large border border-divider bg-content1/30 p-4"
+          className="rounded-2xl border border-border bg-surface/30 p-4"
         >
           <StateTable key={tab} group={tab} usage={usage} />
         </section>

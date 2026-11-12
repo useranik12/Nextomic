@@ -36,19 +36,19 @@ export function ThemeVariables({
   return (
     <div className="flex flex-col gap-3">
       {names.length === 0 ? (
-        <p className="text-small text-default-500">
+        <p className="text-sm text-muted">
           No overrides. Everything uses the base variables from the Variables tab.
         </p>
       ) : null}
       {names.map((name) => {
         const original = variables.find((v) => v.name === name);
         return (
-          <div key={name} className="flex flex-col gap-2 rounded-large border border-divider p-3">
+          <div key={name} className="flex flex-col gap-2 rounded-2xl border border-border p-3">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-small">
+              <span className="font-mono text-sm">
                 {VARIABLE_PREFIX}
                 {name}
-                {original ? null : <span className="ml-2 text-tiny text-danger">missing</span>}
+                {original ? null : <span className="ml-2 text-xs text-danger">missing</span>}
               </span>
               <button
                 type="button"
@@ -58,7 +58,7 @@ export function ThemeVariables({
                   delete next[name];
                   onChange(next);
                 }}
-                className="rounded p-1 text-default-500 hover:text-danger"
+                className="rounded p-1 text-muted hover:text-danger"
               >
                 <Icon name="ph:trash" width={14} height={14} />
               </button>

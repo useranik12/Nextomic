@@ -1,6 +1,6 @@
 "use client";
+import { Busy } from "@/components/ui/busy";
 
-import { Spinner } from "@heroui-v2/react";
 import type { StorageEntry } from "@nextomic/integrations";
 import { useEffect, useState } from "react";
 import { signSupabaseObjectAction } from "@/app/(builder)/editor/[id]/connector-actions";
@@ -45,14 +45,14 @@ function PreviewBody({ kind, url, name }: { kind: ObjectKind; url: string; name:
       </video>
     );
   if (kind === "audio") return <audio src={url} controls className="w-full" aria-label={name} />;
-  return <p className="text-small text-default-500">Preview not available</p>;
+  return <p className="text-sm text-muted">Preview not available</p>;
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">
-      <dt className="text-tiny text-default-500">{label}</dt>
-      <dd className="break-all text-small text-foreground">{value}</dd>
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="break-all text-sm text-foreground">{value}</dd>
     </div>
   );
 }
@@ -92,33 +92,31 @@ export function ObjectPreview({
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
-      className="flex h-full w-[350px] min-w-[350px] max-w-[350px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-divider pl-4"
+      className="flex h-full w-[350px] min-w-[350px] max-w-[350px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-border pl-4"
     >
       <div className="flex items-center gap-2">
-        <p className="min-w-0 flex-1 truncate text-tiny text-default-500" title={url ?? undefined}>
+        <p className="min-w-0 flex-1 truncate text-xs text-muted" title={url ?? undefined}>
           {url ?? (error ? "No URL" : "Signing URL…")}
         </p>
         <button
           type="button"
           aria-label="Close preview"
           onClick={onClose}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-default-600 hover:bg-default-100 hover:text-foreground"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-body hover:bg-default hover:text-foreground"
         >
           <Icon name="ph:x" width={16} height={16} />
         </button>
       </div>
-      <span
-        className={`w-fit rounded-full px-2 py-0.5 text-tiny font-medium ${CHIP_CLASSES[kind]}`}
-      >
+      <span className={`w-fit rounded-full px-2 py-0.5 text-xs font-medium ${CHIP_CLASSES[kind]}`}>
         {label}
       </span>
-      <div className="flex min-h-[200px] items-center justify-center overflow-hidden rounded-medium bg-default-50 p-2">
+      <div className="flex min-h-[200px] items-center justify-center overflow-hidden rounded-xl bg-default/40 p-2">
         {error ? (
-          <p role="alert" className="text-small text-danger">
+          <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         ) : !url ? (
-          <Spinner size="sm" label="Loading preview" />
+          <Busy label="Loading preview" />
         ) : (
           <PreviewBody key={url} kind={kind} url={url} name={entry.name} />
         )}
@@ -144,7 +142,7 @@ export function ObjectPreview({
         {copied ? "Copied" : "Copy URL"}
       </ActionButton>
       {!publicUrl && url ? (
-        <p className="text-tiny text-default-500">This signed URL expires in 10 minutes.</p>
+        <p className="text-xs text-muted">This signed URL expires in 10 minutes.</p>
       ) : null}
     </aside>
   );

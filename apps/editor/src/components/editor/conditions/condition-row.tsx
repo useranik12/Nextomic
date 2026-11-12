@@ -107,7 +107,7 @@ export function ConditionRow({
   onRemove: () => void;
 }) {
   return (
-    <li className="flex flex-col gap-2 rounded-large border border-default-200 p-2.5">
+    <li className="flex flex-col gap-2 rounded-2xl border border-border p-2.5">
       <div className="flex items-start gap-1">
         <div className="min-w-0 flex-1">
           <SelectField
@@ -124,7 +124,7 @@ export function ConditionRow({
           type="button"
           aria-label="Remove condition"
           onClick={onRemove}
-          className="mt-6 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-default-500 transition-colors duration-300 hover:bg-default-100 hover:text-danger"
+          className="mt-6 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors duration-300 hover:bg-default hover:text-danger"
         >
           <Icon name="ph:trash" width={14} height={14} />
         </button>

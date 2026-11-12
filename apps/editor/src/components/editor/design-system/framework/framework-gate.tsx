@@ -37,8 +37,8 @@ export function FrameworkGate({
   if (!theme) {
     return (
       <div className="flex flex-col items-start gap-3 p-4">
-        <h2 className="text-medium font-semibold">{title}</h2>
-        <p className="text-small text-default-500">
+        <h2 className="text-base font-semibold">{title}</h2>
+        <p className="text-sm text-muted">
           This project has no theme yet. The Main theme runs on the Main framework: modern colors,
           fluid scales and utility classes.
         </p>
@@ -57,8 +57,8 @@ export function FrameworkGate({
   if (!framework) {
     return (
       <div className="flex flex-col items-start gap-3 p-4">
-        <h2 className="text-medium font-semibold">{title}</h2>
-        <p className="text-small text-default-500">
+        <h2 className="text-base font-semibold">{title}</h2>
+        <p className="text-sm text-muted">
           {theme.name} has no framework. Start from the Main framework, or import your own in the
           Framework tab.
         </p>
@@ -75,8 +75,8 @@ export function FrameworkGate({
   };
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-end gap-3 border-b border-divider p-3">
-        <h2 className="mr-auto text-medium font-semibold">{title}</h2>
+      <div className="flex flex-wrap items-end gap-3 border-b border-border p-3">
+        <h2 className="mr-auto text-base font-semibold">{title}</h2>
         {themes.length > 1 ? (
           <div className="w-48">
             <SelectField
@@ -88,11 +88,11 @@ export function FrameworkGate({
             />
           </div>
         ) : (
-          <span className="pb-1.5 text-tiny text-default-500">Theme: {theme.name}</span>
+          <span className="pb-1.5 text-xs text-muted">Theme: {theme.name}</span>
         )}
       </div>
       {error ? (
-        <p role="alert" className="px-3 pt-2 text-tiny text-danger">
+        <p role="alert" className="px-3 pt-2 text-xs text-danger">
           {error}
         </p>
       ) : null}

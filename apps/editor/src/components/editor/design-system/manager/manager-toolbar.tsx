@@ -27,7 +27,7 @@ export function ManagerToolbar({
   onFilter: (v: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 border-b border-divider p-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 border-b border-border p-3 lg:grid-cols-4">
       <FormInput
         compact
         type="search"

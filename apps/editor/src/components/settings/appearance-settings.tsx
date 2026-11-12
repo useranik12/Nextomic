@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColorMode } from "@nextomic/schema";
-import { Radio, RadioGroup } from "@heroui-v2/react";
+import { Description, Label, Radio, RadioGroup } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { updateColorModeAction } from "@/app/(builder)/(dashboard)/settings/actions";
@@ -26,15 +26,31 @@ export function AppearanceSettings({ initialColorMode }: { initialColorMode: Col
   return (
     <div className="flex flex-col gap-2">
       <RadioGroup
-        label="Color mode"
-        description="Changes how the builder UI looks. Built sites have their own color modes."
         value={colorMode}
-        onValueChange={handleChange}
+        onChange={handleChange}
         isDisabled={isPending}
+        aria-label="Color mode"
       >
-        <Radio value="dark">Dark</Radio>
-        <Radio value="light">Light</Radio>
-        <Radio value="system">Match system</Radio>
+        <Label className="text-sm font-medium text-body">Color mode</Label>
+        <Description>
+          Changes how the builder UI looks. Built sites have their own color modes.
+        </Description>
+        {(
+          [
+            ["dark", "Dark"],
+            ["light", "Light"],
+            ["system", "Match system"]
+          ] as const
+        ).map(([value, text]) => (
+          <Radio key={value} value={value}>
+            <Radio.Control>
+              <Radio.Indicator />
+            </Radio.Control>
+            <Radio.Content>
+              <Label className="text-sm font-normal text-body">{text}</Label>
+            </Radio.Content>
+          </Radio>
+        ))}
       </RadioGroup>
       {error ? <p className="text-sm text-danger">{error}</p> : null}
     </div>

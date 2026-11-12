@@ -13,7 +13,7 @@ export default function ProjectsError({ error, reset }: { error: Error; reset: (
       title="Could not load your projects"
       message={error.message || "Something went wrong."}
       onRetry={reset}
-      className="rounded-large border border-divider"
+      className="rounded-2xl border border-border"
     />
   );
 }

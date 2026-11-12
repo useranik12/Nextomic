@@ -1,6 +1,6 @@
 "use client";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui-v2/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState } from "react";
 import { previewProps, useStylePreview } from "./design-field-tools";
 import { isNumberText, lengthMode, parseLength, unitSpecFor, type UnitSpec } from "./length-units";
@@ -8,7 +8,7 @@ import { isNumberText, lengthMode, parseLength, unitSpecFor, type UnitSpec } fro
 const SILENT_PREVIEW = { show: () => undefined, clear: () => undefined };
 
 const TRIGGER =
-  "flex shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-tiny font-medium text-default-600 transition-colors duration-300 hover:bg-default-300 hover:text-foreground focus-visible:ring-1 focus-visible:ring-default-800/40";
+  "flex shrink-0 items-center justify-center rounded-full px-1.5 font-mono text-xs font-medium text-body transition-colors duration-300 hover:bg-default-300 hover:text-foreground focus-visible:ring-1 focus-visible:ring-focus/30";
 
 /** The unit a fresh field starts with: a plain number where that is the usual choice (line-height). */
 function defaultUnit(spec: UnitSpec | null): string {
@@ -141,7 +141,7 @@ export function LengthInput({
               commit(typed, start);
             } else onChange(null);
           }}
-          className={fieldClass + " text-default-600"}
+          className={fieldClass + " text-body"}
         />
       ) : (
         <input
@@ -192,7 +192,7 @@ export function LengthInput({
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-52 items-stretch gap-1 p-2">
-          <p className="px-1 text-tiny text-default-500">Unit (hover to preview)</p>
+          <p className="px-1 text-xs text-muted">Unit (hover to preview)</p>
           <ul className="grid grid-cols-2 gap-1">
             {spec.unitless ? (
               <UnitRow
@@ -215,7 +215,7 @@ export function LengthInput({
             ))}
           </ul>
           {spec.keywords.length > 0 ? (
-            <ul className="flex flex-wrap gap-1 border-t border-divider pt-2">
+            <ul className="flex flex-wrap gap-1 border-t border-border pt-2">
               {spec.keywords.map((word) => (
                 <li key={word}>
                   <button
@@ -224,8 +224,8 @@ export function LengthInput({
                     {...previewProps(preview, word)}
                     aria-pressed={value === word}
                     className={
-                      "rounded-full px-2 py-0.5 font-mono text-tiny hover:bg-default-200 " +
-                      (value === word ? "bg-default-300" : "bg-default-100")
+                      "rounded-full px-2 py-0.5 font-mono text-xs hover:bg-default-hover " +
+                      (value === word ? "bg-default-300" : "bg-default")
                     }
                   >
                     {word}
@@ -243,8 +243,8 @@ export function LengthInput({
             }}
             aria-pressed={forcedCustom}
             className={
-              "mt-1 rounded-medium border-t border-divider px-2 pt-2 text-left text-small hover:text-foreground " +
-              (forcedCustom ? "font-medium text-foreground" : "text-default-600")
+              "mt-1 rounded-xl border-t border-border px-2 pt-2 text-left text-sm hover:text-foreground " +
+              (forcedCustom ? "font-medium text-foreground" : "text-body")
             }
           >
             Custom (calc, min, max, var …)
@@ -276,12 +276,12 @@ function UnitRow({
         {...handlers}
         aria-pressed={active}
         className={
-          "flex w-full items-center justify-between gap-2 rounded-medium px-2 py-1.5 text-left transition-colors hover:bg-default-100 " +
-          (active ? "bg-default-200" : "")
+          "flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-default " +
+          (active ? "bg-default-hover" : "")
         }
       >
-        <span className="font-mono text-small">{label}</span>
-        <span className="truncate font-mono text-tiny text-default-500">{shown}</span>
+        <span className="font-mono text-sm">{label}</span>
+        <span className="truncate font-mono text-xs text-muted">{shown}</span>
       </button>
     </li>
   );

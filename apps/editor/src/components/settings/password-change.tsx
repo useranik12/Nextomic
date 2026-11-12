@@ -49,8 +49,8 @@ export function PasswordChange({ email, policy }: { email: string; policy: Passw
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col">
-          <span className="text-small font-medium text-foreground">Password</span>
-          <span className="text-small text-default-500">
+          <span className="text-sm font-medium text-foreground">Password</span>
+          <span className="text-sm text-muted">
             We email a 6-digit code to {email} to confirm the change.
           </span>
         </div>
@@ -113,12 +113,12 @@ export function PasswordChange({ email, policy }: { email: string; policy: Passw
         </div>
       ) : null}
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="text-small text-success">
+        <p role="status" className="text-sm text-success">
           {notice}
         </p>
       ) : null}

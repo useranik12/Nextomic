@@ -34,7 +34,7 @@ export function loopQueryText(tree: ElementNode | undefined, loopId: unknown): s
   return query ? JSON.stringify(query) : "";
 }
 
-const note = "text-tiny text-default-500";
+const note = "text-xs text-muted";
 
 export function QueryOverrideInput({
   field,
@@ -62,13 +62,13 @@ export function QueryOverrideInput({
     if (!loopId) return <p className={note}>Choose a query loop to edit its settings.</p>;
     if (!node || !loop || !query)
       return (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           This query loop is no longer on the page, or its query is turned off.
         </p>
       );
     if (error)
       return (
-        <div role="alert" className="flex items-center gap-2 text-tiny text-danger">
+        <div role="alert" className="flex items-center gap-2 text-xs text-danger">
           {error}
           <ActionButton size="sm" tone="ghost" onPress={() => void reload()}>
             Retry
@@ -122,18 +122,18 @@ export function QueryOverrideInput({
           />
         )}
         {typeChanged ? (
-          <p role="status" className="text-tiny text-warning">
+          <p role="status" className="text-xs text-warning">
             The loop&apos;s query type changed after these settings were saved: they show the
             loop&apos;s own settings now.
           </p>
         ) : null}
         {tooLarge ? (
-          <p role="alert" className="text-tiny text-danger">
+          <p role="alert" className="text-xs text-danger">
             These settings are too large to save. Remove some filters or variables.
           </p>
         ) : null}
         {problems.length > 0 ? (
-          <ul role="status" className="flex flex-col gap-1 text-tiny text-warning">
+          <ul role="status" className="flex flex-col gap-1 text-xs text-warning">
             {problems.map((problem) => (
               <li key={problem}>{problem}</li>
             ))}
@@ -154,7 +154,7 @@ export function QueryOverrideInput({
 
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="mb-1 text-small font-medium text-default-700">{field.label}</legend>
+      <legend className="mb-1 text-sm font-medium text-body">{field.label}</legend>
       {body()}
     </fieldset>
   );

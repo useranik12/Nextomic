@@ -49,11 +49,11 @@ export function AuthBlock({
   return (
     <section
       aria-label="Authentication"
-      className="flex flex-col gap-4 rounded-large border border-default-200 p-5"
+      className="flex flex-col gap-4 rounded-2xl border border-border p-5"
     >
       <div>
-        <h3 className="text-small font-medium text-foreground">Authentication</h3>
-        <p className="text-small text-default-500">
+        <h3 className="text-sm font-medium text-foreground">Authentication</h3>
+        <p className="text-sm text-muted">
           Values are encrypted on the server and never sent to the browser or the built site.
         </p>
       </div>

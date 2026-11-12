@@ -1,8 +1,7 @@
 "use client";
 
 import type { Project } from "@nextomic/schema";
-import { Chip, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@heroui-v2/react";
+import { Chip, Table, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";
@@ -148,36 +147,48 @@ export function ProjectsBoard({
           ))}
         </div>
       ) : (
-        <Table aria-label="Projects">
-          <TableHeader>
-            <TableColumn>NAME</TableColumn>
-            <TableColumn>LAST MODIFIED</TableColumn>
-            <TableColumn> </TableColumn>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((project) => (
-              <TableRow key={project.id}>
-                <TableCell>
-                  <NextLink href={`/editor/${project.id}`} className="hover:underline">
-                    {project.name}
-                  </NextLink>
-                </TableCell>
-                <TableCell>{formatOrdinalDate(project.lastModifiedAt)}</TableCell>
-                <TableCell>
-                  <ActionButton size="sm" tone="ghost" onPress={() => setProjectToRename(project)}>
-                    Rename
-                  </ActionButton>
-                  <ActionButton
-                    size="sm"
-                    tone="danger-ghost"
-                    onPress={() => setProjectToDelete(project)}
-                  >
-                    Delete
-                  </ActionButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+        <Table>
+          <Table.ScrollContainer>
+            <Table.Content aria-label="Projects">
+              <Table.Header>
+                <Table.Column id="name" isRowHeader>
+                  Name
+                </Table.Column>
+                <Table.Column id="modified">Last modified</Table.Column>
+                <Table.Column id="actions">
+                  <span className="sr-only">Actions</span>
+                </Table.Column>
+              </Table.Header>
+              <Table.Body>
+                {filtered.map((project) => (
+                  <Table.Row key={project.id} id={project.id}>
+                    <Table.Cell>
+                      <NextLink href={`/editor/${project.id}`} className="hover:underline">
+                        {project.name}
+                      </NextLink>
+                    </Table.Cell>
+                    <Table.Cell>{formatOrdinalDate(project.lastModifiedAt)}</Table.Cell>
+                    <Table.Cell>
+                      <ActionButton
+                        size="sm"
+                        tone="ghost"
+                        onPress={() => setProjectToRename(project)}
+                      >
+                        Rename
+                      </ActionButton>
+                      <ActionButton
+                        size="sm"
+                        tone="danger-ghost"
+                        onPress={() => setProjectToDelete(project)}
+                      >
+                        Delete
+                      </ActionButton>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table.Content>
+          </Table.ScrollContainer>
         </Table>
       )}
 

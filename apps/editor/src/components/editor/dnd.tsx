@@ -133,7 +133,7 @@ export function EditorDndProvider({ children }: { children: ReactNode }) {
       </DragActiveContext.Provider>
       <DragOverlay dropAnimation={null} style={{ pointerEvents: "none" }}>
         {overlay ? (
-          <div className="rounded-medium bg-default-800 px-3 py-1.5 text-small font-medium text-default-50 shadow-lg">
+          <div className="rounded-xl bg-default-hover px-3 py-1.5 text-sm font-medium text-foreground shadow-lg">
             {overlay}
           </div>
         ) : null}

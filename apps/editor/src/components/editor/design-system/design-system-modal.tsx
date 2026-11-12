@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, ModalContent } from "@heroui-v2/react";
+import { Modal, ModalContent } from "@/components/ui/modal";
 import { useCallback, useState } from "react";
 import { ActionButton } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -69,8 +69,8 @@ export function DesignSystemModal({
     >
       <ModalContent>
         <DesignNavProvider value={{ go, params }}>
-          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-divider px-4">
-            <h2 className="flex items-center gap-2 text-medium font-medium">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-4">
+            <h2 className="flex items-center gap-2 text-base font-medium">
               <Icon name="ph:palette" width={20} height={20} />
               Design System
             </h2>
@@ -78,13 +78,13 @@ export function DesignSystemModal({
               {draft.error ? (
                 <span
                   role="alert"
-                  className="max-w-sm truncate text-tiny text-danger"
+                  className="max-w-sm truncate text-xs text-danger"
                   title={draft.error}
                 >
                   {draft.error}
                 </span>
               ) : draft.dirty ? (
-                <span className="text-tiny font-medium text-warning">Unsaved changes</span>
+                <span className="text-xs font-medium text-warning">Unsaved changes</span>
               ) : null}
               <ActionButton
                 size="sm"
@@ -98,16 +98,16 @@ export function DesignSystemModal({
                 type="button"
                 aria-label="Close the Design System"
                 onClick={requestClose}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-default-600 transition-colors duration-300 hover:bg-default-100"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-body transition-colors duration-300 hover:bg-default"
               >
                 <Icon name="ph:x" width={16} height={16} />
               </button>
             </div>
           </header>
-          <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-b-large">
+          <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-b-2xl">
             <nav
               aria-label="Design system"
-              className="flex w-52 shrink-0 flex-col gap-1 overflow-y-auto border-r border-divider p-3"
+              className="flex w-52 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border p-3"
             >
               {DESIGN_TABS.map((t) => (
                 <button
@@ -116,14 +116,14 @@ export function DesignSystemModal({
                   aria-current={tab === t.id}
                   onClick={() => go(t.id)}
                   className={
-                    "flex flex-col rounded-medium px-3 py-2 text-left transition-colors duration-300 " +
+                    "flex flex-col rounded-xl px-3 py-2 text-left transition-colors duration-300 " +
                     (tab === t.id
-                      ? "bg-default-200 text-foreground"
-                      : "text-default-600 hover:bg-default-100")
+                      ? "bg-default-hover text-foreground"
+                      : "text-body hover:bg-default")
                   }
                 >
-                  <span className="text-small font-medium">{t.label}</span>
-                  <span className="text-tiny text-default-500">{t.hint}</span>
+                  <span className="text-sm font-medium">{t.label}</span>
+                  <span className="text-xs text-muted">{t.hint}</span>
                 </button>
               ))}
             </nav>
@@ -144,9 +144,9 @@ export function DesignSystemModal({
                 aria-label="Unsaved changes"
                 className="absolute inset-0 z-10 flex items-center justify-center bg-background/70 backdrop-blur-sm"
               >
-                <div className="flex w-96 flex-col gap-3 rounded-large border border-divider bg-content1 p-5 shadow-xl">
-                  <h3 className="text-medium font-semibold">Save your changes?</h3>
-                  <p className="text-small text-default-600">
+                <div className="flex w-96 flex-col gap-3 rounded-2xl border border-border bg-surface p-5 shadow-xl">
+                  <h3 className="text-base font-semibold">Save your changes?</h3>
+                  <p className="text-sm text-body">
                     You changed the Design System. Unsaved changes are lost when you close it.
                   </p>
                   <div className="flex justify-end gap-2">

@@ -10,7 +10,7 @@ const MENU_WIDTH = 240;
 const EDGE = 8;
 
 const itemClass =
-  "flex h-8 w-full items-center gap-2 rounded-medium px-2.5 text-left text-small text-foreground outline-none transition-colors duration-300 hover:bg-default-100 focus-visible:bg-default-100 disabled:cursor-not-allowed disabled:text-default-400 disabled:hover:bg-transparent";
+  "flex h-8 w-full items-center gap-2 rounded-xl px-2.5 text-left text-sm text-foreground outline-none transition-colors duration-300 hover:bg-default focus-visible:bg-default disabled:cursor-not-allowed disabled:text-subtle disabled:hover:bg-transparent";
 
 function Item({
   children,
@@ -37,7 +37,7 @@ function Item({
 }
 
 function Divider() {
-  return <div role="separator" className="my-1 h-px bg-divider" />;
+  return <div role="separator" className="my-1 h-px bg-border" />;
 }
 
 function MoveButton({
@@ -59,7 +59,7 @@ function MoveButton({
       title={label}
       disabled={disabled}
       onClick={onPress}
-      className="flex h-7 w-7 items-center justify-center rounded-medium bg-default-100 text-foreground outline-none transition-colors duration-300 hover:bg-default-200 focus-visible:ring-1 focus-visible:ring-default-800 disabled:cursor-not-allowed disabled:text-default-300 disabled:hover:bg-default-100"
+      className="flex h-7 w-7 items-center justify-center rounded-xl bg-default text-foreground outline-none transition-colors duration-300 hover:bg-default-hover focus-visible:ring-1 focus-visible:ring-focus/30 disabled:cursor-not-allowed disabled:text-default-300 disabled:hover:bg-default"
     >
       {children}
     </button>
@@ -158,7 +158,7 @@ export function ElementContextMenu() {
       aria-label={`${label} actions`}
       style={{ left: pos.left, top: pos.top, width: MENU_WIDTH }}
       onContextMenu={(event) => event.preventDefault()}
-      className="fixed z-[100] max-h-[calc(100vh-16px)] overflow-y-auto rounded-large border border-divider bg-content1 p-1.5 shadow-large"
+      className="fixed z-[100] max-h-[calc(100vh-16px)] overflow-y-auto rounded-2xl border border-border bg-surface p-1.5 shadow-lg"
     >
       {choosingClass ? (
         <div className="flex flex-col gap-1">
@@ -168,11 +168,11 @@ export function ElementContextMenu() {
               role="menuitem"
               aria-label="Back to the menu"
               onClick={() => setChoosingClass(false)}
-              className="rounded-medium p-1 text-default-600 hover:bg-default-100 hover:text-foreground"
+              className="rounded-xl p-1 text-body hover:bg-default hover:text-foreground"
             >
               <Icon name="ph:arrow-left" width={14} height={14} />
             </button>
-            <span className="text-small font-medium text-foreground">Move styles to a class</span>
+            <span className="text-sm font-medium text-foreground">Move styles to a class</span>
           </div>
           <input
             autoFocus
@@ -180,14 +180,14 @@ export function ElementContextMenu() {
             placeholder="Search classes"
             value={classQuery}
             onChange={(e) => setClassQuery(e.target.value)}
-            className="mx-1 h-8 rounded-full border border-default-200 bg-transparent px-3 text-small outline-none focus:border-default-800"
+            className="mx-1 h-8 rounded-full border border-border bg-transparent px-3 text-sm outline-none focus:border-focus"
           />
-          <p className="px-2 text-tiny text-default-500">
+          <p className="px-2 text-xs text-muted">
             Moves this element&apos;s own design into the class you pick. Its added classes stay.
           </p>
           <ul role="group" aria-label="Classes" className="max-h-56 overflow-y-auto">
             {classNames.length === 0 ? (
-              <li className="px-2.5 py-2 text-small text-default-500">
+              <li className="px-2.5 py-2 text-sm text-muted">
                 {Object.keys(classes).length === 0
                   ? "This project has no classes yet."
                   : "No class matches."}
@@ -205,7 +205,7 @@ export function ElementContextMenu() {
       ) : (
         <>
           <div className="flex items-center justify-between px-2.5 py-1">
-            <span className="text-small font-medium text-foreground">Move</span>
+            <span className="text-sm font-medium text-foreground">Move</span>
             <span className="flex gap-1">
               <MoveButton
                 label="Move out of parent"

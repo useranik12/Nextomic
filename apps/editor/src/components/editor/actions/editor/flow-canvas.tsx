@@ -23,7 +23,7 @@ interface ListContext {
   errors: ReadonlySet<string>;
 }
 
-const Connector = () => <div aria-hidden className="h-3 w-px bg-divider" />;
+const Connector = () => <div aria-hidden className="h-3 w-px bg-border" />;
 
 function NodeList({
   nodes,
@@ -89,7 +89,7 @@ function NodeBlock({
   const row = node.kind === "condition" || node.kind === "parallel" || node.kind === "tryCatch";
   return (
     <div
-      className={`flex flex-col items-center gap-2 rounded-large border border-dashed border-default-300 p-3 ${node.disabled ? "opacity-60" : ""}`}
+      className={`flex flex-col items-center gap-2 rounded-2xl border border-dashed border-default-300 p-3 ${node.disabled ? "opacity-60" : ""}`}
     >
       {card}
       <div className={row ? "flex items-start gap-4" : "flex flex-col items-center"}>
@@ -97,9 +97,9 @@ function NodeBlock({
           <section
             key={list.list}
             aria-label={list.label}
-            className="flex flex-col items-center gap-1 rounded-medium bg-default-50 p-2"
+            className="flex flex-col items-center gap-1 rounded-xl bg-default/40 p-2"
           >
-            <h4 className="text-tiny font-semibold uppercase tracking-wide text-default-500">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted">
               {list.label}
             </h4>
             <NodeList
@@ -139,7 +139,7 @@ export function FlowCanvas({ errors }: { errors: ReadonlySet<string> }) {
   if (mode === "flows" && !trigger) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3">
-        <p className="text-medium font-semibold">Select Action Trigger</p>
+        <p className="text-base font-semibold">Select Action Trigger</p>
         <TriggerPicker variant="large" />
       </div>
     );
@@ -147,7 +147,7 @@ export function FlowCanvas({ errors }: { errors: ReadonlySet<string> }) {
   if (nodes.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-medium font-semibold">No Actions Created</p>
+        <p className="text-base font-semibold">No Actions Created</p>
         <div className="flex w-56 flex-col gap-2">
           {START_KINDS.map((kind) => (
             <ActionButton
@@ -172,7 +172,7 @@ export function FlowCanvas({ errors }: { errors: ReadonlySet<string> }) {
 }
 
 const ZOOM_BUTTON =
-  "flex h-7 w-7 items-center justify-center rounded-full text-default-600 hover:bg-default-100";
+  "flex h-7 w-7 items-center justify-center rounded-full text-body hover:bg-default";
 
 /** The movable, zoomable area around the flow (right-drag to move, wheel to zoom). */
 function Viewport({ resetKey, children }: { resetKey: unknown; children: React.ReactNode }) {
@@ -192,7 +192,7 @@ function Viewport({ resetKey, children }: { resetKey: unknown; children: React.R
       >
         {children}
       </div>
-      <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full border border-divider bg-content1 px-1 shadow-small">
+      <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full border border-border bg-surface px-1 shadow-sm">
         <button
           type="button"
           aria-label="Zoom out"
@@ -201,7 +201,7 @@ function Viewport({ resetKey, children }: { resetKey: unknown; children: React.R
         >
           <Icon name="ph:minus" width={14} height={14} />
         </button>
-        <span className="w-10 text-center text-tiny tabular-nums text-default-600">
+        <span className="w-10 text-center text-xs tabular-nums text-body">
           {Math.round(view.scale * 100)}%
         </span>
         <button

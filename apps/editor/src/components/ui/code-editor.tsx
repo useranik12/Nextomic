@@ -29,7 +29,7 @@ const INDENT = "  ";
 
 const LINE_HEIGHT = 20;
 const MAX_LINES = 16;
-const BOX = "px-3 py-2.5 font-mono text-tiny leading-5 whitespace-pre";
+const BOX = "px-3 py-2.5 font-mono text-xs leading-5 whitespace-pre";
 
 /**
  * Tab indents like a code editor (Shift+Tab outdents, also over several lines) instead of moving
@@ -109,7 +109,7 @@ export function CssCodeEditor({
     <div
       style={{ height: lines * LINE_HEIGHT + 20 }}
       className={
-        "relative overflow-hidden rounded-medium bg-default-100 focus-within:ring-1 focus-within:ring-default-800/30 " +
+        "relative overflow-hidden rounded-xl bg-default focus-within:ring-1 focus-within:ring-focus/30 " +
         (invalid ? "ring-1 ring-danger" : "")
       }
     >
@@ -144,7 +144,7 @@ export function CssCodeEditor({
           colored.current.scrollTop = e.currentTarget.scrollTop;
           colored.current.scrollLeft = e.currentTarget.scrollLeft;
         }}
-        className={`absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none placeholder:text-default-400 ${BOX}`}
+        className={`absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent text-transparent caret-foreground outline-none placeholder:text-subtle ${BOX}`}
       />
       <div className="absolute right-2 top-2 z-10">
         <FormatButton

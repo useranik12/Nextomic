@@ -41,7 +41,7 @@ export function IdentifierInput({
         className={`${compactFieldClass} font-mono ${problem ? "!border-danger" : ""}`}
       />
       {problem ? (
-        <p role="alert" className="mt-0.5 px-2 text-tiny text-danger">
+        <p role="alert" className="mt-0.5 px-2 text-xs text-danger">
           {problem}
         </p>
       ) : null}

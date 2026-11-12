@@ -311,7 +311,7 @@ export function TimelineSettings({
           tip="Pick the pages that run this timeline. With none picked it runs on every page."
         >
           {pages.length === 0 ? (
-            <p className="text-small text-default-500">This project has no pages yet.</p>
+            <p className="text-sm text-muted">This project has no pages yet.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {pages.map((page) => {
@@ -323,10 +323,10 @@ export function TimelineSettings({
                     aria-pressed={on}
                     onClick={() => togglePage(page.id)}
                     className={
-                      "rounded-full px-3 py-1.5 text-small transition-colors duration-300 " +
+                      "rounded-full px-3 py-1.5 text-sm transition-colors duration-300 " +
                       (on
-                        ? "bg-default-800 text-default-50"
-                        : "bg-default-100 text-default-600 hover:bg-default-200")
+                        ? "bg-default-hover text-foreground"
+                        : "bg-default text-body hover:bg-default-hover")
                     }
                   >
                     {page.name}

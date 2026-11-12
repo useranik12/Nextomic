@@ -77,8 +77,9 @@ export function ActionButton({
   if (href) {
     return (
       <Link
+        // A link has no press handling: only plain DOM props (aria, data, tooltip trigger handlers).
+        {...(props as Record<string, unknown>)}
         href={href}
-        aria-label={props["aria-label"]}
         className={buttonVariants({ variant: VARIANT[tone], isIconOnly }) + " " + classes}
       >
         {startContent}

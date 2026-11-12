@@ -49,11 +49,11 @@ export function EmailChange({ email }: { email: string }) {
   };
 
   return (
-    <div className="flex flex-col gap-3 border-t border-divider pt-4">
+    <div className="flex flex-col gap-3 border-t border-border pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col">
-          <span className="text-small font-medium text-foreground">Email</span>
-          <span className="text-small text-default-500">{current}</span>
+          <span className="text-sm font-medium text-foreground">Email</span>
+          <span className="text-sm text-muted">{current}</span>
         </div>
         {step.kind === "idle" ? (
           <ActionButton
@@ -97,7 +97,7 @@ export function EmailChange({ email }: { email: string }) {
       ) : null}
       {step.kind === "code" ? (
         <div className="flex flex-col gap-2">
-          <p className="text-small text-default-600">
+          <p className="text-sm text-body">
             We sent a 6-digit code to{" "}
             <span className="font-medium text-foreground">{step.sentTo}</span>. It expires in 10
             minutes.
@@ -133,12 +133,12 @@ export function EmailChange({ email }: { email: string }) {
         </div>
       ) : null}
       {error ? (
-        <p role="alert" className="text-small text-danger">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       ) : null}
       {notice ? (
-        <p role="status" className="text-small text-success">
+        <p role="status" className="text-sm text-success">
           {notice}
         </p>
       ) : null}

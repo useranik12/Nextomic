@@ -48,7 +48,7 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-small text-default-600">
+      <p className="text-sm text-body">
         {node.htmlId ? (
           <>
             Read an attribute elsewhere with{" "}
@@ -59,7 +59,7 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
         )}
       </p>
       {names.length === 0 ? (
-        <p className="text-small text-default-500">No attributes yet.</p>
+        <p className="text-sm text-muted">No attributes yet.</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {names.map((name) => (
@@ -76,13 +76,13 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
         </ul>
       )}
       <form
-        className="flex flex-col gap-2 rounded-large bg-default-100 p-3"
+        className="flex flex-col gap-2 rounded-2xl bg-default p-3"
         onSubmit={(e) => {
           e.preventDefault();
           add();
         }}
       >
-        <label htmlFor={nameId} className="text-small font-semibold text-foreground">
+        <label htmlFor={nameId} className="text-sm font-semibold text-foreground">
           New attribute
         </label>
         <input
@@ -94,7 +94,7 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
           className={compactFieldClass}
         />
         {problem ? (
-          <p role="alert" className="text-tiny text-danger">
+          <p role="alert" className="text-xs text-danger">
             {problem}
           </p>
         ) : null}
@@ -116,7 +116,7 @@ export function AttributesEditor({ node }: { node: ElementNode }) {
         <button
           type="submit"
           disabled={!canAdd}
-          className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-default-200 px-3 text-small font-medium text-foreground transition-colors hover:bg-default-300 disabled:opacity-50"
+          className="flex h-8 items-center justify-center gap-1.5 rounded-full bg-default-hover px-3 text-sm font-medium text-foreground transition-colors hover:bg-default-300 disabled:opacity-50"
         >
           <Icon name="ph:plus" width={14} height={14} />
           Add attribute
@@ -159,19 +159,19 @@ function AttributeRow({
               onRename(draft.trim());
             } else setDraft(name);
           }}
-          className="h-7 min-w-0 flex-1 bg-transparent font-mono text-small font-semibold text-foreground outline-none focus-visible:underline"
+          className="h-7 min-w-0 flex-1 bg-transparent font-mono text-sm font-semibold text-foreground outline-none focus-visible:underline"
         />
         <button
           type="button"
           aria-label={`Remove attribute ${name}`}
           onClick={onRemove}
-          className="rounded p-1 text-default-500 hover:text-danger"
+          className="rounded p-1 text-muted hover:text-danger"
         >
           <Icon name="ph:trash" width={14} height={14} />
         </button>
       </div>
       {problem ? (
-        <p role="alert" className="text-tiny text-danger">
+        <p role="alert" className="text-xs text-danger">
           {problem}
         </p>
       ) : null}

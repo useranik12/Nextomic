@@ -1,6 +1,7 @@
 "use client";
+import { Busy } from "@/components/ui/busy";
 
-import { Chip, Spinner } from "@heroui-v2/react";
+import { Chip } from "@heroui/react";
 import type { StorageEntry } from "@nextomic/integrations";
 import type { SupabaseBucket } from "@nextomic/schema";
 import { useEffect, useState } from "react";
@@ -79,8 +80,8 @@ function BucketBrowser({
     <div className="flex min-h-0 min-w-0 flex-1 gap-4">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="font-mono text-medium font-semibold text-foreground">{bucket.name}</h3>
-          <Chip size="sm" variant="flat" color={bucket.public ? "success" : "default"}>
+          <h3 className="font-mono text-base font-semibold text-foreground">{bucket.name}</h3>
+          <Chip size="sm" variant="soft" color={bucket.public ? "success" : "default"}>
             {bucket.public ? "Public" : "Private"}
           </Chip>
         </div>
@@ -88,7 +89,7 @@ function BucketBrowser({
           <button
             type="button"
             onClick={() => openFolder([])}
-            className="rounded-small bg-default-100 px-3 py-1 text-tiny text-default-600 hover:bg-default-200"
+            className="rounded-lg bg-default px-3 py-1 text-xs text-body hover:bg-default-hover"
           >
             objects
           </button>
@@ -97,22 +98,22 @@ function BucketBrowser({
               key={`${i}-${part}`}
               type="button"
               onClick={() => openFolder(path.slice(0, i + 1))}
-              className="rounded-small bg-default-100 px-3 py-1 text-tiny text-default-600 hover:bg-default-200"
+              className="rounded-lg bg-default px-3 py-1 text-xs text-body hover:bg-default-hover"
             >
               {part}
             </button>
           ))}
         </nav>
         {!active ? (
-          <p className="text-small text-default-500">Turn the connection on to browse files.</p>
+          <p className="text-sm text-muted">Turn the connection on to browse files.</p>
         ) : error ? (
-          <p role="alert" className="text-small text-danger">
+          <p role="alert" className="text-sm text-danger">
             {error}
           </p>
         ) : !entries ? (
-          <Spinner size="sm" label="Loading files" className="self-start" />
+          <Busy label="Loading files" className="self-start" />
         ) : entries.length === 0 ? (
-          <p className="text-small text-default-500">
+          <p className="text-sm text-muted">
             This folder is empty, or the anon key may not list it.
           </p>
         ) : (
@@ -123,15 +124,15 @@ function BucketBrowser({
               return (
                 <li
                   key={entry.name}
-                  className="flex items-center justify-between gap-3 border-b border-divider py-1.5 last:border-b-0"
+                  className="flex items-center justify-between gap-3 border-b border-border py-1.5 last:border-b-0"
                 >
                   {entry.folder ? (
                     <button
                       type="button"
                       onClick={() => openFolder([...path, entry.name])}
-                      className="flex items-center gap-2 text-small text-foreground hover:underline"
+                      className="flex items-center gap-2 text-sm text-foreground hover:underline"
                     >
-                      <Icon name="ph:folder" width={16} height={16} className="text-default-500" />
+                      <Icon name="ph:folder" width={16} height={16} className="text-muted" />
                       {entry.name}
                     </button>
                   ) : (
@@ -147,14 +148,9 @@ function BucketBrowser({
                           setPreview(entry);
                         }
                       }}
-                      className={`flex min-w-0 flex-1 items-center gap-2 rounded-small px-1 text-left text-small ${preview?.name === entry.name ? "bg-default-100 text-foreground" : "text-default-600 hover:text-foreground"}`}
+                      className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 text-left text-sm ${preview?.name === entry.name ? "bg-default text-foreground" : "text-body hover:text-foreground"}`}
                     >
-                      <Icon
-                        name="ph:file"
-                        width={16}
-                        height={16}
-                        className="shrink-0 text-default-500"
-                      />
+                      <Icon name="ph:file" width={16} height={16} className="shrink-0 text-muted" />
                       <span className="truncate">{bucket.public ? url : entry.name}</span>
                     </button>
                   )}
@@ -175,7 +171,7 @@ function BucketBrowser({
           </ul>
         )}
         {!bucket.public ? (
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Files of a private bucket are reached with signed URLs at run time.
           </p>
         ) : null}
@@ -213,15 +209,15 @@ export function StorageCard({ projectId, model }: { projectId: string; model: Su
       className={buckets.length > 0 ? "h-[700px]" : undefined}
     >
       {!structure || !connector ? (
-        <p className="text-small text-default-500">Fetch the schema to see the buckets.</p>
+        <p className="text-sm text-muted">Fetch the schema to see the buckets.</p>
       ) : buckets.length === 0 ? (
-        <div className="flex flex-col gap-2 text-small text-default-500">
+        <div className="flex flex-col gap-2 text-sm text-muted">
           <p>
             The anon key sees no buckets. Supabase lists only the buckets the anon role may read
             (row level security on storage.buckets). To show them, run this in the Supabase SQL
             editor, then fetch again:
           </p>
-          <pre className="overflow-x-auto rounded-medium bg-default-100 p-3 font-mono text-tiny text-foreground">
+          <pre className="overflow-x-auto rounded-xl bg-default p-3 font-mono text-xs text-foreground">
             {BUCKET_POLICY_SQL}
           </pre>
         </div>
@@ -237,10 +233,10 @@ export function StorageCard({ projectId, model }: { projectId: string; model: Su
                   type="button"
                   aria-current={b.name === bucket?.name}
                   onClick={() => setChosen(b.name)}
-                  className={`flex w-full items-center gap-2 rounded-full px-4 py-2 text-left text-small transition-colors duration-300 ${b.name === bucket?.name ? "bg-default-100 text-foreground" : "text-default-600 hover:bg-default-50"}`}
+                  className={`flex w-full items-center gap-2 rounded-full px-4 py-2 text-left text-sm transition-colors duration-300 ${b.name === bucket?.name ? "bg-default text-foreground" : "text-body hover:bg-default/40"}`}
                 >
                   <span className="truncate font-mono">{b.name}</span>
-                  <span className="rounded-full border border-default-300 px-1.5 text-tiny">
+                  <span className="rounded-full border border-default-300 px-1.5 text-xs">
                     {b.objectCount}
                     {b.countCapped ? "+" : ""}
                   </span>

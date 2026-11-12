@@ -22,7 +22,7 @@ export function QueryOrderRow({
 }) {
   const mode = useQueryFormMode();
   return (
-    <div className="flex flex-col gap-2 rounded-medium border border-divider p-2">
+    <div className="flex flex-col gap-2 rounded-xl border border-border p-2">
       <div className="flex items-end gap-2">
         <SelectField
           compact

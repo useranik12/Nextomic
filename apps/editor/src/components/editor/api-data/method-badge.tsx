@@ -18,7 +18,7 @@ const METHOD_CLASSES: Record<RestMethod, string> = {
 export function MethodBadge({ method, active }: { method: RestMethod; active: boolean }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-1 pr-2 text-tiny font-medium ${active ? METHOD_CLASSES[method] : "bg-default-100 text-default-400"}`}
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full py-0.5 pl-1 pr-2 text-xs font-medium ${active ? METHOD_CLASSES[method] : "bg-default text-subtle"}`}
       aria-label={active ? method : `${method}, turned off`}
     >
       {active ? (

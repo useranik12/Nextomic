@@ -19,7 +19,7 @@ function LengthField({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-tiny font-medium text-default-600">{label}</span>
+      <span className="text-xs font-medium text-body">{label}</span>
       <div className={fieldShellClass}>
         <div className="min-w-0 flex-1">
           <LengthInput
@@ -33,7 +33,7 @@ function LengthField({
           />
         </div>
       </div>
-      <span className="text-tiny text-default-500">{tip}</span>
+      <span className="text-xs text-muted">{tip}</span>
     </div>
   );
 }
@@ -49,7 +49,7 @@ export function StickyHeaderGroup({
   const set = (patch: Partial<StickyHeader>) => onChange({ ...value, ...patch });
   return (
     <section aria-label="Sticky header" className="flex flex-col gap-3">
-      <h3 className="text-small text-default-600">Sticky header</h3>
+      <h3 className="text-sm text-body">Sticky header</h3>
       <SwitchRow
         label="Sticky header"
         tip="Keeps the header at the top of the window while the page scrolls."
@@ -71,7 +71,7 @@ export function StickyHeaderGroup({
             onChange={(slideAfter) => set({ slideAfter })}
           />
           <AnimationPicker value={value.animation} onChange={(animation) => set({ animation })} />
-          <label className="flex flex-col gap-1 text-tiny font-medium text-default-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-body">
             Slide in and out duration (ms)
             <input
               type="number"

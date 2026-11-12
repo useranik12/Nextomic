@@ -20,7 +20,7 @@ const SORTS: { value: SortKey; label: string }[] = [
 
 const toggle = (on: boolean) =>
   "flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-300 " +
-  (on ? "bg-default-200 text-foreground" : "text-default-600 hover:bg-default-100");
+  (on ? "bg-default-hover text-foreground" : "text-body hover:bg-default");
 
 export function LibraryToolbar({
   query,
@@ -52,7 +52,7 @@ export function LibraryToolbar({
     query.to !== "";
 
   return (
-    <div className="flex flex-col gap-3 border-b border-divider p-4">
+    <div className="flex flex-col gap-3 border-b border-border p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div role="tablist" aria-label="Pages and templates" className="flex gap-1">
           {(["pages", "templates"] as const).map((tab) => (
@@ -65,14 +65,14 @@ export function LibraryToolbar({
                 onQuery({ tab, text: "", categoryId: "all", tagId: "all", type: "all" })
               }
               className={
-                "h-9 rounded-full px-4 text-small font-medium transition-colors duration-300 " +
+                "h-9 rounded-full px-4 text-sm font-medium transition-colors duration-300 " +
                 (query.tab === tab
-                  ? "bg-default-200 text-foreground"
-                  : "text-default-600 hover:bg-default-100")
+                  ? "bg-default-hover text-foreground"
+                  : "text-body hover:bg-default")
               }
             >
               {tab === "pages" ? "Pages" : "Templates"}{" "}
-              <span className="text-tiny text-default-500">{counts[tab]}</span>
+              <span className="text-xs text-muted">{counts[tab]}</span>
             </button>
           ))}
         </div>
@@ -110,7 +110,7 @@ export function LibraryToolbar({
             name="ph:magnifying-glass"
             width={14}
             height={14}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-default-500"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
           />
           <input
             type="search"
@@ -178,7 +178,7 @@ export function LibraryToolbar({
           onValueChange={(dateField) => onQuery({ dateField: dateField as DateField })}
           options={DATE_FIELDS}
         />
-        <label className="flex flex-col gap-0.5 text-tiny text-default-600">
+        <label className="flex flex-col gap-0.5 text-xs text-body">
           From
           <input
             type="date"
@@ -188,7 +188,7 @@ export function LibraryToolbar({
             className={compactFieldClass}
           />
         </label>
-        <label className="flex flex-col gap-0.5 text-tiny text-default-600">
+        <label className="flex flex-col gap-0.5 text-xs text-body">
           To
           <input
             type="date"
@@ -214,7 +214,7 @@ export function LibraryToolbar({
               : "Sorted low to high, switch to high to low"
           }
           onClick={() => onQuery({ descending: !query.descending })}
-          className={toggle(false) + " mb-0.5 border border-default-200"}
+          className={toggle(false) + " mb-0.5 border border-border"}
         >
           {query.descending ? (
             <Icon name="ph:sort-descending" width={16} height={16} />

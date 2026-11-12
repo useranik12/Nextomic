@@ -103,9 +103,9 @@ export function TagFixPrompt() {
       aria-label="Make this a dynamic tag?"
       data-expression-panel
       style={{ left: place.left, top: place.top, width: SIZE.width }}
-      className="fixed z-[70] flex flex-col gap-3 rounded-large border border-default-200 bg-content1 p-3 shadow-large"
+      className="fixed z-[70] flex flex-col gap-3 rounded-2xl border border-border bg-surface p-3 shadow-lg"
     >
-      <p className="text-tiny text-default-600">
+      <p className="text-xs text-body">
         <code className="font-mono text-foreground">{label}</code>
         {prompt.tags.length > 1 ? ` and ${prompt.tags.length - 1} more` : ""} has no space inside
         the braces, so it shows as plain text. Tags are written{" "}

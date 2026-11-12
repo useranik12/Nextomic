@@ -100,7 +100,7 @@ export function LocalQueryForm({
       />
       {reads ? (
         variables.length === 0 ? (
-          <p className="text-tiny text-default-500">{EMPTY_HINT[value.kind]}</p>
+          <p className="text-xs text-muted">{EMPTY_HINT[value.kind]}</p>
         ) : (
           <SelectField
             compact
@@ -115,18 +115,18 @@ export function LocalQueryForm({
         )
       ) : null}
       {reads && value.variable && !variables.some((v) => v.name === value.variable) ? (
-        <p role="status" className="text-tiny text-warning">
+        <p role="status" className="text-xs text-warning">
           The variable &quot;{value.variable}&quot; no longer exists.
         </p>
       ) : null}
       {value.kind === "param" ? (
-        <p className="text-tiny text-default-500">
+        <p className="text-xs text-muted">
           A parameter loops over a JSON array or comma-separated text, like ?tags=a,b.
         </p>
       ) : null}
       {value.kind === "parent" ? (
         outerLoops.length === 0 ? (
-          <p className="text-tiny text-default-500">
+          <p className="text-xs text-muted">
             Parent Item needs this element to be inside another query loop.
           </p>
         ) : (
@@ -143,7 +143,7 @@ export function LocalQueryForm({
               onValueChange={(parentLoop) => patch({ parentLoop })}
             />
             {value.parentLoop && !outerLoops.includes(value.parentLoop) ? (
-              <p role="status" className="text-tiny text-warning">
+              <p role="status" className="text-xs text-warning">
                 The loop %{value.parentLoop} is not around this element any more.
               </p>
             ) : null}
@@ -163,7 +163,7 @@ export function LocalQueryForm({
       {value.kind === "json" ? (
         <div className="flex flex-col gap-1">
           <span className="flex items-center gap-1.5">
-            <label htmlFor={jsonId} className="text-tiny font-medium text-default-600">
+            <label htmlFor={jsonId} className="text-xs font-medium text-body">
               Static JSON
             </label>
             {mode.tip("json") ? (
@@ -176,7 +176,7 @@ export function LocalQueryForm({
             spellCheck={false}
             placeholder='[{ "title": "First" }, { "title": "Second" }]'
             onChange={(e) => patch({ json: e.target.value })}
-            className="w-full resize-none rounded-large border border-default-200 bg-transparent px-3 py-2 font-mono text-tiny text-foreground outline-none transition-colors hover:border-default-400 focus:border-default-800"
+            className="w-full resize-none rounded-2xl border border-border bg-transparent px-3 py-2 font-mono text-xs text-foreground outline-none transition-colors hover:border-default-400 focus:border-focus"
           />
         </div>
       ) : null}
