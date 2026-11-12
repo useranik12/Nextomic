@@ -122,7 +122,13 @@ registerElement({
   defaults: () => ({ props: { src: "", alt: "" }, name: "Image" }),
   propsSchema: z.object({ src: z.string(), alt: z.string() }),
   controls: [
-    { key: "src", label: "Source URL", kind: "url", placeholder: "https://..." },
+    {
+      key: "src",
+      label: "Source URL",
+      kind: "url",
+      placeholder: "https://...",
+      pick: ["image", "svg"]
+    },
     { key: "alt", label: "Alt text", kind: "text" }
   ],
   bindable: { src: true, alt: true },

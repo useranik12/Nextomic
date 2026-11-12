@@ -205,6 +205,8 @@ export const mediaQuerySchema = z.object({
   filter: z.enum(MEDIA_FILTERS).default("all"),
   folderId: z.string().min(1).max(100).nullable().default(null),
   type: z.enum(MEDIA_TYPE_TABS).default("all"),
+  /** Only these kinds (the asset picker of an element that takes one kind of file). */
+  kinds: z.array(z.enum(MEDIA_KINDS)).max(5).optional(),
   sort: z.enum(MEDIA_SORTS).default("newest"),
   search: z.string().trim().max(80).default(""),
   offset: z.number().int().min(0).max(100_000).default(0)

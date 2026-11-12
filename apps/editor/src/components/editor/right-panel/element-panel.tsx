@@ -15,6 +15,7 @@ import { ActionButton, SelectField } from "@/components/ui/controls";
 import { ActionTab } from "../actions/action-tab";
 import { Icon } from "@/lib/icons/Icon";
 import { ConditionsGroup } from "../conditions/conditions-group";
+import { MediaPickerDialog } from "../media/media-picker";
 import { QueryLoopGroup } from "../query/query-loop-group";
 import { RenameField } from "../rename-field";
 import { useEditorStore } from "../store/editor-store";
@@ -45,6 +46,8 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
   const onChange = (next: string) =>
     isTag ? setTag(node.id, next) : setProp(node.id, control.key, parseDynamicText(next));
   const insertToken = (token: string) => onChange(`${value}${tagText(token)}`);
+  const projectId = useEditorStore((s) => s.projectId);
+  const [picking, setPicking] = useState(false);
 
   if (control.kind === "select") {
     return (
@@ -74,9 +77,35 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
             value={value}
             placeholder={control.placeholder}
             onChange={(e) => onChange(e.target.value)}
-            className={compactFieldClass + " pr-9"}
+            className={compactFieldClass + (control.pick ? " pr-16" : " pr-9")}
           />
         )}
+        {control.pick ? (
+          <>
+            <button
+              type="button"
+              aria-label={`Choose ${control.label} from Media`}
+              title="Choose from Media"
+              onClick={() => setPicking(true)}
+              className="absolute right-8 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-default hover:text-foreground"
+            >
+              <Icon name="ph:image-square" width={14} height={14} />
+            </button>
+            <MediaPickerDialog
+              projectId={projectId}
+              kinds={control.pick}
+              isOpen={picking}
+              onClose={() => setPicking(false)}
+              onPick={(asset) => {
+                onChange(asset.path);
+                // A picked image brings its alt text along when the element has none yet.
+                if (control.key === "src" && asset.alt && !dynamicTextOf(node.props.alt))
+                  setProp(node.id, "alt", parseDynamicText(asset.alt));
+                setPicking(false);
+              }}
+            />
+          </>
+        ) : null}
         {isTag ? null : (
           <div
             className={

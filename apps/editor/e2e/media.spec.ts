@@ -112,3 +112,37 @@ test("SVG is sanitized, disguised HTML is refused and strangers cannot upload", 
   expect(denied.status()).toBe(403);
   await stranger.dispose();
 });
+
+test("an Image element picks its file from Media and the library shows where it is used", async ({
+  page
+}) => {
+  await openMedia(page);
+  await upload(page, "Hero.png", "image/png", PNG);
+  await page.getByRole("button", { name: "Open Hero" }).click();
+  await page.getByLabel("Alt text", { exact: true }).fill("A hero image");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^Missing alt text\s*0$/ })).toBeVisible();
+
+  await page.getByRole("button", { name: "Navigator" }).click();
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Image", exact: true }).click();
+  await page.getByRole("button", { name: "Choose Source URL from Media" }).click();
+  await page.getByRole("button", { name: "Choose Hero" }).click();
+  await page.getByRole("button", { name: "Use file" }).click();
+  await expect(page.getByPlaceholder("https://...")).toHaveValue(
+    /^\/media\/[^/]+\/[a-f0-9]{24}\/hero\.png$/
+  );
+  // The file's alt text came along.
+  await expect(page.getByLabel("Alt text", { exact: true })).toHaveValue("A hero image");
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible();
+
+  await page.getByRole("button", { name: "Media", exact: true }).click();
+  await page.getByRole("button", { name: "Open Hero" }).click();
+  await expect(
+    page.getByRole("complementary", { name: "File details" }).getByText("Home", { exact: true })
+  ).toBeVisible();
+  // Trashing a file in use asks first.
+  await page.getByRole("button", { name: "Move to trash" }).click();
+  await expect(page.getByRole("dialog")).toContainText("used on your site");
+});

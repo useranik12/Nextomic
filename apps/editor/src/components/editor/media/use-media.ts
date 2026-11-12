@@ -36,10 +36,10 @@ export const DEFAULT_QUERY: MediaQuery = mediaQuerySchema.parse({});
 const PARALLEL_UPLOADS = 3;
 
 /** State of the Media page: the folder list and counts, one page of files, selection and uploads. */
-export function useMedia(projectId: string) {
+export function useMedia(projectId: string, initial?: Partial<MediaQuery>) {
   const [folders, setFolders] = useState<MediaFolder[]>([]);
   const [counts, setCounts] = useState<MediaCounts | null>(null);
-  const [query, setQuery] = useState<MediaQuery>(DEFAULT_QUERY);
+  const [query, setQuery] = useState<MediaQuery>({ ...DEFAULT_QUERY, ...initial });
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);

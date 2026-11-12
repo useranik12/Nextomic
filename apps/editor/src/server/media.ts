@@ -136,6 +136,7 @@ function filterConditions(projectId: string, q: MediaQuery): SQL[] {
       where.push(isNotNull(mediaAssets.replacedAt));
       break;
   }
+  if (q.kinds && q.kinds.length > 0) where.push(inArray(mediaAssets.kind, q.kinds));
   if (q.type === "image") where.push(eq(mediaAssets.kind, "image"));
   else if (q.type === "svg") where.push(eq(mediaAssets.kind, "svg"));
   else if (q.type === "video") where.push(eq(mediaAssets.kind, "video"));
