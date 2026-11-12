@@ -9,6 +9,7 @@ import {
   withLoopScope
 } from "@nextomic/schema";
 import { useEffect, useMemo } from "react";
+import { useFlowDraft } from "../actions/editor/flow-draft";
 import { useTypeRegistry } from "../data-types/type-picker";
 import { useQuerySourcesStore } from "../query/use-query-sources";
 import { useEditorStore } from "../store/editor-store";
@@ -23,7 +24,10 @@ import { useEditorDynamicContext } from "../use-editor-context";
 export function useExpressionScope(): Record<string, unknown> | null {
   const context = useEditorDynamicContext();
   const tree = useEditorStore((s) => s.doc?.tree);
-  const selectedId = useEditorStore((s) => s.selectedId);
+  const pickedId = useEditorStore((s) => s.selectedId);
+  // In the Action Flow Editor the element is the one the flow belongs to, whatever is selected.
+  const flowElementId = useFlowDraft((s) => (s.target?.mode === "flows" ? s.target.nodeId : null));
+  const selectedId = flowElementId ?? pickedId;
   const projectId = useEditorStore((s) => s.projectId);
   const sources = useQuerySourcesStore((s) => s.data);
   const loadSources = useQuerySourcesStore((s) => s.load);

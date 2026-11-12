@@ -73,16 +73,20 @@ function parseJson(response: SafeResponse): unknown {
 /** Supabase's own error text (PostgREST `message`, Storage `message`/`error`), never a body dump. */
 function upstreamError(response: SafeResponse, fallback: string): ConnectorError {
   let message = fallback;
+  // Storage answers most refusals as HTTP 400 and puts the real status in the body's `statusCode`.
+  let status = response.status;
   try {
     const body = JSON.parse(response.body.toString("utf8")) as Record<string, unknown>;
     const text = body.message ?? body.error ?? body.msg;
     if (typeof text === "string" && text.length > 0) message = text.slice(0, 300);
+    const inner = Number(body.statusCode);
+    if (Number.isInteger(inner) && inner >= 400 && inner < 600) status = inner;
   } catch {
     // Not JSON: keep the fallback.
   }
-  if (response.status === 401 || response.status === 403)
-    message = `${message} Check the anon key and the table's grants and RLS policies.`;
-  return new ConnectorError("upstream", message, { status: response.status });
+  if (status === 401 || status === 403)
+    message = `${message} Check the anon key and the table's or bucket's grants and RLS policies.`;
+  return new ConnectorError("upstream", message, { status });
 }
 
 async function call(

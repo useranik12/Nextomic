@@ -52,7 +52,10 @@ export function DynamicDataModal({
   const constants = useEditorStore((s) => s.project.constants);
   const appAuth = useEditorStore((s) => s.project.appAuth);
   const tree = useEditorStore((s) => s.doc?.tree);
-  const selectedId = useEditorStore((s) => s.selectedId);
+  const pickedId = useEditorStore((s) => s.selectedId);
+  // In the Action Flow Editor the element is the one the flow belongs to, whatever is selected.
+  const flowElementId = useFlowDraft((s) => (s.target?.mode === "flows" ? s.target.nodeId : null));
+  const selectedId = flowElementId ?? pickedId;
   const projectId = useEditorStore((s) => s.projectId);
   const sources = useQuerySourcesStore((s) => s.data);
   const loadSources = useQuerySourcesStore((s) => s.load);
@@ -117,7 +120,7 @@ export function DynamicDataModal({
         (t) => !q || t.token.toLowerCase().includes(q) || t.label.toLowerCase().includes(q)
       )
     }))
-    .filter((g) => g.tags.length > 0);
+    .filter((g) => g.tags.length > 0 || (g.section && !q));
   const plain = visible.filter((g) => !g.section);
   const sections = [...new Set(visible.flatMap((g) => (g.section ? [g.section.id] : [])))].map(
     (id) => ({
@@ -232,7 +235,13 @@ export function DynamicDataModal({
                               {g.label}
                             </summary>
                             <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                              {renderTags(g)}
+                              {g.tags.length === 0 ? (
+                                <p className="text-sm text-muted">
+                                  Name this loop in its Query Loop settings to use its tags.
+                                </p>
+                              ) : (
+                                renderTags(g)
+                              )}
                             </div>
                           </details>
                         ))}

@@ -166,12 +166,19 @@ export default async function handler(request: NextApiRequest, response: NextApi
           ? 400
           : upstream === 401 || upstream === 403
             ? 403
-            : upstream === 404 || upstream === 409 || upstream === 413
+            : upstream === 400 ||
+                upstream === 404 ||
+                upstream === 409 ||
+                upstream === 413 ||
+                upstream === 415
               ? upstream
               : 502;
+      // One line per refused upload, so a 4xx or 502 can be traced (no tokens, no file data).
+       
+      console.warn(`[upload] ${error.code} upstream=${upstream ?? "-"} ${error.message}`);
       return fail(status, error.message);
     }
-     
+
     console.error("[upload]", error);
     return fail(500, "The upload failed.");
   }
