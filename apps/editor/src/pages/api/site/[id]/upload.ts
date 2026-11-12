@@ -158,8 +158,21 @@ export default async function handler(request: NextApiRequest, response: NextApi
   } catch (error) {
     if (error instanceof QueryInputError) return fail(400, error.message);
     if (error instanceof AuthError) return fail(401, error.message);
-    if (error instanceof ConnectorError)
-      return fail(error.code === "invalid_request" ? 400 : 502, error.message);
+    if (error instanceof ConnectorError) {
+      // Storage's own answer decides: a refused write is 403 (policies), not a gateway fault.
+      const upstream = error.status;
+      const status =
+        error.code === "invalid_request"
+          ? 400
+          : upstream === 401 || upstream === 403
+            ? 403
+            : upstream === 404 || upstream === 409 || upstream === 413
+              ? upstream
+              : 502;
+      return fail(status, error.message);
+    }
+     
+    console.error("[upload]", error);
     return fail(500, "The upload failed.");
   }
 }
