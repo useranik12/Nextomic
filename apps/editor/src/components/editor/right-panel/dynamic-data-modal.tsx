@@ -2,13 +2,21 @@
 
 import { Modal, ModalBody, ModalContent, ModalHeader } from "@/components/ui/modal";
 import { getElementDefinition } from "@nextomic/renderer";
-import { flowNamesBefore, loopAncestors, tokenTags, type TransformChain } from "@nextomic/schema";
+import {
+  findTable,
+  flowNamesBefore,
+  loopAncestors,
+  splitTableRef,
+  tokenTags,
+  type TransformChain
+} from "@nextomic/schema";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { TransformPanel } from "../expression/transform-panel";
 import { useExpressionScope } from "../expression/use-expression-scope";
 import { useQuerySourcesStore } from "../query/use-query-sources";
 import { useFlowDraft } from "../actions/editor/flow-draft";
+import { useTypeRegistry } from "../data-types/type-picker";
 import { useEditorStore } from "../store/editor-store";
 import { actionGroups } from "./action-groups";
 import { TagCard } from "./dynamic-tag-card";
@@ -81,11 +89,24 @@ export function DynamicDataModal({
   // Inside the Action Flow Editor: what the earlier nodes of the open node answer.
   const flowNodes = useFlowDraft((s) => (s.target ? s.nodes() : null));
   const flowNodeId = useFlowDraft((s) => s.selectedId);
-  const actions = useMemo(
-    () =>
-      flowNodes && flowNodeId ? actionGroups(flowNamesBefore(flowNodes, flowNodeId) ?? []) : [],
-    [flowNodes, flowNodeId]
-  );
+  const registry = useTypeRegistry();
+  const actions = useMemo(() => {
+    if (!flowNodes || !flowNodeId) return [];
+    const structure = sources?.supabase?.structure ?? null;
+    return actionGroups(flowNamesBefore(flowNodes, flowNodeId) ?? [], {
+      columns: (ref) => {
+        const { schema, table } = splitTableRef(ref);
+        const found = findTable(structure, schema, table);
+        return found ? found.columns.map((c) => ({ name: c.name, type: c.type })) : null;
+      },
+      restFields: (callId) => {
+        const response = sources?.rest?.calls.find((c) => c.id === callId)?.response;
+        if (!response?.parseAsDataType) return null;
+        const type = registry.dataTypes.find((d) => d.id === response.dataTypeId);
+        return type ? type.fields.map((f) => ({ name: f.name, type: f.type })) : null;
+      }
+    });
+  }, [flowNodes, flowNodeId, sources, registry]);
   const allGroups = useMemo(() => [...actions, ...loops, ...groups], [actions, loops, groups]);
   const q = query.trim().toLowerCase();
   const visible = allGroups

@@ -126,7 +126,9 @@ export function ModalContent({ children }: { children: ReactNode }) {
       <V3Modal.Dialog
         className={cn(
           "gap-4 rounded-3xl",
-          full ? "!h-full min-h-0 w-full max-w-none rounded-3xl" : MAX_WIDTH[size],
+          full
+            ? "!h-[calc(100dvh-2rem)] !max-h-[calc(100dvh-2rem)] min-h-0 w-full max-w-none overflow-hidden rounded-3xl"
+            : MAX_WIDTH[size],
           base
         )}
       >

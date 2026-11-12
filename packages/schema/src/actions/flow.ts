@@ -275,6 +275,8 @@ export interface FlowName {
   type?: string;
   /** The node's own name, when set. */
   nodeName?: string;
+  /** The action's saved params (its table, API call ...), to shape the response. */
+  params?: Params;
 }
 
 /**
@@ -304,7 +306,8 @@ export function flowNamesBefore(
         name: node.outputName,
         kind: "output",
         type: node.kind === "action" ? node.type : "block",
-        nodeName: node.name
+        nodeName: node.name,
+        params: node.params
       });
   }
   return null;
