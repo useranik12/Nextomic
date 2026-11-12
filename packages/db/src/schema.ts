@@ -133,6 +133,55 @@ export const templates = pgTable(
   (table) => [index("templates_project_idx").on(table.projectId, table.type)]
 );
 
+// Media library. One row per uploaded file; the bytes live in storage under
+// `media/<projectId>/<id>/<fileName>`. Trashed rows keep serving until purged.
+export const mediaFolders = pgTable(
+  "media_folders",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [uniqueIndex("media_folders_project_name_idx").on(table.projectId, table.name)]
+);
+
+export const mediaAssets = pgTable(
+  "media_assets",
+  {
+    // 24 lowercase hex characters; it is part of the public path, so it is not a uuid.
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    folderId: text("folder_id").references(() => mediaFolders.id, { onDelete: "set null" }),
+    // Empty until someone names the file; the library then shows the original name.
+    title: text("title").notNull().default(""),
+    originalName: text("original_name").notNull(),
+    fileName: text("file_name").notNull(),
+    kind: text("kind").$type<"image" | "svg" | "video" | "audio" | "other">().notNull(),
+    mime: text("mime").notNull(),
+    size: integer("size").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    alt: text("alt").notNull().default(""),
+    caption: text("caption").notNull().default(""),
+    tags: jsonb("tags").$type<string[]>().notNull().default([]),
+    // SHA-256 of the stored bytes; the public route's ETag.
+    hash: text("hash").notNull(),
+    replacedAt: timestamp("replaced_at", { withTimezone: true }),
+    trashedAt: timestamp("trashed_at", { withTimezone: true }),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [index("media_assets_project_idx").on(table.projectId, table.createdAt)]
+);
+
 export const pageVersions = pgTable(
   "page_versions",
   {

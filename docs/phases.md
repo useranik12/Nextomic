@@ -156,11 +156,11 @@ Docs: `dynamic-data-and-actions.md` (section 8), `ui-reference.md` (4.8)
 
 Docs: `ui-reference.md` (4.6), `elements.md` (Icon, SVG, Image, Video, Audio)
 
-- [ ] Media page replicating the Instatic structure with Nextomic styling (library filters, folders, trash, upload, search, type tabs, sort, grid/list, details drawer, bulk actions)
+- [x] Media page replicating the Instatic structure with Nextomic styling (library filters, folders, trash, upload, search, type tabs, sort, grid/list, details drawer, bulk actions) _Built 2026-11-13, see `ui-reference.md` 4.6._
 - [ ] Asset picker used by Image, Video, Audio, Icon, SVG elements
 - [ ] Fonts & Icons tab, Icons sub-tab (`fonts-and-icons.md` section 3): catalog of popular free libraries, SVG and icon-font output modes, custom imports (IcoMoon, Fontello, generic icon font, SVG upload, Iconify JSON), license and attribution handling, icon picker
-- [ ] Image optimization, alt text checks, SVG sanitization, usage tracking
-- [ ] Tests: upload validation, usage, sanitization
+- [ ] Image optimization, alt text checks, SVG sanitization, usage tracking _SVG sanitization and usage tracking built with the Media page (2026-11-13); image optimization and alt-text checks on built output open._
+- [ ] Tests: upload validation, usage, sanitization _Unit tests for sniffing, upload preparation and sanitizer, e2e for upload, serve headers, alt text, folders, trash and restore done; usage and optimization tests open._
 
 ## Phase 7: Element library
 

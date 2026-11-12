@@ -30,7 +30,7 @@ export function failResult<T>(error: unknown, fallback: string): ActionResult<T>
   if (error instanceof z.ZodError) {
     return { data: null, error: error.issues[0]?.message ?? "Invalid input." };
   }
-  if (error instanceof Error && error.name === "FontError")
+  if (error instanceof Error && (error.name === "FontError" || error.name === "MediaError"))
     return { data: null, error: error.message };
   return { data: null, error: fallback };
 }

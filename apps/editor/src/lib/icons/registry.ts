@@ -157,7 +157,12 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:tag" },
   { id: "ph:warning" },
   { id: "ph:brackets-round" },
-  { id: "ph:git-fork" }
+  { id: "ph:git-fork" },
+  { id: "ph:video" },
+  { id: "ph:file-pdf" },
+  { id: "ph:music-notes" },
+  { id: "ph:arrows-clockwise" },
+  { id: "ph:tray" }
 ] as const;
 
 export const ICON_IDS: readonly string[] = ICON_REGISTRY.map((icon) => icon.id);

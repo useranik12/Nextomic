@@ -55,3 +55,5 @@ export * from "./rest";
 export * from "./rest-request";
 export * from "./json-path";
 export * from "./actions";
+export * from "./media";
+export * from "./svg-sanitize";
