@@ -6,6 +6,7 @@ import { animationSettingsSchema, emptyAnimationSettings } from "./animations";
 import { cssFileListSchema } from "./css-files";
 import { CLASS_NAME_PATTERN } from "./element";
 import { fontListSchema } from "./fonts";
+import { iconLibraryListSchema } from "./icons";
 import { styleMapSchema } from "./style";
 import { mainFramework } from "./main-framework";
 import { newTheme, themeListSchema } from "./theme";
@@ -61,6 +62,8 @@ export const projectSettingsSchema = z.object({
   themes: themeListSchema.default([]),
   // Text fonts: files in storage, written to the output as @font-face while active.
   fonts: fontListSchema.default([]),
+  // Icon libraries: one JSON file each in storage; pages refer to icons as { library, name }.
+  iconLibraries: iconLibraryListSchema.default([]),
   // Custom CSS files: written after the theme and before classes, in this order.
   cssFiles: cssFileListSchema.default([]),
   // Categories and tags of pages and templates (four separate lists).
@@ -102,6 +105,7 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   variables: [],
   themes: [mainTheme()],
   fonts: [],
+  iconLibraries: [],
   cssFiles: [],
   animations: emptyAnimationSettings(),
   appState: [],
