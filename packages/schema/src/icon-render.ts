@@ -45,9 +45,26 @@ export function iconSvg(
 }
 
 /** Renders a catalog preview (body plus its own size) the same way as a full set icon. */
-export function sampleSvg(sample: { body: string; width: number; height: number }): string | null {
+export function sampleSvg(sample: {
+  body: string;
+  width: number;
+  height: number;
+  left?: number;
+  top?: number;
+}): string | null {
+  const { body, width, height, left, top } = sample;
   return iconSvg(
-    { icons: { sample: { body: sample.body, width: sample.width, height: sample.height } } },
+    {
+      icons: {
+        sample: {
+          body,
+          width,
+          height,
+          ...(left !== undefined ? { left } : {}),
+          ...(top !== undefined ? { top } : {})
+        }
+      }
+    },
     "sample"
   );
 }

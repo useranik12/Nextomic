@@ -24,7 +24,7 @@ export function UpdateIconDialog({
   onApply,
   onClose
 }: {
-  library: Pick<IconLibrary, "key" | "name" | "version" | "sha256">;
+  library: Pick<IconLibrary, "key" | "name" | "version" | "sha256" | "file">;
   projectId: string;
   applying: boolean;
   onApply: (version: string) => Promise<void>;
@@ -35,20 +35,22 @@ export function UpdateIconDialog({
   useEffect(() => {
     let live = true;
     setLoad({ state: "loading" });
-    void previewIconUpdateAction(projectId, { key: library.key, sha256: library.sha256 }).then(
-      (res) => {
-        if (!live) return;
-        setLoad(
-          res.error === null
-            ? { state: "ready", preview: res.data }
-            : { state: "error", message: res.error }
-        );
-      }
-    );
+    void previewIconUpdateAction(projectId, {
+      key: library.key,
+      sha256: library.sha256,
+      file: library.file
+    }).then((res) => {
+      if (!live) return;
+      setLoad(
+        res.error === null
+          ? { state: "ready", preview: res.data }
+          : { state: "error", message: res.error }
+      );
+    });
     return () => {
       live = false;
     };
-  }, [projectId, library.key, library.sha256]);
+  }, [projectId, library.key, library.sha256, library.file]);
 
   const ready = load.state === "ready" ? load.preview : null;
 

@@ -1,7 +1,13 @@
 "use server";
 
-import { iconKeySchema, iconLibraryListSchema, type IconLibrary } from "@nextomic/schema";
+import {
+  iconFileSchema,
+  iconKeySchema,
+  iconLibraryListSchema,
+  type IconLibrary
+} from "@nextomic/schema";
 import { z } from "zod";
+import { importIconUpload, type UploadResult } from "@/server/icon-upload";
 import { authorizeProject, failResult, type ActionResult } from "@/server/authorize";
 import {
   checkIconUpdates,
@@ -20,7 +26,8 @@ const versionSchema = z
   .optional();
 const libraryRefSchema = z.object({
   key: iconKeySchema,
-  sha256: z.string().regex(/^[0-9a-f]{64}$/)
+  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  file: iconFileSchema
 });
 
 /** Downloads a catalog set into project storage. The caller adds the result to the project draft. */
@@ -94,5 +101,27 @@ export async function searchIconsAction(
     };
   } catch (error) {
     return failResult(error, "Could not search the icons.");
+  }
+}
+
+/** Form fields: `meta` (JSON, see iconUploadMetaSchema) and one `file` entry per uploaded file. */
+export async function uploadIconLibraryAction(
+  projectId: string,
+  form: FormData
+): Promise<ActionResult<UploadResult>> {
+  try {
+    await authorizeProject(projectId);
+    const rawMeta = form.get("meta");
+    if (typeof rawMeta !== "string") return { data: null, error: "Missing library details." };
+    const files = await Promise.all(
+      form
+        .getAll("file")
+        .filter((f): f is File => f instanceof File)
+        .map(async (f) => ({ name: f.name, data: new Uint8Array(await f.arrayBuffer()) }))
+    );
+    return { data: await importIconUpload(projectId, JSON.parse(rawMeta), files), error: null };
+  } catch (error) {
+    if (error instanceof SyntaxError) return { data: null, error: "Invalid library details." };
+    return failResult(error, "Could not upload the icons.");
   }
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import {
+  glyphChar,
+  iconFontFaceCss,
+  iconFontFamily,
   ICON_CATALOG,
   ICONIFY_MAX_BYTES,
   type IconCatalogEntry,
@@ -15,6 +18,7 @@ import { Toggle } from "@/components/ui/toggles";
 import { Icon } from "@/lib/icons/Icon";
 import { IconSetRow, type IconChip } from "./icon-set-row";
 import { UpdateIconDialog } from "./update-icon-dialog";
+import { UploadIconsDialog } from "./upload-icons-dialog";
 import { useIconLibraries } from "./use-icon-libraries";
 
 const count = (n: number) => n.toLocaleString("en-US");
@@ -24,8 +28,17 @@ function chipsFor(x: {
   palette: boolean;
   requiresAttribution: boolean;
   brand: boolean;
+  mode?: IconLibrary["mode"];
+  source?: IconLibrary["source"];
 }): IconChip[] {
   const chips: IconChip[] = [];
+  if (x.source && x.source !== "iconify")
+    chips.push({ label: "Custom", tip: "Uploaded by you, not from the catalog." });
+  if (x.mode === "font")
+    chips.push({
+      label: "Icon font",
+      tip: "Drawn with a font file. One color only; use SVG icons for multicolor or animated icons."
+    });
   if (x.animated)
     chips.push({ label: "Animated", tip: "Some icons move. They are drawn as inline SVG." });
   if (x.palette)
@@ -59,6 +72,7 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
   const [query, setQuery] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [removing, setRemoving] = useState<IconLibrary | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const q = query.trim().toLowerCase();
   const matches = (...texts: string[]) =>
@@ -111,6 +125,14 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
         <ActionButton
           tone="secondary"
           size="sm"
+          startContent={<Icon name="ph:upload-simple" width={14} height={14} />}
+          onPress={() => setUploading(true)}
+        >
+          Upload icons
+        </ActionButton>
+        <ActionButton
+          tone="secondary"
+          size="sm"
           isIconOnly
           aria-label="Check for icon updates"
           data-tip="Check for icon updates"
@@ -141,7 +163,12 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
                     key={l.key}
                     name={l.name}
                     samples={l.samples}
-                    facts={`${factsOf(l)} · v${l.version}`}
+                    glyphs={
+                      l.mode === "font"
+                        ? { family: iconFontFamily(l.key), chars: l.glyphSamples.map(glyphChar) }
+                        : undefined
+                    }
+                    facts={l.version ? `${factsOf(l)} · v${l.version}` : factsOf(l)}
                     chips={chipsFor(l)}
                     libraryKey={l.key}
                     error={lib.errors[l.key]}
@@ -214,6 +241,20 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
           )}
         </section>
       </div>
+      <style>
+        {lib.libraries
+          .filter((l) => l.mode === "font")
+          .map((l) => iconFontFaceCss(l, `/icons/${lib.projectId}`))
+          .join("")}
+      </style>
+      {uploading ? (
+        <UploadIconsDialog
+          projectId={lib.projectId}
+          takenKeys={lib.libraries.map((l) => l.key)}
+          onAdded={(library) => void lib.addUploaded(library)}
+          onClose={() => setUploading(false)}
+        />
+      ) : null}
       {updateTarget ? (
         <UpdateIconDialog
           library={updateTarget}

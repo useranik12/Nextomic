@@ -22,6 +22,11 @@ export type IconSource = (typeof ICON_SOURCES)[number];
 /** `svg`: inline SVG (default, multicolor and animated icons work). `font`: glyph font files. */
 export const ICON_MODES = ["svg", "font"] as const;
 
+/** A library's data file in storage, named by content: `<key>-<first 8 of sha256>.json`. */
+export const iconFileSchema = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]*-[0-9a-f]{8}.json$/)
+  .max(100);
 export const iconKeySchema = z.string().regex(ICON_KEY_PATTERN).max(40);
 export const iconNameSchema = z.string().regex(ICON_NAME_PATTERN).max(120);
 
@@ -33,10 +38,22 @@ export type IconRef = z.infer<typeof iconRefSchema>;
 export const iconSampleSchema = z.object({
   name: iconNameSchema,
   body: z.string().max(20_000),
+  left: z.number().optional(),
+  top: z.number().optional(),
   width: z.number().positive().max(10_000),
   height: z.number().positive().max(10_000)
 });
 export type IconSample = z.infer<typeof iconSampleSchema>;
+
+/** A font file of an uploaded icon font, named by content like the data file. */
+export const ICON_FONT_FILE_PATTERN = /^[a-z0-9][a-z0-9-]*-[0-9a-f]{8}.(woff2|woff|ttf|otf)$/;
+export const iconFontFileSchema = z.object({
+  file: z.string().regex(ICON_FONT_FILE_PATTERN).max(100),
+  format: z.enum(["woff2", "woff", "ttf", "otf"]),
+  bytes: z.number().int().min(1).max(10_000_000),
+  sha256: z.string().regex(/^[0-9a-f]{64}$/)
+});
+export type IconFontFile = z.infer<typeof iconFontFileSchema>;
 
 export const iconLibrarySchema = z.object({
   key: iconKeySchema,
@@ -57,9 +74,16 @@ export const iconLibrarySchema = z.object({
   /** Contains SMIL animated icons. */
   animated: z.boolean().default(false),
   samples: z.array(iconSampleSchema).max(4).default([]),
+  /** Icon fonts: the font files, and four codepoints (hex) for the row preview. */
+  fontFiles: z.array(iconFontFileSchema).max(4).default([]),
+  glyphSamples: z
+    .array(z.string().regex(/^[0-9a-f]{1,6}$/))
+    .max(4)
+    .default([]),
   count: z.number().int().min(0).max(100_000),
   bytes: z.number().int().min(0).max(100_000_000),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  file: iconFileSchema,
   /** Hidden from the picker while off; icons already in use keep rendering. */
   enabled: z.boolean().default(true),
   installedAt: z.string().max(40).default("")
@@ -143,3 +167,51 @@ export type IconifySet = z.infer<typeof iconifySetSchema>;
 /** Every name an icon set offers: its icons and its aliases. */
 export const iconifyNames = (set: Pick<IconifySet, "icons" | "aliases">): string[] =>
   [...Object.keys(set.icons), ...Object.keys(set.aliases ?? {})].sort();
+
+// ------------------------------------------------------------------ icon font data
+
+/** An uploaded icon font's glyph map (the library's data file): icon name to codepoint in hex. */
+export const iconFontDataSchema = z.object({
+  prefix: iconKeySchema,
+  glyphs: z
+    .record(iconNameSchema, z.string().regex(/^[0-9a-f]{1,6}$/))
+    .refine((g) => Object.keys(g).length <= 20_000, {
+      message: "This icon font has too many glyphs."
+    })
+});
+export type IconFontData = z.infer<typeof iconFontDataSchema>;
+
+export const iconFontFamily = (key: string): string => `nxt-${key}`;
+export const iconFontClass = (key: string, name: string): string => `nxt-${key}-${name}`;
+/** The character a codepoint draws. Used for previews and the picker; built sites use the class. */
+export const glyphChar = (hex: string): string => String.fromCodePoint(parseInt(hex, 16));
+
+const FORMAT_CSS = { woff2: "woff2", woff: "woff", ttf: "truetype", otf: "opentype" } as const;
+
+/**
+ * The @font-face for an uploaded icon font, built here from the stored file list. The uploaded CSS
+ * is never served (docs/fonts-and-icons.md 3.4). `base` is the URL prefix the files load from.
+ */
+export function iconFontFaceCss(
+  library: Pick<IconLibrary, "key" | "fontFiles">,
+  base: string
+): string {
+  const order = ["woff2", "woff", "ttf", "otf"];
+  const src = [...library.fontFiles]
+    .sort((a, b) => order.indexOf(a.format) - order.indexOf(b.format))
+    .map((f) => `url(${base}/${f.file}) format("${FORMAT_CSS[f.format]}")`)
+    .join(",");
+  const family = iconFontFamily(library.key);
+  return (
+    `@font-face{font-family:"${family}";src:${src};font-weight:400;font-style:normal;font-display:block}` +
+    `.${family}{font-family:"${family}"!important;font-style:normal;font-weight:400;font-variant:normal;` +
+    `text-transform:none;line-height:1;display:inline-block;-webkit-font-smoothing:antialiased}`
+  );
+}
+
+/** One `.nxt-<key>-<name>::before` rule per glyph (or per used glyph, in built output). */
+export function iconFontGlyphCss(key: string, glyphs: Record<string, string>): string {
+  return Object.entries(glyphs)
+    .map(([name, hex]) => `.${iconFontClass(key, name)}::before{content:"\\${hex}"}`)
+    .join("");
+}

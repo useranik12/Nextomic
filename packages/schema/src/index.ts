@@ -41,6 +41,7 @@ export * from "./query-refresh";
 export * from "./compose";
 export * from "./fonts";
 export * from "./icons";
+export * from "./icon-import";
 export * from "./icon-catalog.generated";
 export * from "./icon-render";
 export * from "./font-support";

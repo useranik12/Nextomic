@@ -1,13 +1,17 @@
 import { createHash } from "node:crypto";
 import {
   ICON_CATALOG,
+  ICON_FONT_FILE_PATTERN,
   ICONIFY_MAX_BYTES,
+  iconFileSchema,
+  iconFontDataSchema,
   iconKeySchema,
   iconLibrarySchema,
   iconSvg,
   iconifyNames,
   iconifySetSchema,
   MEDIA_SEGMENT,
+  type IconFontData,
   type IconifySet,
   type IconLibrary
 } from "@nextomic/schema";
@@ -56,9 +60,20 @@ const sha256Hex = (data: Uint8Array): string => createHash("sha256").update(data
 const sha256Base64 = (data: Uint8Array): string =>
   createHash("sha256").update(data).digest("base64");
 
-export const iconSetKey = (projectId: string, key: string): string => {
+/**
+ * Storage key of a library's data file. The file is named by its content (`<key>-<sha8>.json`),
+ * so an update never overwrites the release a saved or published project still points at.
+ */
+export const iconSetKey = (projectId: string, file: string): string => {
   if (!MEDIA_SEGMENT.test(projectId)) throw new IconError("Invalid project.");
-  return `icons/${projectId}/${iconKeySchema.parse(key)}.json`;
+  return `icons/${projectId}/${iconFileSchema.parse(file)}`;
+};
+
+/** Storage key of an uploaded icon font file (served by app/icons/[projectId]/[file]). */
+export const iconFontKey = (projectId: string, file: string): string => {
+  if (!MEDIA_SEGMENT.test(projectId) || !ICON_FONT_FILE_PATTERN.test(file))
+    throw new IconError("Invalid icon font file.");
+  return `icons/${projectId}/${file}`;
 };
 
 const catalogEntry = (prefix: string) => {
@@ -137,7 +152,9 @@ const nameIndex = new Map<string, string[]>();
 const setCache = new Map<string, IconifySet>();
 const SET_CACHE_MAX = 4;
 
-const cacheKey = (projectId: string, library: Pick<IconLibrary, "key" | "sha256">): string =>
+type LibraryData = Pick<IconLibrary, "key" | "sha256" | "file"> & { mode?: IconLibrary["mode"] };
+
+const cacheKey = (projectId: string, library: LibraryData): string =>
   `${projectId}:${library.key}:${library.sha256}`;
 
 function remember(id: string, set: IconifySet): void {
@@ -162,15 +179,15 @@ export async function installIconSet(
       `${entry.name} is ${Math.round(entry.bytes / 1e6)} MB. The limit is ${Math.round(ICONIFY_MAX_BYTES / 1e6)} MB.`
     );
   }
-  const key = iconSetKey(projectId, prefix);
   const release = await downloadSet(prefix, version ?? (await latestIconVersion(prefix)));
+  const sha = sha256Hex(release.data);
+  const file = `${prefix}-${sha.slice(0, 8)}.json`;
   await getStorageAdapter().put({
-    key,
+    key: iconSetKey(projectId, file),
     data: release.data,
     contentType: "application/json"
   });
-  const sha = sha256Hex(release.data);
-  remember(cacheKey(projectId, { key: prefix, sha256: sha }), release.set);
+  remember(cacheKey(projectId, { key: prefix, sha256: sha, file }), release.set);
   return iconLibrarySchema.parse({
     key: prefix,
     name: entry.name,
@@ -188,6 +205,7 @@ export async function installIconSet(
     count: Object.keys(release.set.icons).length,
     bytes: release.data.length,
     sha256: sha,
+    file,
     enabled: true,
     installedAt: new Date().toISOString()
   });
@@ -239,7 +257,7 @@ export interface IconUpdatePreview {
 /** What an update would change: icons added, and the names that disappear. Stores nothing. */
 export async function previewIconUpdate(
   projectId: string,
-  library: Pick<IconLibrary, "key" | "sha256">
+  library: LibraryData
 ): Promise<IconUpdatePreview> {
   const current = await iconNames(projectId, library);
   const release = await downloadSet(library.key, await latestIconVersion(library.key));
@@ -256,13 +274,10 @@ export async function previewIconUpdate(
 
 // ---- Reading and searching ---------------------------------------------------------------------
 
-async function loadSet(
-  projectId: string,
-  library: Pick<IconLibrary, "key" | "sha256">
-): Promise<IconifySet> {
+async function loadSet(projectId: string, library: LibraryData): Promise<IconifySet> {
   const hit = setCache.get(cacheKey(projectId, library));
   if (hit) return hit;
-  const data = await getStorageAdapter().get(iconSetKey(projectId, library.key));
+  const data = await getStorageAdapter().get(iconSetKey(projectId, library.file));
   if (!data) throw new IconError("The icons of this library are missing from storage.");
   let set: IconifySet;
   try {
@@ -274,10 +289,31 @@ async function loadSet(
   return set;
 }
 
-async function iconNames(
+const glyphCache = new Map<string, IconFontData["glyphs"]>();
+
+/** The glyph map of an uploaded icon font. */
+async function loadGlyphs(
   projectId: string,
-  library: Pick<IconLibrary, "key" | "sha256">
-): Promise<string[]> {
+  library: LibraryData
+): Promise<IconFontData["glyphs"]> {
+  const id = cacheKey(projectId, library);
+  const hit = glyphCache.get(id);
+  if (hit) return hit;
+  const data = await getStorageAdapter().get(iconSetKey(projectId, library.file));
+  if (!data) throw new IconError("The icons of this library are missing from storage.");
+  let glyphs: IconFontData["glyphs"];
+  try {
+    glyphs = iconFontDataSchema.parse(JSON.parse(new TextDecoder().decode(data))).glyphs;
+  } catch {
+    throw new IconError("The icons of this library could not be read.");
+  }
+  glyphCache.set(id, glyphs);
+  while (glyphCache.size > 30) glyphCache.delete(glyphCache.keys().next().value as string);
+  return glyphs;
+}
+
+async function iconNames(projectId: string, library: LibraryData): Promise<string[]> {
+  if (library.mode === "font") return Object.keys(await loadGlyphs(projectId, library)).sort();
   const id = cacheKey(projectId, library);
   const known = nameIndex.get(id);
   if (known) return known;
@@ -293,10 +329,12 @@ export const searchInputSchema = z.object({
 });
 export const ICON_SEARCH_PAGE = 60;
 
+/** A search result: `svg` for SVG libraries, `glyph` (hex codepoint) for uploaded icon fonts. */
 export interface IconHit {
   library: string;
   name: string;
-  svg: string;
+  svg?: string;
+  glyph?: string;
 }
 
 /** Names matching every word of the query, whole-word and prefix matches first. */
@@ -331,7 +369,7 @@ export async function searchIcons(
   input: z.infer<typeof searchInputSchema>
 ): Promise<{ hits: IconHit[]; total: number }> {
   const pool = libraries.filter(
-    (l) => l.enabled && l.mode === "svg" && (input.library === "" || l.key === input.library)
+    (l) => l.enabled && (input.library === "" || l.key === input.library)
   );
   const matches: { library: IconLibrary; name: string }[] = [];
   for (const library of pool) {
@@ -342,6 +380,11 @@ export async function searchIcons(
   const page = matches.slice(input.offset, input.offset + ICON_SEARCH_PAGE);
   const hits: IconHit[] = [];
   for (const { library, name } of page) {
+    if (library.mode === "font") {
+      const glyph = (await loadGlyphs(projectId, library))[name];
+      if (glyph) hits.push({ library: library.key, name, glyph });
+      continue;
+    }
     const svg = iconSvg(await loadSet(projectId, library), name);
     if (svg) hits.push({ library: library.key, name, svg });
   }

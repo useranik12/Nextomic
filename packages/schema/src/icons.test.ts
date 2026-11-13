@@ -98,7 +98,8 @@ describe("icon library list", () => {
     source: "iconify",
     count: 1,
     bytes: 10,
-    sha256: "a".repeat(64)
+    sha256: "a".repeat(64),
+    file: "ph-aaaaaaaa.json"
   };
   it("accepts a library and fills defaults", () => {
     const [parsed] = iconLibraryListSchema.parse([lib]);

@@ -63,6 +63,12 @@ export function useIconLibraries(saveNow: () => Promise<void>) {
     return true;
   }
 
+  /** Adds a library the server just stored from an upload. */
+  async function addUploaded(library: IconLibrary) {
+    setLibraries([...store().project.iconLibraries, library]);
+    await saveNow();
+  }
+
   const check = useCallback(async () => {
     const installed = store().project.iconLibraries;
     if (!installed.some((l) => l.source === "iconify")) return;
@@ -101,6 +107,7 @@ export function useIconLibraries(saveNow: () => Promise<void>) {
     check,
     toggle,
     remove,
+    addUploaded,
     setLibraries
   };
 }
