@@ -12,6 +12,7 @@ import {
 } from "@nextomic/schema";
 import { z } from "zod";
 import { getStorageAdapter } from "@/lib/storage";
+import { fetchHttps } from "./remote-fetch";
 
 // Font import. Everything fetched from the network goes through `fetchAllowed`: https only, a fixed
 // host allowlist, no redirects, a timeout and a size cap (docs/integrations.md SSRF rules).
@@ -33,24 +34,15 @@ export class FontError extends Error {
   }
 }
 
-async function fetchAllowed(url: string, maxBytes: number): Promise<Uint8Array> {
-  const parsed = new URL(url);
-  if (parsed.protocol !== "https:" || !ALLOWED_HOSTS.has(parsed.hostname)) {
-    throw new FontError("That address is not an allowed font source.");
-  }
-  let response: Response;
-  try {
-    response = await fetch(parsed, { redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS) });
-  } catch {
-    throw new FontError("Could not reach the font source. Try again in a moment.");
-  }
-  if (!response.ok) throw new FontError(`The font source answered ${response.status}.`);
-  const declared = Number(response.headers.get("content-length") ?? 0);
-  if (declared > maxBytes) throw new FontError("A font file is larger than the allowed size.");
-  const data = new Uint8Array(await response.arrayBuffer());
-  if (data.length > maxBytes) throw new FontError("A font file is larger than the allowed size.");
-  return data;
-}
+const fetchAllowed = (url: string, maxBytes: number): Promise<Uint8Array> =>
+  fetchHttps({
+    url,
+    hosts: ALLOWED_HOSTS,
+    maxBytes,
+    what: "font source",
+    timeoutMs: TIMEOUT_MS,
+    fail: (message) => new FontError(message)
+  });
 
 async function fetchJson<T>(url: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>): Promise<T> {
   const data = await fetchAllowed(url, MAX_JSON_BYTES);

@@ -95,6 +95,15 @@ for (const prefix of PREFIXES) {
   if (!c) throw new Error(`Unknown Iconify set: ${prefix}`);
   const spdx = c.license?.spdx ?? "";
   if (NON_COMMERCIAL.test(spdx)) throw new Error(`${prefix} is non-commercial (${spdx})`);
+  // Download size of the current release, so the UI can refuse a set that is over the install limit.
+  const { version } = await get(
+    `https://data.jsdelivr.com/v1/packages/npm/@iconify-json/${prefix}/resolved?specifier=latest`
+  );
+  const files = await get(
+    `https://data.jsdelivr.com/v1/packages/npm/@iconify-json/${prefix}@${version}?structure=flat`
+  );
+  const bytes = files.files?.find((f) => f.name === "/icons.json")?.size;
+  if (!bytes) throw new Error(`${prefix}: no icons.json in ${version}`);
   const names = (c.samples ?? []).slice(0, 4);
   const data = await get(`https://api.iconify.design/${prefix}.json?icons=${names.join(",")}`);
   const w = data.width ?? c.height ?? 16;
@@ -116,6 +125,7 @@ for (const prefix of PREFIXES) {
     licenseSpdx: spdx,
     licenseUrl: c.license?.url ?? "",
     total: c.total,
+    bytes,
     category: c.category ?? "",
     palette: c.palette === true,
     animated: ANIMATED.has(prefix),
