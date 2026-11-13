@@ -184,6 +184,7 @@ export async function installIconSet(
     mode: "svg",
     palette: entry.palette,
     animated: entry.animated,
+    samples: entry.samples,
     count: Object.keys(release.set.icons).length,
     bytes: release.data.length,
     sha256: sha,

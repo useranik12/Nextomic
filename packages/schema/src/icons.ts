@@ -29,6 +29,15 @@ export const iconNameSchema = z.string().regex(ICON_NAME_PATTERN).max(120);
 export const iconRefSchema = z.object({ library: iconKeySchema, name: iconNameSchema });
 export type IconRef = z.infer<typeof iconRefSchema>;
 
+/** A few icons kept with the library so its row can show a preview without loading the set. */
+export const iconSampleSchema = z.object({
+  name: iconNameSchema,
+  body: z.string().max(20_000),
+  width: z.number().positive().max(10_000),
+  height: z.number().positive().max(10_000)
+});
+export type IconSample = z.infer<typeof iconSampleSchema>;
+
 export const iconLibrarySchema = z.object({
   key: iconKeySchema,
   name: z.string().trim().min(1).max(80),
@@ -47,6 +56,7 @@ export const iconLibrarySchema = z.object({
   palette: z.boolean().default(false),
   /** Contains SMIL animated icons. */
   animated: z.boolean().default(false),
+  samples: z.array(iconSampleSchema).max(4).default([]),
   count: z.number().int().min(0).max(100_000),
   bytes: z.number().int().min(0).max(100_000_000),
   sha256: z.string().regex(/^[0-9a-f]{64}$/),
@@ -80,7 +90,7 @@ export interface IconCatalogEntry {
   animated: boolean;
   brand: boolean;
   requiresAttribution: boolean;
-  samples: { name: string; body: string; width: number; height: number }[];
+  samples: IconSample[];
 }
 
 // ------------------------------------------------------------------ Iconify set data

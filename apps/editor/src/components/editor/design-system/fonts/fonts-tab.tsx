@@ -3,6 +3,7 @@
 import { fontsCss, type ProjectFont } from "@nextomic/schema";
 import { useMemo, useState } from "react";
 import { useEditorStore } from "../../store/editor-store";
+import { IconsTab } from "../icons/icons-tab";
 import { FontEditor } from "./font-editor";
 import { FontManager } from "./font-manager";
 import { useFontUsage } from "./use-font-usage";
@@ -37,8 +38,7 @@ const NO_USE = { variables: [], classes: 0, elements: 0, total: 0 };
 
 /**
  * Design System > Fonts & Icons. Edits are drafts like every Design System change: they reach the
- * canvas at once and are written only when the modal's Save is pressed. Icons arrive with the Media
- * phase (docs/fonts-and-icons.md).
+ * canvas at once and are written only when the modal's Save is pressed (docs/fonts-and-icons.md).
  */
 export function FontsTab({ saveNow }: { saveNow: () => Promise<void> }) {
   const fonts = useEditorStore((s) => s.project.fonts);
@@ -91,9 +91,9 @@ export function FontsTab({ saveNow }: { saveNow: () => Promise<void> }) {
         </Pill>
       </div>
       {sub === "icons" ? (
-        <p className="p-4 text-sm text-muted">
-          Icon libraries arrive with the Media manager (a later phase). Fonts are ready now.
-        </p>
+        <div className="min-h-0 flex-1">
+          <IconsTab saveNow={saveNow} />
+        </div>
       ) : open ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
           <FontEditor
