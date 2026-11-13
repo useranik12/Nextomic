@@ -1,6 +1,7 @@
 // Generates packages/schema/src/icon-catalog.generated.ts from Iconify's public collection list.
 // Run by hand when the curated list changes: `node scripts/gen-icon-catalog.mjs`.
 // The builder never calls api.iconify.design at runtime; this file is the catalog.
+/* global fetch, process */
 import { writeFileSync } from "node:fs";
 
 // Curated by the owner (docs/fonts-and-icons.md 3.2). Non-commercial sets are excluded on purpose
