@@ -90,7 +90,7 @@ export function MediaGrid({ assets, view, selected, openId, onOpen, onSelect }: 
   return (
     <ul
       aria-label="Media files"
-      className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3"
+      className="grid grid-cols-[repeat(auto-fill,10rem)] justify-start gap-3"
     >
       {assets.map((a) => (
         <li key={a.id}>
@@ -113,7 +113,7 @@ export function MediaGrid({ assets, view, selected, openId, onOpen, onSelect }: 
               </span>
             </button>
             <span
-              className={`absolute left-2 top-2 rounded-md bg-surface/90 p-0.5 ${selected.has(a.id) ? "" : "opacity-0 focus-within:opacity-100 group-hover:opacity-100"}`}
+              className={`absolute left-2 top-2 drop-shadow ${selected.has(a.id) ? "" : "opacity-0 focus-within:opacity-100 group-hover:opacity-100"}`}
             >
               {check(a)}
             </span>

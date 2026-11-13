@@ -19,36 +19,74 @@ function KindIcon({ kind }: { kind: MediaAsset["kind"] }) {
   return <Icon name="ph:image-square" {...props} />;
 }
 
+/**
+ * A file preview. Thumbnails (default) are inert; `interactive` is the details-drawer preview with
+ * real controls for video and audio and an embedded viewer for PDFs.
+ */
 export function MediaThumb({
   asset,
   className = "",
-  fit = "cover"
+  fit = "cover",
+  interactive = false
 }: {
   asset: MediaAsset;
   className?: string;
   fit?: "cover" | "contain";
+  interactive?: boolean;
 }) {
   const fitClass = fit === "cover" ? "object-cover" : "object-contain";
+  const src = mediaSrc(asset);
+  const isPdf = asset.mime === "application/pdf";
   return (
-    <div className={`flex items-center justify-center overflow-hidden bg-default/40 ${className}`}>
+    <div
+      className={`relative flex items-center justify-center overflow-hidden bg-default/40 ${className}`}
+    >
       {asset.kind === "image" || asset.kind === "svg" ? (
         <img
-          src={mediaSrc(asset)}
+          src={src}
           alt={asset.alt}
           loading="lazy"
           decoding="async"
           draggable={false}
-          className={`h-full w-full ${asset.kind === "svg" ? "object-contain p-3" : fitClass}`}
-        />
-      ) : asset.kind === "video" ? (
-        <video
-          src={`${mediaSrc(asset)}#t=0.1`}
-          preload="metadata"
-          muted
-          playsInline
-          aria-label={mediaLabel(asset)}
           className={`h-full w-full ${fitClass}`}
         />
+      ) : asset.kind === "video" ? (
+        <>
+          <video
+            src={interactive ? src : `${src}#t=0.1`}
+            preload="metadata"
+            muted={!interactive}
+            controls={interactive}
+            playsInline
+            aria-label={mediaLabel(asset)}
+            className={`h-full w-full ${fitClass}`}
+          />
+          {interactive ? null : (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white"
+            >
+              <Icon name="ph:play" width={16} height={16} />
+            </span>
+          )}
+        </>
+      ) : asset.kind === "audio" && interactive ? (
+        <audio
+          src={src}
+          controls
+          preload="metadata"
+          aria-label={mediaLabel(asset)}
+          className="w-4/5"
+        />
+      ) : isPdf && interactive ? (
+        <object
+          data={src}
+          type="application/pdf"
+          aria-label={mediaLabel(asset)}
+          className="h-full w-full"
+        >
+          <KindIcon kind={asset.kind} />
+        </object>
       ) : (
         <KindIcon kind={asset.kind} />
       )}
