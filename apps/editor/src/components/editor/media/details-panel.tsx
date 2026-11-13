@@ -152,8 +152,13 @@ export function DetailsPanel({
           <Icon name="ph:x" width={16} height={16} />
         </button>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-        <MediaThumb asset={asset} fit="contain" className="aspect-video w-full rounded-2xl" />
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 [&>*]:shrink-0">
+        <MediaThumb
+          asset={asset}
+          fit="contain"
+          interactive
+          className={`w-full shrink-0 rounded-2xl ${asset.mime === "application/pdf" ? "h-96" : "aspect-video"}`}
+        />
         <div className="flex flex-wrap gap-2">
           <ActionButton
             tone="secondary"

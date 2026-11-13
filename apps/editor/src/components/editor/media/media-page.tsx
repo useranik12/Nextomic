@@ -97,7 +97,7 @@ export function MediaPage({ projectId }: { projectId: string }) {
         <FoldersPanel model={model} />
       </aside>
       <div
-        className="relative flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-6"
+        className="relative flex min-w-0 flex-1 flex-col gap-4 overflow-y-auto p-6 [&>*]:shrink-0"
         onDragOver={(e) => {
           if (inTrash || !e.dataTransfer.types.includes("Files")) return;
           e.preventDefault();
