@@ -43,6 +43,24 @@ const DROP_WITH_CONTENT = new Set([
   "metadata"
 ]);
 
+/** SMIL animation. Kept only in icon mode: animated icons (spinners, line animations) need it. */
+const ANIMATION = new Set(["animate", "set", "animateTransform", "animateMotion"]);
+
+/** An animation may not rewrite an attribute that loads or runs something (links, handlers). */
+function animationTargetsUnsafe(attrs: readonly (readonly [string, string])[]): boolean {
+  for (const [name, value] of attrs) {
+    if (name.toLowerCase() !== "attributename") continue;
+    const target = value.trim().toLowerCase();
+    if (target === "href" || target === "xlink:href" || target.startsWith("on")) return true;
+  }
+  return false;
+}
+
+export interface SanitizeOptions {
+  /** Keep safe SMIL animation (icon libraries). Media uploads leave this off. */
+  animations?: boolean;
+}
+
 const MAX_DEPTH = 64;
 const MAX_NODES = 40_000;
 
@@ -134,7 +152,8 @@ function keepAttribute(name: string, value: string): string | null {
  * Comments, processing instructions, scripts, event handlers, external references and
  * non-allowlisted elements never appear in the result.
  */
-export function sanitizeSvg(source: string): string {
+export function sanitizeSvg(source: string, options: SanitizeOptions = {}): string {
+  const allowAnimation = options.animations === true;
   const text = source.replace(BOM, "");
   if (/<!doctype/i.test(text) || /<!entity/i.test(text))
     throw new SvgError("SVG files with a DOCTYPE or ENTITY declaration are not accepted.");
@@ -255,9 +274,13 @@ export function sanitizeSvg(source: string): string {
     }
     if (stack.length >= MAX_DEPTH) throw new SvgError("This SVG is nested too deeply.");
 
-    const dropped = skipDepth > 0 || DROP_WITH_CONTENT.has(name);
+    const animation = allowAnimation && ANIMATION.has(name);
+    const dropped =
+      skipDepth > 0 || (animation ? animationTargetsUnsafe(attrs) : DROP_WITH_CONTENT.has(name));
     const kept =
-      !dropped && ELEMENTS.has(name) && (stack.length === 0 || stack[stack.length - 1]!.kept);
+      !dropped &&
+      (ELEMENTS.has(name) || animation) &&
+      (stack.length === 0 || stack[stack.length - 1]!.kept);
     if (dropped) {
       if (selfClose) {
         if (stack.length === 0) fail();
