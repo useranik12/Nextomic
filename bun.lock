@@ -125,6 +125,7 @@
       "name": "@nextomic/schema",
       "version": "0.0.0",
       "dependencies": {
+        "@iconify/utils": "2.1.33",
         "luxon": "3.7.2",
         "postcss": "^8.5.32",
         "zod": "3.24.1",

@@ -10,8 +10,22 @@ export interface IconChip {
   tone?: "default" | "warning";
 }
 
+/** Characters of an uploaded icon font, drawn with its generated @font-face. */
+export interface GlyphPreview {
+  family: string;
+  chars: string[];
+}
+
 /** Four sample icons in a row, drawn from sanitized SVG (animated sets keep moving). */
-function PreviewStrip({ samples, label }: { samples: readonly IconSample[]; label: string }) {
+function PreviewStrip({
+  samples,
+  glyphs,
+  label
+}: {
+  samples: readonly IconSample[];
+  glyphs?: GlyphPreview;
+  label: string;
+}) {
   const drawn = useMemo(
     () => samples.map((s) => ({ name: s.name, svg: sampleSvg(s) })).filter((s) => s.svg),
     [samples]
@@ -22,6 +36,16 @@ function PreviewStrip({ samples, label }: { samples: readonly IconSample[]; labe
       aria-label={`${label} sample icons`}
       className="grid w-[8.5rem] shrink-0 grid-cols-4 gap-1"
     >
+      {glyphs?.chars.map((c) => (
+        <span
+          key={c}
+          aria-hidden
+          style={{ fontFamily: `"${glyphs.family}"` }}
+          className="flex h-8 items-center justify-center text-2xl leading-none text-foreground"
+        >
+          {c}
+        </span>
+      ))}
       {drawn.map((s) => (
         <span
           key={s.name}
@@ -55,6 +79,7 @@ function Chip({ chip }: { chip: IconChip }) {
 export function IconSetRow({
   name,
   samples,
+  glyphs,
   facts,
   chips,
   libraryKey,
@@ -63,6 +88,7 @@ export function IconSetRow({
 }: {
   name: string;
   samples: readonly IconSample[];
+  glyphs?: GlyphPreview;
   facts: string;
   chips: readonly IconChip[];
   libraryKey: string;
@@ -72,7 +98,7 @@ export function IconSetRow({
   return (
     <li className="flex flex-col gap-1 border-b border-border py-2.5 last:border-b-0">
       <div className="flex items-center gap-3">
-        <PreviewStrip samples={samples} label={name} />
+        <PreviewStrip samples={samples} glyphs={glyphs} label={name} />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{name}</span>

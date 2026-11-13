@@ -70,7 +70,7 @@ describe("installIconSet", () => {
       enabled: true
     });
     expect(lib.sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(stored.has("icons/p1/svg-spinners.json")).toBe(true);
+    expect(stored.has(`icons/p1/${lib.file}`)).toBe(true);
     expect(stored.size).toBe(1);
   });
 
@@ -155,6 +155,22 @@ describe("updates", () => {
       .slice(calls)
       .filter(([u]) => String(u).includes("/icons.json"));
     expect(files).toHaveLength(0);
+  });
+});
+
+describe("update keeps earlier releases", () => {
+  it("names the file by content, so an old library entry still reads its own release", async () => {
+    jsdelivr({ "1.7.0": setJson(["old-icon"]), "1.7.1": setJson(["new-icon"]) }, "1.7.0");
+    const v1 = await installIconSet("p1", "svg-spinners");
+    jsdelivr({ "1.7.0": setJson(["old-icon"]), "1.7.1": setJson(["new-icon"]) }, "1.7.1");
+    const v2 = await installIconSet("p1", "svg-spinners", "1.7.1");
+    expect(v1.file).not.toBe(v2.file);
+    expect(v1.file).toMatch(/^svg-spinners-[0-9a-f]{8}.json$/);
+    expect(stored.has(`icons/p1/${v1.file}`)).toBe(true);
+    expect(stored.has(`icons/p1/${v2.file}`)).toBe(true);
+    // Discarding the update brings back the v1 entry; it must still find v1's icons.
+    const old = await searchIcons("p1", [v1], { query: "", library: "", offset: 0 });
+    expect(old.hits.map((h) => h.name)).toEqual(["old-icon"]);
   });
 });
 
