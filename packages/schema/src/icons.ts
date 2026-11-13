@@ -73,6 +73,8 @@ export interface IconCatalogEntry {
   licenseSpdx: string;
   licenseUrl: string;
   total: number;
+  /** Size of the set's icons.json in the release the catalog was made from. */
+  bytes: number;
   category: string;
   palette: boolean;
   animated: boolean;

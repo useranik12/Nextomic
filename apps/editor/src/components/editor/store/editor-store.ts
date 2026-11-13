@@ -327,6 +327,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       variables: [],
       themes: [],
       fonts: [],
+      iconLibraries: [],
       cssFiles: [],
       animations: { folders: [], timelines: [] },
       appState: [],
