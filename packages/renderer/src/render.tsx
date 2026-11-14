@@ -8,6 +8,7 @@ import {
   createTokenResolver,
   expressionScope,
   hasConditions,
+  iconFontClass,
   isAllowedAttribute,
   isVisible,
   walkElements,
@@ -33,7 +34,7 @@ import {
 import { Fragment, type ReactNode } from "react";
 import { pageCss } from "./css";
 import "./elements";
-import { getElementDefinition } from "./registry";
+import { getElementDefinition, type IconDraw, type IconLookup } from "./registry";
 import { resolveBoolean, resolveText, safeUrl, type TokenResolver } from "./values";
 
 export interface RenderOptions {
@@ -105,6 +106,10 @@ export interface RenderOptions {
    * condition passes. Its content never reaches the browser before then.
    */
   liveSlots?: boolean;
+  /** Icon libraries the page uses (see IconLookup). Without it library icons render empty. */
+  icons?: IconLookup;
+  /** CSS of the icon-font libraries in use (@font-face and glyph rules), written with the fonts. */
+  iconCss?: string;
 }
 
 /** Where an element renders: the loop rows around it and the resolver that sees them. */
@@ -242,6 +247,18 @@ function passes(node: ElementNode, options: RenderOptions, scope: RenderScope): 
   return forced ? forced === "show" : holds;
 }
 
+function drawIcon(
+  icons: IconLookup | undefined,
+  library: string,
+  name: string,
+  opts: { size?: string; label?: string } = {}
+): IconDraw | null {
+  if (!icons || library === "" || name === "") return null;
+  if (icons.font(library, name)) return { kind: "font", className: iconFontClass(library, name) };
+  const html = icons.svg(library, name, { size: opts.size ?? "1em", label: opts.label ?? "" });
+  return html === null ? null : { kind: "svg", html };
+}
+
 function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderScope): ReactNode {
   const definition = getElementDefinition(node.type);
   if (!definition || node.hidden) return null;
@@ -254,7 +271,8 @@ function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderSc
     text: (key) => resolveText(node.props[key], scope.resolveToken),
     bool: (key) => resolveBoolean(node.props[key]),
     attrs: options.loopMarkers ? { ...attrs, ...loopMarkers(node, options, scope) } : attrs,
-    children: definition.canHaveChildren ? renderChildren(node, options, scope) : null
+    children: definition.canHaveChildren ? renderChildren(node, options, scope) : null,
+    icon: (library, name, opts) => drawIcon(options.icons, library, name, opts)
   });
 }
 
@@ -303,6 +321,7 @@ export function PageRenderer({ tree, ...given }: RenderOptions & { tree: Element
   // its own file the page style splits around the link so the order stays the same.
   const head =
     fontsCss(options.fonts ?? [], fontBase) +
+    (options.iconCss ?? "") +
     variablesCss(options.variables ?? []) +
     (options.theme && !linkTheme ? themeCss(options.theme, used) : "") +
     (linkOthers ? "" : others.map((t) => themeCss(t, used, false)).join(""));

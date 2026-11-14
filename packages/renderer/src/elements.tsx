@@ -1,4 +1,11 @@
-import { mediaSrcSet } from "@nextomic/schema";
+import {
+  IconImportError,
+  iconSvg,
+  mediaSrcSet,
+  sanitizeSvg,
+  svgToIcon,
+  SvgError
+} from "@nextomic/schema";
 import { createElement } from "react";
 import { z } from "zod";
 import { registerElement, type ControlDef } from "./registry";
@@ -143,5 +150,154 @@ registerElement({
       ...(srcSet && !attrs.srcset ? { srcSet } : {}),
       alt: text("alt")
     });
+  }
+});
+
+const ICON_SIZE = /^[0-9.]+(px|em|rem)$/;
+
+type IconInner = { html: string } | { className: string } | null;
+
+/** The shared wrapper of Icon and SVG: the element attributes plus accessible naming. */
+function iconWrapper(attrs: Record<string, string>, label: string, inner: IconInner) {
+  const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": "true" };
+  if (inner && "className" in inner) {
+    const className = [attrs.className, inner.className].filter(Boolean).join(" ");
+    return createElement("i", { ...attrs, ...a11y, className });
+  }
+  return createElement("span", {
+    ...attrs,
+    ...a11y,
+    ...(inner ? { dangerouslySetInnerHTML: { __html: inner.html } } : {})
+  });
+}
+
+registerElement({
+  type: "icon",
+  label: "Icon",
+  category: "basic",
+  canHaveChildren: false,
+  defaults: () => ({
+    props: {
+      source: "library",
+      library: "",
+      name: "",
+      svg: "",
+      keepColors: false,
+      size: "1em",
+      label: ""
+    },
+    name: "Icon"
+  }),
+  propsSchema: z.object({
+    source: z.string(),
+    library: z.string(),
+    name: z.string(),
+    svg: z.string(),
+    keepColors: z.boolean(),
+    size: z.string(),
+    label: z.string()
+  }),
+  controls: [
+    {
+      key: "source",
+      label: "Source",
+      kind: "select",
+      options: [
+        { value: "library", label: "Library icon" },
+        { value: "svg", label: "SVG code" }
+      ]
+    },
+    {
+      key: "name",
+      label: "Icon",
+      kind: "icon",
+      libraryKey: "library",
+      when: { key: "source", value: "library" }
+    },
+    {
+      key: "svg",
+      label: "SVG code",
+      kind: "textarea",
+      placeholder: "<svg viewBox=...>",
+      when: { key: "source", value: "svg" }
+    },
+    {
+      key: "keepColors",
+      label: "Keep SVG colors",
+      kind: "switch",
+      when: { key: "source", value: "svg" }
+    },
+    { key: "size", label: "Size", kind: "text", placeholder: "1em" },
+    {
+      key: "label",
+      label: "Accessible name",
+      kind: "text",
+      placeholder: "Leave empty if decorative"
+    }
+  ],
+  bindable: {
+    source: { reason: "Decides how the icon is built, which the build must know." },
+    library: {
+      reason: "Only the icon name is dynamic; the library decides which sets a page loads."
+    },
+    name: true,
+    svg: true,
+    keepColors: { reason: "A fixed style choice of the SVG, not data." },
+    size: true,
+    label: true
+  },
+  render: ({ attrs, text, bool, icon }) => {
+    const size = ICON_SIZE.test(text("size").trim()) ? text("size").trim() : "1em";
+    const label = text("label");
+    if (text("source") === "svg") {
+      try {
+        const set = { icons: { i: { ...svgToIcon(text("svg"), bool("keepColors")) } } };
+        const html = iconSvg(set, "i", { size, label });
+        return iconWrapper(attrs, label, html === null ? null : { html });
+      } catch (error) {
+        if (error instanceof IconImportError) return iconWrapper(attrs, label, null);
+        throw error;
+      }
+    }
+    const drawn = icon(text("library"), text("name"), { size, label });
+    return iconWrapper(
+      attrs,
+      label,
+      drawn === null
+        ? null
+        : drawn.kind === "svg"
+          ? { html: drawn.html }
+          : { className: drawn.className }
+    );
+  }
+});
+
+registerElement({
+  type: "svg",
+  label: "SVG",
+  category: "basic",
+  canHaveChildren: false,
+  defaults: () => ({ props: { svg: "", label: "" }, name: "SVG" }),
+  propsSchema: z.object({ svg: z.string(), label: z.string() }),
+  controls: [
+    { key: "svg", label: "SVG code", kind: "textarea", placeholder: "<svg viewBox=...>" },
+    {
+      key: "label",
+      label: "Accessible name",
+      kind: "text",
+      placeholder: "Leave empty if decorative"
+    }
+  ],
+  bindable: { svg: true, label: true },
+  render: ({ attrs, text }) => {
+    const label = text("label");
+    const source = text("svg").trim();
+    if (source === "") return iconWrapper(attrs, label, null);
+    try {
+      return iconWrapper(attrs, label, { html: sanitizeSvg(source, { animations: true }) });
+    } catch (error) {
+      if (error instanceof SvgError) return iconWrapper(attrs, label, null);
+      throw error;
+    }
   }
 });

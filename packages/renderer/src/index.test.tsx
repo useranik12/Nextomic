@@ -37,7 +37,17 @@ function node(partial: Partial<ElementNode> & Pick<ElementNode, "id" | "type">):
 describe("registry", () => {
   it("registers the starter elements", () => {
     const types = listElementDefinitions().map((d) => d.type);
-    expect(types).toEqual(["page", "section", "container", "heading", "text", "button", "image"]);
+    expect(types).toEqual([
+      "page",
+      "section",
+      "container",
+      "heading",
+      "text",
+      "button",
+      "image",
+      "icon",
+      "svg"
+    ]);
   });
 
   it("marks every prop as bindable or opted out", () => {
@@ -53,9 +63,16 @@ describe("registry", () => {
       page: { name: "Shop", route: "/", settings: defaultPageSettings() },
       mode: "live"
     });
+    // These must hold a valid length or SVG, so their own tests below check that tokens resolve.
+    const checkedApart = new Set(["icon.size", "icon.svg", "svg.svg"]);
+    const icons = {
+      svg: (_library: string, name: string) =>
+        `<svg viewBox="0 0 1 1"><title>${name}</title></svg>`,
+      font: () => false
+    };
     for (const def of listElementDefinitions()) {
       for (const [key, flag] of Object.entries(def.bindable)) {
-        if (flag !== true) continue;
+        if (flag !== true || checkedApart.has(`${def.type}.${key}`)) continue;
         const root = emptyPageTree();
         const defaults = def.defaults();
         root.children = [
@@ -65,12 +82,18 @@ describe("registry", () => {
             ...defaults,
             props: {
               ...defaults.props,
+              ...(def.type === "icon" ? { library: "ph", name: "home" } : {}),
               [key]: { kind: "mixed", parts: ["x-", { token: "page.name" }] }
             }
           })
         ];
         const html = renderToStaticMarkup(
-          <PageRenderer tree={root} breakpoints={DEFAULT_BREAKPOINTS} dynamic={dynamic} />
+          <PageRenderer
+            tree={root}
+            breakpoints={DEFAULT_BREAKPOINTS}
+            dynamic={dynamic}
+            icons={icons}
+          />
         );
         expect(html, `${def.type}.${key}`).toContain("x-Shop");
       }
@@ -759,5 +782,97 @@ describe("conditional visibility", () => {
     expect(html).toContain("PanelThree");
     expect(html).toContain("PanelFour");
     expect(html).not.toContain("PanelFive");
+  });
+
+  describe("icon and svg", () => {
+    const render = (el: ElementNode, extra: object = {}) =>
+      renderToStaticMarkup(
+        <PageRenderer
+          tree={{ ...emptyPageTree(), children: [el] }}
+          breakpoints={DEFAULT_BREAKPOINTS}
+          {...extra}
+        />
+      );
+    const lookup = {
+      svg: (library: string, name: string, o: { size: string; label: string }) =>
+        library === "ph" && name === "home"
+          ? `<svg viewBox="0 0 24 24" height="${o.size}"><path d="M0 0"/></svg>`
+          : null,
+      font: (library: string, name: string) => library === "brand" && name === "star"
+    };
+    const icon = (props: Record<string, unknown>) =>
+      node({
+        id: "i1",
+        type: "icon",
+        props: { ...getElementDefinition("icon")!.defaults().props, ...props } as never
+      });
+
+    it("draws a library icon inline, decorative unless it has a name", () => {
+      const html = render(icon({ library: "ph", name: "home", size: "2em" }), { icons: lookup });
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).toContain('height="2em"');
+      expect(
+        render(icon({ library: "ph", name: "home", label: "Home" }), { icons: lookup })
+      ).toContain('role="img" aria-label="Home"');
+    });
+    it("draws an icon-font glyph as a class, and renders an empty box for an unknown icon", () => {
+      const font = render(icon({ library: "brand", name: "star" }), { icons: lookup });
+      expect(font).toContain("<i");
+      expect(font).toContain("nxt-brand-star");
+      const missing = render(icon({ library: "ph", name: "nope" }), { icons: lookup });
+      expect(missing).toContain("<span");
+      expect(missing).not.toContain("<svg");
+      expect(render(icon({}), { icons: lookup })).not.toContain("<svg");
+      expect(render(icon({ library: "ph", name: "home" }))).not.toContain("<svg");
+    });
+    it("writes the icon-font CSS it was given with the fonts", () => {
+      const html = render(icon({ library: "brand", name: "star" }), {
+        icons: lookup,
+        iconCss: ".nxt-brand-star::before{content:'x'}"
+      });
+      expect(html).toContain(".nxt-brand-star::before");
+    });
+    it("builds an icon from SVG code, recolored unless colors are kept, and strips scripts", () => {
+      const svg =
+        '<svg viewBox="0 0 8 8"><script>alert(1)</script><path fill="#f00" onclick="x()" d="M0 0h8v8z"/></svg>';
+      const plain = render(icon({ source: "svg", svg }));
+      expect(plain).toContain("currentColor");
+      expect(plain).not.toMatch(/alert|onclick|#f00/);
+      expect(render(icon({ source: "svg", svg, keepColors: true }))).toContain("#f00");
+      expect(render(icon({ source: "svg", svg: "not svg" }))).not.toContain("<svg");
+    });
+    it("resolves tokens in the size and the SVG code", () => {
+      const dynamic = buildDynamicContext({
+        page: { name: "Shop", route: "/", settings: defaultPageSettings() },
+        mode: "live"
+      });
+      const html = render(
+        icon({ source: "svg", svg: '<svg viewBox="0 0 8 8"><path d="M0 0"/></svg>', size: "3px" }),
+        { dynamic }
+      );
+      expect(html).toContain('height="3px"');
+      const inline = render(
+        node({
+          id: "s1",
+          type: "svg",
+          props: {
+            svg: {
+              kind: "mixed",
+              parts: ['<svg viewBox="0 0 8 8"><title>', { token: "page.name" }, "</title></svg>"]
+            }
+          } as never
+        }),
+        { dynamic }
+      );
+      expect(inline).toContain("Shop");
+    });
+    it("renders an SVG element sanitized, empty when it has none", () => {
+      const svg = (code: string) =>
+        render(node({ id: "s1", type: "svg", props: { svg: code, label: "" } }));
+      expect(svg('<svg viewBox="0 0 8 8"><script>x</script><path d="M0 0"/></svg>')).not.toContain(
+        "script"
+      );
+      expect(svg("")).not.toContain("<svg");
+    });
   });
 });
