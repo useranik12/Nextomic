@@ -1,4 +1,4 @@
-import { pageCss, renderNode } from "@nextomic/renderer";
+import { pageCss, renderNode, type IconLookup } from "@nextomic/renderer";
 import {
   applyElementEdits,
   applyRefreshes,
@@ -57,6 +57,7 @@ export async function renderParts(input: {
   refreshes?: RefreshRequest;
   savedQuery?: (nodeId: string, loopId: string) => ElementQuery | null;
   loopRows?: (node: ElementNode) => Promise<LoopRows>;
+  icons?: IconLookup;
 }): Promise<FragmentPart[]> {
   const resolveToken = createTokenResolver(input.dynamic);
   const tree = applyRefreshes(
@@ -82,6 +83,7 @@ export async function renderParts(input: {
           resolveToken,
           tree,
           liveSlots: true,
+          ...(input.icons ? { icons: input.icons } : {}),
           ...(loopRows ? { loopRows } : {})
         })
       )
@@ -98,6 +100,7 @@ export function renderOverlay(input: {
   dynamic: DynamicContext;
   settings: ProjectSettings;
   params: Readonly<Record<string, string>>;
+  icons?: IconLookup;
 }): OverlayPart {
   const { template, settings } = input;
   if (!isOverlayType(template.type)) throw new Error("Not a modal or bottom sheet template.");
@@ -108,6 +111,7 @@ export function renderOverlay(input: {
     classes: settings.classes,
     dynamic,
     resolveToken,
+    ...(input.icons ? { icons: input.icons } : {}),
     tree: template.tree
   };
   const html = renderToStaticMarkup(

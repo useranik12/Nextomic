@@ -1,3 +1,4 @@
+import { pageIcons } from "@/server/icon-lookup";
 import { renderLoopCopies } from "@nextomic/renderer";
 import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -75,6 +76,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const { tree, dynamic } = await publishedLayout(id, view, values, headers, gate.visitor);
 
   try {
+    const drawn = await pageIcons(id, view.settings.iconLibraries, [tree]);
     const page = await loopPage({
       projectId: id,
       tree,
@@ -95,6 +97,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
             dynamic,
             loopRows: page.loopRows,
             loopMarkers: true,
+            icons: drawn.icons,
             tree
           },
           page.start

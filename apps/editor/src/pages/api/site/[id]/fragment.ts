@@ -1,3 +1,4 @@
+import { pageIcons } from "@/server/icon-lookup";
 import type { NextApiRequest, NextApiResponse } from "next";
 import {
   elementEditsSchema,
@@ -124,7 +125,9 @@ export default async function handler(request: NextApiRequest, response: NextApi
     ];
     savedQuery = (nodeId, loopId) => findRefreshQuery(lists, nodeId, loopId);
   }
+  const pageDrawn = await pageIcons(id, laid.settings.iconLibraries, [laid.tree]);
   const parts = await renderParts({
+    icons: pageDrawn.icons,
     tree: laid.tree,
     dynamic,
     settings: laid.settings,
@@ -149,7 +152,9 @@ export default async function handler(request: NextApiRequest, response: NextApi
         "The modal or bottom sheet template is not published or its conditions do not match."
       );
     const ranks = overlayRanks(templates.filter((t) => t.type === template.type));
+    const overlayDrawn = await pageIcons(id, laid.settings.iconLibraries, [template.tree]);
     overlay = renderOverlay({
+      icons: overlayDrawn.icons,
       template,
       rank: ranks[template.id] ?? 0,
       dynamic,

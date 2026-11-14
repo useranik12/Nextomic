@@ -1,3 +1,4 @@
+import { pageIcons } from "@/server/icon-lookup";
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
 import { ActionRuntime } from "@/components/runtime/action-runtime";
 import { AnimationPlayer } from "@/components/runtime/animation-player";
@@ -266,6 +267,7 @@ export default async function PreviewPage({
       user: dynamicUser(visitor, settings.appAuth)
     });
   const { tree, dynamic } = laid;
+  const drawn = await pageIcons(id, settings.iconLibraries, [tree]);
   // Template previews (sample content around a header or footer) run no actions.
   const actions =
     "templateIds" in laid
@@ -309,6 +311,8 @@ export default async function PreviewPage({
         customCss={customCssFor(settings.cssFiles, page.id)}
         dynamic={dynamic}
         loopRows={loopRows}
+        icons={drawn.icons}
+        iconCss={drawn.iconCss}
         bootScript
         pruneUnusedClasses
         liveSlots={runtime !== null}

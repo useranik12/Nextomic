@@ -274,7 +274,7 @@ export async function previewIconUpdate(
 
 // ---- Reading and searching ---------------------------------------------------------------------
 
-async function loadSet(projectId: string, library: LibraryData): Promise<IconifySet> {
+export async function loadSet(projectId: string, library: LibraryData): Promise<IconifySet> {
   const hit = setCache.get(cacheKey(projectId, library));
   if (hit) return hit;
   const data = await getStorageAdapter().get(iconSetKey(projectId, library.file));
@@ -292,7 +292,7 @@ async function loadSet(projectId: string, library: LibraryData): Promise<Iconify
 const glyphCache = new Map<string, IconFontData["glyphs"]>();
 
 /** The glyph map of an uploaded icon font. */
-async function loadGlyphs(
+export async function loadGlyphs(
   projectId: string,
   library: LibraryData
 ): Promise<IconFontData["glyphs"]> {

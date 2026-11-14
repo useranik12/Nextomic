@@ -251,7 +251,7 @@ registerElement({
     const label = text("label");
     if (text("source") === "svg") {
       try {
-        const set = { icons: { i: { ...svgToIcon(text("svg"), bool("keepColors")) } } };
+        const set = { icons: { i: svgToIcon(text("svg"), bool("keepColors")) } };
         const html = iconSvg(set, "i", { size, label });
         return iconWrapper(attrs, label, html === null ? null : { html });
       } catch (error) {

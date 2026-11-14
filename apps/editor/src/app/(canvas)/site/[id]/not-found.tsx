@@ -1,3 +1,4 @@
+import { pageIcons } from "@/server/icon-lookup";
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
 import {
   collectElementAnimations,
@@ -45,6 +46,7 @@ export default async function SiteNotFound() {
     rules
   });
   const otherThemes = themeSwitching(settings.themes, theme, Boolean(themeId));
+  const drawn = await pageIcons(projectId, settings.iconLibraries, [tree]);
   return (
     <>
       <style>{BASE_CSS + elementAnimationCss(tree)}</style>
@@ -67,6 +69,8 @@ export default async function SiteNotFound() {
             : undefined
         }
         dynamic={context}
+        icons={drawn.icons}
+        iconCss={drawn.iconCss}
         bootScript
         pruneUnusedClasses
       />
