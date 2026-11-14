@@ -14,11 +14,21 @@ const KINDS: { id: Kind; label: string; accept: string; hint: string }[] = [
   {
     id: "font",
     label: "Icon font",
-    accept: ".woff2,.woff,.ttf,.otf,.json,.css",
-    hint: "Font file plus selection.json, config.json or CSS"
+    accept: ".zip,.woff2,.woff,.ttf,.otf,.json,.css",
+    hint: "The IcoMoon or Fontello zip, or the font file plus selection.json, config.json or CSS"
   },
-  { id: "svg", label: "SVG icons", accept: ".svg", hint: "One or many .svg files" },
-  { id: "iconify-json", label: "Iconify JSON", accept: ".json", hint: "An Iconify icon set .json" }
+  {
+    id: "svg",
+    label: "SVG icons",
+    accept: ".zip,.svg",
+    hint: "A zip of .svg files, or one or many .svg files"
+  },
+  {
+    id: "iconify-json",
+    label: "Iconify JSON",
+    accept: ".zip,.json",
+    hint: "An Iconify icon set .json, or a zip with it"
+  }
 ];
 
 function Steps({ children }: { children: ReactNode }) {
@@ -42,13 +52,13 @@ function Guide({ kind }: { kind: Kind }) {
             <Steps>
               <li>
                 Make the font at icomoon.io/app (Generate Font, then Download) or fontello.com (pick
-                icons, then Download webfont). Already have a font? Skip to step 3.
+                icons, then Download webfont).
               </li>
-              <li>Unzip the download.</li>
+              <li>Select the .zip you downloaded.</li>
               <li>
-                Select these files together: the font file (.woff2, .woff or .ttf, usually in the
-                fonts folder) and the file that lists the icons: selection.json (IcoMoon),
-                config.json (Fontello) or the .css file.
+                Or, with an unzipped font, select together the font file (.woff2, .woff or .ttf) and
+                the file that lists the icons: selection.json (IcoMoon), config.json (Fontello) or
+                the .css file.
               </li>
             </Steps>
             <p className="text-muted">
@@ -60,16 +70,16 @@ function Guide({ kind }: { kind: Kind }) {
         ) : null}
         {kind === "svg" ? (
           <p className="text-muted">
-            Each file becomes one icon, named after the file. SVGs need a viewBox (or width and
-            height). Scripts and event handlers are removed; simple animation is kept. Up to 1000
-            files, 200 KB each.
+            Each file becomes one icon, named after the file. Choose the files or one .zip of them.
+            SVGs need a viewBox (or width and height). Scripts and event handlers are removed;
+            simple animation is kept. Up to 1000 files, 200 KB each.
           </p>
         ) : null}
         {kind === "iconify-json" ? (
           <p className="text-muted">
             Use an icon set exported as Iconify JSON, for example the icons.json inside an
-            @iconify-json package or a set from icon-sets.iconify.design. Icons with unsafe markup
-            are left out.
+            @iconify-json package or a set from icon-sets.iconify.design, as a file or in a .zip.
+            Icons with unsafe markup are left out.
           </p>
         ) : null}
       </div>

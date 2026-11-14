@@ -10,7 +10,8 @@ vi.mock("@/lib/storage", () => ({
   })
 }));
 
-import { importIconUpload } from "./icon-upload";
+import { strToU8, zipSync } from "fflate";
+import { MAX_ZIP_ENTRIES, importIconUpload } from "./icon-upload";
 import { searchIcons } from "./icons";
 
 const enc = (text: string) => new TextEncoder().encode(text);
@@ -195,5 +196,97 @@ describe("icon fonts", () => {
     ]);
     const found = await searchIcons("p1", [library], { query: "sta", library: "", offset: 0 });
     expect(found.hits).toEqual([{ library: "brand-font", name: "star", glyph: "e901" }]);
+  });
+});
+
+describe("zip uploads", () => {
+  const zip = (entries: Record<string, Uint8Array | string>, name = "pack.zip") => ({
+    name,
+    data: zipSync(
+      Object.fromEntries(
+        Object.entries(entries).map(([k, v]) => [k, typeof v === "string" ? strToU8(v) : v])
+      )
+    )
+  });
+  const selection = JSON.stringify({
+    icons: [
+      { properties: { name: "home", code: 59648 } },
+      { properties: { name: "star", code: 59649 } }
+    ]
+  });
+
+  it("reads an IcoMoon download: font in a folder, selection.json, ignoring the demo files", async () => {
+    const { library } = await importIconUpload("p1", meta({ kind: "font", name: "Moon" }), [
+      zip({
+        "fonts/moon.woff2": woff2.data,
+        "selection.json": selection,
+        "style.css": ".x{}",
+        "demo.html": "<html>",
+        "Read Me.txt": "hi",
+        "__MACOSX/._selection.json": "junk",
+        ".hidden.json": "{}"
+      })
+    ]);
+    expect(library).toMatchObject({ source: "icomoon", mode: "font", count: 2 });
+    expect(library.fontFiles.map((f) => f.format)).toEqual(["woff2"]);
+  });
+
+  it("makes a library of the SVG files in a zip, folders and all", async () => {
+    const { library } = await importIconUpload("p1", meta(), [
+      zip({ "icons/a.svg": svg("<path d='M0 0'/>"), "icons/more/b.svg": svg("<path d='M1 1'/>") })
+    ]);
+    expect(library.count).toBe(2);
+    const data = JSON.parse(new TextDecoder().decode(stored.get(`icons/p1/${library.file}`)));
+    expect(Object.keys(data.icons).sort()).toEqual(["a", "b"]);
+  });
+
+  it("opens a zip holding an Iconify set", async () => {
+    const set = JSON.stringify({
+      prefix: "x",
+      width: 24,
+      height: 24,
+      icons: { ok: { body: "<path d='M0 0'/>" } }
+    });
+    const { library } = await importIconUpload("p1", meta({ kind: "iconify-json" }), [
+      zip({ "set/icons.json": set })
+    ]);
+    expect(library).toMatchObject({ source: "iconify-json", count: 1 });
+  });
+
+  it("keeps a path with .. from reaching anywhere: only the file name is used", async () => {
+    const { library } = await importIconUpload("p1", meta(), [
+      zip({ "../../evil/up.svg": svg("<path d='M0 0'/>") })
+    ]);
+    const data = JSON.parse(new TextDecoder().decode(stored.get(`icons/p1/${library.file}`)));
+    expect(Object.keys(data.icons)).toEqual(["up"]);
+    expect([...stored.keys()].every((k) => k.startsWith("icons/p1/"))).toBe(true);
+  });
+
+  it("refuses things that are not a usable zip", async () => {
+    await expect(
+      importIconUpload("p1", meta(), [{ name: "x.zip", data: enc("not a zip at all") }])
+    ).rejects.toThrow(/not a valid zip/);
+    const truncated = zip({ "a.svg": svg("<path/>") });
+    await expect(
+      importIconUpload("p1", meta(), [{ ...truncated, data: truncated.data.slice(0, 30) }])
+    ).rejects.toThrow(/could not be opened/);
+    await expect(
+      importIconUpload("p1", meta(), [zip({ "readme.txt": "hello", "a.png": "x" })])
+    ).rejects.toThrow(/no supported files/);
+    expect(stored.size).toBe(0);
+  });
+
+  it("refuses a zip that would expand too far or hold too many files, before inflating", async () => {
+    // 29 MB of zeros packs to a few KB: the declared size is what is checked.
+    const huge = zip({ "big.json": new Uint8Array(29_000_000) });
+    expect(huge.data.length).toBeLessThan(100_000);
+    await expect(importIconUpload("p1", meta({ kind: "iconify-json" }), [huge])).rejects.toThrow(
+      /larger than 60 MB/
+    );
+    const many = Object.fromEntries(
+      Array.from({ length: MAX_ZIP_ENTRIES + 1 }, (_, i) => [`f${i}.svg`, "x"])
+    );
+    await expect(importIconUpload("p1", meta(), [zip(many)])).rejects.toThrow(/too many files/);
+    expect(stored.size).toBe(0);
   });
 });

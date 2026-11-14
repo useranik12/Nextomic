@@ -19,6 +19,7 @@ import {
   type IconSource,
   type SvgIcon
 } from "@nextomic/schema";
+import { unzipSync } from "fflate";
 import { z } from "zod";
 import { getStorageAdapter } from "@/lib/storage";
 import { IconError, iconFontKey, iconSetKey } from "./icons";
@@ -34,6 +35,10 @@ export const MAX_FONT_BYTES = 2_000_000;
 export const MAX_FONT_FILES = 4;
 export const MAX_META_BYTES = 5_000_000;
 export const MAX_JSON_SET_BYTES = 28_000_000;
+
+export const MAX_ZIP_ENTRIES = 2000;
+export const MAX_ZIP_TOTAL = 60_000_000;
+const ZIP_KEEP = new Set(["svg", "json", "css", "woff2", "woff", "ttf", "otf"]);
 
 export const iconUploadMetaSchema = z.object({
   name: z.string().trim().min(1, "Give the library a name.").max(60),
@@ -111,6 +116,54 @@ function describe(
     installedAt: new Date().toISOString(),
     ...extra
   });
+}
+
+// ---- Zip files ----------------------------------------------------------------------------------
+
+const isZip = (data: Uint8Array): boolean =>
+  data[0] === 0x50 && data[1] === 0x4b && data[2] === 3 && data[3] === 4;
+
+/**
+ * Replaces each uploaded .zip by the supported files inside it (svg, json, css and font files; folder
+ * names are dropped, hidden and __MACOSX entries are skipped). Declared sizes are checked before
+ * anything is inflated, so a small zip cannot expand into memory: at most 2000 files, 28 MB each,
+ * 60 MB together. What comes out then goes through the same checks as files chosen one by one.
+ */
+export function expandZips(files: readonly UploadFile[]): UploadFile[] {
+  const out: UploadFile[] = [];
+  let entries = 0;
+  let total = 0;
+  for (const file of files) {
+    if (ext(file.name) !== "zip") {
+      out.push(file);
+      continue;
+    }
+    if (!isZip(file.data)) throw new IconError(`${file.name} is not a valid zip file.`);
+    let unzipped: Record<string, Uint8Array>;
+    try {
+      unzipped = unzipSync(file.data, {
+        filter: (info) => {
+          const base = info.name.replace(/^.*\//, "");
+          if (info.name.endsWith("/") || base.startsWith(".") || info.name.startsWith("__MACOSX/"))
+            return false;
+          if (!ZIP_KEEP.has(ext(base))) return false;
+          entries += 1;
+          total += info.originalSize;
+          if (entries > MAX_ZIP_ENTRIES) throw new IconError("This zip has too many files.");
+          if (info.originalSize > MAX_JSON_SET_BYTES || total > MAX_ZIP_TOTAL)
+            throw new IconError("This zip is larger than 60 MB unpacked.");
+          return true;
+        }
+      });
+    } catch (error) {
+      if (error instanceof IconError) throw error;
+      throw new IconError(`${file.name} could not be opened as a zip file.`);
+    }
+    for (const [path, data] of Object.entries(unzipped)) {
+      out.push({ name: path.replace(/^.*\//, ""), data });
+    }
+  }
+  return out;
 }
 
 // ---- SVG files ---------------------------------------------------------------------------------
@@ -310,10 +363,14 @@ export async function importIconUpload(
   const meta = iconUploadMetaSchema.parse(rawMeta);
   const key = libraryKey(meta.name, meta.takenKeys);
   if (files.length === 0) throw new IconError("Choose the files to upload.");
+  const expanded = expandZips(files);
+  if (expanded.length === 0)
+    throw new IconError("The zip holds no supported files (svg, json, css or font files).");
   try {
-    if (meta.kind === "svg") return await importSvgFiles(projectId, meta, key, files);
-    if (meta.kind === "iconify-json") return await importIconifyJson(projectId, meta, key, files);
-    return await importIconFont(projectId, meta, key, files);
+    if (meta.kind === "svg") return await importSvgFiles(projectId, meta, key, expanded);
+    if (meta.kind === "iconify-json")
+      return await importIconifyJson(projectId, meta, key, expanded);
+    return await importIconFont(projectId, meta, key, expanded);
   } catch (error) {
     if (error instanceof IconImportError) throw new IconError(error.message);
     throw error;
