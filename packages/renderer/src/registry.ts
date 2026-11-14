@@ -4,7 +4,7 @@ import type { ZodObject, ZodRawShape } from "zod";
 
 export type ElementCategory = "layout" | "basic";
 
-export type ControlKind = "text" | "textarea" | "url" | "select" | "switch";
+export type ControlKind = "text" | "textarea" | "url" | "select" | "switch" | "icon";
 
 export interface ControlDef {
   key: string;
@@ -14,6 +14,10 @@ export interface ControlDef {
   placeholder?: string;
   /** Adds a "Choose from Media" button; the picker only lists these kinds of file. */
   pick?: MediaKind[];
+  /** Shows the control only while another prop has this value (for example the Icon source). */
+  when?: { key: string; value: string };
+  /** `icon` controls: the prop that holds the library key (`key` holds the icon name). */
+  libraryKey?: string;
 }
 
 // `true`: accepts static text mixed with dynamic tokens. `{ reason }`: opted out, with a written reason.
@@ -27,6 +31,22 @@ export interface RenderContext {
   /** Attributes every element receives (data-nid, id, custom attributes). */
   attrs: Record<string, string>;
   children: ReactNode;
+  /** A library icon drawn as inline SVG or an icon-font class; null when it is not known. */
+  icon: (
+    library: string,
+    name: string,
+    options?: { size?: string; label?: string }
+  ) => IconDraw | null;
+}
+
+export type IconDraw = { kind: "svg"; html: string } | { kind: "font"; className: string };
+
+/** What the page knows about icon libraries; filled by the server or the canvas before rendering. */
+export interface IconLookup {
+  /** Sanitized inline SVG for a library icon, or null when the icon is not known. */
+  svg: (library: string, name: string, options: { size: string; label: string }) => string | null;
+  /** True when the library is an uploaded icon font that has this glyph (drawn with a class). */
+  font: (library: string, name: string) => boolean;
 }
 
 export interface ElementDefinition {
