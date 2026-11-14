@@ -20,6 +20,7 @@ import {
 import { useDragActive } from "../dnd";
 import { useEditorStore } from "../store/editor-store";
 import { useEditorDynamicContext } from "../use-editor-context";
+import { useCanvasIcons } from "./use-canvas-icons";
 import { useCanvasLoopRows } from "./use-canvas-loop-rows";
 import { themeModeFor, useResolvedTheme } from "../store/use-resolved-theme";
 import { onAnimationCommand, reportAnimationState } from "./animation-bridge";
@@ -88,6 +89,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const pageId = useEditorStore((s) => s.page?.id ?? null);
   const projectId = useEditorStore((s) => s.projectId);
   const loopRows = useCanvasLoopRows(projectId, doc?.tree ?? null, dynamic);
+  const { icons, request: requestIcons } = useCanvasIcons(projectId);
   const theme = useResolvedTheme();
   const activeId = useEditorStore((s) => s.activeBreakpointId);
   const selectedId = useEditorStore((s) => s.selectedId);
@@ -250,6 +252,9 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
           });
           break;
         }
+        case "icons-needed":
+          requestIcons(message.refs);
+          break;
         case "conditions-failed":
           setConditionsFailed(message.ids);
           break;
@@ -282,7 +287,8 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     panBy,
     panMove,
     wheelZoom,
-    setConditionsFailed
+    setConditionsFailed,
+    requestIcons
   ]);
 
   const send = useCallback((message: HostMessage) => {
@@ -345,12 +351,14 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       hideSelection,
       dynamic,
       loopRows,
-      visibilityPreview
+      visibilityPreview,
+      icons
     });
   }, [
     ready,
     dynamic,
     loopRows,
+    icons,
     doc,
     withLayout,
     breakpoints,

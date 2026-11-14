@@ -1,6 +1,7 @@
 import {
   iconFontFaceCss,
   iconFontGlyphCss,
+  iconRefKey,
   iconSvg,
   walkElements,
   type ElementNode,
@@ -8,6 +9,7 @@ import {
   type IconifySet
 } from "@nextomic/schema";
 import type { IconLookup } from "@nextomic/renderer";
+import { z } from "zod";
 import { loadGlyphs, loadSet } from "./icons";
 
 // The icons a page draws. The Icon element stores `{ library, name }` and the library is always a
@@ -71,4 +73,65 @@ export async function pageIcons(
       }
     }
   };
+}
+
+// ---- The editor canvas ---------------------------------------------------------------------------
+// The canvas renders in the browser and finds out which icons it needs while it renders (names may
+// come from loop rows), then asks for exactly those. Nothing but the drawn icons reaches the browser.
+
+export const iconRefsSchema = z
+  .array(
+    z.object({
+      library: z.string().max(60),
+      name: z.string().max(120),
+      size: z.string().max(12),
+      label: z.string().max(200)
+    })
+  )
+  .max(300);
+export type IconRefs = z.infer<typeof iconRefsSchema>;
+
+export interface DrawnIcons {
+  /** Inline SVG by `iconRefKey`; null when the icon is not known. */
+  svg: Record<string, string | null>;
+  /** Icon-font glyphs by `library\0name`. */
+  fonts: Record<string, true>;
+  /** @font-face and glyph rules for the font glyphs above. */
+  css: string;
+}
+
+/** Draws the icons the canvas asked for from the given libraries (the project draft). */
+export async function drawIcons(
+  projectId: string,
+  libraries: readonly IconLibrary[],
+  refs: IconRefs
+): Promise<DrawnIcons> {
+  const out: DrawnIcons = { svg: {}, fonts: {}, css: "" };
+  const faces = new Set<string>();
+  for (const ref of refs) {
+    const library = libraries.find((l) => l.key === ref.library);
+    const key = iconRefKey(ref.library, ref.name, ref.size, ref.label);
+    out.svg[key] = null;
+    if (!library) continue;
+    try {
+      if (library.mode === "font") {
+        const hex = (await loadGlyphs(projectId, library))[ref.name];
+        if (hex === undefined) continue;
+        out.fonts[[ref.library, ref.name].join("\u0000")] = true;
+        if (!faces.has(library.key)) {
+          faces.add(library.key);
+          out.css += iconFontFaceCss(library, `/icons/${projectId}`);
+        }
+        out.css += iconFontGlyphCss(library.key, { [ref.name]: hex });
+      } else {
+        out.svg[key] = iconSvg(await loadSet(projectId, library), ref.name, {
+          size: ref.size,
+          label: ref.label
+        });
+      }
+    } catch {
+      // Unreadable library data: its icons draw nothing.
+    }
+  }
+  return out;
 }

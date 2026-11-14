@@ -1,12 +1,14 @@
 "use client";
 
-import { BASE_CSS, PageRenderer, getElementDefinition } from "@nextomic/renderer";
+import { BASE_CSS, PageRenderer, getElementDefinition, type IconLookup } from "@nextomic/renderer";
 import { previewTimeline, type PreviewHandle } from "@nextomic/runtime";
 import { findNode } from "@nextomic/schema";
 import { useEffect, useRef, useState } from "react";
 import { createCanvasTester, type StateOverride } from "./canvas-test";
 import {
   hostMessageSchema,
+  iconKey,
+  type CanvasIconRef,
   type CanvasMessage,
   type HostMessage,
   type RenderMessage
@@ -44,6 +46,14 @@ function ReportFailed({
 }) {
   useEffect(() => {
     postToHost({ type: "conditions-failed", ids: [...failed].filter((id) => !held.has(id)) });
+  });
+  return null;
+}
+
+/** Icons the render needed and the host has not sent yet; reported after commit so they get drawn. */
+function ReportIcons({ misses }: { misses: ReadonlyMap<string, CanvasIconRef> }) {
+  useEffect(() => {
+    if (misses.size > 0) postToHost({ type: "icons-needed", refs: [...misses.values()] });
   });
   return null;
 }
@@ -347,6 +357,20 @@ export function CanvasDocument() {
   const failed = new Set<string>();
   const held = new Set<string>();
   if (!payload) return null;
+  // Icons come from the host, drawn on the server; what is missing is asked for after this render.
+  const misses = new Map<string, CanvasIconRef>();
+  const iconLookup: IconLookup = {
+    font: (library, name) => [library, name].join("\u0000") in payload.icons.fonts,
+    svg: (library, name, options) => {
+      const ref = { library, name, size: options.size, label: options.label };
+      const key = iconKey(ref);
+      if (!(key in payload.icons.svg)) {
+        misses.set(key, ref);
+        return null;
+      }
+      return payload.icons.svg[key] ?? null;
+    }
+  };
   return (
     <>
       <style>{EDITOR_CSS}</style>
@@ -365,8 +389,11 @@ export function CanvasDocument() {
         visibilityPreview={payload.visibilityPreview}
         conditionsFailed={failed}
         conditionsHeld={held}
+        icons={iconLookup}
+        iconCss={payload.icons.css}
       />
       <ReportFailed failed={failed} held={held} />
+      <ReportIcons misses={misses} />
       <div id="nxt-drop" ref={markerRef} />
       <div id="nxt-pick" ref={pickRef} />
     </>

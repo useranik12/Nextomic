@@ -7,6 +7,7 @@ import {
   type IconLibrary
 } from "@nextomic/schema";
 import { z } from "zod";
+import { drawIcons, iconRefsSchema, type DrawnIcons } from "@/server/icon-lookup";
 import { importIconUpload, type UploadResult } from "@/server/icon-upload";
 import { authorizeProject, failResult, type ActionResult } from "@/server/authorize";
 import {
@@ -123,5 +124,26 @@ export async function uploadIconLibraryAction(
   } catch (error) {
     if (error instanceof SyntaxError) return { data: null, error: "Invalid library details." };
     return failResult(error, "Could not upload the icons.");
+  }
+}
+
+/** Draws the icons the editor canvas asks for, from the project draft libraries. */
+export async function drawIconsAction(
+  projectId: string,
+  libraries: unknown,
+  refs: unknown
+): Promise<ActionResult<DrawnIcons>> {
+  try {
+    await authorizeProject(projectId);
+    return {
+      data: await drawIcons(
+        projectId,
+        iconLibraryListSchema.parse(libraries),
+        iconRefsSchema.parse(refs)
+      ),
+      error: null
+    };
+  } catch (error) {
+    return failResult(error, "Could not draw the icons.");
   }
 }
