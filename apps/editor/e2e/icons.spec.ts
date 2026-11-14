@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { strToU8, zipSync } from "fflate";
 
 // Design System > Fonts & Icons > Icons: install a catalog set (SVG Spinners, the smallest animated
 // set), see it in Installed with its chips, keep it across a reload, turn it off, and remove it.
@@ -171,4 +172,28 @@ test("an icon font upload explains what is missing", async ({ page }) => {
   await expect(
     page.getByText("Add the file that lists the icons", { exact: false }).last()
   ).toBeVisible();
+});
+
+test("upload an IcoMoon style zip as an icon font", async ({ page }) => {
+  await openIcons(page);
+  const zip = zipSync({
+    "fonts/brand.woff2": new Uint8Array(WOFF2),
+    "selection.json": strToU8(SELECTION),
+    "demo.html": strToU8("<html></html>")
+  });
+  await page.getByRole("button", { name: "Upload icons" }).click();
+  await page.getByLabel("Library name").fill("Zip Font");
+  await page
+    .getByTestId("icon-upload-input")
+    .setInputFiles([
+      { name: "icomoon.zip", mimeType: "application/zip", buffer: Buffer.from(zip) }
+    ]);
+  await page.getByText("I have the right to use").click();
+  await page.getByRole("button", { name: "Upload", exact: true }).click();
+  const font = page
+    .getByRole("region", { name: "Installed icon libraries" })
+    .getByRole("listitem")
+    .filter({ hasText: "Zip Font" });
+  await expect(font).toContainText("2 icons", { timeout: 30_000 });
+  await expect(font.getByText("Icon font")).toBeVisible();
 });
