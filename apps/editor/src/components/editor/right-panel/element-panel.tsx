@@ -12,6 +12,8 @@ import {
 } from "@nextomic/schema";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
+import { Toggle } from "@/components/ui/toggles";
+import { IconControl } from "./icon-control";
 import { ActionTab } from "../actions/action-tab";
 import { Icon } from "@/lib/icons/Icon";
 import { ConditionsGroup } from "../conditions/conditions-group";
@@ -49,6 +51,16 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
   const projectId = useEditorStore((s) => s.projectId);
   const [picking, setPicking] = useState(false);
 
+  if (control.kind === "icon") return <IconControl node={node} control={control} />;
+  if (control.kind === "switch") {
+    return (
+      <Toggle
+        label={control.label}
+        isSelected={node.props[control.key] === true}
+        onChange={(on) => setProp(node.id, control.key, on)}
+      />
+    );
+  }
   if (control.kind === "select") {
     return (
       <SelectField
@@ -163,7 +175,9 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   );
   const q = query.trim().toLowerCase();
   const controls = (definition?.controls ?? []).filter(
-    (c) => !q || c.label.toLowerCase().includes(q)
+    (c) =>
+      (!q || c.label.toLowerCase().includes(q)) &&
+      (!c.when || dynamicTextOf(node.props[c.when.key]) === c.when.value)
   );
   const groups = DESIGN_GROUPS.map((g) => ({
     ...g,

@@ -75,7 +75,8 @@ Groups and tile labels follow `blueprint/components/elements-panel.png`:
 - **Rich text:** single component, WordPress-like editor: bold, italic, underline, strikethrough, ordered/unordered list, link, basic table, image insert with alignment and size. Stored as a safe structured JSON (e.g. Tiptap/ProseMirror doc), rendered to sanitized HTML. Supports dynamic tokens.
 - Button, Link, Image, Video, Audio (assets from the Media manager)
 - Icon: picks from the project's icon libraries (popular free sets, icon fonts such as IcoMoon exports, uploaded SVGs) through one picker; stored as `{ library, name }`; output as inline SVG (default) or icon font per library. See `fonts-and-icons.md`.
-- SVG (inline, sanitized)
+- SVG (inline, sanitized): one prop `svg` (code) plus an optional accessible name; the markup runs through the SVG sanitizer (scripts, handlers and external references removed, simple SMIL kept).
+- Icon implementation (7a): props `source` (`library` or `svg`), `library`, `name`, `svg`, `keepColors`, `size`, `label`. Only `name`, `svg`, `size` and `label` take dynamic data; `library` is a fixed key (opt-out reason in the registry) so a page knows which icon sets to load. A library icon draws as inline SVG (`<span>`) or, for uploaded icon fonts, `<i class="nxt-<key>-<name>">` with the font CSS added for the libraries in use. `source: svg` turns pasted SVG code into an icon (recolored to `currentColor` unless `keepColors`). Decorative by default (`aria-hidden`); a name makes it `role="img"`. An unknown name draws an empty box. Disabled libraries keep drawing icons already placed. The renderer reads icons through `RenderOptions.icons` (`IconLookup`); the server loads only the libraries a page uses (`server/icon-lookup.ts`, every render entry: page, preview, 404, loop and fragment endpoints, overlays) and the editor canvas asks the server for exactly the icons it renders (`use-canvas-icons.ts`). A library whose icons are used cannot be removed.
 
 ### General
 
@@ -99,11 +100,12 @@ Groups and tile labels follow `blueprint/components/elements-panel.png`:
 
 ## Build order for Phase 7
 
-1. Forms group (needs validation and form actions)
-2. General: accordion, tabs, dropdown, off-canvas, list, icon list, divider, progress, rating, switch, counter
-3. Rich text, code, HTML, SVG, video, audio
-4. Slider, chart, map, captcha
-5. Query group elements (after the data layer is stable)
+1. Icon and SVG (7a, built 2026-11-14: Icon element, icon picker, SVG element)
+2. Forms group (needs validation and form actions)
+3. General: accordion, tabs, dropdown, off-canvas, list, icon list, divider, progress, rating, switch, counter
+4. Rich text, code, HTML, video, audio
+5. Slider, chart, map, captcha
+6. Query group elements (after the data layer is stable)
 
 ## Built-site look
 

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  ICON_SEARCH_PAGE,
   ICON_CATALOG,
   ICON_FONT_FILE_PATTERN,
   ICONIFY_MAX_BYTES,
@@ -327,7 +328,6 @@ export const searchInputSchema = z.object({
   library: z.union([iconKeySchema, z.literal("")]),
   offset: z.number().int().min(0).max(100_000)
 });
-export const ICON_SEARCH_PAGE = 60;
 
 /** A search result: `svg` for SVG libraries, `glyph` (hex codepoint) for uploaded icon fonts. */
 export interface IconHit {

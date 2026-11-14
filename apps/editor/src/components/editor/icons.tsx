@@ -23,6 +23,10 @@ export function ElementIcon({ type, size = 28 }: { type: string; size?: number }
       return <Icon name="ph:cursor-click" {...props} />;
     case "image":
       return <Icon name="ph:image" {...props} />;
+    case "icon":
+      return <Icon name="ph:star" {...props} />;
+    case "svg":
+      return <Icon name="ph:file-svg" {...props} />;
     default:
       return <Icon name="ph:square" {...props} />;
   }
