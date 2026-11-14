@@ -143,13 +143,13 @@ export function parseIconFontCss(css: string): Glyph[] {
 
 // ---- SVG files ----------------------------------------------------------------------------------
 
-export interface SvgIcon {
+export type SvgIcon = {
   body: string;
   width: number;
   height: number;
   left?: number;
   top?: number;
-}
+};
 
 const ROOT_STYLE = new Set(
   (

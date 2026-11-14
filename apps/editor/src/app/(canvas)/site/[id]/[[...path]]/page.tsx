@@ -1,3 +1,4 @@
+import { pageIcons } from "@/server/icon-lookup";
 import { BASE_CSS, PageRenderer } from "@nextomic/renderer";
 import { AnimationPlayer } from "@/components/runtime/animation-player";
 import {
@@ -138,6 +139,7 @@ export default async function PublishedPage({
         execute: asVisitor(siteExecutor(id, workspaceId), gate.visitor?.accessToken)
       })
     : {};
+  const drawn = await pageIcons(id, settings.iconLibraries, [tree]);
   const hasLoops = Object.keys(loopRows).length > 0;
   const realtime = hasLoops && usesRealtime(tree) ? await realtimeConnection(id) : null;
   const { theme } = resolveRenderTheme(settings.themes, {
@@ -177,6 +179,8 @@ export default async function PublishedPage({
         dynamic={dynamic}
         loopRows={loopRows}
         loopMarkers
+        icons={drawn.icons}
+        iconCss={drawn.iconCss}
         bootScript
         pruneUnusedClasses
         liveSlots={runtime !== null}
