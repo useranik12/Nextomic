@@ -20,6 +20,7 @@ import { IconSetRow, type IconChip } from "./icon-set-row";
 import { UpdateIconDialog } from "./update-icon-dialog";
 import { UploadIconsDialog } from "./upload-icons-dialog";
 import { useIconLibraries } from "./use-icon-libraries";
+import { useIconUsage } from "./use-icon-usage";
 
 const count = (n: number) => n.toLocaleString("en-US");
 
@@ -72,6 +73,7 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
   const [query, setQuery] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [removing, setRemoving] = useState<IconLibrary | null>(null);
+  const usage = useIconUsage(lib.projectId, removing?.key ?? null);
   const [uploading, setUploading] = useState(false);
 
   const q = query.trim().toLowerCase();
@@ -271,7 +273,11 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
         onClose={() => setRemoving(null)}
         size="sm"
         title={`Remove ${removing?.name ?? ""}`}
-        description="Its icons leave the picker. Press Save in the Design System to keep the change, or Discard to bring it back."
+        description={
+          usage.used
+            ? "Icons from this library are in use, so it cannot be removed yet."
+            : "Its icons leave the picker. Press Save in the Design System to keep the change, or Discard to bring it back."
+        }
         footer={
           <>
             <ActionButton tone="secondary" size="md" onPress={() => setRemoving(null)}>
@@ -280,6 +286,7 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
             <ActionButton
               tone="danger"
               size="md"
+              isDisabled={usage.checking || usage.used}
               onPress={() => {
                 if (removing) lib.remove(removing.key);
                 setRemoving(null);
@@ -289,7 +296,26 @@ export function IconsTab({ saveNow }: { saveNow: () => Promise<void> }) {
             </ActionButton>
           </>
         }
-      />
+      >
+        {usage.checking ? <p className="text-xs text-muted">Checking where it is used...</p> : null}
+        {usage.error ? (
+          <p role="alert" className="text-xs text-danger">
+            {usage.error}
+          </p>
+        ) : null}
+        {usage.used ? (
+          <ul
+            aria-label="Where it is used"
+            className="flex max-h-40 flex-col gap-1 overflow-y-auto text-xs text-body"
+          >
+            {usage.list.map((u) => (
+              <li key={`${u.kind}:${u.id}`}>
+                {u.kind === "page" ? "Page" : u.kind === "template" ? "Template" : ""} {u.name}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </Dialog>
     </div>
   );
 }

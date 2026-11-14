@@ -119,6 +119,8 @@ Design sources are in `blueprint/` (see `ui-reference.md` for the index, coverag
 
 - 2026-11-12 Phase 5d-1 built-app auth (owner chose full scope incl. OAuth and magic link): Supabase Auth is called over its REST API (GoTrue) with the anon key from `packages/integrations/src/supabase/auth.ts` instead of adding `@supabase/supabase-js`/`ssr`, so only the connector touches Supabase, the dependency list stays unchanged and refresh is serialized by us (single-use refresh tokens). Sessions live in project-scoped httpOnly cookies (live and preview apart), every token is checked against Supabase, redirect flows use PKCE with one callback route that must be in the Supabase redirect allow-list, protected pages are served only to signed-in visitors and the fragment, loop and action endpoints refuse them otherwise. Preview runs real sign-in with its own cookie (the older "mock user only" idea in `app-auth.md` section 8 is not built). Details: `app-auth.md` section 11.
 
+- 2026-11-14 Phase 7a Icon and SVG (built with the owner's recommendations after no reply to four questions, change on request): the Icon library is a fixed choice and only the icon name is dynamic; Icon source is "Library icon" or "SVG code" (pasted, sanitized, recolored to currentColor unless Keep colors); Favorites and Recent live in the browser per project (per account needs a DB column, not built); the canvas draws icons through a server action that returns only the drawn SVG; removing a library whose icons are used is blocked.
+
 ## Glossary
 
 Project, Page, Template, Theme, Color mode, Element (node), Class, Variable, Query, Loop, Binding, Condition, Action flow, Connector, Auth provider, Dynamic data, Scope.

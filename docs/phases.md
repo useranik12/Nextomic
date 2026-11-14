@@ -168,7 +168,8 @@ Docs: `elements.md`
 
 - [ ] Forms group (inputs with clear, mask/toggle, regex and built-in validation)
 - [ ] General group (accordion, tabs, dropdown, off-canvas, list, icon list, divider, progress, rating, switch, counter)
-- [ ] Rich text, code block, HTML, SVG, video, audio, icon
+- [x] Icon and SVG elements, icon picker (7a) _Built 2026-11-14, see `elements.md`. Picker: search, library tabs, Recent and Favorites (kept in this browser, per project). Open: size and color preview in the picker, a toast Icon parameter, favorites per account (needs a DB column), "load SVG from Media" for the SVG code._
+- [ ] Rich text, code block, HTML, video, audio
 - [ ] Slider, chart, map, captcha (Turnstile, Google)
 - [ ] Query group (filter, search, pagination, query-bound form controls)
 - [ ] Per-element tests: schema, editor render, Next and Astro render, a11y, dynamic data on every bindable prop

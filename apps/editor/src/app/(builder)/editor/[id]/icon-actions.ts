@@ -7,6 +7,7 @@ import {
   type IconLibrary
 } from "@nextomic/schema";
 import { z } from "zod";
+import { iconLibraryUsage, type IconUsage } from "@/server/icon-usage";
 import { drawIcons, iconRefsSchema, type DrawnIcons } from "@/server/icon-lookup";
 import { importIconUpload, type UploadResult } from "@/server/icon-upload";
 import { authorizeProject, failResult, type ActionResult } from "@/server/authorize";
@@ -145,5 +146,18 @@ export async function drawIconsAction(
     };
   } catch (error) {
     return failResult(error, "Could not draw the icons.");
+  }
+}
+
+/** Where an icon library is used. A library in use cannot be removed. */
+export async function iconLibraryUsageAction(
+  projectId: string,
+  key: string
+): Promise<ActionResult<IconUsage[]>> {
+  try {
+    await authorizeProject(projectId);
+    return { data: await iconLibraryUsage(projectId, iconKeySchema.parse(key)), error: null };
+  } catch (error) {
+    return failResult(error, "Could not check where the library is used.");
   }
 }

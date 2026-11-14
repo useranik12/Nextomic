@@ -181,6 +181,9 @@ export const iconFontDataSchema = z.object({
 });
 export type IconFontData = z.infer<typeof iconFontDataSchema>;
 
+/** Matches per page of an icon search (the server pages by this many). */
+export const ICON_SEARCH_PAGE = 60;
+
 export const iconFontFamily = (key: string): string => `nxt-${key}`;
 export const iconFontClass = (key: string, name: string): string => `nxt-${key}-${name}`;
 /** The character a codepoint draws. Used for previews and the picker; built sites use the class. */
