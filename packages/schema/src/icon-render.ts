@@ -68,3 +68,7 @@ export function sampleSvg(sample: {
     "sample"
   );
 }
+
+/** The key of one icon as drawn: library, name, size and accessible label. */
+export const iconRefKey = (library: string, name: string, size: string, label: string): string =>
+  [library, name, size, label].join("\u0000");

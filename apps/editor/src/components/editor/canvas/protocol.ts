@@ -17,6 +17,7 @@ import {
   type BreakpointDef,
   type ElementNode,
   type ProjectVariable,
+  iconRefKey,
   type StyleMap,
   type Theme
 } from "@nextomic/schema";
@@ -27,6 +28,25 @@ import { z } from "zod";
 // check `event.source` and validate every payload.
 
 const finite = z.number().finite();
+
+/** One icon the canvas draws: where it comes from, its size and its accessible label. */
+export const canvasIconRefSchema = z.object({
+  library: z.string().max(60),
+  name: z.string().max(120),
+  size: z.string().max(12),
+  label: z.string().max(200)
+});
+export type CanvasIconRef = z.infer<typeof canvasIconRefSchema>;
+export const iconKey = (ref: CanvasIconRef): string =>
+  iconRefKey(ref.library, ref.name, ref.size, ref.label);
+
+/** Icons drawn by the server for the canvas (see use-canvas-icons). */
+export const canvasIconsSchema = z.object({
+  svg: z.record(z.string().max(700), z.string().max(200_000).nullable()),
+  fonts: z.record(z.string().max(200), z.literal(true)),
+  css: z.string().max(5_000_000)
+});
+export type CanvasIcons = z.infer<typeof canvasIconsSchema>;
 
 export const dropZoneSchema = z.enum(["before", "inside", "after"]);
 
@@ -57,7 +77,9 @@ export const renderMessageSchema = z.object({
     )
     .default({}),
   // Auto / Show / Hide preview switch per element (conditional visibility; never saved).
-  visibilityPreview: z.record(z.string().max(64), z.enum(["show", "hide"])).default({})
+  visibilityPreview: z.record(z.string().max(64), z.enum(["show", "hide"])).default({}),
+  // Icons the canvas asked for, drawn by the server.
+  icons: canvasIconsSchema.default({ svg: {}, fonts: {}, css: "" })
 });
 export type RenderMessage = z.infer<typeof renderMessageSchema>;
 
@@ -133,6 +155,8 @@ export const canvasMessageSchema = z.discriminatedUnion("type", [
     playing: z.boolean()
   }),
   z.object({ type: z.literal("select"), id: z.string().nullable() }),
+  // Icons the last render needed and did not have yet.
+  z.object({ type: z.literal("icons-needed"), refs: z.array(canvasIconRefSchema).max(300) }),
   // Elements whose visibility conditions fail on the canvas (the Navigator marks them).
   z.object({
     type: z.literal("conditions-failed"),
