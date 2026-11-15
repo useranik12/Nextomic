@@ -8,6 +8,9 @@ import {
   describeType,
   stateNameProblem,
   stateTypeSchema,
+  PARAM_TYPES,
+  VALUE_TYPES,
+  FIELD_TYPES,
   typeReferences,
   valueAfterTypeChange,
   type TypeRegistry,
@@ -77,6 +80,21 @@ describe("typed values", () => {
     ["supabaseRow", "[1]", false]
   ] as const)("%s %s fits: %s", (type, text, ok) => {
     expect(checkStateValue(spec(type), text) === null).toBe(ok);
+  });
+
+  it("checks icons written as library:name", () => {
+    expect(checkStateValue(spec("icon"), "ph:star")).toBeNull();
+    expect(checkStateValue(spec("icon"), "my-set:arrow-left")).toBeNull();
+    expect(checkStateValue(spec("icon"), "star")).not.toBeNull();
+    expect(checkStateValue(spec("icon"), "ph:Star")).not.toBeNull();
+    expect(checkStateValue(spec("icon"), "a:b:c")).not.toBeNull();
+  });
+
+  it("offers Color and Icon for parameters, and Icon nowhere else", () => {
+    expect(PARAM_TYPES).toContain("color");
+    expect(PARAM_TYPES).toContain("icon");
+    expect(VALUE_TYPES).not.toContain("icon");
+    expect(FIELD_TYPES).not.toContain("icon");
   });
 
   it("reads old type names as their replacements", () => {

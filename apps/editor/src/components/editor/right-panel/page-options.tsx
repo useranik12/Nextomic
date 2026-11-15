@@ -17,6 +17,7 @@ import { DraftScope } from "../draft-scope";
 import { useEditorStore } from "../store/editor-store";
 import { DynamicBolt } from "./dynamic-bolt";
 import { MarkingGroup } from "./marking-group";
+import { ColorParamField, IconParamField } from "./param-default-fields";
 import { compactFieldClass } from "./setting-row";
 
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -192,6 +193,24 @@ function BoltInput({
   );
 }
 
+/** The default value control that fits the parameter type. */
+function DefaultField({
+  type,
+  label,
+  value,
+  onChange
+}: {
+  type: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const shared = { label, value, exclude: ["params", "state"] as ("params" | "state")[], onChange };
+  if (type === "color") return <ColorParamField {...shared} className="flex-1" />;
+  if (type === "icon") return <IconParamField {...shared} className="flex-1" />;
+  return <BoltInput {...shared} placeholder="Default value" className="flex-1" />;
+}
+
 function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }) {
   return (
     <button
@@ -271,12 +290,10 @@ export function PageParameters({ title = "Page Parameters" }: { title?: string }
                       set(params.map((p, i) => (i === index ? { ...p, type } : p)))
                     }
                   />
-                  <BoltInput
+                  <DefaultField
+                    type={param.type}
                     label={`Default value for ${param.name}`}
-                    placeholder="Default value"
                     value={param.defaultValue}
-                    exclude={["params", "state"]}
-                    className="flex-1"
                     onChange={(defaultValue) =>
                       set(params.map((p, i) => (i === index ? { ...p, defaultValue } : p)))
                     }

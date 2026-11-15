@@ -16,9 +16,25 @@ export const STATE_TYPES = [
   "url",
   "enum",
   "dataType",
+  "icon",
   "supabaseRow"
 ] as const;
 export type StateType = (typeof STATE_TYPES)[number];
+
+/** Types a variable, constant, action block parameter or return can have (Icon is for parameters). */
+export const VALUE_TYPES = [
+  "string",
+  "int",
+  "float",
+  "boolean",
+  "json",
+  "timestamptz",
+  "color",
+  "url",
+  "enum",
+  "dataType",
+  "supabaseRow"
+] as const satisfies readonly StateType[];
 
 /** Types a custom data type's fields can have (everything except a Supabase row). */
 export const FIELD_TYPES = [
@@ -35,7 +51,15 @@ export const FIELD_TYPES = [
 ] as const satisfies readonly StateType[];
 
 /** Types a page parameter (a value from the address) can have. */
-export const PARAM_TYPES = ["string", "int", "float", "boolean", "timestamptz"] as const;
+export const PARAM_TYPES = [
+  "string",
+  "int",
+  "float",
+  "boolean",
+  "timestamptz",
+  "color",
+  "icon"
+] as const satisfies readonly StateType[];
 
 export const STATE_TYPE_LABELS: Record<StateType, string> = {
   string: "String",
@@ -48,6 +72,7 @@ export const STATE_TYPE_LABELS: Record<StateType, string> = {
   url: "URL",
   enum: "Enum",
   dataType: "Data Type",
+  icon: "Icon",
   supabaseRow: "Supabase Row"
 };
 
@@ -211,6 +236,8 @@ export const TIMESTAMP_PATTERN =
   /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[T ]([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d{1,6})?)?(Z|[+-]([01]\d)(:?[0-5]\d)?)?$/i;
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const COLOR_FN = /^(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch)\([^()]*\)$/i;
+/** An icon as text: its library key and name, `library:name`. */
+const ICON_VALUE = /^[a-z0-9]+(-[a-z0-9]+)*:[a-z0-9]+(-[a-z0-9]+)*$/;
 const MAX_DEPTH = 6;
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -257,6 +284,10 @@ function valueProblem(
       return typeof value === "string" && (value.startsWith("/") || /^https?:\/\/\S+$/i.test(value))
         ? null
         : "Expected an http(s) URL or a path starting with /.";
+    case "icon":
+      return typeof value === "string" && ICON_VALUE.test(value)
+        ? null
+        : "Expected an icon written as library:name, for example ph:star.";
     case "enum": {
       if (typeof value !== "string") return "Expected one of the enum values.";
       if (!registry) return null;

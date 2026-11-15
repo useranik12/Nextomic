@@ -78,7 +78,8 @@ export function DataTypeEditor({
                     onChange={(next) =>
                       setField(field.id, {
                         ...field,
-                        type: next.type === "supabaseRow" ? "json" : next.type,
+                        type:
+                          next.type === "supabaseRow" || next.type === "icon" ? "json" : next.type,
                         ref: next.ref
                       })
                     }

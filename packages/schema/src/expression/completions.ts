@@ -172,6 +172,7 @@ const KIND_OF_TYPE: Partial<Record<TypeSpec["type"], ValueKind>> = {
   color: "string",
   url: "string",
   enum: "string",
+  icon: "string",
   int: "number",
   float: "number",
   boolean: "boolean",

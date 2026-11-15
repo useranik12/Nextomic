@@ -2,7 +2,7 @@
 
 import {
   REF_TYPES,
-  STATE_TYPES,
+  VALUE_TYPES,
   STATE_TYPE_LABELS,
   type StateType,
   type TypeSpec
@@ -36,7 +36,7 @@ export function TypePicker({
   label,
   spec,
   onChange,
-  types = STATE_TYPES,
+  types = VALUE_TYPES,
   excludeDataTypes = [],
   compact = true
 }: {

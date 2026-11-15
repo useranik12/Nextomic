@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { IDENTIFIER_PATTERN, STATE_TYPES, type StateType } from "../state";
+import { IDENTIFIER_PATTERN, VALUE_TYPES, type StateType } from "../state";
 import { flowNodeSchema, MAX_FLOW_NODES, walkFlow, type FlowNode } from "./flow";
 
 // Action Blocks: reusable flows of a project with typed parameters and an optional return value.
 // Editing a block changes every place that calls it (like a component); there is no detach.
 
-export const BLOCK_PARAM_TYPES = [...STATE_TYPES, "element"] as const;
+export const BLOCK_PARAM_TYPES = [...VALUE_TYPES, "element"] as const;
 export type BlockParamType = (typeof BLOCK_PARAM_TYPES)[number];
 
 export interface BlockParam {
@@ -74,7 +74,7 @@ export const actionBlockSchema: z.ZodType<ActionBlock, z.ZodTypeDef, unknown> = 
     .default([]),
   returns: z
     .object({
-      type: z.enum(STATE_TYPES),
+      type: z.enum(VALUE_TYPES),
       isList: z.boolean().default(false),
       ref: z.string().max(200).default(""),
       value: z.string().max(2000).default("")

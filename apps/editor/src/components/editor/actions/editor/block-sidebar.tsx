@@ -4,7 +4,7 @@ import { SwitchField as Switch } from "@/components/ui/toggles";
 import {
   BLOCK_PARAM_TYPES,
   STATE_TYPE_LABELS,
-  STATE_TYPES,
+  VALUE_TYPES,
   type ActionBlock,
   type BlockParam,
   type BlockParamType
@@ -18,7 +18,7 @@ const PARAM_TYPE_OPTIONS = BLOCK_PARAM_TYPES.map((t) => ({
   value: t,
   label: t === "element" ? "Element" : STATE_TYPE_LABELS[t]
 }));
-const RETURN_TYPE_OPTIONS = STATE_TYPES.map((t) => ({ value: t, label: STATE_TYPE_LABELS[t] }));
+const RETURN_TYPE_OPTIONS = VALUE_TYPES.map((t) => ({ value: t, label: STATE_TYPE_LABELS[t] }));
 
 function ParamRow({
   param,
@@ -153,7 +153,7 @@ export function BlockSidebar() {
               value={block.returns.type}
               options={RETURN_TYPE_OPTIONS}
               onValueChange={(type) =>
-                set({ returns: { ...block.returns!, type: type as (typeof STATE_TYPES)[number] } })
+                set({ returns: { ...block.returns!, type: type as (typeof VALUE_TYPES)[number] } })
               }
             />
             <BoltInput
