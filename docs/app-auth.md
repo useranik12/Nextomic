@@ -109,7 +109,7 @@ Planned: `User.isLoggedIn`, `User.id`, `User.email`, `User.phone`, `User.name`, 
 
 ## 6. Forms
 
-- The Form wrapper has a Submit action flow; it can start with any auth action. Fields map to action params by field `name` (`email`, `password`, `code`, `phone`, `name`) or by explicit binding.
+- The Form wrapper has no action flow (owner decision 2026-11-16). A Button's flow can start with Validate Form and then any auth action; the auth action params bind to form values with `{{ form.<formName>.<fieldName> }}`.
 - Auth form presets in the element picker (or snippet library): Login, Sign up, Forgot password, Reset password, Verify OTP (uses the Pin element), Magic link, Social sign-in buttons. Presets are normal elements and classes inserted into the page. They are fully editable and have no hidden behavior.
 - Password inputs: masked by default, optional show/hide toggle, excluded from state persistence, previews, logs, and screenshots.
 - Built-in validation presets: email format, password policy (min length, character rules), password confirmation match, OTP length.

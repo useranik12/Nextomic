@@ -53,6 +53,7 @@ export * from "./query-scope";
 export * from "./query-run";
 export * from "./query-loop-rows";
 export * from "./loop-names";
+export * from "./forms";
 export * from "./query-sample";
 export * from "./query-local";
 export * from "./rest";
