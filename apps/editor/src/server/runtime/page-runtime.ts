@@ -1,6 +1,7 @@
 import {
   calledBlocks,
   stateDependencies,
+  hasActiveForm,
   walkFlow,
   type ActionBlock,
   type DynamicContext,
@@ -70,9 +71,10 @@ function loopFreeDeps(tree: ElementNode): Record<string, string[]> {
   return Object.fromEntries(Object.entries(stateDependencies(tree)).filter(([id]) => free.has(id)));
 }
 
-/** The runtime payload, or null when the page has no flows (no runtime is shipped then). */
+/** The runtime payload, or null when the page has no flows and no active form (no runtime is shipped then). */
 export function runtimePayload(input: PayloadInput): RuntimePayload | null {
-  if (!hasNodes(input.flows)) return null;
+  // Forms need the runtime too (errors, clear and show/hide buttons, no browser submit).
+  if (!hasNodes(input.flows) && !hasActiveForm(input.tree)) return null;
   const user = input.dynamic.user ? { ...input.dynamic.user, accessToken: "" } : null;
   return {
     projectId: input.projectId,
@@ -154,7 +156,6 @@ export async function livePayload(
   search: string
 ): Promise<RuntimePayload | null> {
   const { flows, blocks } = await liveFlows(projectId, view.page.flows, laid.templateIds);
-  if (!hasNodes(flows)) return null;
   return runtimePayload({
     ...laid,
     projectId,
@@ -177,7 +178,6 @@ export async function previewPayload(
   search: string
 ): Promise<RuntimePayload | null> {
   const { flows, blocks } = await draftFlows(projectId, page.id, laid.templateIds);
-  if (!hasNodes(flows)) return null;
   const pages = await listPages(projectId);
   return runtimePayload({
     ...laid,
