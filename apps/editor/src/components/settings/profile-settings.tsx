@@ -83,7 +83,7 @@ export function ProfileSettings({
           name={draftName || savedName}
           image={shownImage}
           size="lg"
-          className="h-16 w-16 text-lg"
+          className="!h-16 !w-16 text-lg"
         />
         <div className="flex flex-wrap items-center gap-2">
           <input

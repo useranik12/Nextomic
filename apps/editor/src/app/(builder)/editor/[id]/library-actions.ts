@@ -4,8 +4,10 @@ import {
   activeForms,
   type FormInfo,
   createTemplateInputSchema,
+  pageNameSchema,
   pageSettingsSchema,
   saveTemplateInputSchema,
+  templateNameSchema,
   type PublishedTemplate,
   templateSettingsSchema
 } from "@nextomic/schema";
@@ -204,5 +206,40 @@ export async function setLiveAction(
       : { data: null, error: "Could not change the status." };
   } catch (error) {
     return fail(error, "Could not change the status.");
+  }
+}
+
+/** Renames a page or template from the manager. Saved like any edit (version checked). */
+export async function renameItemAction(
+  projectId: string,
+  kind: "page" | "template",
+  id: string,
+  name: string
+): Promise<ActionResult<true>> {
+  try {
+    const userId = await authorize(projectId);
+    const itemId = idSchema.parse(id);
+    if (kind === "page") {
+      const page = await getPage(projectId, itemId);
+      if (!page) return { data: null, error: "Page not found." };
+      const result = await savePage(projectId, itemId, userId, {
+        baseVersion: page.version,
+        name: pageNameSchema.parse(name)
+      });
+      return result.ok
+        ? { data: true, error: null }
+        : { data: null, error: "Could not rename the page." };
+    }
+    const template = await getTemplate(projectId, itemId);
+    if (!template) return { data: null, error: "Template not found." };
+    const result = await saveTemplate(projectId, itemId, {
+      baseVersion: template.version,
+      name: templateNameSchema.parse(name)
+    });
+    return result.ok
+      ? { data: true, error: null }
+      : { data: null, error: "Could not rename the template." };
+  } catch (error) {
+    return fail(error, "Could not rename.");
   }
 }

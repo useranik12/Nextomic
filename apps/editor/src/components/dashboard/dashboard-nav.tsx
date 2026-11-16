@@ -7,7 +7,7 @@ import { Icon } from "@/lib/icons/Icon";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "ph:squares-four" },
   { href: "/projects", label: "All Projects", icon: "ph:stack" },
-  { href: "/settings", label: "Settings", icon: null }
+  { href: "/settings", label: "Settings", icon: "ph:gear-six" }
 ] as const;
 
 export function DashboardNav() {
@@ -29,12 +29,10 @@ export function DashboardNav() {
             ].join(" ")}
             aria-current={isActive ? "page" : undefined}
           >
-            {item.icon ? (
-              <Icon
-                name={item.icon}
-                className={isActive ? "text-accent" : "text-subtle group-hover:text-body"}
-              />
-            ) : null}
+            <Icon
+              name={item.icon}
+              className={isActive ? "text-foreground" : "text-subtle group-hover:text-body"}
+            />
             {item.label}
           </Link>
         );

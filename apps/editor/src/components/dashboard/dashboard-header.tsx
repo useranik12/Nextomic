@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { getBrandAsset } from "@/lib/assets";
 import { Icon } from "@/lib/icons/Icon";
 import { ActionButton } from "@/components/ui/controls";
+import { GlobalSearch } from "@/components/dashboard/global-search";
 import { Hint } from "@/components/ui/hint";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { authClient } from "@/lib/auth-client";
@@ -22,12 +23,6 @@ const ICON_TRIGGER =
   " flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-0";
 
 const ICON = "size-5!";
-
-const SHORTCUTS = [
-  { key: "new-project", label: "New Project", href: "/projects?new=1" },
-  { key: "all-projects", label: "All Projects", href: "/projects" },
-  { key: "settings", label: "Settings", href: "/settings" }
-];
 
 export function DashboardHeader({ userName, userEmail, userImage }: DashboardHeaderProps) {
   const router = useRouter();
@@ -64,32 +59,19 @@ export function DashboardHeader({ userName, userEmail, userImage }: DashboardHea
       </div>
 
       <div className="flex items-center gap-2">
-        <Hint content="Search projects">
+        <GlobalSearch />
+
+        <Hint content="Dashboard">
           <ActionButton
             tone="ghost"
             isIconOnly
-            href="/projects"
-            aria-label="Search projects"
+            href="/dashboard"
+            aria-label="Dashboard"
             className="flex shrink-0 items-center justify-center rounded-full"
           >
-            <Icon name="ph:magnifying-glass" label="Search" className={ICON} />
+            <Icon name="ph:squares-four" label="Dashboard" className={ICON} />
           </ActionButton>
         </Hint>
-
-        <Dropdown>
-          <Dropdown.Trigger aria-label="Shortcuts" className={ICON_TRIGGER}>
-            <Icon name="ph:squares-four" label="Shortcuts" className={ICON} />
-          </Dropdown.Trigger>
-          <Dropdown.Popover placement="bottom end" className="min-w-44">
-            <Dropdown.Menu aria-label="Shortcuts" onAction={(key) => router.push(String(key))}>
-              {SHORTCUTS.map((item) => (
-                <Dropdown.Item key={item.key} id={item.href} textValue={item.label}>
-                  <Label>{item.label}</Label>
-                </Dropdown.Item>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
 
         <Hint content="Settings">
           <ActionButton

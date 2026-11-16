@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColorMode } from "@nextomic/schema";
-import { Description, Label, Radio, RadioGroup } from "@heroui/react";
+import { Label, Radio, RadioGroup } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { useState, useTransition } from "react";
 import { updateColorModeAction } from "@/app/(builder)/(dashboard)/settings/actions";
@@ -24,35 +24,45 @@ export function AppearanceSettings({ initialColorMode }: { initialColorMode: Col
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <RadioGroup
-        value={colorMode}
-        onChange={handleChange}
-        isDisabled={isPending}
-        aria-label="Color mode"
-      >
-        <Label className="text-sm font-medium text-body">Color mode</Label>
-        <Description>
+    <div className="overflow-hidden rounded-2xl border border-separator bg-surface/40">
+      <div className="flex flex-col gap-0.5 border-b border-separator px-5 py-4">
+        <h3 className="text-sm font-medium text-foreground">Color mode</h3>
+        <p className="text-xs text-muted">
           Changes how the builder UI looks. Built sites have their own color modes.
-        </Description>
-        {(
-          [
-            ["dark", "Dark"],
-            ["light", "Light"],
-            ["system", "Match system"]
-          ] as const
-        ).map(([value, text]) => (
-          <Radio key={value} value={value}>
-            <Radio.Control>
-              <Radio.Indicator />
-            </Radio.Control>
-            <Radio.Content>
-              <Label className="text-sm font-normal text-body">{text}</Label>
-            </Radio.Content>
-          </Radio>
-        ))}
-      </RadioGroup>
-      {error ? <p className="text-sm text-danger">{error}</p> : null}
+        </p>
+      </div>
+      <div className="p-5">
+        <RadioGroup
+          value={colorMode}
+          onChange={handleChange}
+          isDisabled={isPending}
+          aria-label="Color mode"
+          orientation="horizontal"
+          className="flex flex-row flex-wrap gap-3"
+        >
+          {(
+            [
+              ["dark", "Dark"],
+              ["light", "Light"],
+              ["system", "Match system"]
+            ] as const
+          ).map(([value, text]) => (
+            <Radio
+              key={value}
+              value={value}
+              className="rounded-xl border border-separator px-4 py-2.5 data-[selected=true]:border-focus"
+            >
+              <Radio.Control>
+                <Radio.Indicator />
+              </Radio.Control>
+              <Radio.Content>
+                <Label className="text-sm font-normal text-body">{text}</Label>
+              </Radio.Content>
+            </Radio>
+          ))}
+        </RadioGroup>
+        {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
+      </div>
     </div>
   );
 }

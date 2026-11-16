@@ -25,7 +25,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <section className="flex flex-col gap-4">
+      <section id="profile" className="flex scroll-mt-6 flex-col gap-4">
         <h2 className="text-xl font-semibold text-foreground">Profile</h2>
         <ProfileSettings
           name={sessionData.user.name}
@@ -34,7 +34,7 @@ export default async function SettingsPage() {
         />
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section id="security" className="flex scroll-mt-6 flex-col gap-4">
         <h2 className="text-xl font-semibold text-foreground">Security</h2>
         <div className="flex flex-col gap-5 rounded-2xl border border-separator bg-surface/40 p-5">
           <PasswordChange email={sessionData.user.email} policy={passwordPolicy} />
@@ -47,12 +47,12 @@ export default async function SettingsPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section id="appearance" className="flex scroll-mt-6 flex-col gap-4">
         <h2 className="text-xl font-semibold text-foreground">Appearance</h2>
         <AppearanceSettings initialColorMode={preference?.colorMode ?? "dark"} />
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section id="dependencies" className="flex scroll-mt-6 flex-col gap-4">
         <h2 className="text-xl font-semibold text-foreground">Dependencies</h2>
         <DependenciesTable manifest={manifest} />
       </section>
