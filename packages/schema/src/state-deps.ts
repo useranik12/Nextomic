@@ -6,12 +6,14 @@ import { walkElements, type ElementNode } from "./element";
 
 const TAG = /\{\{([\s\S]*?)\}\}/g;
 const REF = /\b(app|state)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)/g;
+const FORM_REF = /\bform\s*\.\s*([A-Za-z][A-Za-z0-9_]*)\s*\.\s*([A-Za-z][A-Za-z0-9_]*)/g;
 
 /** The state names ("app.cart", "state.open") the {{ tags }} of a text read. */
 export function stateRefs(text: string): string[] {
   const found = new Set<string>();
   for (const tag of text.matchAll(TAG)) {
     for (const ref of (tag[1] ?? "").matchAll(REF)) found.add(`${ref[1]}.${ref[2]}`);
+    for (const ref of (tag[1] ?? "").matchAll(FORM_REF)) found.add(`form.${ref[1]}.${ref[2]}`);
   }
   return [...found];
 }

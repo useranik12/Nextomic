@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { buildDynamicContext, createTokenResolver } from "./dynamic-context";
 import { elementNodeSchema } from "./element";
+import { defaultPageSettings } from "./page";
+import { stateRefs } from "./state-deps";
 import {
   activeForms,
   formProblems,
   formsOf,
   freeFormName,
   validateValue,
+  withFormDefaults,
   type FieldRules
 } from "./forms";
 
@@ -93,5 +97,37 @@ describe("validateValue", () => {
   });
   it("ignores a dangerous pattern instead of running it", () => {
     expect(validateValue("aaaa!", rules({ pattern: "(a+)+$" }))).toBeNull();
+  });
+});
+
+describe("form values in dynamic data", () => {
+  const dynamic = buildDynamicContext({
+    page: { name: "P", route: "/", settings: defaultPageSettings() },
+    mode: "live"
+  });
+  const root = page(
+    form("f1", "signup", [
+      input("a", "email", { value: "a@b.co" }),
+      input("b", "pw", { type: "password", value: "secret" })
+    ]),
+    form("f2", "off", [input("c", "x")], { status: "inactive" })
+  );
+
+  it("fills starting values for active forms only and keeps passwords empty", () => {
+    expect(withFormDefaults(dynamic, root).forms).toEqual({ signup: { email: "a@b.co", pw: "" } });
+  });
+
+  it("takes the visitor's values but ignores forms and fields the tree lacks", () => {
+    const sent = {
+      ...dynamic,
+      forms: { signup: { email: "me@x.io", pw: "leak", nope: "1" }, ghost: { a: "1" } }
+    };
+    expect(withFormDefaults(sent, root).forms).toEqual({ signup: { email: "me@x.io", pw: "" } });
+  });
+
+  it("resolves {{ form.* }} tags and lists them as dependencies", () => {
+    const filled = withFormDefaults(dynamic, root);
+    expect(createTokenResolver(filled)("form.signup.email")).toBe("a@b.co");
+    expect(stateRefs("Hi {{ form.signup.email.toUpperCase() }}")).toEqual(["form.signup.email"]);
   });
 });

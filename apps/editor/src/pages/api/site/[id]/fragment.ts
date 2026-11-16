@@ -49,6 +49,10 @@ const bodySchema = z.object({
   ids: z.array(z.string().min(1).max(64)).max(MAX_FRAGMENT_IDS).default([]),
   app: values,
   state: values,
+  /** Visitor form values by form then field; the tree decides which exist. */
+  forms: z
+    .record(z.string().max(40), z.record(z.string().max(40), z.string().max(5000)))
+    .default({}),
   edits: elementEditsSchema.default({}),
   refreshes: refreshRequestSchema.default({}),
   overlay: z
@@ -96,7 +100,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
       : await draftView(id, body.route, body.search, headers, member);
   if (!laid) return fail(404, "Not found.");
 
-  const dynamic = withClientState(laid.dynamic, body.app, body.state);
+  const dynamic = { ...withClientState(laid.dynamic, body.app, body.state), forms: body.forms };
   // Loops inside a redrawn element run here, with the connector of this mode: the site's own in
   // its workspace, or the signed-in member's in the preview.
   let executor: Executor | null = null;

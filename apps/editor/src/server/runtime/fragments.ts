@@ -14,6 +14,7 @@ import {
   type RefreshRequest,
   type ProjectSettings,
   type PublishedTemplate,
+  withFormDefaults,
   withTemplateParams
 } from "@nextomic/schema";
 import { createElement, Fragment } from "react";
@@ -59,12 +60,14 @@ export async function renderParts(input: {
   loopRows?: (node: ElementNode) => Promise<LoopRows>;
   icons?: IconLookup;
 }): Promise<FragmentPart[]> {
-  const resolveToken = createTokenResolver(input.dynamic);
   const tree = applyRefreshes(
     applyElementEdits(input.tree, input.edits ?? {}),
     input.refreshes ?? {},
     input.savedQuery ?? (() => null)
   );
+  // Form values the visitor sent count only for the fields and active forms the tree declares.
+  const dynamic = withFormDefaults(input.dynamic, tree);
+  const resolveToken = createTokenResolver(dynamic);
   const free = loopFreeIds(tree);
   const parts: FragmentPart[] = [];
   for (const id of input.ids.slice(0, MAX_FRAGMENT_IDS)) {
@@ -79,7 +82,7 @@ export async function renderParts(input: {
         renderNode(node, {
           breakpoints: input.settings.breakpoints,
           classes: input.settings.classes,
-          dynamic: input.dynamic,
+          dynamic,
           resolveToken,
           tree,
           liveSlots: true,
@@ -104,7 +107,10 @@ export function renderOverlay(input: {
 }): OverlayPart {
   const { template, settings } = input;
   if (!isOverlayType(template.type)) throw new Error("Not a modal or bottom sheet template.");
-  const dynamic = withTemplateParams(input.dynamic, template.settings.params, input.params);
+  const dynamic = withFormDefaults(
+    withTemplateParams(input.dynamic, template.settings.params, input.params),
+    template.tree
+  );
   const resolveToken = createTokenResolver(dynamic);
   const options = {
     breakpoints: settings.breakpoints,

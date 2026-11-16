@@ -31,6 +31,7 @@ import {
   type StyleMap,
   type Theme
 } from "@nextomic/schema";
+import { withFormDefaults } from "@nextomic/schema";
 import { Fragment, type ReactNode } from "react";
 import { pageCss } from "./css";
 import "./elements";
@@ -303,7 +304,9 @@ export function renderLoopCopies(
 }
 
 /** The page tree plus the CSS for every element at every breakpoint. */
-export function PageRenderer({ tree, ...given }: RenderOptions & { tree: ElementNode }) {
+export function PageRenderer({ tree, ...rest }: RenderOptions & { tree: ElementNode }) {
+  // Form fields of the tree take part in dynamic data ({{ form.signup.email }}).
+  const given = rest.dynamic ? { ...rest, dynamic: withFormDefaults(rest.dynamic, tree) } : rest;
   const options: RenderOptions = {
     ...given,
     tree,

@@ -82,6 +82,11 @@ export const dynamicContextSchema = z.object({
       z.object({ type: stateTypeSchema, isList: z.boolean(), ref: z.string().default("") })
     )
     .default({}),
+  /**
+   * Form field values by form name, then field name (`{{ form.signup.email }}`). The renderer fills
+   * the starting values from the tree (`withFormDefaults`); the runtime sends the visitor's values.
+   */
+  forms: z.record(z.string(), z.record(z.string(), z.string().max(5000))).default({}),
   /** The moment `now.*` tokens show, as an ISO string. */
   nowIso: z.string().max(40),
   /** IANA time zone `now.date` and `now.time` are shown in. */
@@ -249,6 +254,7 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
     state,
     app,
     constants,
+    forms: {},
     types,
     nowIso: input.nowIso ?? new Date().toISOString(),
     timeZone: input.timeZone ?? "UTC",
@@ -327,6 +333,7 @@ export function expressionScope(
     state: typedGroup(context.state, context.types, "state"),
     app: typedGroup(context.app, context.types, "app"),
     const: typedGroup(context.constants, context.types, "const"),
+    form: context.forms,
     ...nowValues(context.nowIso, context.timeZone)
   };
 }

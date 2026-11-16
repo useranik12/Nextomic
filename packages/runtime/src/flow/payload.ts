@@ -45,6 +45,8 @@ export interface FragmentRequest {
   ids?: string[];
   app: Record<string, string>;
   state: Record<string, string>;
+  /** Visitor form values by form and field; password fields are never sent. */
+  forms?: Record<string, Record<string, string>>;
   /** Changes class, ID and attribute actions made: the redraw applies them first. */
   edits?: ElementEdits;
   /** Loops Refresh Query ran (by loop id): the action node and its filled values. */

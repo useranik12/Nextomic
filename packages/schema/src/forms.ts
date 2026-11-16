@@ -1,5 +1,6 @@
 import { walkElements, type ElementNode } from "./element";
 import { patternProblem } from "./condition";
+import type { DynamicContext } from "./dynamic-context";
 
 // Forms (owner decisions 2026-11-16, elements.md "Forms"): a Form wrapper has a unique `name`, a
 // `status` (an inactive form turns its actions and tags off) and `validateOn`. It has no action flow;
@@ -174,4 +175,30 @@ export function validateValue(value: string, rules: FieldRules): string | null {
   if (rules.matchValue !== null && value !== rules.matchValue)
     return m.match ?? "The values do not match.";
   return null;
+}
+
+// ---- values in dynamic data ----
+
+/**
+ * The context with every named field of an active form in `tree` present under
+ * `forms.<form>.<field>`: the visitor's value when `dynamic.forms` has one, else the field's
+ * starting value (plain text only; a dynamic default starts empty). Fields of the tree decide what
+ * exists, so a request cannot add forms or fields. Password fields always start and stay empty.
+ */
+export function withFormDefaults(dynamic: DynamicContext, tree: ElementNode): DynamicContext {
+  const forms: Record<string, Record<string, string>> = {};
+  walkElements(tree, (node) => {
+    if (node.type !== FORM_TYPE || !formIsActive(node) || !FORM_NAME_PATTERN.test(formName(node)))
+      return;
+    const values: Record<string, string> = {};
+    walkElements(node, (child) => {
+      if (child === node || !isFormField(child) || !FORM_NAME_PATTERN.test(fieldName(child)))
+        return;
+      const start = typeof child.props.value === "string" ? child.props.value : "";
+      const given = dynamic.forms[formName(node)]?.[fieldName(child)];
+      values[fieldName(child)] = child.props.type === "password" ? "" : (given ?? start);
+    });
+    forms[formName(node)] = values;
+  });
+  return { ...dynamic, forms };
 }
