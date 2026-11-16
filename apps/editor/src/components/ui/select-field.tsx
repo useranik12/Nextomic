@@ -13,6 +13,8 @@ export interface SelectOption {
   /** Shown but not selectable; `hint` says why when the pointer rests on it. */
   disabled?: boolean;
   hint?: string;
+  /** Drawn before the label, in the list and in the closed field. */
+  icon?: ReactNode;
 }
 
 export interface SelectFieldProps {
@@ -74,7 +76,15 @@ function Items({ items }: { items: SelectOption[] }) {
       // Disabled choices stay hoverable so their hint can explain how to enable them.
       className="text-body data-[disabled=true]:pointer-events-auto data-[disabled=true]:cursor-not-allowed data-[selected=true]:font-medium data-[selected=true]:text-foreground"
     >
-      {option.hint ? (
+      {option.icon ? (
+        // Icon and label stay one unit so the closed field shows them on one line too.
+        <span className="flex min-w-0 items-center gap-2">
+          <span aria-hidden="true" className="flex shrink-0 items-center text-muted">
+            {option.icon}
+          </span>
+          {option.label}
+        </span>
+      ) : option.hint ? (
         <span data-tip={option.hint} className="block w-full">
           {option.label}
         </span>

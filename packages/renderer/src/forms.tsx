@@ -1,4 +1,5 @@
 import {
+  DEFAULT_MESSAGES,
   FORM_STATUSES,
   INPUT_TYPES,
   VALIDATE_ON,
@@ -86,16 +87,32 @@ registerElement({
 // Static text, a number or a switch; dynamic text is checked by the shared prop value schema.
 const looseValue = z.union([z.string(), z.number(), z.boolean()]).optional();
 
-const INPUT_TYPE_OPTIONS = INPUT_TYPES.map((value) => ({ value, label: value }));
+const INPUT_TYPE_OPTIONS = INPUT_TYPES.map((value) => ({ value, label: value, icon: value }));
 
-const messageControls: ControlDef[] = [
-  { key: "requiredMessage", label: "Required message", kind: "text" },
-  { key: "typeMessage", label: "Format message", kind: "text" },
-  { key: "lengthMessage", label: "Length message", kind: "text" },
-  { key: "rangeMessage", label: "Range message", kind: "text" },
-  { key: "patternMessage", label: "Pattern message", kind: "text" },
-  { key: "matchMessage", label: "Match message", kind: "text" }
-];
+const GROUP = {
+  field: "Field",
+  content: "Content",
+  validation: "Validation",
+  messages: "Messages",
+  behavior: "Behavior"
+} as const;
+
+const messageControls: ControlDef[] = (
+  [
+    { key: "requiredMessage", label: "Required message", message: "required" },
+    { key: "typeMessage", label: "Format message", message: "type" },
+    { key: "lengthMessage", label: "Length message", message: "length" },
+    { key: "rangeMessage", label: "Range message", message: "range" },
+    { key: "patternMessage", label: "Pattern message", message: "pattern" },
+    { key: "matchMessage", label: "Match message", message: "match" }
+  ] satisfies { key: string; label: string; message: keyof typeof DEFAULT_MESSAGES }[]
+).map(({ key, label, message }) => ({
+  key,
+  label,
+  kind: "text",
+  group: GROUP.messages,
+  placeholder: DEFAULT_MESSAGES[message]
+}));
 
 const MESSAGE_PROPS = [
   ["required", "requiredMessage"],
@@ -145,6 +162,12 @@ registerElement({
       max: "",
       pattern: "",
       matchField: "",
+      requiredMessage: DEFAULT_MESSAGES.required,
+      typeMessage: DEFAULT_MESSAGES.type,
+      lengthMessage: DEFAULT_MESSAGES.length,
+      rangeMessage: DEFAULT_MESSAGES.range,
+      patternMessage: DEFAULT_MESSAGES.pattern,
+      matchMessage: DEFAULT_MESSAGES.match,
       disabled: false,
       readOnly: false,
       clearable: false,
@@ -177,23 +200,40 @@ registerElement({
     showToggle: looseValue
   }),
   controls: [
-    { key: "name", label: "Field name", kind: "text", placeholder: "email" },
-    { key: "type", label: "Type", kind: "select", options: INPUT_TYPE_OPTIONS },
-    { key: "label", label: "Label", kind: "text" },
-    { key: "placeholder", label: "Placeholder", kind: "text" },
-    { key: "value", label: "Default value", kind: "text" },
-    { key: "required", label: "Required", kind: "switch" },
-    { key: "minLength", label: "Minimum length", kind: "text" },
-    { key: "maxLength", label: "Maximum length", kind: "text" },
-    { key: "min", label: "Minimum value", kind: "text" },
-    { key: "max", label: "Maximum value", kind: "text" },
-    { key: "pattern", label: "Regex pattern", kind: "text", placeholder: "^[a-z]+$" },
-    { key: "matchField", label: "Must match field", kind: "text", placeholder: "password" },
+    { key: "name", label: "Field name", kind: "text", placeholder: "email", group: GROUP.field },
+    { key: "type", label: "Type", kind: "select", options: INPUT_TYPE_OPTIONS, group: GROUP.field },
+    { key: "label", label: "Label", kind: "text", group: GROUP.content },
+    { key: "placeholder", label: "Placeholder", kind: "text", group: GROUP.content },
+    { key: "value", label: "Default value", kind: "text", group: GROUP.content },
+    { key: "required", label: "Required", kind: "switch", group: GROUP.validation },
+    { key: "minLength", label: "Minimum length", kind: "text", group: GROUP.validation },
+    { key: "maxLength", label: "Maximum length", kind: "text", group: GROUP.validation },
+    { key: "min", label: "Minimum value", kind: "text", group: GROUP.validation },
+    { key: "max", label: "Maximum value", kind: "text", group: GROUP.validation },
+    {
+      key: "pattern",
+      label: "Regex pattern",
+      kind: "text",
+      placeholder: "^[a-z]+$",
+      group: GROUP.validation
+    },
+    {
+      key: "matchField",
+      label: "Must match field",
+      kind: "text",
+      placeholder: "password",
+      group: GROUP.validation
+    },
     ...messageControls,
-    { key: "disabled", label: "Disabled", kind: "switch" },
-    { key: "readOnly", label: "Read only", kind: "switch" },
-    { key: "clearable", label: "Clear button", kind: "switch" },
-    { key: "showToggle", label: "Show/hide password button", kind: "switch" }
+    { key: "disabled", label: "Disabled", kind: "switch", group: GROUP.behavior },
+    { key: "readOnly", label: "Read only", kind: "switch", group: GROUP.behavior },
+    { key: "clearable", label: "Clear button", kind: "switch", group: GROUP.behavior },
+    {
+      key: "showToggle",
+      label: "Show/hide password button",
+      kind: "switch",
+      group: GROUP.behavior
+    }
   ],
   bindable: {
     name: { reason: FORM_NAME_REASON },

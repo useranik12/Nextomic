@@ -10,7 +10,8 @@ export interface ControlDef {
   key: string;
   label: string;
   kind: ControlKind;
-  options?: { value: string; label: string }[];
+  /** `icon` is a key the editor maps to an icon (see right-panel/option-icons.tsx). */
+  options?: { value: string; label: string; icon?: string }[];
   placeholder?: string;
   /** Adds a "Choose from Media" button; the picker only lists these kinds of file. */
   pick?: MediaKind[];
@@ -18,6 +19,8 @@ export interface ControlDef {
   when?: { key: string; value: string };
   /** `icon` controls: the prop that holds the library key (`key` holds the icon name). */
   libraryKey?: string;
+  /** Controls with the same group sit together under a heading, set apart from the next group. */
+  group?: string;
 }
 
 // `true`: accepts static text mixed with dynamic tokens. `{ reason }`: opted out, with a written reason.

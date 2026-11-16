@@ -4,6 +4,7 @@ import { elementNodeSchema } from "./element";
 import { defaultPageSettings } from "./page";
 import { stateRefs } from "./state-deps";
 import {
+  DEFAULT_MESSAGES,
   activeForms,
   formPlacementProblem,
   formProblems,
@@ -96,6 +97,19 @@ describe("validateValue", () => {
     expect(validateValue("x1", rules({ pattern: "^[a-z]+$" }))).toMatch(/format/);
     expect(validateValue("a", rules({ matchValue: "b" }))).toBe("The values do not match.");
     expect(validateValue("b", rules({ matchValue: "b" }))).toBeNull();
+  });
+  it("fills {type}, {length} and {range} in custom and default messages", () => {
+    const messages = {
+      length: "Needs {length} letters",
+      range: "Pick {range}",
+      type: "Not {type}"
+    };
+    expect(validateValue("ab", rules({ minLength: 3, messages }))).toBe("Needs at least 3 letters");
+    expect(validateValue("9", rules({ type: "number", max: 5, messages }))).toBe("Pick 5 or less");
+    expect(validateValue("x", rules({ type: "url", messages }))).toBe("Not a valid web address");
+    expect(validateValue("a", rules({ matchValue: "b", messages: { match: "" } }))).toBe(
+      DEFAULT_MESSAGES.match
+    );
   });
   it("ignores a dangerous pattern instead of running it", () => {
     expect(validateValue("aaaa!", rules({ pattern: "(a+)+$" }))).toBeNull();

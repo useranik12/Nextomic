@@ -136,7 +136,7 @@ export interface FieldRules {
   pattern: string;
   /** The current value of the field named in `matchField` (empty when there is none). */
   matchValue: string | null;
-  messages: Partial<Record<"required" | "type" | "length" | "range" | "pattern" | "match", string>>;
+  messages: Partial<Record<MessageKey, string>>;
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -150,30 +150,58 @@ const urlOk = (value: string): boolean => {
   }
 };
 
+type MessageKey = "required" | "type" | "length" | "range" | "pattern" | "match";
+
+/**
+ * The messages a field shows when it has no message of its own. {type}, {length} and {range} are
+ * replaced by the words for the failed check ("a valid email address", "at least 3", "5 or more").
+ */
+export const DEFAULT_MESSAGES: Readonly<Record<MessageKey, string>> = {
+  required: "This field is required.",
+  type: "Enter {type}.",
+  length: "Use {length} characters.",
+  range: "Enter {range}.",
+  pattern: "This does not match the expected format.",
+  match: "The values do not match."
+};
+
+const TYPE_WORDS: Partial<Record<InputType, string>> = {
+  email: "a valid email address",
+  url: "a valid web address",
+  number: "a number"
+};
+
+/** The message for a failed check: the field's own text, else the default, with {words} filled in. */
+function message(rules: FieldRules, key: MessageKey, words: Record<string, string> = {}): string {
+  const text = rules.messages[key] || DEFAULT_MESSAGES[key];
+  return text.replace(/{(type|length|range)}/g, (all, name: string) => words[name] ?? all);
+}
+
 /** The first problem with `value`, as the message to show, or null when it passes. */
 export function validateValue(value: string, rules: FieldRules): string | null {
-  const m = rules.messages;
-  if (value.trim() === "") return rules.required ? (m.required ?? "This field is required.") : null;
-  if (rules.type === "email" && !EMAIL.test(value)) return m.type ?? "Enter a valid email address.";
-  if (rules.type === "url" && !urlOk(value)) return m.type ?? "Enter a valid web address.";
+  if (value.trim() === "") return rules.required ? message(rules, "required") : null;
+  const type = { type: TYPE_WORDS[rules.type] ?? "a valid value" };
+  if (rules.type === "email" && !EMAIL.test(value)) return message(rules, "type", type);
+  if (rules.type === "url" && !urlOk(value)) return message(rules, "type", type);
   if (rules.type === "number") {
     const n = Number(value);
-    if (!Number.isFinite(n)) return m.type ?? "Enter a number.";
-    if (rules.min !== null && n < rules.min) return m.range ?? `Enter ${rules.min} or more.`;
-    if (rules.max !== null && n > rules.max) return m.range ?? `Enter ${rules.max} or less.`;
+    if (!Number.isFinite(n)) return message(rules, "type", type);
+    if (rules.min !== null && n < rules.min)
+      return message(rules, "range", { range: `${rules.min} or more` });
+    if (rules.max !== null && n > rules.max)
+      return message(rules, "range", { range: `${rules.max} or less` });
   }
   if (rules.minLength !== null && value.length < rules.minLength)
-    return m.length ?? `Use at least ${rules.minLength} characters.`;
+    return message(rules, "length", { length: `at least ${rules.minLength}` });
   if (rules.maxLength !== null && value.length > rules.maxLength)
-    return m.length ?? `Use at most ${rules.maxLength} characters.`;
+    return message(rules, "length", { length: `at most ${rules.maxLength}` });
   if (
     rules.pattern &&
     !patternProblem(rules.pattern) &&
     !new RegExp(rules.pattern, "u").test(value)
   )
-    return m.pattern ?? "This does not match the expected format.";
-  if (rules.matchValue !== null && value !== rules.matchValue)
-    return m.match ?? "The values do not match.";
+    return message(rules, "pattern");
+  if (rules.matchValue !== null && value !== rules.matchValue) return message(rules, "match");
   return null;
 }
 

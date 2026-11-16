@@ -43,6 +43,18 @@ test("forms: tiles, tags, no nesting, blur validation and no submit on Enter", a
   // A form with an email input and a password input.
   await add(page, "Form");
   await add(page, "Input");
+  // General settings are grouped under headings, with the default messages ready to edit.
+  for (const heading of ["Field", "Content", "Validation", "Messages", "Behavior"])
+    await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
+  await expect(page.getByLabel("Required message", { exact: true })).toHaveValue(
+    "This field is required."
+  );
+  // The type list shows an icon beside every option and beside the chosen one.
+  await page.getByRole("button", { name: /Type$/ }).click();
+  for (const option of await page.locator("[role=option]").all())
+    await expect(option.locator("svg").first()).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: /Type$/ }).locator("svg").first()).toBeVisible();
   await page.getByLabel("Field name", { exact: true }).fill("email");
   await page.getByRole("button", { name: /Type$/ }).click();
   await page.locator("[role=option]", { hasText: /^email$/ }).click();

@@ -33,6 +33,7 @@ import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
 import { DynamicBolt } from "./dynamic-bolt";
 import { IdentityField } from "./identity-field";
+import { optionIcon } from "./option-icons";
 import { SettingRow, compactFieldClass } from "./setting-row";
 
 type Tab = "element" | "design" | "action";
@@ -67,7 +68,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
         compact
         label={control.label}
         value={value}
-        options={control.options ?? []}
+        options={(control.options ?? []).map((o) => ({ ...o, icon: optionIcon(o.icon) }))}
         onValueChange={onChange}
       />
     );
@@ -137,6 +138,39 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
         )}
       </div>
     </SettingRow>
+  );
+}
+
+/** The settings of the General section: one list, or headed groups set apart by dividers. */
+function GeneralControls({ node, controls }: { node: ElementNode; controls: ControlDef[] }) {
+  const groups: { name: string; controls: ControlDef[] }[] = [];
+  for (const control of controls) {
+    const name = control.group ?? "";
+    const last = groups[groups.length - 1];
+    if (last && last.name === name) last.controls.push(control);
+    else groups.push({ name, controls: [control] });
+  }
+  return (
+    <div className="flex flex-col gap-6">
+      {groups.map((group, index) => (
+        <section
+          key={group.name || index}
+          aria-label={group.name || undefined}
+          className={index > 0 && group.name ? "border-t border-border pt-5" : undefined}
+        >
+          {group.name ? (
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
+              {group.name}
+            </h3>
+          ) : null}
+          <div className="flex flex-col gap-5">
+            {group.controls.map((control) => (
+              <ControlField key={control.key} node={node} control={control} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
   );
 }
 
@@ -316,11 +350,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
               {controls.length === 0 ? (
                 <p className="text-sm text-muted">This element has no content settings.</p>
               ) : (
-                <div className="flex flex-col gap-5">
-                  {controls.map((control) => (
-                    <ControlField key={control.key} node={node} control={control} />
-                  ))}
-                </div>
+                <GeneralControls node={node} controls={controls} />
               )}
             </AccordionSection>
             {canHaveQuery(node.type) && (!q || "query loop".includes(q)) ? (
