@@ -1,5 +1,6 @@
 import {
   DEFAULT_MESSAGES,
+  INPUT_ICON_SLOTS,
   FORM_STATUSES,
   INPUT_TYPES,
   VALIDATE_ON,
@@ -9,6 +10,7 @@ import {
 } from "@nextomic/schema";
 import { createElement } from "react";
 import { z } from "zod";
+import { iconInner, iconWrapper } from "./elements";
 import { registerElement, type ControlDef, type RenderContext } from "./registry";
 
 // Form wrapper and Input (elements.md "Forms"). The wrapper has no action flow; the runtime reads
@@ -87,12 +89,18 @@ registerElement({
 // Static text, a number or a switch; dynamic text is checked by the shared prop value schema.
 const looseValue = z.union([z.string(), z.number(), z.boolean()]).optional();
 
+const ICON_POSITIONS = ["left", "right"] as const;
+
+const ICON_LIBRARY_REASON =
+  "Only the icon name is dynamic; the library decides which icon sets a page loads.";
+
 const INPUT_TYPE_OPTIONS = INPUT_TYPES.map((value) => ({ value, label: value, icon: value }));
 
 const GROUP = {
   field: "Field",
   content: "Content",
   validation: "Validation",
+  icons: "Icons",
   messages: "Messages",
   behavior: "Behavior"
 } as const;
@@ -143,6 +151,11 @@ function inputRules(ctx: RenderContext, type: InputType) {
   };
 }
 
+/** The message an error preview shows: the first one the author wrote, else the required text. */
+function errorSample(ctx: RenderContext): string {
+  return ctx.text("requiredMessage") || DEFAULT_MESSAGES.required;
+}
+
 registerElement({
   type: "input",
   label: "Input",
@@ -162,6 +175,17 @@ registerElement({
       max: "",
       pattern: "",
       matchField: "",
+      helpText: "",
+      successMessage: "Looks good.",
+      library: "",
+      icon: "",
+      iconPosition: "left",
+      clearLibrary: "",
+      clearIcon: "",
+      showLibrary: "",
+      showIcon: "",
+      hideLibrary: "",
+      hideIcon: "",
       requiredMessage: DEFAULT_MESSAGES.required,
       typeMessage: DEFAULT_MESSAGES.type,
       lengthMessage: DEFAULT_MESSAGES.length,
@@ -188,6 +212,17 @@ registerElement({
     max: looseValue,
     pattern: looseValue,
     matchField: z.string(),
+    helpText: looseValue,
+    successMessage: looseValue,
+    library: z.string().optional(),
+    icon: looseValue,
+    iconPosition: z.enum(ICON_POSITIONS).optional(),
+    clearLibrary: z.string().optional(),
+    clearIcon: looseValue,
+    showLibrary: z.string().optional(),
+    showIcon: looseValue,
+    hideLibrary: z.string().optional(),
+    hideIcon: looseValue,
     requiredMessage: looseValue,
     typeMessage: looseValue,
     lengthMessage: looseValue,
@@ -205,6 +240,7 @@ registerElement({
     { key: "label", label: "Label", kind: "text", group: GROUP.content },
     { key: "placeholder", label: "Placeholder", kind: "text", group: GROUP.content },
     { key: "value", label: "Default value", kind: "text", group: GROUP.content },
+    { key: "helpText", label: "Help text", kind: "text", group: GROUP.content },
     { key: "required", label: "Required", kind: "switch", group: GROUP.validation },
     { key: "minLength", label: "Minimum length", kind: "text", group: GROUP.validation },
     { key: "maxLength", label: "Maximum length", kind: "text", group: GROUP.validation },
@@ -225,6 +261,47 @@ registerElement({
       group: GROUP.validation
     },
     ...messageControls,
+    { key: "successMessage", label: "Success message", kind: "text", group: GROUP.messages },
+    {
+      key: "icon",
+      label: "Field icon",
+      kind: "icon",
+      libraryKey: "library",
+      group: GROUP.icons
+    },
+    {
+      key: "iconPosition",
+      label: "Icon position",
+      kind: "select",
+      options: [
+        { value: "left", label: "Left", icon: "align-left" },
+        { value: "right", label: "Right", icon: "align-right" }
+      ],
+      group: GROUP.icons
+    },
+    {
+      key: "clearIcon",
+      label: "Clear button icon",
+      kind: "icon",
+      libraryKey: "clearLibrary",
+      group: GROUP.icons
+    },
+    {
+      key: "showIcon",
+      label: "Show password icon",
+      kind: "icon",
+      libraryKey: "showLibrary",
+      when: { key: "type", value: "password" },
+      group: GROUP.icons
+    },
+    {
+      key: "hideIcon",
+      label: "Hide password icon",
+      kind: "icon",
+      libraryKey: "hideLibrary",
+      when: { key: "type", value: "password" },
+      group: GROUP.icons
+    },
     { key: "disabled", label: "Disabled", kind: "switch", group: GROUP.behavior },
     { key: "readOnly", label: "Read only", kind: "switch", group: GROUP.behavior },
     { key: "clearable", label: "Clear button", kind: "switch", group: GROUP.behavior },
@@ -251,6 +328,17 @@ registerElement({
     max: true,
     pattern: true,
     matchField: { reason: FORM_NAME_REASON },
+    helpText: true,
+    successMessage: true,
+    library: { reason: ICON_LIBRARY_REASON },
+    icon: true,
+    iconPosition: { reason: "A fixed layout choice, not data." },
+    clearLibrary: { reason: ICON_LIBRARY_REASON },
+    clearIcon: true,
+    showLibrary: { reason: ICON_LIBRARY_REASON },
+    showIcon: true,
+    hideLibrary: { reason: ICON_LIBRARY_REASON },
+    hideIcon: true,
     requiredMessage: true,
     typeMessage: true,
     lengthMessage: true,
@@ -268,6 +356,7 @@ registerElement({
     const name = ctx.text("name");
     const controlId = `${attrs.id ?? attrs["data-nid"] ?? name}-control`;
     const errorId = `${controlId}-error`;
+    const helpId = `${controlId}-help`;
     const password = type === "password";
     const controlProps = {
       id: controlId,
@@ -278,7 +367,7 @@ registerElement({
       readOnly: on(ctx, "readOnly") || undefined,
       minLength: numberOrNull(ctx.text("minLength")) ?? undefined,
       maxLength: numberOrNull(ctx.text("maxLength")) ?? undefined,
-      "aria-describedby": errorId,
+      "aria-describedby": `${helpId} ${errorId}`,
       "data-nxt-control": ""
     };
     // A password field never carries a default value (it would sit in the HTML and the state).
@@ -295,6 +384,20 @@ registerElement({
             autoComplete: password ? "current-password" : undefined
           });
     const label = ctx.text("label");
+    const required = on(ctx, "required");
+    const help = ctx.text("helpText");
+    const success = ctx.text("successMessage");
+    // The editor canvas can pin an input in one state (Design > Form Input) to style it.
+    const force = attrs["data-nxt-force"];
+    const sample = force === "error" ? errorSample(ctx) : "";
+    const slot = (index: number, extra: Record<string, string> = {}) => {
+      const { library, name } = INPUT_ICON_SLOTS[index] as (typeof INPUT_ICON_SLOTS)[number];
+      const icon = ctx.text(name);
+      const drawn = icon ? ctx.icon(ctx.text(library), icon, { size: "1em", label: "" }) : null;
+      return drawn === null ? null : iconWrapper({ ...extra }, "", iconInner(drawn));
+    };
+    const fieldIcon = slot(0, { "data-nxt-icon": "" });
+    const side = ctx.text("iconPosition") === "right" ? "right" : "left";
     return createElement(
       "div",
       {
@@ -303,16 +406,20 @@ registerElement({
         "data-nxt-secret": password ? "" : undefined,
         "data-nxt-rules": JSON.stringify(inputRules(ctx, type))
       },
-      label ? createElement("label", { htmlFor: controlId }, label) : null,
+      label
+        ? createElement("label", { htmlFor: controlId, "data-required": flag(required) }, label)
+        : null,
       createElement(
         "div",
         { "data-nxt-box": "" },
+        side === "left" ? fieldIcon : null,
         control,
+        side === "right" ? fieldIcon : null,
         on(ctx, "clearable")
           ? createElement(
               "button",
               { type: "button", hidden: true, "data-nxt-clear": "", "aria-label": "Clear field" },
-              "×"
+              slot(1) ?? "×"
             )
           : null,
         password && on(ctx, "showToggle")
@@ -324,11 +431,26 @@ registerElement({
                 "aria-label": "Show password",
                 "aria-pressed": "false"
               },
-              "Show"
+              createElement("span", { "data-nxt-when": "hidden" }, slot(2) ?? "Show"),
+              createElement("span", { "data-nxt-when": "shown" }, slot(3) ?? "Hide")
             )
           : null
       ),
-      createElement("p", { id: errorId, role: "alert", hidden: true, "data-nxt-error": "" })
+      help ? createElement("p", { id: helpId, "data-nxt-help": "" }, help) : null,
+      createElement(
+        "p",
+        { id: errorId, role: "alert", hidden: sample === "" || undefined, "data-nxt-error": "" },
+        sample
+      ),
+      createElement(
+        "p",
+        {
+          role: "status",
+          hidden: force === "success" && success ? undefined : true,
+          "data-nxt-success": ""
+        },
+        success
+      )
     );
   }
 });

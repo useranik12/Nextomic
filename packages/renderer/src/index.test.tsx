@@ -91,6 +91,18 @@ describe("registry", () => {
             props: {
               ...defaults.props,
               ...(def.type === "icon" ? { library: "ph", name: "home" } : {}),
+              // Each icon slot of an input draws only with a library, and the buttons only when shown.
+              ...(def.type === "input" && /Icon$|^icon$/.test(key)
+                ? {
+                    library: "ph",
+                    clearLibrary: "ph",
+                    showLibrary: "ph",
+                    hideLibrary: "ph",
+                    type: "password",
+                    clearable: true,
+                    showToggle: true
+                  }
+                : {}),
               [key]: { kind: "mixed", parts: ["x-", { token: "page.name" }] }
             }
           })
@@ -200,6 +212,89 @@ describe("forms", () => {
     expect(html).toContain("noValidate");
     expect(html).not.toContain("action=");
     expect(html).toContain('data-nxt-form="signup"');
+  });
+
+  describe("icons and messages", () => {
+    const icons = {
+      svg: (_l: string, name: string) => `<svg data-icon="${name}"></svg>`,
+      font: () => false
+    };
+    const draw = (props: Record<string, unknown>) =>
+      renderToStaticMarkup(
+        <PageRenderer
+          tree={node({
+            id: "root",
+            type: "page",
+            children: [
+              node({ id: "f", type: "form", props: { name: "s" }, children: [input(props)] })
+            ]
+          })}
+          breakpoints={DEFAULT_BREAKPOINTS}
+          icons={icons}
+        />
+      );
+
+    it("draws the field icon on the chosen side, and no box without a library", () => {
+      const left = draw({ library: "ph", icon: "mail" });
+      expect(left.indexOf("data-nxt-icon")).toBeLessThan(left.indexOf("<input"));
+      const right = draw({ library: "ph", icon: "mail", iconPosition: "right" });
+      expect(right.indexOf("data-nxt-icon")).toBeGreaterThan(right.indexOf("<input"));
+      expect(draw({ icon: "mail" })).not.toContain("data-nxt-icon");
+      expect(left).toContain('aria-hidden="true"');
+    });
+
+    it("keeps text on the buttons until an icon is picked, and both toggle faces exist", () => {
+      const plain = draw({ type: "password", showToggle: true, clearable: true });
+      expect(plain).toContain("×");
+      expect(plain).toContain(">Show<");
+      expect(plain).toContain(">Hide<");
+      const icons2 = draw({
+        type: "password",
+        showToggle: true,
+        showLibrary: "ph",
+        showIcon: "eye",
+        hideLibrary: "ph",
+        hideIcon: "eye-slash"
+      });
+      expect(icons2).toContain('data-icon="eye"');
+      expect(icons2).toContain('data-icon="eye-slash"');
+      expect(icons2).not.toContain(">Show<");
+    });
+
+    it("renders help text and a hidden success text", () => {
+      const html = draw({ helpText: "Use your work email", successMessage: "Nice" });
+      expect(html).toContain("Use your work email");
+      expect(html).toMatch(/<p[^>]*hidden[^>]*data-nxt-success[^>]*>Nice/);
+    });
+
+    it("shows a sample error or success while the canvas pins the state", () => {
+      const pinned = (state: string) =>
+        renderToStaticMarkup(
+          <PageRenderer
+            tree={node({
+              id: "root",
+              type: "page",
+              children: [
+                node({
+                  id: "f",
+                  type: "form",
+                  props: { name: "s" },
+                  children: [
+                    {
+                      ...input({ requiredMessage: "Needed", successMessage: "Fine" }),
+                      attributes: { "data-nxt-force": state }
+                    }
+                  ]
+                })
+              ]
+            })}
+            breakpoints={DEFAULT_BREAKPOINTS}
+          />
+        );
+      expect(pinned("error")).toMatch(/<p[^>]*data-nxt-error[^>]*>Needed/);
+      expect(pinned("error")).not.toMatch(/<p[^>]*hidden[^>]*data-nxt-error/);
+      expect(pinned("success")).not.toMatch(/<p[^>]*hidden[^>]*data-nxt-success/);
+    });
   });
 
   it("marks an inactive form", () => {

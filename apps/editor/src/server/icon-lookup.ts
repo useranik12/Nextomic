@@ -1,6 +1,7 @@
 import {
   iconFontFaceCss,
   iconFontGlyphCss,
+  iconLibrariesOf,
   iconRefKey,
   iconSvg,
   walkElements,
@@ -17,14 +18,12 @@ import { loadGlyphs, loadSet } from "./icons";
 // renders. Their data is loaded once (cached) and the renderer then looks icons up synchronously,
 // also names that come from loop rows. Libraries the project no longer has draw nothing.
 
-/** Library keys of the Icon elements in the given trees (elements set to SVG code use none). */
+/** Library keys of the icons (Icon elements and Input icons) in the given trees. */
 export function iconLibraryKeys(trees: readonly ElementNode[]): string[] {
   const keys = new Set<string>();
   for (const tree of trees) {
     walkElements(tree, (node) => {
-      if (node.type !== "icon" || node.props.source === "svg") return;
-      const key = node.props.library;
-      if (typeof key === "string" && key !== "") keys.add(key);
+      for (const key of iconLibrariesOf(node)) keys.add(key);
     });
   }
   return [...keys];

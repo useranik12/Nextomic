@@ -47,6 +47,17 @@ describe("icon libraries a page uses", () => {
   });
 });
 
+describe("libraries of input icons", () => {
+  it("lists the library of every icon slot of an input", () => {
+    const input = {
+      ...icon({}),
+      type: "input",
+      props: { library: "a", clearLibrary: "b", showLibrary: "", hideLibrary: "c" }
+    } as ElementNode;
+    expect(iconLibraryKeys([icon({ type: "other" }, [input])]).sort()).toEqual(["a", "b", "c"]);
+  });
+});
+
 describe("pageIcons", () => {
   it("looks an icon up by a name only known at render time, even when the library is disabled", async () => {
     const { library } = await importIconUpload(

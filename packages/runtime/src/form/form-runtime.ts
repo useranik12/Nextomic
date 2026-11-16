@@ -80,7 +80,7 @@ export function startFormRuntime(
   const tag = (form: Element, field: Element) =>
     `form.${form.getAttribute("data-nxt-form") ?? ""}.${fieldNameOf(field)}`;
 
-  const showError = (field: Element, message: string | null) => {
+  const showError = (field: Element, message: string | null, mark = true) => {
     const error = field.querySelector("[data-nxt-error]");
     if (error) {
       error.textContent = message ?? "";
@@ -89,6 +89,11 @@ export function startFormRuntime(
     const control = controlOf(field);
     if (control) control.setAttribute("aria-invalid", message ? "true" : "false");
     field.toggleAttribute("data-invalid", Boolean(message));
+    // A checked, filled field that passes shows its success text (when it has any).
+    const valid = mark && !message && (control?.value.trim() ?? "") !== "";
+    field.toggleAttribute("data-valid", valid);
+    const success = field.querySelector("[data-nxt-success]");
+    if (success) success.toggleAttribute("hidden", !valid || !success.textContent);
   };
 
   const checkField = (form: Element, field: Element, show: boolean): string | null => {
@@ -152,7 +157,6 @@ export function startFormRuntime(
       control.type = show ? "text" : "password";
       toggle.setAttribute("aria-pressed", String(show));
       toggle.setAttribute("aria-label", show ? "Hide password" : "Show password");
-      toggle.textContent = show ? "Hide" : "Show";
     }
   });
   // Enter in a field must never send the values anywhere (no action, no query string).
@@ -229,7 +233,7 @@ export function startFormRuntime(
       return changed(
         fieldsOf(form).map((field) => {
           touched.delete(field);
-          showError(field, null);
+          showError(field, null, false);
           return write(form, field, controlOf(field)?.defaultValue ?? "");
         })
       );
@@ -240,7 +244,7 @@ export function startFormRuntime(
       return changed(
         fieldsOf(form).map((field) => {
           touched.delete(field);
-          showError(field, null);
+          showError(field, null, false);
           return write(form, field, "");
         })
       );

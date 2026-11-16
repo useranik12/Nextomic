@@ -20,6 +20,10 @@ export function optionIcon(key: string | undefined): ReactNode {
       return <Icon name="ph:link" {...props} />;
     case "search":
       return <Icon name="ph:magnifying-glass" {...props} />;
+    case "align-left":
+      return <Icon name="ph:text-align-left" {...props} />;
+    case "align-right":
+      return <Icon name="ph:text-align-right" {...props} />;
     case "textarea":
       return <Icon name="ph:text-align-left" {...props} />;
     default:

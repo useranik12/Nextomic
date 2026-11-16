@@ -8,7 +8,7 @@ import {
 } from "@nextomic/schema";
 import { createElement } from "react";
 import { z } from "zod";
-import { registerElement, type ControlDef } from "./registry";
+import { registerElement, type ControlDef, type IconDraw } from "./registry";
 import { safeUrl } from "./values";
 
 const LAYOUT_TAGS = ["div", "section", "header", "main", "nav", "aside", "article", "footer"];
@@ -155,10 +155,18 @@ registerElement({
 
 const ICON_SIZE = /^[0-9.]+(px|em|rem)$/;
 
-type IconInner = { html: string } | { className: string } | null;
+export type IconInner = { html: string } | { className: string } | null;
+
+/** What an icon lookup drew, as the inner part of an icon wrapper. */
+export const iconInner = (drawn: IconDraw | null): IconInner =>
+  drawn === null
+    ? null
+    : drawn.kind === "svg"
+      ? { html: drawn.html }
+      : { className: drawn.className };
 
 /** The shared wrapper of Icon and SVG: the element attributes plus accessible naming. */
-function iconWrapper(attrs: Record<string, string>, label: string, inner: IconInner) {
+export function iconWrapper(attrs: Record<string, string>, label: string, inner: IconInner) {
   const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": "true" };
   if (inner && "className" in inner) {
     const className = [attrs.className, inner.className].filter(Boolean).join(" ");
@@ -260,15 +268,7 @@ registerElement({
       }
     }
     const drawn = icon(text("library"), text("name"), { size, label });
-    return iconWrapper(
-      attrs,
-      label,
-      drawn === null
-        ? null
-        : drawn.kind === "svg"
-          ? { html: drawn.html }
-          : { className: drawn.className }
-    );
+    return iconWrapper(attrs, label, iconInner(drawn));
   }
 });
 

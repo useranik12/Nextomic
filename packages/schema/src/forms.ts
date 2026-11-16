@@ -315,3 +315,30 @@ export function uniquifyFormNames(root: ElementNode, parentId: string, subtree: 
   };
   loose(subtree);
 }
+
+// ---- icons of elements ----
+
+/** The props of an Input that hold an icon library key, each beside the icon name it draws. */
+export const INPUT_ICON_SLOTS = [
+  { library: "library", name: "icon" },
+  { library: "clearLibrary", name: "clearIcon" },
+  { library: "showLibrary", name: "showIcon" },
+  { library: "hideLibrary", name: "hideIcon" }
+] as const;
+
+/** The prop names that can hold an icon library key (Icon element and Input slots). */
+export const ICON_LIBRARY_PROPS: readonly string[] = [
+  "library",
+  ...INPUT_ICON_SLOTS.slice(1).map((slot) => slot.library)
+];
+
+/** Library keys the icons of this one element come from (SVG-code icons use none). */
+export function iconLibrariesOf(node: ElementNode): string[] {
+  const keys: unknown[] =
+    node.type === "icon"
+      ? [node.props.source === "svg" ? "" : node.props.library]
+      : isFormField(node)
+        ? INPUT_ICON_SLOTS.map((slot) => node.props[slot.library])
+        : [];
+  return keys.filter((key): key is string => typeof key === "string" && key !== "");
+}

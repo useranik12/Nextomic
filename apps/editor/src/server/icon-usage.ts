@@ -1,6 +1,6 @@
 import { actionBlocks, actionFlows, getDb, pages, templates } from "@nextomic/db";
-import { iconKeySchema } from "@nextomic/schema";
-import { and, eq, or, sql } from "drizzle-orm";
+import { ICON_LIBRARY_PROPS, iconKeySchema } from "@nextomic/schema";
+import { and, eq, or, sql, type SQL, type SQLWrapper } from "drizzle-orm";
 
 export interface IconUsage {
   kind: "page" | "template" | "action";
@@ -16,20 +16,18 @@ export interface IconUsage {
  * > Fonts & Icons), because its icons would silently stop drawing.
  */
 export async function iconLibraryUsage(projectId: string, key: string): Promise<IconUsage[]> {
-  const like = `%"library": "${iconKeySchema.parse(key)}"%`;
+  const checked = iconKeySchema.parse(key);
+  const likes = ICON_LIBRARY_PROPS.map((prop) => `%"${prop}": "${checked}"%`);
+  // The stored JSON text holds the key under any of the props an icon slot uses.
+  const uses = (column: SQLWrapper) =>
+    or(...likes.map((like) => sql`${column}::text like ${like}`)) as SQL;
   const db = getDb();
   const [pageRows, templateRows, flowRows, blockRows] = await Promise.all([
     db
       .select({ id: pages.id, name: pages.name })
       .from(pages)
       .where(
-        and(
-          eq(pages.projectId, projectId),
-          or(
-            sql`${pages.tree}::text like ${like}`,
-            sql`${pages.publishedSnapshot}::text like ${like}`
-          )
-        )
+        and(eq(pages.projectId, projectId), or(uses(pages.tree), uses(pages.publishedSnapshot)))
       ),
     db
       .select({ id: templates.id, name: templates.name })
@@ -37,24 +35,17 @@ export async function iconLibraryUsage(projectId: string, key: string): Promise<
       .where(
         and(
           eq(templates.projectId, projectId),
-          or(
-            sql`${templates.tree}::text like ${like}`,
-            sql`${templates.publishedSnapshot}::text like ${like}`
-          )
+          or(uses(templates.tree), uses(templates.publishedSnapshot))
         )
       ),
     db
       .select({ id: actionFlows.id })
       .from(actionFlows)
-      .where(
-        and(eq(actionFlows.projectId, projectId), sql`${actionFlows.flows}::text like ${like}`)
-      ),
+      .where(and(eq(actionFlows.projectId, projectId), uses(actionFlows.flows))),
     db
       .select({ id: actionBlocks.id })
       .from(actionBlocks)
-      .where(
-        and(eq(actionBlocks.projectId, projectId), sql`${actionBlocks.block}::text like ${like}`)
-      )
+      .where(and(eq(actionBlocks.projectId, projectId), uses(actionBlocks.block)))
   ]);
   return [
     ...pageRows.map((r): IconUsage => ({ kind: "page", id: r.id, name: r.name })),

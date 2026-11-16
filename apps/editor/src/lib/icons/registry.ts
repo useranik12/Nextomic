@@ -56,6 +56,7 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:textbox" },
   { id: "ph:lock-simple" },
   { id: "ph:phone" },
+  { id: "ph:text-align-right" },
   { id: "ph:clock-counter-clockwise" },
   { id: "ph:sign-out" },
   { id: "ph:warning-circle" },
