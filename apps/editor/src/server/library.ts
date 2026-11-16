@@ -26,6 +26,8 @@ export interface LibraryItem {
   categoryIds: string[];
   tagIds: string[];
   screenshotAt: string | null;
+  /** Pages only: the page asks visitors to sign in (takes effect when app sign-in is on). */
+  requiresAuth: boolean;
 }
 
 const stable = (value: unknown): string => JSON.stringify(value);
@@ -72,7 +74,8 @@ export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
       live: settings.status !== "draft",
       categoryIds: settings.categoryIds,
       tagIds: settings.tagIds,
-      screenshotAt: page.screenshotAt?.toISOString() ?? null
+      screenshotAt: page.screenshotAt?.toISOString() ?? null,
+      requiresAuth: settings.requiresAuth
     });
   }
   for (const { template, creator } of templateRows) {
@@ -97,7 +100,8 @@ export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
       live: settings.status !== "draft",
       categoryIds: settings.categoryIds,
       tagIds: settings.tagIds,
-      screenshotAt: template.screenshotAt?.toISOString() ?? null
+      screenshotAt: template.screenshotAt?.toISOString() ?? null,
+      requiresAuth: false
     });
   }
   return items;

@@ -174,7 +174,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
               ? upstream
               : 502;
       // One line per refused upload, so a 4xx or 502 can be traced (no tokens, no file data).
-       
+
       console.warn(`[upload] ${error.code} upstream=${upstream ?? "-"} ${error.message}`);
       return fail(status, error.message);
     }

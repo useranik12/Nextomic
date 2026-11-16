@@ -17,6 +17,7 @@ const item = (over: Partial<LibraryItem>): LibraryItem => ({
   categoryIds: [],
   tagIds: [],
   screenshotAt: null,
+  requiresAuth: false,
   ...over
 });
 

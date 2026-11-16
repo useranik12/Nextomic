@@ -15,8 +15,9 @@ import { DEFAULT_QUERY, filterLibrary, type LibraryQuery } from "./library-filte
 import { LibraryGrid, LibraryTable } from "./library-views";
 import { ActionIcons, type RowAction } from "./library-parts";
 import { LibraryToolbar, type LibraryView } from "./library-toolbar";
+import { PreviewDialog, RenameItemDialog } from "./library-dialogs";
 import { NewTemplateModal } from "./new-template-modal";
-import { generateScreenshot, useScreenshotQueue } from "./screenshots";
+import { generateScreenshot, previewAddress, useScreenshotQueue } from "./screenshots";
 
 const VIEW_KEY = "nxt:library-view";
 
@@ -71,6 +72,9 @@ export function LibraryManager({
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const [renaming, setRenaming] = useState<LibraryItem | null>(null);
+  const [previewing, setPreviewing] = useState<LibraryItem | null>(null);
+  const authOn = useEditorStore((s) => s.project.appAuth.enabled);
   const taxonomy = useEditorStore((s) => s.project.taxonomy);
   const screenshots = useEditorStore((s) => s.project.generateScreenshots);
 
@@ -111,6 +115,10 @@ export function LibraryManager({
 
   async function act(item: LibraryItem, action: RowAction) {
     if (action === "edit") return void onOpen(item);
+    if (action === "rename") return setRenaming(item);
+    if (action === "preview") return setPreviewing(item);
+    if (action === "preview-tab")
+      return void window.open(previewAddress(projectId, item), "_blank", "noopener");
     if (action === "delete" && !window.confirm(`Delete "${item.name}"? This cannot be undone.`))
       return;
     setWorking(true);
@@ -178,6 +186,7 @@ export function LibraryManager({
       projectId,
       items: shown,
       selectedId,
+      authOn,
       onSelect: setSelectedId,
       onOpen: (item: LibraryItem) => void onOpen(item),
       onAction: (item: LibraryItem, action: RowAction) => void act(item, action)
@@ -230,7 +239,25 @@ export function LibraryManager({
           </span>
         ) : null}
       </div>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{body}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{body}</div>
+      {renaming ? (
+        <RenameItemDialog
+          projectId={projectId}
+          item={renaming}
+          onClose={() => setRenaming(null)}
+          onRenamed={async () => {
+            await reload();
+            onChanged();
+          }}
+        />
+      ) : null}
+      {previewing ? (
+        <PreviewDialog
+          projectId={projectId}
+          item={previewing}
+          onClose={() => setPreviewing(null)}
+        />
+      ) : null}
       {creating && query.tab === "pages" ? (
         <NewPageModal
           onClose={() => setCreating(false)}
