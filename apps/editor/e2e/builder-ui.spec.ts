@@ -178,3 +178,29 @@ test("modals fit the screen, Design System checks, Pages & Templates views", asy
   expect(cells).toHaveLength(headers.length);
   headers.forEach((left, i) => expect(Math.abs(left - (cells[i] ?? 0))).toBeLessThanOrEqual(1));
 });
+
+test("a published page shows Published, not Modified, and the project menu icon is centered", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page, "Status project");
+  await page.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(page.getByText(/published/i).first()).toBeVisible({ timeout: 20_000 });
+  await page.getByRole("button", { name: "Pages & Templates" }).click();
+  const chips = page.getByRole("list", { name: "Items" }).locator(".chip");
+  await expect(chips.filter({ hasText: "Published" })).toHaveCount(1, { timeout: 20_000 });
+  await expect(chips.filter({ hasText: "Modified" })).toHaveCount(0);
+
+  await page.goto("/projects");
+  const trigger = page.getByRole("button", { name: /Status project actions/ });
+  await trigger.locator("svg").waitFor();
+  const offset = await trigger.evaluate((el) => {
+    const svg = el.querySelector("svg")?.getBoundingClientRect();
+    const box = el.getBoundingClientRect();
+    return {
+      dx: Math.abs(box.left + box.width / 2 - ((svg?.left ?? 0) + (svg?.width ?? 0) / 2)),
+      dy: Math.abs(box.top + box.height / 2 - ((svg?.top ?? 0) + (svg?.height ?? 0) / 2))
+    };
+  });
+  expect(offset.dx).toBeLessThan(1.5);
+  expect(offset.dy).toBeLessThan(1.5);
+});

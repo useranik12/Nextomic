@@ -2,7 +2,7 @@ import { pageSettingsSchema, templateSettingsSchema, type TemplateType } from "@
 import { getDb, pages, templates, user } from "@nextomic/db";
 import { asc, eq } from "drizzle-orm";
 import { projectFlows } from "./action-flows";
-import { snapshotOfPage, templateSnapshotOf } from "./publish";
+import { snapshotOfPage, stable, templateSnapshotOf } from "./publish";
 
 // The Pages & Templates manager reads one flat list of both kinds.
 
@@ -29,8 +29,6 @@ export interface LibraryItem {
   /** Pages only: the page asks visitors to sign in (takes effect when app sign-in is on). */
   requiresAuth: boolean;
 }
-
-const stable = (value: unknown): string => JSON.stringify(value);
 
 /** Draft: not going out. Published: live and unchanged. Modified: live, but the draft has changed since. */
 function statusOf(live: unknown, current: unknown): LibraryStatus {

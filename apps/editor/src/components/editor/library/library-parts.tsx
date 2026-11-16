@@ -23,7 +23,7 @@ const STATUS_COLOR: Record<LibraryStatus, "default" | "success" | "warning" | "a
 const STATUS_TIP: Record<LibraryStatus, string> = {
   draft: "Draft: not going out when the project is published.",
   published: "Published: live, and unchanged since it was published.",
-  modified: "Modified: live, but the draft has changed since it was published.",
+  modified: "Modified: published, with edits since. Publish again to put them live.",
   scheduled: "Scheduled: goes live at the time set in its settings."
 };
 
@@ -51,10 +51,8 @@ export function AuthBadge({ item, authOn }: { item: LibraryItem; authOn: boolean
       aria-label={authTip(authOn)}
       data-tip={authTip(authOn)}
       className={
-        "flex h-6 w-6 items-center justify-center rounded-full border backdrop-blur " +
-        (authOn
-          ? "border-accent/40 bg-accent/15 text-accent"
-          : "border-border bg-surface/80 text-muted")
+        "flex h-6 w-6 items-center justify-center rounded-full border border-white/25 bg-black/60 text-white backdrop-blur-md " +
+        (authOn ? "" : "opacity-75")
       }
     >
       <Icon name="ph:lock-simple" width={13} height={13} />

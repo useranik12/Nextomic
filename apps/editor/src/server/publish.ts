@@ -62,7 +62,7 @@ export async function schedulePublish(projectId: string, at: Date | null): Promi
   return getPublishState(projectId);
 }
 
-function stable(value: unknown): string {
+export function stable(value: unknown): string {
   return JSON.stringify(value, (_key, v: unknown) =>
     v && typeof v === "object" && !Array.isArray(v)
       ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))

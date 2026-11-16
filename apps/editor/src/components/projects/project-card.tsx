@@ -51,10 +51,11 @@ export function ProjectCard({ project, onRename, onDelete }: ProjectCardProps) {
           <Dropdown.Trigger
             aria-label={`${project.name} actions`}
             className={
-              buttonVariants({ variant: "ghost", size: "sm", isIconOnly: true }) + " h-8 w-8"
+              buttonVariants({ variant: "ghost", size: "sm", isIconOnly: true }) +
+              " flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0"
             }
           >
-            <Icon name="ph:dots-three-vertical" label="Actions" />
+            <Icon name="ph:dots-three-vertical" label="Actions" width={18} height={18} />
           </Dropdown.Trigger>
           <Dropdown.Popover placement="bottom end" className="min-w-44">
             <Dropdown.Menu
