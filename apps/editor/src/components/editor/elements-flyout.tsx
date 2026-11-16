@@ -14,7 +14,8 @@ import { useEditorStore } from "./store/editor-store";
 
 const GROUPS: { id: ElementCategory; label: string }[] = [
   { id: "layout", label: "Layout" },
-  { id: "basic", label: "Basic" }
+  { id: "basic", label: "Basic" },
+  { id: "forms", label: "Forms" }
 ];
 
 function Tile({ definition, onInsert }: { definition: ElementDefinition; onInsert: () => void }) {

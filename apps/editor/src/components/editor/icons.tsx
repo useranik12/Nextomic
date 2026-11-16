@@ -27,6 +27,10 @@ export function ElementIcon({ type, size = 28 }: { type: string; size?: number }
       return <Icon name="ph:star" {...props} />;
     case "svg":
       return <Icon name="ph:file-svg" {...props} />;
+    case "form":
+      return <Icon name="ph:list-checks" {...props} />;
+    case "input":
+      return <Icon name="ph:textbox" {...props} />;
     default:
       return <Icon name="ph:square" {...props} />;
   }

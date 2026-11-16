@@ -2,7 +2,7 @@ import type { ElementNode, MediaKind, PropValue } from "@nextomic/schema";
 import type { ReactNode } from "react";
 import type { ZodObject, ZodRawShape } from "zod";
 
-export type ElementCategory = "layout" | "basic";
+export type ElementCategory = "layout" | "basic" | "forms";
 
 export type ControlKind = "text" | "textarea" | "url" | "select" | "switch" | "icon";
 

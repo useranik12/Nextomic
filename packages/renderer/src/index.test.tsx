@@ -46,7 +46,9 @@ describe("registry", () => {
       "button",
       "image",
       "icon",
-      "svg"
+      "svg",
+      "form",
+      "input"
     ]);
   });
 
@@ -64,7 +66,13 @@ describe("registry", () => {
       mode: "live"
     });
     // These must hold a valid length or SVG, so their own tests below check that tokens resolve.
-    const checkedApart = new Set(["icon.size", "icon.svg", "svg.svg"]);
+    const checkedApart = new Set([
+      "icon.size",
+      "icon.svg",
+      "svg.svg",
+      ...["required", "disabled", "readOnly", "clearable", "showToggle"].map((k) => `input.${k}`),
+      ...["minLength", "maxLength", "min", "max"].map((k) => `input.${k}`)
+    ]);
     const icons = {
       svg: (_library: string, name: string) =>
         `<svg viewBox="0 0 1 1"><title>${name}</title></svg>`,
@@ -161,6 +169,67 @@ describe("css", () => {
   it("reports styles per breakpoint", () => {
     expect(hasStylesAt(tree, "tablet")).toBe(true);
     expect(hasStylesAt(tree, "nope")).toBe(false);
+  });
+});
+
+describe("forms", () => {
+  const render = (children: ElementNode[], formProps: Record<string, unknown> = {}) =>
+    renderToStaticMarkup(
+      <PageRenderer
+        tree={node({
+          id: "root",
+          type: "page",
+          children: [
+            node({
+              id: "f",
+              type: "form",
+              props: { name: "signup", status: "active", validateOn: "blur", ...formProps },
+              children
+            })
+          ]
+        })}
+        breakpoints={DEFAULT_BREAKPOINTS}
+      />
+    );
+  const input = (props: Record<string, unknown>) =>
+    node({ id: "i", type: "input", props: { name: "pw", type: "text", label: "L", ...props } });
+
+  it("renders a form that never submits by itself", () => {
+    const html = render([input({})]);
+    expect(html).toContain("<form");
+    expect(html).toContain("noValidate");
+    expect(html).not.toContain("action=");
+    expect(html).toContain('data-nxt-form="signup"');
+  });
+
+  it("marks an inactive form", () => {
+    expect(render([], { status: "inactive" })).toContain('data-nxt-inactive="true"');
+  });
+
+  it("never writes a default value into a password field", () => {
+    const html = render([input({ type: "password", value: "secret123", showToggle: true })]);
+    expect(html).not.toContain("secret123");
+    expect(html).toContain("data-nxt-toggle");
+  });
+
+  it("reads switches and numbers from text that resolves to them", () => {
+    const html = render([
+      input({
+        type: "password",
+        required: { kind: "mixed", parts: ["tr", "ue"] },
+        showToggle: { kind: "mixed", parts: ["tr", "ue"] },
+        minLength: { kind: "mixed", parts: ["1", "2"] }
+      })
+    ]);
+    expect(html).toContain("&quot;required&quot;:true");
+    expect(html).toContain("&quot;minLength&quot;:12");
+    expect(html).toContain("data-nxt-toggle");
+  });
+
+  it("writes only usable rules and drops a dangerous pattern", () => {
+    const html = render([input({ pattern: "(a+)+$", required: true })]);
+    expect(html).toContain("&quot;pattern&quot;:&quot;&quot;");
+    expect(html).toContain("&quot;required&quot;:true");
   });
 });
 
