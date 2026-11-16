@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { useEditorStore } from "../store/editor-store";
 
 // Small tools that sit beside a Design value: the unit chooser and the color palette. Which tools a
@@ -18,14 +18,19 @@ export function fieldKind(property: string): FieldKind {
  * Shows a hovered option on the canvas element before it is picked. `show` and `clear` go on an
  * option's hover and focus; the preview also ends when the picker closes or unmounts.
  */
+/** A field whose value is stored under another key (Form Input settings) previews under that key. */
+export const PreviewKeyContext = createContext<string | null>(null);
+
 export function useStylePreview(property: string): {
   show: (value: string) => void;
   clear: () => void;
 } {
   const set = useEditorStore((s) => s.setStylePreview);
+  const override = useContext(PreviewKeyContext);
+  const key = override ?? property;
   useEffect(() => () => set(null), [set]);
   return {
-    show: (value) => set({ property, value }),
+    show: (value) => set({ property: key, value }),
     clear: () => set(null)
   };
 }

@@ -22,10 +22,11 @@ export interface DesignTarget {
  * What the Design tab edits: the selected class when one is active, else the element. Reading from
  * the target (not always the element) keeps the fields in step with where changes are written.
  */
-export function useDesignTarget(node: ElementNode): DesignTarget {
+export function useDesignTarget(node: ElementNode, pinned?: PseudoState): DesignTarget {
   const activeClass = useEditorStore((s) => s.activeClass);
   const breakpointId = useEditorStore((s) => s.activeBreakpointId);
-  const state = useEditorStore((s) => s.activeState);
+  const globalState = useEditorStore((s) => s.activeState);
+  const state = pinned ?? globalState;
   const classStyles = useEditorStore((s) =>
     s.activeClass ? s.project.classes[s.activeClass] : undefined
   );

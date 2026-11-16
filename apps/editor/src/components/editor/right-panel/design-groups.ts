@@ -19,6 +19,10 @@ export interface DesignProperty {
   cluster?: string;
   /** A visual editor in a popover instead of a text field. */
   editor?: "transform" | "filter" | "backdrop-filter";
+  /** The real CSS property when `property` is a storage key (Form Input settings). */
+  as?: string;
+  /** Read and written at the default state whatever the state switcher shows. */
+  pinned?: boolean;
 }
 
 export interface DesignGroup {

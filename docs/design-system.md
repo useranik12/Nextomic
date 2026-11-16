@@ -157,3 +157,7 @@ Superseded by `templates-and-themes.md` (themes are built; see the decisions log
 ## 11. Tests
 
 CSS round-trip, class scope editing, variable rename propagation, fluid scale math, theme output and scoping, dynamic style values compile to safe custom properties (no CSS injection), unused class pruning, ID uniqueness, builder UI CSS never present in the canvas iframe.
+
+## Form Input style keys
+
+Inputs are styled per part with style keys named `--nxt-ip-<part>-<property>[-<state>]` (parts: field, label, required, box, control, placeholder, icon, clear, toggle, help, error, success; states: hover, focus, error, success, disabled). They live in the normal style map (so they work per breakpoint, in classes, in the CSS tab and with dynamic tags) but are not output as custom properties: the renderer writes them as declarations on the part. See `elements.md` "Form Input design".

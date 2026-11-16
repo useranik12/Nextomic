@@ -51,6 +51,7 @@ import {
   type TemplateType,
   type Theme,
   type PropValue,
+  type InputState,
   type PseudoState
 } from "@nextomic/schema";
 import { current, produce } from "immer";
@@ -176,6 +177,9 @@ interface EditorState {
   /** True while a setting that the selection outline would cover is being edited (and the project asks to hide it). */
   hideSelection: boolean;
   setHideSelection: (hide: boolean) => void;
+  /** The state the canvas pins the selected Input in while Design > Form Input is edited. */
+  inputPreview: InputState;
+  setInputPreview: (state: InputState) => void;
   designGroup: string | null;
   setDesignGroup: (group: string | null) => void;
   designMemory: Record<string, { group: string; property: string }>;
@@ -221,7 +225,13 @@ interface EditorState {
   renameClass: (from: string, to: string) => boolean;
   /** `replaceWith` null removes the class from the elements of the open page. */
   deleteClass: (name: string, replaceWith: string | null) => void;
-  setElementStyle: (id: string, property: string, value: string | null) => void;
+  /** `state` pins the write to one pseudo state, whatever the state switcher shows. */
+  setElementStyle: (
+    id: string,
+    property: string,
+    value: string | null,
+    state?: PseudoState
+  ) => void;
   /** Several declarations in one step (one undo): a value sets the property, null removes it. */
   setElementStyles: (id: string, patch: Readonly<Record<string, string | null>>) => void;
   setStylePreview: (preview: { property: string; value: string } | null) => void;
@@ -347,6 +357,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
     selectedId: null,
     activeClass: null,
     stylePreview: null,
+    inputPreview: "default",
+    setInputPreview: (inputPreview) => set({ inputPreview }),
     classesTick: 0,
     pageDrafts: NO_DRAFTS,
     activeBreakpointId: BASE_BREAKPOINT_ID,
@@ -1002,8 +1014,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     setStylePreview: (stylePreview) => set({ stylePreview }),
 
-    setElementStyle: (id, property, value) => {
-      const { activeBreakpointId, activeState, activeClass, project } = get();
+    setElementStyle: (id, property, value, pinned) => {
+      const { activeBreakpointId, activeClass, project } = get();
+      const activeState = pinned ?? get().activeState;
       if (activeClass) {
         const styles: StyleMap = structuredClone(
           project.classes[activeClass] ?? { breakpoints: {} }

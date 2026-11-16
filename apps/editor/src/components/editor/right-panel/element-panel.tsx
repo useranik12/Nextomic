@@ -31,6 +31,8 @@ import { AttributesEditor } from "./attributes-editor";
 import { ConvertToClass } from "./convert-to-class";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
+import { FormInputGroup, formInputMatches } from "./form-input-group";
+import { FORM_INPUT_GROUP } from "./form-input-part";
 import { DynamicBolt } from "./dynamic-bolt";
 import { IdentityField } from "./identity-field";
 import { optionIcon } from "./option-icons";
@@ -220,7 +222,8 @@ export function ElementPanel({ node }: { node: ElementNode }) {
     )
   })).filter((g) => g.properties.length > 0);
   const showElement = q ? controls.length > 0 : tab === "element";
-  const showDesign = q ? groups.length > 0 : tab === "design";
+  const hasFormInput = node.type === "input" && formInputMatches(q);
+  const showDesign = q ? groups.length > 0 || hasFormInput : tab === "design";
   const showAction = !q && tab === "action";
 
   // Opening an element's Design tab shows the group (and setting) it was last edited in.
@@ -230,6 +233,8 @@ export function ElementPanel({ node }: { node: ElementNode }) {
     if (tab !== "design") return;
     // An element never opened keeps the group that was open last.
     if (memoryGroup !== undefined) setDesignGroup(memoryGroup);
+    // An Input opens on its own group first: that is where its parts are designed.
+    else if (node.type === "input") setDesignGroup(FORM_INPUT_GROUP);
     if (!memoryProperty) return;
     const frame = requestAnimationFrame(() => {
       scroller.current
@@ -393,6 +398,17 @@ export function ElementPanel({ node }: { node: ElementNode }) {
         ) : null}
         {showDesign ? (
           <div className="flex flex-col" aria-label="Design settings">
+            {hasFormInput ? (
+              <AccordionSection
+                id={FORM_INPUT_GROUP}
+                title="Form Input"
+                icon={<Icon name="ph:textbox" width={18} height={18} />}
+                open={q ? true : designGroup === FORM_INPUT_GROUP}
+                onToggle={toggleGroup}
+              >
+                <FormInputGroup key={node.id} node={node} query={q} />
+              </AccordionSection>
+            ) : null}
             {groups.map((group) => (
               <AccordionSection
                 key={group.id}

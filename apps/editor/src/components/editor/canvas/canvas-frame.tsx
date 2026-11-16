@@ -4,6 +4,7 @@ import {
   breakpointPreviewWidth,
   customCssFor,
   findNode,
+  INPUT_DESIGN_PREFIX,
   setStyle,
   type PseudoState,
   type StyleMap
@@ -97,6 +98,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const visibilityPreview = useEditorStore((s) => s.visibilityPreview);
   const setConditionsFailed = useEditorStore((s) => s.setConditionsFailed);
   const stylePreview = useEditorStore((s) => s.stylePreview);
+  const inputPreview = useEditorStore((s) => s.inputPreview);
   const withLayout = useLayoutComposer();
   const activeClass = useEditorStore((s) => s.activeClass);
   const activeState = useEditorStore((s) => s.activeState);
@@ -312,16 +314,24 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     let tree = doc.tree;
     let sentClasses = classes;
     if (stylePreview && selectedId) {
+      // Form Input settings are always stored at the default state.
+      const state = stylePreview.property.startsWith(INPUT_DESIGN_PREFIX) ? "default" : activeState;
       if (activeClass) {
         const styles = structuredClone(classes[activeClass] ?? { breakpoints: {} });
-        setStyle({ styles }, activeId, activeState, stylePreview.property, stylePreview.value);
+        setStyle({ styles }, activeId, state, stylePreview.property, stylePreview.value);
         sentClasses = { ...classes, [activeClass]: styles };
       } else {
         tree = structuredClone(doc.tree);
         const found = findNode(tree, selectedId);
-        if (found)
-          setStyle(found.node, activeId, activeState, stylePreview.property, stylePreview.value);
+        if (found) setStyle(found.node, activeId, state, stylePreview.property, stylePreview.value);
       }
+    }
+    // Design > Form Input pins the selected Input in the state being styled (a copy, never saved).
+    if (inputPreview !== "default" && selectedId) {
+      if (tree === doc.tree) tree = structuredClone(doc.tree);
+      const found = findNode(tree, selectedId);
+      if (found?.node.type === "input")
+        found.node.attributes = { ...found.node.attributes, "data-nxt-force": inputPreview };
     }
     // With a pseudo state chosen, the canvas shows that state's design (hover, focus ...) on the
     // element or class being edited, by drawing a copy where the state's values are the default.
@@ -374,6 +384,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     hideSelection,
     visibilityPreview,
     stylePreview,
+    inputPreview,
     activeClass,
     activeState,
     activeId,

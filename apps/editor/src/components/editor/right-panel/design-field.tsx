@@ -8,7 +8,7 @@ import { SelectField } from "@/components/ui/controls";
 import { WEIGHT_NAMES } from "../design-system/fonts/font-model";
 import { useEditorStore } from "../store/editor-store";
 import { ColorPalette } from "./color-palette";
-import { fieldKind } from "./design-field-tools";
+import { PreviewKeyContext, fieldKind } from "./design-field-tools";
 import type { DesignProperty } from "./design-groups";
 import { CallEditorButton } from "./call-editor";
 import { DesignIcon, PropertyIcon } from "./design-icons";
@@ -61,7 +61,9 @@ function useOptions(node: ElementNode, property: DesignProperty, own: string | u
 
 export function DesignField({ node, property }: { node: ElementNode; property: DesignProperty }) {
   const id = useId();
-  const target = useDesignTarget(node);
+  const target = useDesignTarget(node, property.pinned ? "default" : undefined);
+  // The CSS property that decides the kind of field, units and icon (Form Input keys name a part).
+  const real = property.as ?? property.property;
   const [focused, setFocused] = useState(false);
   const setStyle = useEditorStore((s) => s.setElementStyle);
   const { options, hidden } = useOptions(node, property, target.own(property.property));
@@ -83,148 +85,146 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
   const inherited = target.inherited(property.property);
   const changed = own !== undefined;
   // What the element looks like before anything is set here (a container starts as a flex column).
-  const builtin = builtinStyle(node, property.property);
+  const builtin = property.as ? undefined : builtinStyle(node, property.property);
   const effective = own ?? inherited ?? builtin;
-  const kind = fieldKind(property.property);
-  const numeric = unitSpecFor(property.property) !== null;
-  const set = (next: string | null) => setStyle(node.id, property.property, next);
+  const kind = fieldKind(real);
+  const numeric = unitSpecFor(real) !== null;
+  const set = (next: string | null) =>
+    setStyle(node.id, property.property, next, property.pinned ? "default" : undefined);
 
   return (
-    <SettingRow
-      label={property.label}
-      htmlFor={id}
-      changed={changed}
-      onReset={() => set(null)}
-      tip={property.tip}
-      responsive={!property.half}
-      icon={<PropertyIcon property={property.property} />}
-    >
-      {property.options && property.icons ? (
-        <div
-          role="group"
-          aria-label={property.label}
-          className="grid grid-flow-col auto-cols-fr gap-1"
-        >
-          {property.options.map((o) => (
-            <button
-              key={o}
-              type="button"
-              title={o}
-              aria-label={o}
-              aria-pressed={own === o}
-              data-effective={own === undefined && effective === o ? "true" : undefined}
-              onClick={() => set(own === o ? null : o)}
-              className={
-                "flex h-10 items-center justify-center rounded-xl outline-none transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-focus/30 " +
-                (own === o
-                  ? "bg-default-300 text-foreground"
-                  : effective === o
-                    ? "bg-default-hover text-foreground ring-1 ring-inset ring-default-400"
-                    : "bg-default text-body hover:bg-default-hover")
-              }
-            >
-              <DesignIcon id={property.icons?.[o] ?? ""} />
-            </button>
-          ))}
-        </div>
-      ) : property.options ? (
-        <SelectField
-          compact
-          hideLabel
-          label={property.label}
-          value={own ?? DEFAULT_OPTION}
-          options={[
-            {
-              value: DEFAULT_OPTION,
-              label: inherited
-                ? `${inherited} (inherited)`
-                : builtin
-                  ? `${builtin} (default)`
-                  : "Default"
-            },
-            ...options
-          ]}
-          onValueChange={(next) => set(next === DEFAULT_OPTION ? null : next)}
-        />
-      ) : (
-        <div className={fieldShellClass}>
-          {numeric ? (
-            <div className="min-w-0 flex-1">
-              <LengthInput
-                id={id}
-                property={property.property}
-                ariaLabel={property.label}
-                value={own}
-                placeholder={inherited ?? builtin ?? property.placeholder}
-                onChange={set}
-                fieldClass={bareFieldClass}
-              />
-            </div>
-          ) : (
-            <div className="relative min-w-0 flex-1">
-              <input
-                id={id}
-                value={own ?? ""}
-                placeholder={inherited ?? builtin ?? property.placeholder}
-                onChange={(e) => set(e.target.value.trim() === "" ? null : e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                className={bareFieldClass}
-              />
-              {property.suggestions && focused ? (
-                <ul
-                  aria-label={`${property.label} options`}
-                  className="absolute inset-x-0 top-full z-30 mt-1 flex flex-wrap gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg"
-                >
-                  {property.suggestions.map((option) => (
-                    <li key={option}>
-                      <button
-                        type="button"
-                        // Keep focus in the field so the list stays open while picking.
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => set(option)}
-                        aria-pressed={own === option}
-                        className={
-                          "rounded-full px-2.5 py-1 font-mono text-xs transition-colors hover:bg-default-300 " +
-                          (own === option ? "bg-default-300" : "bg-default")
-                        }
-                      >
-                        {option}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          )}
-          <div className="flex h-9 shrink-0 items-center gap-0.5 pr-1">
-            {kind === "color" ? (
-              <ColorPalette
-                label={property.label}
-                property={property.property}
-                value={own}
-                onPick={set}
-              />
-            ) : null}
-            {kind === "font" ? <FontPicker property={property.property} onPick={set} /> : null}
-            {kind !== "color" && typesForProperty(property.property) !== null ? (
-              <VariablePicker label={property.label} property={property.property} onPick={set} />
-            ) : null}
-            {property.editor ? (
-              <CallEditorButton
-                label={property.label}
-                kind={property.editor}
-                value={own}
-                onChange={set}
-              />
-            ) : null}
-            <DynamicBolt
-              label={property.label}
-              onInsert={(token) => set(`${own ?? ""}${tagText(token)}`)}
-            />
+    <PreviewKeyContext.Provider value={property.as ? property.property : null}>
+      <SettingRow
+        label={property.label}
+        htmlFor={id}
+        changed={changed}
+        onReset={() => set(null)}
+        tip={property.tip}
+        responsive={!property.half}
+        icon={<PropertyIcon property={real} />}
+      >
+        {property.options && property.icons ? (
+          <div
+            role="group"
+            aria-label={property.label}
+            className="grid grid-flow-col auto-cols-fr gap-1"
+          >
+            {property.options.map((o) => (
+              <button
+                key={o}
+                type="button"
+                title={o}
+                aria-label={o}
+                aria-pressed={own === o}
+                data-effective={own === undefined && effective === o ? "true" : undefined}
+                onClick={() => set(own === o ? null : o)}
+                className={
+                  "flex h-10 items-center justify-center rounded-xl outline-none transition-colors duration-300 focus-visible:ring-1 focus-visible:ring-focus/30 " +
+                  (own === o
+                    ? "bg-default-300 text-foreground"
+                    : effective === o
+                      ? "bg-default-hover text-foreground ring-1 ring-inset ring-default-400"
+                      : "bg-default text-body hover:bg-default-hover")
+                }
+              >
+                <DesignIcon id={property.icons?.[o] ?? ""} />
+              </button>
+            ))}
           </div>
-        </div>
-      )}
-    </SettingRow>
+        ) : property.options ? (
+          <SelectField
+            compact
+            hideLabel
+            label={property.label}
+            value={own ?? DEFAULT_OPTION}
+            options={[
+              {
+                value: DEFAULT_OPTION,
+                label: inherited
+                  ? `${inherited} (inherited)`
+                  : builtin
+                    ? `${builtin} (default)`
+                    : "Default"
+              },
+              ...options
+            ]}
+            onValueChange={(next) => set(next === DEFAULT_OPTION ? null : next)}
+          />
+        ) : (
+          <div className={fieldShellClass}>
+            {numeric ? (
+              <div className="min-w-0 flex-1">
+                <LengthInput
+                  id={id}
+                  property={real}
+                  ariaLabel={property.label}
+                  value={own}
+                  placeholder={inherited ?? builtin ?? property.placeholder}
+                  onChange={set}
+                  fieldClass={bareFieldClass}
+                />
+              </div>
+            ) : (
+              <div className="relative min-w-0 flex-1">
+                <input
+                  id={id}
+                  value={own ?? ""}
+                  placeholder={inherited ?? builtin ?? property.placeholder}
+                  onChange={(e) => set(e.target.value.trim() === "" ? null : e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  className={bareFieldClass}
+                />
+                {property.suggestions && focused ? (
+                  <ul
+                    aria-label={`${property.label} options`}
+                    className="absolute inset-x-0 top-full z-30 mt-1 flex flex-wrap gap-1 rounded-xl border border-border bg-surface p-2 shadow-lg"
+                  >
+                    {property.suggestions.map((option) => (
+                      <li key={option}>
+                        <button
+                          type="button"
+                          // Keep focus in the field so the list stays open while picking.
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => set(option)}
+                          aria-pressed={own === option}
+                          className={
+                            "rounded-full px-2.5 py-1 font-mono text-xs transition-colors hover:bg-default-300 " +
+                            (own === option ? "bg-default-300" : "bg-default")
+                          }
+                        >
+                          {option}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            )}
+            <div className="flex h-9 shrink-0 items-center gap-0.5 pr-1">
+              {kind === "color" ? (
+                <ColorPalette label={property.label} property={real} value={own} onPick={set} />
+              ) : null}
+              {kind === "font" ? <FontPicker property={real} onPick={set} /> : null}
+              {kind !== "color" && typesForProperty(real) !== null ? (
+                <VariablePicker label={property.label} property={real} onPick={set} />
+              ) : null}
+              {property.editor ? (
+                <CallEditorButton
+                  label={property.label}
+                  kind={property.editor}
+                  value={own}
+                  onChange={set}
+                />
+              ) : null}
+              <DynamicBolt
+                label={property.label}
+                onInsert={(token) => set(`${own ?? ""}${tagText(token)}`)}
+              />
+            </div>
+          </div>
+        )}
+      </SettingRow>
+    </PreviewKeyContext.Provider>
   );
 }
