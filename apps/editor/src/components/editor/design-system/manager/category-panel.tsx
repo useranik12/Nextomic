@@ -1,5 +1,6 @@
 "use client";
 
+import { Chip } from "@heroui/react";
 import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 
@@ -91,11 +92,9 @@ export function CategoryPanel({
             >
               <span className="min-w-0 flex-1 truncate">{name}</span>
               {badge ? (
-                <span
-                  className={`rounded-xl px-1.5 py-0.5 text-xs font-semibold ${active ? "bg-default/20" : "bg-default-hover"}`}
-                >
-                  {badge}
-                </span>
+                <Chip size="sm" variant="soft">
+                  <Chip.Label>{badge}</Chip.Label>
+                </Chip>
               ) : null}
             </button>
             {editable ? (

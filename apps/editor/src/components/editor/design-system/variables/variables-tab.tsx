@@ -91,21 +91,30 @@ export function VariablesTab() {
   }));
   const selectedProjectCategory = category?.startsWith("project:") ? category.slice(8) : "General";
 
-  /** Project variables in view can be selected; framework variables belong to their own tabs. */
-  const selectable = useMemo(
-    () => shown.filter((r) => r.source === "project").map((r) => r.name),
-    [shown]
-  );
+  /** Project variables and plain framework variables can be selected; generated ones belong to their own tabs. */
+  const selectable = useMemo(() => shown.filter((r) => !r.readOnly).map((r) => r.key), [shown]);
 
   function deletePicked() {
-    const names = [...picked].filter((n) => variables.some((v) => v.name === n));
-    const used = names.reduce((sum, n) => sum + (usage[n] ?? 0), 0);
+    const chosen = rows.filter((r) => picked.has(r.key) && !r.readOnly);
+    const names = chosen.filter((r) => r.source === "project").map((r) => r.name);
+    const frameworkNames = new Set(
+      chosen.filter((r) => r.source === "framework").map((r) => r.name)
+    );
+    const used = chosen.reduce((sum, r) => sum + (usage[r.name] ?? 0), 0);
+    const count = chosen.length;
     const message =
       used > 0
-        ? `Delete ${names.length} variable${names.length === 1 ? "" : "s"}? They are used ${used} time${used === 1 ? "" : "s"}.`
-        : `Delete ${names.length} variable${names.length === 1 ? "" : "s"}?`;
-    if (names.length === 0 || !window.confirm(message)) return;
+        ? `Delete ${count} variable${count === 1 ? "" : "s"}? They are used ${used} time${used === 1 ? "" : "s"}.`
+        : `Delete ${count} variable${count === 1 ? "" : "s"}?`;
+    if (count === 0 || !window.confirm(message)) return;
     for (const n of names) useEditorStore.getState().deleteVariable(n);
+    if (frameworkNames.size > 0 && framework)
+      setError(
+        setFramework({
+          ...framework,
+          variables: framework.variables.filter((v) => !frameworkNames.has(v.name))
+        })
+      );
     setPicked(new Set());
     setOpen(null);
   }
@@ -238,14 +247,20 @@ export function VariablesTab() {
                   variable={v}
                   used={usage[r.name] ?? 0}
                   categories={projectNames}
-                  checked={picked.has(r.name)}
-                  onCheck={(on) => setPicked(toggled(picked, r.name, on))}
+                  checked={picked.has(r.key)}
+                  onCheck={(on) => setPicked(toggled(picked, r.key, on))}
                   open={open === r.key}
                   onToggle={() => setOpen(open === r.key ? null : r.key)}
                   onError={setError}
                 />
               ) : (
-                <FrameworkVariableRow key={r.key} row={r} onEdit={editFramework} />
+                <FrameworkVariableRow
+                  key={r.key}
+                  row={r}
+                  onEdit={editFramework}
+                  checked={picked.has(r.key)}
+                  onCheck={(on) => setPicked(toggled(picked, r.key, on))}
+                />
               );
             })
           )}

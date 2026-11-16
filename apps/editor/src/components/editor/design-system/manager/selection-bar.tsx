@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { ActionButton } from "@/components/ui/controls";
+import { ActionButton, CheckField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 
 /**
@@ -24,26 +23,18 @@ export function SelectionBar({
   onClear: () => void;
   onDelete: () => void;
 }) {
-  const box = useRef<HTMLInputElement>(null);
   const all = total > 0 && selected >= total;
-  useEffect(() => {
-    if (box.current) box.current.indeterminate = selected > 0 && !all;
-  }, [selected, all]);
 
   return (
     <div className="flex min-h-9 flex-wrap items-center gap-2">
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-body">
-        <input
-          ref={box}
-          type="checkbox"
-          checked={all}
-          disabled={total === 0}
-          onChange={() => (all ? onClear() : onSelectAll())}
-          aria-label={`Select all ${noun}`}
-          className="h-4 w-4 cursor-pointer accent-accent"
-        />
-        Select all
-      </label>
+      <CheckField
+        isSelected={all}
+        isIndeterminate={selected > 0 && !all}
+        isDisabled={total === 0}
+        onChange={() => (all ? onClear() : onSelectAll())}
+        aria-label={`Select all ${noun}`}
+        label="Select all"
+      />
       {selected > 0 ? (
         <>
           <button

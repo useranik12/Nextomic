@@ -58,15 +58,7 @@ export function DesignSystemModal({
   }, []);
 
   return (
-    <Modal
-      isOpen
-      onClose={requestClose}
-      isDismissable={false}
-      hideCloseButton
-      size="5xl"
-      scrollBehavior="inside"
-      classNames={{ base: "h-[80vh] max-h-[80vh]", body: "p-0" }}
-    >
+    <Modal isOpen onClose={requestClose} isDismissable={false} hideCloseButton size="full">
       <ModalContent>
         <DesignNavProvider value={{ go, params }}>
           <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-4">

@@ -202,7 +202,7 @@ export function PageSettingsModal({
   }
 
   return (
-    <Modal isOpen onOpenChange={(open) => !open && onClose()} scrollBehavior="inside">
+    <Modal isOpen onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>Page settings</ModalHeader>
         <ModalBody className="gap-3">

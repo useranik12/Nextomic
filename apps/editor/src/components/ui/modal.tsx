@@ -13,6 +13,17 @@ function cn(...parts: Array<string | false | undefined>): string {
   return parts.filter(Boolean).join(" ");
 }
 
+/**
+ * The one sizing rule of every builder modal (owner rule, 2026-11-16): the box fits its content,
+ * grows with it, and never exceeds the screen minus 1.5rem on any side. What is inside scrolls,
+ * never the modal. `Dialog` uses the same constants.
+ */
+export const MODAL_CONTAINER = "p-3 sm:p-3";
+export const MODAL_DIALOG =
+  "max-h-full min-h-0 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-3xl [&>form]:flex [&>form]:min-h-0 [&>form]:flex-1 [&>form]:flex-col [&>form]:gap-4";
+export const MODAL_HEADER = "shrink-0";
+export const MODAL_FOOTER = "shrink-0";
+
 const MAX_WIDTH: Record<ModalSize, string> = {
   xs: "max-w-xs",
   sm: "max-w-sm",
@@ -36,7 +47,7 @@ interface ModalState {
 
 const ModalContext = createContext<ModalState>({
   hideCloseButton: false,
-  scroll: "outside",
+  scroll: "inside",
   size: "md"
 });
 
@@ -47,7 +58,6 @@ export interface ModalProps {
   isDismissable?: boolean;
   hideCloseButton?: boolean;
   size?: ModalSize;
-  scrollBehavior?: "inside" | "outside";
   /** Extra classes: `base` is the dialog box, `body` the scrolling body. */
   classNames?: { base?: string; body?: string };
   children: ReactNode;
@@ -83,7 +93,6 @@ export function Modal({
   isDismissable = true,
   hideCloseButton = false,
   size = "md",
-  scrollBehavior = "outside",
   classNames,
   children
 }: ModalProps) {
@@ -92,7 +101,7 @@ export function Modal({
     <ModalContext.Provider
       value={{
         hideCloseButton,
-        scroll: scrollBehavior,
+        scroll: "inside",
         base: classNames?.base,
         body: classNames?.body,
         size
@@ -121,13 +130,14 @@ export function ModalContent({ children }: { children: ReactNode }) {
     <V3Modal.Container
       scroll={scroll}
       size={full ? "full" : "md"}
-      className={full ? "p-4 sm:p-4" : "sm:w-full"}
+      className={cn(MODAL_CONTAINER, full ? "" : "sm:w-full")}
     >
       <V3Modal.Dialog
         className={cn(
-          "gap-4 rounded-3xl",
+          "gap-4",
+          MODAL_DIALOG,
           full
-            ? "!h-[calc(100dvh-2rem)] !max-h-[calc(100dvh-2rem)] min-h-0 w-full max-w-none overflow-hidden rounded-3xl"
+            ? "!h-[calc(100dvh-1.5rem)] !max-h-[calc(100dvh-1.5rem)] w-full max-w-none !rounded-3xl"
             : MAX_WIDTH[size],
           base
         )}
@@ -142,7 +152,7 @@ export function ModalContent({ children }: { children: ReactNode }) {
 export function ModalHeader({ children, className }: { children: ReactNode; className?: string }) {
   // The heading names the dialog for assistive tech (aria-labelledby).
   return (
-    <V3Modal.Header>
+    <V3Modal.Header className={MODAL_HEADER}>
       <V3Modal.Heading className={cn("text-base font-semibold text-foreground", className)}>
         {children}
       </V3Modal.Heading>
@@ -160,5 +170,7 @@ export function ModalBody({ children, className }: { children: ReactNode; classN
 }
 
 export function ModalFooter({ children, className }: { children: ReactNode; className?: string }) {
-  return <V3Modal.Footer className={cn("gap-2", className)}>{children}</V3Modal.Footer>;
+  return (
+    <V3Modal.Footer className={cn(MODAL_FOOTER, "gap-2", className)}>{children}</V3Modal.Footer>
+  );
 }

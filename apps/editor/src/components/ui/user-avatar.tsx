@@ -24,9 +24,18 @@ export function UserAvatar({
   className?: string;
 }) {
   return (
-    <Avatar size={size} className={className}>
-      {image ? <Avatar.Image src={image} alt={name} /> : null}
-      <Avatar.Fallback className="font-semibold">{avatarLetter(name)}</Avatar.Fallback>
+    <Avatar
+      size={size}
+      className={`aspect-square shrink-0 overflow-hidden !rounded-full ${className ?? ""}`}
+    >
+      {image ? (
+        <Avatar.Image
+          src={image}
+          alt={name}
+          className="aspect-square h-full w-full rounded-full object-cover"
+        />
+      ) : null}
+      <Avatar.Fallback className="rounded-full font-semibold">{avatarLetter(name)}</Avatar.Fallback>
     </Avatar>
   );
 }

@@ -7,6 +7,7 @@ import {
   slugifyFontId,
   type ProjectFont
 } from "@nextomic/schema";
+import { Chip } from "@heroui/react";
 import { useMemo, useState } from "react";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
@@ -109,9 +110,11 @@ function NewCustomFont({
   );
 }
 
-function Chip({ children }: { children: string }) {
+function FontChip({ children }: { children: string }) {
   return (
-    <span className="rounded-full bg-default-hover px-2 py-0.5 text-xs text-body">{children}</span>
+    <Chip size="sm" variant="soft">
+      <Chip.Label>{children}</Chip.Label>
+    </Chip>
   );
 }
 
@@ -235,7 +238,7 @@ export function FontManager({
                       {SAMPLE}
                     </p>
                   </div>
-                  <Chip>System</Chip>
+                  <FontChip>System</FontChip>
                 </li>
               ))}
             </ul>
@@ -273,9 +276,9 @@ export function FontManager({
                     >
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-medium">{f.family}</span>
-                        <Chip>{f.source === "google" ? "Google" : "Custom"}</Chip>
-                        {f.active ? null : <Chip>Off</Chip>}
-                        {f.rights ? null : <Chip>Rights not confirmed</Chip>}
+                        <FontChip>{f.source === "google" ? "Google" : "Custom"}</FontChip>
+                        {f.active ? null : <FontChip>Off</FontChip>}
+                        {f.rights ? null : <FontChip>Rights not confirmed</FontChip>}
                         <span className="text-xs text-muted">Styles: {f.files.length}</span>
                       </span>
                       <span

@@ -9,7 +9,8 @@ import {
 } from "@nextomic/schema";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { classUsageAction } from "@/app/(builder)/editor/[id]/actions";
-import { ActionButton } from "@/components/ui/controls";
+import { Chip } from "@heroui/react";
+import { ActionButton, CheckField } from "@/components/ui/controls";
 import { VirtualList } from "@/components/ui/virtual-list";
 import { useEditorStore } from "../../store/editor-store";
 import { useDesignNav } from "../design-nav";
@@ -298,17 +299,16 @@ export function ClassesTab() {
                   }
                 >
                   {r.source === "project" && !r.locked ? (
-                    <input
-                      type="checkbox"
-                      checked={picked.has(r.name)}
-                      onChange={(e) => {
+                    <CheckField
+                      isSelected={picked.has(r.name)}
+                      onChange={(on) => {
                         const next = new Set(picked);
-                        if (e.target.checked) next.add(r.name);
+                        if (on) next.add(r.name);
                         else next.delete(r.name);
                         setPicked(next);
                       }}
                       aria-label={`Select .${r.name}`}
-                      className="ml-4 h-4 w-4 shrink-0 cursor-pointer accent-accent"
+                      className="ml-4 shrink-0"
                     />
                   ) : (
                     <span aria-hidden className="ml-4 h-4 w-4 shrink-0" />
@@ -321,7 +321,9 @@ export function ClassesTab() {
                   >
                     <span className="min-w-0 flex-1 truncate">.{r.name}</span>
                     {r.locked && r.source === "project" ? (
-                      <span className="text-xs opacity-70">locked</span>
+                      <Chip size="sm" variant="soft">
+                        <Chip.Label>locked</Chip.Label>
+                      </Chip>
                     ) : null}
                     <span
                       className="text-xs opacity-70"

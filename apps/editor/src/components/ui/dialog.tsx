@@ -2,7 +2,13 @@
 
 import { Modal } from "@heroui/react";
 import type { ReactNode } from "react";
-import { usePopoverGuard } from "./modal";
+import {
+  MODAL_CONTAINER,
+  MODAL_DIALOG,
+  MODAL_FOOTER,
+  MODAL_HEADER,
+  usePopoverGuard
+} from "./modal";
 
 // The builder's dialog (HeroUI v3 Modal): blurred backdrop, overlay surface, fade and scale in,
 // focus trapped inside, Escape and the close button dismiss it. Footer buttons follow the button
@@ -39,17 +45,19 @@ export function Dialog({
       onOpenChange={(open) => (open || popoverJustClosed() ? undefined : onClose())}
     >
       <Modal.Backdrop variant="blur" isDismissable={isDismissable}>
-        <Modal.Container size={size}>
-          <Modal.Dialog className="gap-5 rounded-3xl">
+        <Modal.Container size={size} scroll="inside" className={MODAL_CONTAINER}>
+          <Modal.Dialog className={`gap-5 ${MODAL_DIALOG}`}>
             <Modal.CloseTrigger />
-            <Modal.Header className="gap-1">
+            <Modal.Header className={`gap-1 ${MODAL_HEADER}`}>
               <Modal.Heading className="text-base font-semibold text-foreground">
                 {title}
               </Modal.Heading>
               {description ? <p className="text-sm text-muted">{description}</p> : null}
             </Modal.Header>
             {children ? <Modal.Body className="flex flex-col gap-4">{children}</Modal.Body> : null}
-            {footer ? <Modal.Footer className="gap-2">{footer}</Modal.Footer> : null}
+            {footer ? (
+              <Modal.Footer className={`gap-2 ${MODAL_FOOTER}`}>{footer}</Modal.Footer>
+            ) : null}
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>

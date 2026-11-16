@@ -163,7 +163,6 @@ export function DynamicDataModal({
     <Modal
       isOpen
       onClose={onClose}
-      scrollBehavior="inside"
       classNames={{ base: "h-[80vh] w-[80vw] max-w-[80vw] sm:max-w-[80vw]" }}
     >
       <ModalContent>

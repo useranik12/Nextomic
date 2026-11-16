@@ -1,5 +1,6 @@
 "use client";
 
+import { Chip } from "@heroui/react";
 import {
   countRules,
   darkModeLocked,
@@ -138,14 +139,14 @@ export function ThemesTab() {
                 <span className="flex items-center gap-2 text-sm font-medium">
                   <span className="truncate">{t.name}</span>
                   {t.active ? null : (
-                    <span className="rounded-full bg-default-hover px-2 text-xs text-body">
-                      Off
-                    </span>
+                    <Chip size="sm" variant="soft">
+                      <Chip.Label>Off</Chip.Label>
+                    </Chip>
                   )}
                   {t.isDefault ? (
-                    <span className="rounded-full bg-default-hover px-2 text-xs text-foreground">
-                      Default
-                    </span>
+                    <Chip size="sm" variant="soft" color="accent">
+                      <Chip.Label>Default</Chip.Label>
+                    </Chip>
                   ) : null}
                 </span>
                 <span className="text-xs text-muted">{conditionSummary(t)}</span>

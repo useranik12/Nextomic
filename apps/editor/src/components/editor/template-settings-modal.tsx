@@ -13,7 +13,7 @@ export function TemplateSettingsModal({ onClose }: { onClose: () => void }) {
   const updateMeta = useEditorStore((s) => s.updatePageMeta);
   const valid = templateNameSchema.safeParse(name).success;
   return (
-    <Modal isOpen size="2xl" onOpenChange={(open) => !open && onClose()} scrollBehavior="inside">
+    <Modal isOpen size="2xl" onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>Template settings</ModalHeader>
         <ModalBody className="gap-4">

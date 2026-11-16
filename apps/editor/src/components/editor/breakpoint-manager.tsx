@@ -111,12 +111,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onOpenChange={(open) => !open && onClose()}
-      size="2xl"
-      scrollBehavior="inside"
-    >
+    <Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()} size="2xl">
       <ModalContent>
         <ModalHeader>Breakpoints</ModalHeader>
         <ModalBody className="gap-4">

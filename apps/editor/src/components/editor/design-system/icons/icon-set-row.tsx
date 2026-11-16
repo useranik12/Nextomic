@@ -1,5 +1,6 @@
 "use client";
 
+import { Chip } from "@heroui/react";
 import { sampleSvg, type IconSample } from "@nextomic/schema";
 import { useMemo, type ReactNode } from "react";
 
@@ -58,17 +59,16 @@ function PreviewStrip({
   );
 }
 
-function Chip({ chip }: { chip: IconChip }) {
+function IconSetChip({ chip }: { chip: IconChip }) {
   return (
-    <span
+    <Chip
+      size="sm"
+      variant="soft"
+      color={chip.tone === "warning" ? "warning" : "default"}
       data-tip={chip.tip}
-      className={
-        "rounded-full px-2 py-0.5 text-[11px] leading-4 " +
-        (chip.tone === "warning" ? "bg-warning/15 text-warning" : "bg-default-hover text-body")
-      }
     >
-      {chip.label}
-    </span>
+      <Chip.Label>{chip.label}</Chip.Label>
+    </Chip>
   );
 }
 
@@ -103,7 +103,7 @@ export function IconSetRow({
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             <span className="truncate text-sm font-medium text-foreground">{name}</span>
             {chips.map((c) => (
-              <Chip key={c.label} chip={c} />
+              <IconSetChip key={c.label} chip={c} />
             ))}
           </div>
           <p className="truncate text-xs text-muted">{facts}</p>
