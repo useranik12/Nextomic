@@ -77,6 +77,9 @@ export function actionsByCategory(category: ActionCategory): {
   return [...groups].map(([subcategory, actions]) => ({ subcategory, actions }));
 }
 
+export const NO_ACTIVE_FORM =
+  "This page has no active form. Add a form from the Forms group and set its Status to Active (a form in a header, footer or popup counts).";
+
 export const SET_THEME_UNAVAILABLE =
   "Set Theme needs two or more active themes, with Follow the primary theme turned on in at least one of them (Design System, Themes).";
 
@@ -86,7 +89,7 @@ export const SET_THEME_UNAVAILABLE =
  */
 export function actionDisabledReason(
   action: ActionDef,
-  project?: { themes: readonly Theme[] }
+  project?: { themes: readonly Theme[]; hasActiveForm?: boolean }
 ): string | null {
   const category = categoryOf(action.category);
   const categoryReason = category && "disabled" in category ? category.disabled : undefined;
@@ -94,6 +97,7 @@ export function actionDisabledReason(
   if (own) return own;
   if (action.type === "theme.set" && project && !canSwitchThemes(project.themes))
     return SET_THEME_UNAVAILABLE;
+  if (action.type.startsWith("form.") && project?.hasActiveForm === false) return NO_ACTIVE_FORM;
   return null;
 }
 

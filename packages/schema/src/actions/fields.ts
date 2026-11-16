@@ -27,6 +27,7 @@ export const FIELD_KINDS = [
   "template",
   "targetParams",
   "queryOverride",
+  "form",
   "flow"
 ] as const;
 export type FieldKind = (typeof FIELD_KINDS)[number];
@@ -109,6 +110,7 @@ export const UNBINDABLE_FIELD_REASONS: Partial<Record<FieldKind, string>> = {
     "One value per parameter of the chosen page or template; each value takes dynamic data.",
   queryOverride:
     "The chosen loop's query settings, saved with the action so the server can trust them; their values take dynamic data.",
+  form: "Picks an active form of this page, a header or footer, or a popup so the flow can be checked when it is saved.",
   flow: "A nested action flow built in the editor, not a value."
 };
 

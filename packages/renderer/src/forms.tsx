@@ -260,6 +260,7 @@ registerElement({
       {
         ...attrs,
         "data-nxt-field": name,
+        "data-nxt-secret": password ? "" : undefined,
         "data-nxt-rules": JSON.stringify(inputRules(ctx, type))
       },
       label ? createElement("label", { htmlFor: controlId }, label) : null,

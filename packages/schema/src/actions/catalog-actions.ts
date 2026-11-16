@@ -432,7 +432,13 @@ const stateUpdates = (kind: "appState" | "pageState"): ParamField => ({
   ]
 });
 
-const FORMS_LATER = "Form elements come in Phase 7.";
+const FORM = (extra: Partial<ParamField> = {}): ParamField => ({
+  key: "form",
+  label: "Form",
+  kind: "form",
+  required: true,
+  ...extra
+});
 
 const STATE_ACTIONS: ActionDef[] = [
   {
@@ -460,12 +466,53 @@ const STATE_ACTIONS: ActionDef[] = [
       "Runs the page's queries again and redraws the page with its header and footer templates.",
     fields: []
   },
-  ...later("state", "Form", FORMS_LATER, [
-    ["form.set", "Set Form Fields"],
-    ["form.reset", "Reset Form Fields"],
-    ["form.clear", "Clear Form Fields"],
-    ["form.validate", "Validate Form"]
-  ]),
+  {
+    type: "form.set",
+    label: "Set Form Fields",
+    category: "state",
+    subcategory: "Form",
+    runs: "browser",
+    description: "Puts values in fields of a form, by field name.",
+    fields: [
+      FORM(),
+      pairs("values", "Fields", {
+        columns: [text("name", "Field name", { required: true }), text("value", "Value")]
+      })
+    ],
+    summary: ["form"]
+  },
+  {
+    type: "form.reset",
+    label: "Reset Form Fields",
+    category: "state",
+    subcategory: "Form",
+    runs: "browser",
+    description: "Puts every field of a form back to its starting value and clears its errors.",
+    fields: [FORM()],
+    summary: ["form"]
+  },
+  {
+    type: "form.clear",
+    label: "Clear Form Fields",
+    category: "state",
+    subcategory: "Form",
+    runs: "browser",
+    description: "Empties every field of a form and clears its errors.",
+    fields: [FORM()],
+    summary: ["form"]
+  },
+  {
+    type: "form.validate",
+    label: "Validate Form",
+    category: "state",
+    subcategory: "Form",
+    runs: "browser",
+    description:
+      "Checks every field of a form and shows the errors. The output is true when all fields pass, so a Condition can decide what happens next.",
+    fields: [FORM()],
+    output: { type: "boolean" },
+    summary: ["form"]
+  },
   {
     type: "element.rebuild",
     label: "Rebuild Component/Element",

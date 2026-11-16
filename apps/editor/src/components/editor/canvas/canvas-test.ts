@@ -7,6 +7,8 @@ import {
   ElementEditStore,
   createOverlayLayer,
   createToastStack,
+  startFormRuntime,
+  type FormRuntime,
   type OverlayPart,
   starterHandlers,
   type RunLogEntry,
@@ -88,8 +90,11 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
   // Opened by a test run and kept open so the owner sees them; closed when the test ends.
   const overlays = createOverlayLayer();
   const toasts = createToastStack();
+  let forms: FormRuntime | null = null;
 
   function stop() {
+    forms?.stop();
+    forms = null;
     overlays.destroy();
     toasts.destroy();
     controller?.abort();
@@ -126,10 +131,15 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
     const live = new LiveState(payload, {}, null, () => {
       if (controller === own) setOverride({ app: { ...live.app }, state: { ...live.state } });
     });
+    // Form actions of a test run act on the forms drawn in this canvas.
+    const formRuntime = startFormRuntime(() => live.invalidate());
+    forms = formRuntime;
+    live.formValues = () => formRuntime.values(true);
     const note = (label: string, output: string) =>
       log({ nodeId: "", label, status: "ok", ms: 0, output });
     const handlers = starterHandlers({
       payload,
+      forms: formRuntime,
       state: live,
       log,
       hrefFor: (route, query) => (query.size > 0 ? `${route}?${query.toString()}` : route),

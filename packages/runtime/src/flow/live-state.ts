@@ -19,6 +19,8 @@ export class LiveState {
   readonly state: Record<string, string>;
   private readonly initial: { app: Record<string, string>; state: Record<string, string> };
   private scopeCache: Record<string, unknown> | null = null;
+  /** Reads the visitor's form values (set by the page runtime once the forms exist). */
+  formValues: () => Record<string, Record<string, string>> = () => ({});
 
   constructor(
     private readonly payload: RuntimePayload,
@@ -33,7 +35,17 @@ export class LiveState {
 
   /** The dynamic context with the current values (what fragments are rendered with). */
   context(): DynamicContext {
-    return { ...this.payload.dynamic, app: { ...this.app }, state: { ...this.state } };
+    return {
+      ...this.payload.dynamic,
+      app: { ...this.app },
+      state: { ...this.state },
+      forms: this.formValues()
+    };
+  }
+
+  /** Drops the cached scope after something outside app and page state changed (form values). */
+  invalidate(): void {
+    this.scopeCache = null;
   }
 
   /** The names expressions see, rebuilt only after a change. */

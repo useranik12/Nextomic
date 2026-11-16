@@ -6,6 +6,7 @@ import {
   toText,
   type ThemeChoice
 } from "@nextomic/schema";
+import type { FormRuntime } from "../form/form-runtime";
 import { browserActionHandlers } from "./browser-actions";
 import { pickerHandlers, pickValue } from "./pickers";
 import { themeHandlers } from "./theme-actions";
@@ -39,6 +40,8 @@ export const browserNavigation: Navigation = {
 
 export interface HandlerDeps {
   payload: RuntimePayload;
+  /** The page's forms: values, validation, set, reset and clear. */
+  forms: FormRuntime;
   state: LiveState;
   /** Renders a modal or bottom sheet template with these parameter values. */
   renderOverlay: (templateId: string, params: Record<string, string>) => Promise<OverlayPart>;
@@ -123,6 +126,14 @@ function overlayOptions(p: Record<string, unknown>): ShowOverlayOptions {
 }
 
 export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler> {
+  /** The form name an action names, or a failure the flow shows when the page has no such active form. */
+  const formOf = (value: unknown): string => {
+    const name = toText(value).trim();
+    if (!name) throw new FlowError("no-form", "Choose the form.");
+    if (!deps.forms.has(name))
+      throw new FlowError("no-form", `The form "${name}" is not on the page or is not active.`);
+    return name;
+  };
   const showOverlay = async (type: OverlayPart["type"], p: Record<string, unknown>) => {
     const templateId = toText(p.template);
     if (!templateId) throw new FlowError("no-template", "Choose the template to show.");
@@ -243,6 +254,18 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
     "state.updateApp": (p) => deps.state.update("app", updatesOf(p.updates)),
     "state.updatePage": (p) => deps.state.update("state", updatesOf(p.updates)),
     "page.rebuild": () => deps.rebuild(),
+    "form.validate": (p) => deps.forms.validate(formOf(p.form)).valid,
+    "form.set": (p) => {
+      const values: Record<string, string> = {};
+      for (const row of rowsOf(p.values)) {
+        const name = toText(row.name).trim();
+        if (name) values[name] = toText(row.value);
+      }
+      formOf(p.form);
+      deps.forms.set(toText(p.form), values);
+    },
+    "form.reset": (p) => void deps.forms.reset(formOf(p.form)),
+    "form.clear": (p) => void deps.forms.clear(formOf(p.form)),
     "text.set": (p, ctx) => {
       const id = toText(p.element) || ctx.elementId;
       if (!id) throw new FlowError("no-element", "Choose the element to change.");

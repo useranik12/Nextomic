@@ -5,6 +5,7 @@ import { ElementEditStore } from "./html-props";
 import { FlowError, runFlow, type ActionHandler, type RunLogEntry } from "./engine";
 import { browserNavigation, starterHandlers, type Navigation } from "./handlers";
 import type { UploadedFile } from "./files";
+import { startFormRuntime } from "../form/form-runtime";
 import { LiveState } from "./live-state";
 import { createOverlayLayer } from "./overlays";
 import { createToastStack } from "./toasts";
@@ -114,6 +115,7 @@ export function startActionRuntime(
       ids: wanted,
       app,
       state,
+      forms: forms.values(false),
       edits: edits.snapshot(),
       refreshes
     });
@@ -136,6 +138,13 @@ export function startActionRuntime(
   };
   const restored = options.persist ? restorePersisted(payload.appState, options.persist) : {};
   const live = new LiveState(payload, restored, options.persist, onChange);
+  // Form fields: the browser keeps the values; a change redraws the elements that read it.
+  const forms = startFormRuntime((names) => {
+    live.invalidate();
+    onChange(names);
+  });
+  live.formValues = () => forms.values(true);
+  stops.push(forms.stop);
 
   const overlays = createOverlayLayer((content) => bindInserted(content));
   const toasts = createToastStack();
@@ -162,6 +171,7 @@ export function startActionRuntime(
   };
   const handlers: Record<string, ActionHandler> = starterHandlers({
     payload,
+    forms,
     state: live,
     log: options.log,
     hrefFor: options.hrefFor,
@@ -339,6 +349,7 @@ export function startActionRuntime(
   };
   /** Load, viewport and resize triggers of an element and everything inside it. */
   function bindInserted(root: Element) {
+    forms.sync(root);
     const els = [root, ...root.querySelectorAll("[data-nid]")];
     for (const el of els) {
       const id = el.getAttribute("data-nid") ?? "";
