@@ -65,3 +65,22 @@ describe("css text round trip", () => {
     expect(styles.raw).toContain("(max-width: 500px)");
   });
 });
+
+describe("Form Input keys in the CSS text", () => {
+  it("survive CSS -> StyleMap -> CSS unchanged, per breakpoint", () => {
+    const styles: StyleMap = {
+      breakpoints: {
+        base: {
+          default: {
+            "--nxt-ip-box-border-color": "#f00",
+            "--nxt-ip-box-border-color-error": "#a00"
+          }
+        },
+        [tablet]: { default: { "--nxt-ip-label-font-size": "12px" } }
+      }
+    };
+    const css = styleMapToCss(styles, SEL, DEFAULT_BREAKPOINTS);
+    expect(parsed(css)).toEqual(styles);
+    expect(styleMapToCss(parsed(css), SEL, DEFAULT_BREAKPOINTS)).toBe(css);
+  });
+});

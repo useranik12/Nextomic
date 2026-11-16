@@ -220,6 +220,7 @@ describe("forms", () => {
       font: () => false
     };
     const draw = (props: Record<string, unknown>) =>
+      // The page style sheet also names these attributes; only the markup is measured.
       renderToStaticMarkup(
         <PageRenderer
           tree={node({
@@ -232,7 +233,9 @@ describe("forms", () => {
           breakpoints={DEFAULT_BREAKPOINTS}
           icons={icons}
         />
-      );
+      )
+        .slice(0)
+        .replace(/^[\s\S]*?(?=<form)/, "");
 
     it("draws the field icon on the chosen side, and no box without a library", () => {
       const left = draw({ library: "ph", icon: "mail" });

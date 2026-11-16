@@ -1,12 +1,14 @@
 import type { TokenResolver } from "./values";
 import {
   breakpointCascade,
+  INPUT_DESIGN_PREFIX,
   walkElements,
   type BreakpointDef,
   type ElementNode,
   type PseudoState,
   type StyleMap
 } from "@nextomic/schema";
+import { INPUT_BASE_CSS, inputPartCss } from "./input-css";
 import { getElementDefinition } from "./registry";
 
 const PSEUDO_SELECTOR: Record<PseudoState, string> = {
@@ -63,10 +65,20 @@ function resolveStyleValue(value: string, resolve: TokenResolver | undefined): s
   return resolve ? value.replace(STYLE_TOKEN, (_, token: string) => resolve(token)) : "";
 }
 
-function declarations(styles: Record<string, string>, resolve?: TokenResolver): string {
+/** Resolved, safe declarations of a style block; Form Input part keys are left to `inputPartCss`. */
+function safeEntries(
+  styles: Record<string, string>,
+  resolve: TokenResolver | undefined,
+  inputParts: boolean
+): [string, string][] {
   return Object.entries(styles)
-    .map(([property, value]) => [property, resolveStyleValue(value, resolve)] as const)
-    .filter(([, value]) => isSafeCssValue(value))
+    .filter(([property]) => property.startsWith(INPUT_DESIGN_PREFIX) === inputParts)
+    .map(([property, value]) => [property, resolveStyleValue(value, resolve)] as [string, string])
+    .filter(([, value]) => isSafeCssValue(value));
+}
+
+function declarations(styles: Record<string, string>, resolve?: TokenResolver): string {
+  return safeEntries(styles, resolve, false)
     .map(([property, value]) => `${property}:${value}`)
     .join(";");
 }
@@ -115,6 +127,12 @@ function stylesCss(
       const body = declarations(byState[state] ?? {}, resolve);
       if (body) rules.push(`${selector}${PSEUDO_SELECTOR[state]}{${body}}`);
     }
+    // Form Input parts: keys set at the default state, written as rules on each part.
+    const parts = inputPartCss(
+      selector,
+      Object.fromEntries(safeEntries(byState.default ?? {}, resolve, true))
+    );
+    if (parts) rules.push(parts);
     if (rules.length === 0) continue;
     out.push(media ? `@media ${media}{${rules.join("")}}` : rules.join(""));
   }
@@ -131,6 +149,11 @@ export function pageCss(
   resolve?: TokenResolver
 ): string {
   const chunks: string[] = [];
+  let hasInput = false;
+  walkElements(root, (node) => {
+    if (node.type === "input") hasInput = true;
+  });
+  if (hasInput) chunks.push(INPUT_BASE_CSS);
   for (const [name, styles] of Object.entries(classes)) {
     const css = classCss(name, styles, breakpoints, resolve);
     if (css) chunks.push(css);

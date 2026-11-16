@@ -45,3 +45,69 @@ describe("container defaults", () => {
     );
   });
 });
+
+describe("Form Input part styles", () => {
+  const tablet = DEFAULT_BREAKPOINTS.find((b) => b.kind === "down")?.id ?? "tablet";
+  const css = (decls: Record<string, string>, breakpoint = "base") =>
+    classCss("f", { breakpoints: { [breakpoint]: { default: decls } } }, DEFAULT_BREAKPOINTS);
+
+  it("writes a part setting as a plain declaration on the part, never as a variable", () => {
+    const out = css({ "--nxt-ip-box-border-color": "#f00" });
+    expect(out).toBe(
+      ".f[data-nxt-field] [data-nxt-box],.f [data-nxt-field] [data-nxt-box]{border-color:#f00}"
+    );
+    expect(out).not.toContain("--nxt-ip");
+    expect(out).not.toContain("var(");
+  });
+
+  it("emits nothing at a breakpoint where nothing is set, so the default look stays", () => {
+    const out = css({ "--nxt-ip-box-padding": "4px" }, tablet);
+    expect(out.startsWith("@media")).toBe(true);
+    expect(out.replace(/@media[^{]+\{/, "")).toContain("padding:4px");
+    // Nothing outside the media query: desktop has no rule for the box at all.
+    expect(out.indexOf("[data-nxt-box]")).toBeGreaterThan(out.indexOf("@media"));
+    expect(css({ color: "red" })).toBe(".f{color:red}");
+  });
+
+  it("styles a state only in that state, with a forced form for the canvas", () => {
+    const out = css({ "--nxt-ip-box-border-color-error": "#a00" });
+    expect(out).toContain(".f[data-nxt-field][data-invalid] [data-nxt-box]");
+    expect(out).toContain('[data-nxt-force="error"]');
+    expect(out).not.toContain(".f [data-nxt-field] [data-nxt-box]{");
+  });
+
+  it("orders states so an error beats a focus and disabled comes last", () => {
+    const out = css({
+      "--nxt-ip-box-border-color-disabled": "#111",
+      "--nxt-ip-box-border-color-error": "#222",
+      "--nxt-ip-box-border-color-focus": "#333",
+      "--nxt-ip-box-border-color": "#444"
+    });
+    const at = (color: string) => out.indexOf(`border-color:${color}`);
+    expect(at("#444")).toBeLessThan(at("#333"));
+    expect(at("#333")).toBeLessThan(at("#222"));
+    expect(at("#222")).toBeLessThan(at("#111"));
+  });
+
+  it("keeps hidden messages hidden by scoping their rules to shown ones", () => {
+    const out = css({ "--nxt-ip-error-padding": "8px", "--nxt-ip-clear-width": "20px" });
+    expect(out).toContain("[data-nxt-error]:not([hidden])");
+    expect(out).toContain("[data-nxt-clear]:not([hidden])");
+  });
+
+  it("drops settings the table does not list, unsafe values and states a part lacks", () => {
+    expect(css({ "--nxt-ip-box-position": "fixed" })).toBe("");
+    expect(css({ "--nxt-ip-nope-color": "red" })).toBe("");
+    expect(css({ "--nxt-ip-error-color-focus": "red" })).toBe("");
+    expect(css({ "--nxt-ip-box-padding": "1px;}body{x:y" })).toBe("");
+  });
+
+  it("the default look is zero specificity and shipped with every page that has an input", async () => {
+    const { INPUT_BASE_CSS } = await import("./input-css");
+    for (const rule of INPUT_BASE_CSS.split("}").filter((r) => r.startsWith(":where("))) {
+      expect(rule.startsWith(":where(")).toBe(true);
+    }
+    expect(INPUT_BASE_CSS).toContain("border:1px solid");
+    expect(INPUT_BASE_CSS).toContain("[hidden]{display:none}");
+  });
+});
