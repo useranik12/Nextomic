@@ -20,7 +20,8 @@ import { useTypeRegistry } from "../data-types/type-picker";
 import { useEditorStore } from "../store/editor-store";
 import { actionGroups } from "./action-groups";
 import { TagCard } from "./dynamic-tag-card";
-import { dynamicGroups, type DynamicGroup } from "./dynamic-sources";
+import { useAvailableForms } from "../forms/use-available-forms";
+import { dynamicGroups, formGroups, type DynamicGroup } from "./dynamic-sources";
 import { loopGroups } from "./loop-groups";
 
 export type Exclude = ("params" | "state")[];
@@ -110,7 +111,12 @@ export function DynamicDataModal({
       }
     });
   }, [flowNodes, flowNodeId, sources, registry]);
-  const allGroups = useMemo(() => [...actions, ...loops, ...groups], [actions, loops, groups]);
+  const forms = useAvailableForms();
+  const formTags = useMemo(() => formGroups(forms), [forms]);
+  const allGroups = useMemo(
+    () => [...actions, ...loops, ...formTags, ...groups],
+    [actions, loops, formTags, groups]
+  );
   const q = query.trim().toLowerCase();
   const visible = allGroups
     .filter((g) => group === "all" || g.id === group || g.section?.id === group)

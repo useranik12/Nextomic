@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 import { InfoTip } from "@/components/ui/info-tip";
 import { Icon } from "@/lib/icons/Icon";
+import { useAvailableForms } from "../../forms/use-available-forms";
 import { useEditorStore } from "../../store/editor-store";
 
 const ITEM =
@@ -17,7 +18,8 @@ const ITEM =
 
 function ActionItem({ action, onPick }: { action: ActionDef; onPick: () => void }) {
   const themes = useEditorStore((s) => s.project.themes);
-  const reason = actionDisabledReason(action, { themes });
+  const hasActiveForm = useAvailableForms().length > 0;
+  const reason = actionDisabledReason(action, { themes, hasActiveForm });
   if (reason) {
     return (
       <li className={`${ITEM} cursor-not-allowed text-subtle`} aria-disabled="true">

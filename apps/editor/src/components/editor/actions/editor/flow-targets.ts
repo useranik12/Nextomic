@@ -1,7 +1,11 @@
 import type { PageParam, TargetParams } from "@nextomic/schema";
 import { create } from "zustand";
 import { listPagesAction } from "@/app/(builder)/editor/[id]/actions";
-import { listTemplatesAction } from "@/app/(builder)/editor/[id]/library-actions";
+import {
+  listTemplateFormsAction,
+  listTemplatesAction,
+  type TemplateForms
+} from "@/app/(builder)/editor/[id]/library-actions";
 import type { PageSummary } from "@/server/pages";
 import type { TemplateSummary } from "@/server/templates";
 
@@ -12,6 +16,8 @@ interface FlowTargetsState {
   status: "idle" | "loading" | "ready" | "error";
   pages: PageSummary[];
   templates: TemplateSummary[];
+  /** Active forms inside saved templates (header, footer, popups). */
+  templateForms: TemplateForms[];
   load: (projectId: string) => Promise<void>;
 }
 
@@ -19,17 +25,24 @@ export const useFlowTargets = create<FlowTargetsState>((set) => ({
   status: "idle",
   pages: [],
   templates: [],
+  templateForms: [],
   load: async (projectId) => {
     set({ status: "loading" });
-    const [pages, templates] = await Promise.all([
+    const [pages, templates, forms] = await Promise.all([
       listPagesAction(projectId),
-      listTemplatesAction(projectId)
+      listTemplatesAction(projectId),
+      listTemplateFormsAction(projectId)
     ]);
-    if (pages.error !== null || templates.error !== null) {
+    if (pages.error !== null || templates.error !== null || forms.error !== null) {
       set({ status: "error" });
       return;
     }
-    set({ status: "ready", pages: pages.data, templates: templates.data });
+    set({
+      status: "ready",
+      pages: pages.data,
+      templates: templates.data,
+      templateForms: forms.data
+    });
   }
 }));
 

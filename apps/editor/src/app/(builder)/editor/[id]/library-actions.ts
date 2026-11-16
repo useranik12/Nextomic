@@ -1,6 +1,8 @@
 "use server";
 
 import {
+  activeForms,
+  type FormInfo,
   createTemplateInputSchema,
   pageSettingsSchema,
   saveTemplateInputSchema,
@@ -13,6 +15,7 @@ import {
   failResult as fail,
   type ActionResult
 } from "@/server/authorize";
+import { assertFormsValid } from "@/server/forms-check";
 import { listLibrary, type LibraryItem } from "@/server/library";
 import { getPage, savePage } from "@/server/pages";
 import {
@@ -36,6 +39,31 @@ export async function listLibraryAction(projectId: string): Promise<ActionResult
     return { data: await listLibrary(projectId), error: null };
   } catch (error) {
     return fail(error, "Could not load pages and templates.");
+  }
+}
+
+/** A template (header, footer, popup ...) and the active forms in it. */
+export interface TemplateForms {
+  templateId: string;
+  templateName: string;
+  forms: FormInfo[];
+}
+
+/** Active forms of every saved template, so Form actions and tags know about forms outside the page. */
+export async function listTemplateFormsAction(
+  projectId: string
+): Promise<ActionResult<TemplateForms[]>> {
+  try {
+    await authorize(projectId);
+    const all = await getDraftTemplates(projectId);
+    return {
+      data: all
+        .map((t) => ({ templateId: t.id, templateName: t.name, forms: activeForms(t.tree) }))
+        .filter((t) => t.forms.length > 0),
+      error: null
+    };
+  } catch (error) {
+    return fail(error, "Could not load the forms of the templates.");
   }
 }
 
@@ -99,6 +127,7 @@ export async function saveTemplateAction(
   try {
     await authorize(projectId);
     const parsed = saveTemplateInputSchema.parse(input);
+    assertFormsValid(parsed.tree);
     return { data: await saveTemplate(projectId, idSchema.parse(templateId), parsed), error: null };
   } catch (error) {
     return fail(error, "Could not save the template.");

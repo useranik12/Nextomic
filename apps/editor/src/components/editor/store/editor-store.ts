@@ -6,6 +6,8 @@ import {
   anyStylesAt,
   assignMissingHtmlIds,
   cloneWithNewIds,
+  formPlacementProblem,
+  uniquifyFormNames,
   collectHtmlIds,
   duplicateNode,
   pairNodeIds,
@@ -476,6 +478,12 @@ export const useEditorStore = create<EditorState>((set, get) => {
         } else target = doc.tree.id;
       }
       const parentId2 = target;
+      const refused = formPlacementProblem(doc.tree, parentId2, node);
+      if (refused) {
+        get().showToast(refused);
+        return null;
+      }
+      uniquifyFormNames(doc.tree, parentId2, node);
       const ok = edit(null, (draft) => {
         if (!insertNode(draft.tree, parentId2, node, at, canHaveChildren)) {
           insertNode(draft.tree, draft.tree.id, node, undefined, canHaveChildren);
@@ -488,6 +496,13 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     moveElement: (id, parentId, index) => {
       let moved = false;
+      const { doc } = get();
+      const moving = doc ? findNode(doc.tree, id)?.node : undefined;
+      const refused = doc && moving ? formPlacementProblem(doc.tree, parentId, moving) : null;
+      if (refused) {
+        get().showToast(refused);
+        return false;
+      }
       edit(null, (draft) => {
         moved = moveNode(draft.tree, id, parentId, index, canHaveChildren);
       });
@@ -559,6 +574,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
         const source = findNode(draft.tree, id)?.node;
         const copy = duplicateNode(draft.tree, id, project.generateElementIds);
         copyId = copy?.id ?? null;
+        const parent = findNode(draft.tree, id)?.parent;
+        if (copy && parent) uniquifyFormNames(draft.tree, parent.id, copy);
         if (source && copy) pairs = pairNodeIds(source, copy);
       });
       if (pairs) useFlowStore.getState().copyFlows(pairs);
@@ -592,6 +609,12 @@ export const useEditorStore = create<EditorState>((set, get) => {
         }
       }
       const copy = cloneWithNewIds(clipboard, collectHtmlIds(doc.tree), project.generateElementIds);
+      const refused = formPlacementProblem(doc.tree, target, copy);
+      if (refused) {
+        get().showToast(refused);
+        return;
+      }
+      uniquifyFormNames(doc.tree, target, copy);
       const flows = useFlowStore.getState();
       flows.copyFlows(pairNodeIds(clipboard, copy), flows.elementClipboard);
       const finalTarget = target;

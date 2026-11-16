@@ -13,6 +13,7 @@ import { useEffect, useMemo } from "react";
 import type { SelectOption } from "@/components/ui/controls";
 import { useQuerySources } from "../../query/use-query-sources";
 import { useEditorStore } from "../../store/editor-store";
+import { useAvailableForms } from "../../forms/use-available-forms";
 import { useFlowTargets } from "./flow-targets";
 
 export type PickerKind = Extract<
@@ -29,6 +30,7 @@ export type PickerKind = Extract<
   | "timeline"
   | "theme"
   | "template"
+  | "form"
 >;
 
 export const PICKER_KINDS: ReadonlySet<FieldKind> = new Set<PickerKind>([
@@ -43,7 +45,8 @@ export const PICKER_KINDS: ReadonlySet<FieldKind> = new Set<PickerKind>([
   "restCall",
   "timeline",
   "theme",
-  "template"
+  "template",
+  "form"
 ]);
 
 const EMPTY_HINT: Record<PickerKind, string> = {
@@ -58,7 +61,8 @@ const EMPTY_HINT: Record<PickerKind, string> = {
   restCall: "Add a call in API Data first.",
   timeline: "Create a GSAP timeline in Animations first.",
   theme: "No themes.",
-  template: "No templates of this type yet: create one in Pages & Templates, Templates tab."
+  template: "No templates of this type yet: create one in Pages & Templates, Templates tab.",
+  form: "Add a form from the Forms group and set its Status to Active."
 };
 
 /** Options for every structure picker, read from the editor and the project. */
@@ -70,6 +74,7 @@ export function usePickerOptions(): {
   const doc = useEditorStore((s) => s.doc);
   const project = useEditorStore((s) => s.project);
   const currentPageId = useEditorStore((s) => (s.page?.kind === "template" ? null : s.page?.id));
+  const forms = useAvailableForms();
   const sources = useQuerySources(projectId);
   const targetStatus = useFlowTargets((s) => s.status);
   const pageList = useFlowTargets((s) => s.pages);
@@ -148,6 +153,8 @@ export function usePickerOptions(): {
         return lists.timelines;
       case "theme":
         return lists.themes;
+      case "form":
+        return forms.map((f) => ({ value: f.name, label: f.name }));
       case "template":
         return templateList
           .filter((t) => !field.templateType || t.type === field.templateType)

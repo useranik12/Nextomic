@@ -11,6 +11,7 @@ import {
   type ProjectSettings
 } from "@nextomic/schema";
 import { z } from "zod";
+import { assertFormsValid } from "@/server/forms-check";
 import {
   authorizeProject as authorize,
   failResult as fail,
@@ -98,6 +99,7 @@ export async function savePageAction(
   try {
     const userId = await authorize(projectId);
     const parsed = savePageInputSchema.parse(input);
+    assertFormsValid(parsed.tree);
     const result = await savePage(projectId, idSchema.parse(pageId), userId, parsed);
     return { data: result, error: null };
   } catch (error) {

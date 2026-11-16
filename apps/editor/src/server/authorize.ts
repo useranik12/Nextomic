@@ -32,7 +32,10 @@ export function failResult<T>(error: unknown, fallback: string): ActionResult<T>
   }
   if (
     error instanceof Error &&
-    (error.name === "FontError" || error.name === "MediaError" || error.name === "IconError")
+    (error.name === "FontError" ||
+      error.name === "MediaError" ||
+      error.name === "IconError" ||
+      error.name === "FormError")
   )
     return { data: null, error: error.message };
   return { data: null, error: fallback };

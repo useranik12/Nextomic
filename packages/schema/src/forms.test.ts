@@ -5,9 +5,11 @@ import { defaultPageSettings } from "./page";
 import { stateRefs } from "./state-deps";
 import {
   activeForms,
+  formPlacementProblem,
   formProblems,
   formsOf,
   freeFormName,
+  uniquifyFormNames,
   validateValue,
   withFormDefaults,
   type FieldRules
@@ -129,5 +131,40 @@ describe("form values in dynamic data", () => {
     const filled = withFormDefaults(dynamic, root);
     expect(createTokenResolver(filled)("form.signup.email")).toBe("a@b.co");
     expect(stateRefs("Hi {{ form.signup.email.toUpperCase() }}")).toEqual(["form.signup.email"]);
+  });
+});
+
+describe("placing forms", () => {
+  it("refuses a form inside a form or a query loop", () => {
+    const root = page(
+      form("f1", "a", [el("box", "container")]),
+      el("loop", "container", {}, [], { query: { enabled: true, source: "supabase", name: "l" } })
+    );
+    expect(formPlacementProblem(root, "box", form("n", "b"))).toMatch(/another form/);
+    expect(formPlacementProblem(root, "loop", form("n", "b"))).toMatch(/query loop/);
+    expect(formPlacementProblem(root, "root", form("n", "b"))).toBeNull();
+    expect(formPlacementProblem(root, "box", input("i", "x"))).toBeNull();
+  });
+
+  it("names new forms and fields so they stay unique", () => {
+    const root = page(form("f1", "form", [input("a", "field")]));
+    const fresh = form("f2", "form", [input("b", "field"), input("c", "field")]);
+    uniquifyFormNames(root, "root", fresh);
+    expect(fresh.props.name).toBe("form2");
+    expect(fresh.children.map((c) => c.props.name)).toEqual(["field", "field2"]);
+    const loose = input("d", "field");
+    uniquifyFormNames(root, "f1", loose);
+    expect(loose.props.name).toBe("field2");
+  });
+
+  it("ignores its own elements when a duplicate is already in the tree", () => {
+    const original = form("f1", "form", [input("a", "field")]);
+    const copy = structuredClone(original);
+    copy.id = "f2";
+    copy.children[0]!.id = "b";
+    const root = page(original, copy);
+    uniquifyFormNames(root, "root", copy);
+    expect(copy.props.name).toBe("form2");
+    expect(original.props.name).toBe("form");
   });
 });

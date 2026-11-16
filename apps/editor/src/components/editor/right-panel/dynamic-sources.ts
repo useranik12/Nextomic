@@ -1,4 +1,4 @@
-import type { AppStateVariable, Constant, PageSettings } from "@nextomic/schema";
+import type { AppStateVariable, Constant, FormInfo, PageSettings } from "@nextomic/schema";
 
 export interface DynamicTag {
   token: string;
@@ -242,4 +242,25 @@ export function dynamicGroups(
     });
   const auth = globals?.auth;
   return [...groups, ...(auth ? BUILT_IN.map((g) => withTokenTags(g, auth)) : BUILT_IN)];
+}
+
+const FORMS_SECTION = { id: "form", label: "Form" } as const;
+
+/**
+ * The Form group: one sub-group per active form with a tag for each named field. Nothing while the
+ * page (or a header, footer or popup) has no active form.
+ */
+export function formGroups(forms: readonly FormInfo[]): DynamicGroup[] {
+  return forms
+    .filter((form) => form.fields.length > 0)
+    .map((form) => ({
+      id: `form-${form.name}`,
+      label: form.name,
+      section: FORMS_SECTION,
+      tags: form.fields.map((field) => ({
+        token: `form.${form.name}.${field.name}`,
+        label: field.name,
+        hint: field.type === "password" ? "text, never sent to the server" : "text"
+      }))
+    }));
 }

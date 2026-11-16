@@ -202,3 +202,88 @@ export function withFormDefaults(dynamic: DynamicContext, tree: ElementNode): Dy
   });
   return { ...dynamic, forms };
 }
+
+// ---- placing forms in a tree ----
+
+/** The elements from the root down to `id` (inclusive), or [] when `id` is not in the tree. */
+function pathTo(root: ElementNode, id: string): ElementNode[] {
+  if (root.id === id) return [root];
+  for (const child of root.children) {
+    const below = pathTo(child, id);
+    if (below.length > 0) return [root, ...below];
+  }
+  return [];
+}
+
+const containsForm = (node: ElementNode): boolean => {
+  let found = false;
+  walkElements(node, (n) => {
+    if (n.type === FORM_TYPE) found = true;
+  });
+  return found;
+};
+
+/** Why `subtree` (a new or moved element) cannot go under `parentId`, or null when it can. */
+export function formPlacementProblem(
+  root: ElementNode,
+  parentId: string,
+  subtree: ElementNode
+): string | null {
+  if (!containsForm(subtree)) return null;
+  const path = pathTo(root, parentId);
+  if (path.some((n) => n.type === FORM_TYPE)) return "A form cannot sit inside another form.";
+  if (path.some((n) => n.query?.enabled)) return "A form cannot sit inside a query loop.";
+  return null;
+}
+
+/**
+ * Gives the forms and fields of `subtree` names that are free where it is going: form names are
+ * unique on the page, field names unique inside their form. `subtree` may already be in `root`
+ * (a duplicate); its own elements are then left out of the names taken. Changes `subtree`.
+ */
+export function uniquifyFormNames(root: ElementNode, parentId: string, subtree: ElementNode): void {
+  const own = new Set<string>();
+  walkElements(subtree, (n) => own.add(n.id));
+  const takenForms: string[] = [];
+  walkElements(root, (n) => {
+    if (!own.has(n.id) && n.type === FORM_TYPE) takenForms.push(formName(n));
+  });
+  const fieldsOfForm = (form: ElementNode, skipOwn: boolean): string[] => {
+    const names: string[] = [];
+    walkElements(form, (n) => {
+      if (n !== form && isFormField(n) && !(skipOwn && own.has(n.id))) names.push(fieldName(n));
+    });
+    return names;
+  };
+  const rename = (node: ElementNode, taken: string[], base: string, key: "name") => {
+    const next = freeFormName(
+      taken,
+      FORM_NAME_PATTERN.test(propText(node, key)) ? propText(node, key) : base
+    );
+    node.props[key] = next;
+    taken.push(next);
+  };
+  // Forms inside the subtree, then fields: each form numbers its own fields.
+  const visit = (node: ElementNode) => {
+    if (node.type === FORM_TYPE) {
+      rename(node, takenForms, "form", "name");
+      const fields: string[] = [];
+      walkElements(node, (n) => {
+        if (n !== node && isFormField(n)) rename(n, fields, "field", "name");
+      });
+      return;
+    }
+    node.children.forEach(visit);
+  };
+  visit(subtree);
+  // A field placed (not inside a form of its own) into an existing form joins that form's names.
+  const enclosing = [...pathTo(root, parentId)].reverse().find((n) => n.type === FORM_TYPE);
+  if (!enclosing) return;
+  const taken = fieldsOfForm(enclosing, true);
+  const loose = (node: ElementNode) => {
+    if (node.type === FORM_TYPE) return;
+    if (isFormField(node)) rename(node, taken, "field", "name");
+    node.children.forEach(loose);
+  };
+  loose(subtree);
+}
