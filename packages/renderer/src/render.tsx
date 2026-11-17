@@ -171,7 +171,12 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
   const result = options.loopRows?.[loopKey(scope.path, node.id)];
   if (result?.failed && query?.fallback.enabled && query.fallback.text !== "")
     return resolveText(query.fallback.text, scope.resolveToken);
-  const rows = result ? result.rows : options.loopPlaceholder ? [{}] : [];
+  // The editor canvas shows ghost options only when the query has no rows to draw there.
+  const ghosting =
+    !!options.loopPlaceholder &&
+    node.props.optionsSource === "dynamic" &&
+    (result?.rows.length ?? 0) === 0;
+  const rows = ghosting || !result ? (options.loopPlaceholder ? [{}] : []) : result.rows;
   const drawn = rows.map((item, index) => {
     const frames = [loopFrame(node, item, index), ...scope.frames];
     return copy(
@@ -184,9 +189,7 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
       `#${index}`
     );
   });
-  // The editor canvas shows ghost copies of a dynamic option so it is clear the options come from a query.
-  if (!options.loopPlaceholder || node.props.optionsSource !== "dynamic" || drawn.length === 0)
-    return drawn;
+  if (!ghosting || drawn.length === 0) return drawn;
   const ghosts = Array.from({ length: GHOST_OPTIONS }, (_, n) => (
     <span key={`ghost${n}`} data-nxt-ghost="" aria-hidden="true" inert>
       {drawn[drawn.length - 1]}

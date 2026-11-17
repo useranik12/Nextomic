@@ -915,6 +915,28 @@ describe("query loops", () => {
       />
     );
     expect(canvas.slice(canvas.indexOf("<form")).match(/data-nxt-ghost/g)).toHaveLength(5);
+    // With rows to show on the canvas there are no ghosts.
+    const withRows = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        loopPlaceholder
+        loopRows={{ g: { rows: [{ name: "Small", id: 1 }], hasMore: false } }}
+      />
+    );
+    expect(withRows).not.toContain('data-nxt-ghost=""');
+    // A query that returned no rows still shows ghosts.
+    const empty = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        loopPlaceholder
+        loopRows={{ g: { rows: [], hasMore: false } }}
+      />
+    );
+    expect(empty.slice(empty.indexOf("<form")).match(/data-nxt-ghost/g)).toHaveLength(5);
     const live = draw("live");
     expect(live).toContain("Small");
     expect(live).not.toContain("Big");
