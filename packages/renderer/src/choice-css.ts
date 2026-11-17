@@ -19,6 +19,9 @@ export const CHOICE_BASE_CSS =
   `:where(${CHOICE}:has(${INPUT}:disabled)){cursor:not-allowed;opacity:.6}` +
   `:where(${CHOICE} [data-nxt-text]){display:flex;flex-direction:column;gap:2px}` +
   `:where(${CHOICE} [data-nxt-sub]){font-size:.8125rem;color:#71717a}` +
+  `:where(${CHOICE}[data-nxt-invalid]){flex-wrap:wrap;opacity:.7;outline:1px dashed #dc2626;outline-offset:2px;border-radius:6px}` +
+  `:where(${CHOICE}[data-nxt-invalid])::after{content:attr(data-nxt-invalid);flex-basis:100%;font-size:.75rem;color:#dc2626}` +
+  `[data-nxt-ghost]{display:contents}[data-nxt-ghost]>*{opacity:.4;pointer-events:none}` +
   `:where([data-nxt-options]){display:flex;flex-direction:column;gap:8px}` +
   `:where([data-nxt-options][data-nxt-layout="horizontal"]){flex-direction:row;flex-wrap:wrap;gap:8px 16px}` +
   `:where(${CHOICE} [data-nxt-ico]){display:inline-flex;flex:none;align-items:center;font-size:1.125rem;color:#52525b}` +

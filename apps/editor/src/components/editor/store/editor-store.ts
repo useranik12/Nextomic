@@ -7,6 +7,11 @@ import {
   assignMissingHtmlIds,
   cloneWithNewIds,
   formPlacementProblem,
+  isOptionGroup,
+  loopNames,
+  newElementQuery,
+  OPTION_TYPE,
+  optionLockProblem,
   uniquifyFormNames,
   collectHtmlIds,
   duplicateNode,
@@ -129,6 +134,7 @@ interface EditorState {
   setElementAnimation: (id: string, animation: ElementAnimation | null) => void;
   /** Sets or clears (null) the element's query loop (Container and Section). */
   setElementQuery: (id: string, query: ElementQuery | null) => void;
+  setOptionsSource: (id: string, source: "static" | "dynamic") => void;
   /** Sets or removes (null) an element's conditional visibility. */
   setElementVisibility: (id: string, visibility: Visibility | null) => void;
   /** Renames a query loop and every `%old` tag inside it. */
@@ -450,6 +456,20 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (animation) found.node.animation = animation;
         else delete found.node.animation;
       }),
+    setOptionsSource: (id, source) =>
+      void edit(`options-source:${id}`, (draft) => {
+        const node = findNode(draft.tree, id)?.node;
+        if (!node || !isOptionGroup(node)) return;
+        node.props.optionsSource = source;
+        const options = node.children.filter((child) => child.type === OPTION_TYPE);
+        if (source === "dynamic") {
+          // One option stays as the template; the rest are dropped.
+          node.children = options.slice(0, 1);
+          node.query = node.query
+            ? { ...node.query, enabled: true }
+            : newElementQuery(loopNames(draft.tree));
+        } else if (node.query) node.query = { ...node.query, enabled: false };
+      }),
     setElementQuery: (id, query) =>
       void edit(`query:${id}`, (draft) => {
         const found = findNode(draft.tree, id);
@@ -517,7 +537,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
       let moved = false;
       const { doc } = get();
       const moving = doc ? findNode(doc.tree, id)?.node : undefined;
-      const refused = doc && moving ? formPlacementProblem(doc.tree, parentId, moving) : null;
+      const refused =
+        (doc ? optionLockProblem(doc.tree, id) : null) ??
+        (doc && moving ? formPlacementProblem(doc.tree, parentId, moving) : null);
       if (refused) {
         get().showToast(refused);
         return false;
@@ -529,6 +551,12 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     removeElement: (id) => {
+      const doc0 = get().doc;
+      const locked = doc0 ? optionLockProblem(doc0.tree, id) : null;
+      if (locked) {
+        get().showToast(locked);
+        return;
+      }
       edit(null, (draft) => {
         removeNode(draft.tree, id);
       });
@@ -538,6 +566,12 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     shiftElement: (id, direction) => {
       let moved = false;
+      const docNow = get().doc;
+      const locked = docNow ? optionLockProblem(docNow.tree, id) : null;
+      if (locked) {
+        get().showToast(locked);
+        return false;
+      }
       edit(null, (draft) => {
         if (direction === "up") moved = shiftNode(draft.tree, id, -1);
         else if (direction === "down") moved = shiftNode(draft.tree, id, 1);
@@ -587,6 +621,11 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     duplicateElement: (id) => {
       const { project } = get();
+      const locked = get().doc ? optionLockProblem(get().doc!.tree, id) : null;
+      if (locked) {
+        get().showToast(locked);
+        return;
+      }
       let copyId: string | null = null;
       let pairs: Map<string, string> | null = null;
       edit(null, (draft) => {

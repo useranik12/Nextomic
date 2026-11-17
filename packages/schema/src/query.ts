@@ -8,8 +8,17 @@ import type { SupabaseColumn, SupabaseStructure, SupabaseTable } from "./supabas
 // call), and repeat its children once per row. Values here are templates: static text mixed with
 // {{ }} dynamic data, filled where the query runs. Row data is never stored.
 
-/** Element types that can hold a query loop (owner decision: Container and Section only). */
-export const QUERY_LOOP_TYPES: ReadonlySet<string> = new Set(["container", "section"]);
+/**
+ * Element types that can hold a query loop: Container and Section, and the fields that hold options
+ * (Radio, Checkbox group, Choice chips), where the loop repeats the one option template.
+ */
+export const QUERY_LOOP_TYPES: ReadonlySet<string> = new Set([
+  "container",
+  "section",
+  "radio",
+  "checkboxGroup",
+  "choiceChips"
+]);
 
 export const canHaveQuery = (type: string) => QUERY_LOOP_TYPES.has(type);
 
@@ -258,8 +267,16 @@ export function freeLoopName(base: string, taken: readonly string[]): string {
 }
 
 /** The query an element runs, or null when it has none or it is turned off. */
-export const activeQuery = (node: { type: string; query?: ElementQuery | undefined }) =>
-  node.query?.enabled && canHaveQuery(node.type) ? node.query : null;
+export const activeQuery = (node: {
+  type: string;
+  query?: ElementQuery | undefined;
+  props?: Record<string, unknown>;
+}) => {
+  if (!node.query?.enabled || !canHaveQuery(node.type)) return null;
+  // A field that holds options loops only while its options are dynamic.
+  const fieldOfOptions = node.type !== "container" && node.type !== "section";
+  return fieldOfOptions && node.props?.optionsSource !== "dynamic" ? null : node.query;
+};
 
 /** How the query is named in the builder: the element's name and the query type. */
 export const queryLabel = (elementName: string, query: ElementQuery) =>

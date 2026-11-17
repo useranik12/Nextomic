@@ -1,4 +1,4 @@
-import { listText, parseList } from "@nextomic/schema";
+import { OPTION_VALUE_TYPES, listText, parseList, type OptionValueType } from "@nextomic/schema";
 
 // How the runtime reads and writes the value of a form field (elements.md "Forms"). A field is the
 // element marked `data-nxt-field`; its controls are the inputs inside it marked `data-nxt-control`.
@@ -18,6 +18,10 @@ export const controlsOf = (field: Element): Control[] => [
   ...field.querySelectorAll<Control>("[data-nxt-control]")
 ];
 
+/** The data type of the field's option values (`data-nxt-value-type`); text when it says nothing. */
+const valueTypeOf = (field: Element): OptionValueType =>
+  OPTION_VALUE_TYPES.find((t) => t === field.getAttribute("data-nxt-value-type")) ?? "string";
+
 export function shapeOf(field: Element): FieldShape {
   const kind = field.getAttribute("data-nxt-kind") ?? "text";
   return SHAPES.includes(kind) ? (kind as FieldShape) : "text";
@@ -34,7 +38,10 @@ export function readField(field: Element): string {
     case "one":
       return checkedOf(controls)[0]?.value ?? "";
     case "many":
-      return listText(checkedOf(controls).map((c) => c.value));
+      return listText(
+        checkedOf(controls).map((c) => c.value),
+        valueTypeOf(field)
+      );
     case "pin":
       return controls.map((c) => c.value).join("");
     default:
@@ -80,7 +87,10 @@ export function defaultOf(field: Element): string {
     case "one":
       return started[0]?.value ?? "";
     case "many":
-      return listText(started.map((c) => c.value));
+      return listText(
+        started.map((c) => c.value),
+        valueTypeOf(field)
+      );
     case "pin":
       return controls.map((c) => c.defaultValue).join("");
     default:

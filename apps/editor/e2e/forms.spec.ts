@@ -325,3 +325,40 @@ test("option fields: starter options, placement, radio and checkbox group valida
   await boxes.nth(1).check({ force: true });
   await expect(preview.getByRole("alert").filter({ hasText: "Choose at least 2." })).toBeHidden();
 });
+
+test("dynamic options: one locked template option, ghost copies on the canvas, value type error", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Radio");
+  await expect(page.getByRole("treeitem")).toHaveCount(5);
+
+  // The value data type flags a written option value that does not fit.
+  await page.getByLabel("Value data type", { exact: true }).click();
+  await page.locator("[role=option]", { hasText: "Int" }).first().click();
+  await page.getByRole("treeitem").nth(3).click();
+  await page.getByRole("textbox", { name: "Value" }).fill("abc");
+  await expect(page.getByRole("alert").filter({ hasText: /whole number/ })).toBeVisible();
+  await page.getByRole("textbox", { name: "Value" }).fill("12");
+  await expect(page.getByRole("alert").filter({ hasText: /whole number/ })).toBeHidden();
+
+  // Dynamic Query keeps one option and shows the ghost copies.
+  await page
+    .getByRole("tree", { name: "Page elements" })
+    .getByText("Radio", { exact: true })
+    .first()
+    .click();
+  await page.locator('button[aria-label="Options"]').click();
+  await page.locator("[role=option]", { hasText: "Dynamic Query" }).click();
+  await expect(page.getByRole("treeitem")).toHaveCount(3);
+  await expect(page.getByLabel("Open the query loop of Radio")).toBeVisible();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nxt-ghost]")).toHaveCount(5, { timeout: 15_000 });
+
+  // The template cannot be removed.
+  await page.getByRole("treeitem").nth(2).click();
+  await page.keyboard.press("Delete");
+  await expect(page.getByText(/template of a field/)).toBeVisible();
+  await expect(page.getByRole("treeitem")).toHaveCount(3);
+});

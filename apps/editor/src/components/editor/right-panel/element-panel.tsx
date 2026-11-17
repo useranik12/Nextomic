@@ -6,6 +6,10 @@ import {
   dynamicTextOf,
   findNode,
   hasConditions,
+  isOptionGroup,
+  optionsAreDynamic,
+  optionValueProblem,
+  optionValueTypeOf,
   parseDynamicText,
   type ElementNode,
   tagText
@@ -14,6 +18,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Toggle } from "@/components/ui/toggles";
 import { IconControl } from "./icon-control";
+import { OptionsSourceControl } from "./options-source-control";
 import { ActionTab } from "../actions/action-tab";
 import { Icon } from "@/lib/icons/Icon";
 import { ConditionsGroup } from "../conditions/conditions-group";
@@ -53,7 +58,22 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
   const insertToken = (token: string) => onChange(`${value}${tagText(token)}`);
   const projectId = useEditorStore((s) => s.projectId);
   const [picking, setPicking] = useState(false);
+  // An option's written value must fit the data type its field set (dynamic values are checked when drawn).
+  const field = useEditorStore((s) =>
+    node.type === "option" && s.doc ? findNode(s.doc.tree, node.id)?.parent : undefined
+  );
+  const valueProblem =
+    field && control.key === "value"
+      ? (() => {
+          const written = value.trim() || dynamicTextOf(node.props.label).trim();
+          return written === "" || written.includes("{{")
+            ? null
+            : optionValueProblem(optionValueTypeOf(field), written);
+        })()
+      : null;
 
+  if (control.key === "optionsSource" && isOptionGroup(node))
+    return <OptionsSourceControl node={node} />;
   if (control.kind === "icon") return <IconControl node={node} control={control} />;
   if (control.kind === "switch") {
     return (
@@ -83,6 +103,12 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
           <Icon name="ph:warning" width={14} height={14} className="mt-0.5 shrink-0" />
           Missing alt text. Describe the image for screen readers, or leave it empty only if it is
           decoration.
+        </p>
+      ) : null}
+      {valueProblem ? (
+        <p role="alert" className="mb-1 flex items-start gap-1.5 text-xs text-danger">
+          <Icon name="ph:warning" width={14} height={14} className="mt-0.5 shrink-0" />
+          {valueProblem} The field expects {field ? optionValueTypeOf(field) : "text"} values.
         </p>
       ) : null}
       <div className="relative">
@@ -358,7 +384,9 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 <GeneralControls node={node} controls={controls} />
               )}
             </AccordionSection>
-            {canHaveQuery(node.type) && (!q || "query loop".includes(q)) ? (
+            {canHaveQuery(node.type) &&
+            (!isOptionGroup(node) || optionsAreDynamic(node)) &&
+            (!q || "query loop".includes(q)) ? (
               <AccordionSection
                 id="query"
                 title="Query Loop"

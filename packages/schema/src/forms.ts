@@ -1,6 +1,7 @@
 import { walkElements, type ElementNode } from "./element";
 import { patternProblem } from "./condition";
 import type { DynamicContext } from "./dynamic-context";
+import { checkStateValue, type StateType } from "./state";
 
 // Forms (owner decisions 2026-11-16, elements.md "Forms"): a Form wrapper has a unique `name`, a
 // `status` (an inactive form turns its actions and tags off) and `validateOn`. It has no action flow;
@@ -16,11 +17,41 @@ export const FORM_FIELD_TYPES = [
   "choiceChips"
 ] as const;
 
+/** The data types an option value can be set to (the owner's FlutterFlow-style value type). */
+export const OPTION_VALUE_TYPES = [
+  "string",
+  "int",
+  "float",
+  "boolean",
+  "timestamptz",
+  "color",
+  "url"
+] as const satisfies readonly StateType[];
+export type OptionValueType = (typeof OPTION_VALUE_TYPES)[number];
+
 /** Option elements sit directly inside these fields; a query loop on the field repeats them. */
 export const OPTION_TYPE = "option";
 export const OPTION_GROUP_TYPES = ["radio", "checkboxGroup", "choiceChips"] as const;
 export const isOptionGroup = (node: ElementNode): boolean =>
   (OPTION_GROUP_TYPES as readonly string[]).includes(node.type);
+
+/**
+ * Options of a field are either fixed (written by hand, as many as wanted) or dynamic: the field
+ * runs a query loop and keeps ONE option as the template, repeated once per row.
+ */
+export const OPTIONS_SOURCES = ["static", "dynamic"] as const;
+export type OptionsSource = (typeof OPTIONS_SOURCES)[number];
+export const optionsAreDynamic = (node: ElementNode): boolean =>
+  isOptionGroup(node) && node.props.optionsSource === "dynamic";
+
+/** The data type of a field's option values (text unless the field says otherwise). */
+export const optionValueTypeOf = (group: ElementNode): OptionValueType =>
+  OPTION_VALUE_TYPES.find((type) => type === group.props.valueType) ?? "string";
+
+/** Why an option value does not fit the field's value type, or null when it does. */
+export function optionValueProblem(type: OptionValueType, value: string): string | null {
+  return type === "string" ? null : checkStateValue({ type, isList: false, ref: "" }, value);
+}
 
 /** Names are identifiers so the dotted tag path never needs quoting. */
 export const FORM_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
@@ -85,7 +116,9 @@ export function startValueOf(node: ElementNode): string {
   if (node.type === "checkbox") return isOn(node.props.checked) ? "true" : "false";
   if (isOptionGroup(node)) {
     const chosen = startOptions(node);
-    return valueKindOf(node) === "many" ? listText(chosen) : (chosen[0] ?? "");
+    return valueKindOf(node) === "many"
+      ? listText(chosen, optionValueTypeOf(node))
+      : (chosen[0] ?? "");
   }
   if (node.props.type === "password") return "";
   return typeof node.props.value === "string" ? node.props.value : "";
@@ -166,7 +199,58 @@ export function formProblems(root: ElementNode): string[] {
     node.children.forEach((child) => visit(child, inForm || node.type === FORM_TYPE, loop));
   };
   visit(root, false, false);
+  walkElements(root, (node) => {
+    if (!isOptionGroup(node)) return;
+    problems.push(...optionValueProblems(node));
+    if (!optionsAreDynamic(node)) return;
+    const name = propText(node, "name");
+    if (!node.query?.enabled)
+      problems.push(`"${name}" takes its options from a query, but no query is set up.`);
+    if (node.children.filter((child) => child.type === OPTION_TYPE).length !== 1)
+      problems.push(
+        `"${name}" takes its options from a query, so it needs exactly one option as the template.`
+      );
+  });
   return problems;
+}
+
+/** Why this option cannot be removed, duplicated or moved, or null when it can. */
+export function optionLockProblem(root: ElementNode, id: string): string | null {
+  const path = pathTo(root, id);
+  const node = path[path.length - 1];
+  const parent = path[path.length - 2];
+  if (node?.type === OPTION_TYPE && parent && optionsAreDynamic(parent))
+    return "This option is the template of a field that takes its options from a query, so it stays. Switch the field to fixed options to change the options.";
+  return null;
+}
+
+/** The text of a prop that holds plain text (no dynamic tags), or null when it holds tags. */
+const plainText = (node: ElementNode, key: string): string | null => {
+  const v = node.props[key];
+  if (v === undefined) return "";
+  return typeof v === "string" ? v : typeof v === "number" ? String(v) : null;
+};
+
+/**
+ * One sentence for each option of this field whose written value does not fit the field's value
+ * type. A value that holds dynamic tags is checked when the page is drawn, not here.
+ */
+export function optionValueProblems(group: ElementNode): string[] {
+  const type = optionValueTypeOf(group);
+  const out: string[] = [];
+  for (const option of group.children) {
+    if (option.type !== OPTION_TYPE) continue;
+    const value = plainText(option, "value");
+    const label = plainText(option, "label");
+    const effective = value === "" ? label : value;
+    if (effective === null || effective === "") continue;
+    const problem = optionValueProblem(type, effective);
+    if (problem)
+      out.push(
+        `Option "${effective}" of "${propText(group, "name")}" is not a valid ${type} value: ${problem}`
+      );
+  }
+  return out;
 }
 
 // ---- validation ----
@@ -179,19 +263,33 @@ export function formProblems(root: ElementNode): string[] {
 export const FIELD_VALUE_KINDS = ["text", "check", "many"] as const;
 export type FieldValueKind = (typeof FIELD_VALUE_KINDS)[number];
 
-/** The items of a list value; anything that is not a JSON array of text gives []. */
+/** The items of a list value as text; anything that is not a JSON array gives []. */
 export function parseList(value: string): string[] {
   try {
     const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed)
-      ? parsed.filter((item): item is string => typeof item === "string")
-      : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item) => ["string", "number", "boolean"].includes(typeof item))
+      .map((item) => String(item));
   } catch {
     return [];
   }
 }
 
-export const listText = (items: readonly string[]): string => JSON.stringify(items);
+/**
+ * Option values are typed by their field (`valueType`): a list of Int options holds numbers, a list
+ * of Boolean options holds true and false, so `{{ form.x.y }}` gives real values.
+ */
+export function listText(items: readonly string[], type: OptionValueType = "string"): string {
+  const typed = items.map((item): string | number | boolean => {
+    if (type === "int" || type === "float") {
+      const n = Number(item);
+      return item.trim() !== "" && Number.isFinite(n) ? n : item;
+    }
+    return type === "boolean" && (item === "true" || item === "false") ? item === "true" : item;
+  });
+  return JSON.stringify(typed);
+}
 
 export interface FieldRules {
   /** Defaults to `text`. */
@@ -314,12 +412,12 @@ export function withFormDefaults(dynamic: DynamicContext, tree: ElementNode): Dy
       const given = dynamic.forms[formName(node)]?.[fieldName(child)];
       values[fieldName(child)] =
         child.props.type === "password" ? "" : (given ?? startValueOf(child));
-      if (valueKindOf(child) === "many")
-        types[`form.${formName(node)}.${fieldName(child)}`] = {
-          type: "string",
-          isList: true,
-          ref: ""
-        };
+      if (isOptionGroup(child) || child.type === "checkbox") {
+        const many = valueKindOf(child) === "many";
+        const type = isOptionGroup(child) ? optionValueTypeOf(child) : "boolean";
+        if (many || type !== "string")
+          types[`form.${formName(node)}.${fieldName(child)}`] = { type, isList: many, ref: "" };
+      }
     });
     forms[formName(node)] = values;
   });
@@ -358,6 +456,8 @@ export function formPlacementProblem(
     return "An option goes inside a Radio, Checkbox group or Choice chips.";
   if (parent && isOptionGroup(parent) && subtree.type !== OPTION_TYPE)
     return "Radio, Checkbox group and Choice chips can only hold options.";
+  if (parent && optionsAreDynamic(parent))
+    return "This field takes its options from a query and keeps one option as the template. Switch it to fixed options to add more.";
   if (!containsForm(subtree)) return null;
   if (path.some((n) => n.type === FORM_TYPE)) return "A form cannot sit inside another form.";
   if (path.some((n) => n.query?.enabled)) return "A form cannot sit inside a query loop.";

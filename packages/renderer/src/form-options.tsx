@@ -1,4 +1,12 @@
-import { DEFAULT_MESSAGES, valueKindOf } from "@nextomic/schema";
+import {
+  DEFAULT_MESSAGES,
+  OPTIONS_SOURCES,
+  OPTION_VALUE_TYPES,
+  STATE_TYPE_LABELS,
+  optionValueProblem,
+  optionValueTypeOf,
+  valueKindOf
+} from "@nextomic/schema";
 import { createElement } from "react";
 import { z } from "zod";
 import { iconInner, iconWrapper } from "./elements";
@@ -38,6 +46,11 @@ function optionInput(ctx: RenderContext) {
 function renderOption(ctx: RenderContext) {
   const group = optionInput(ctx);
   const label = ctx.text("label");
+  // The value must fit the field's value type. A value from dynamic data is only known here, so it
+  // is checked here: the editor and preview show the problem, the live site leaves the option out.
+  const value = ctx.text("value") || label;
+  const problem = ctx.parent ? optionValueProblem(optionValueTypeOf(ctx.parent.node), value) : null;
+  if (problem && ctx.mode === "live") return null;
   const subtext = ctx.text("subtext");
   const sides = iconSides(ctx.text("iconPosition"));
   const slot = () => {
@@ -47,13 +60,17 @@ function renderOption(ctx: RenderContext) {
   };
   return createElement(
     "label",
-    { ...ctx.attrs, "data-nxt-choice": "" },
+    {
+      ...ctx.attrs,
+      "data-nxt-choice": "",
+      "data-nxt-invalid": problem ? `"${value}" is not valid: ${problem}` : undefined
+    },
     createElement("input", {
       type: group.type,
       name: group.name,
-      value: ctx.text("value") || label,
-      defaultChecked: on(ctx, "selected") || undefined,
-      disabled: group.disabled || on(ctx, "disabled") || undefined,
+      value,
+      defaultChecked: (!problem && on(ctx, "selected")) || undefined,
+      disabled: group.disabled || problem !== null || on(ctx, "disabled") || undefined,
       "data-nxt-control": ""
     }),
     createElement("span", { "data-nxt-mark": "", "aria-hidden": "true" }),
@@ -165,6 +182,8 @@ function registerGroup(type: GroupType, label: string, defaultName: string) {
         name: defaultName,
         label: "Label",
         layout: chips ? "horizontal" : "vertical",
+        optionsSource: "static",
+        valueType: "string",
         ...(chips ? { multiple: true } : {}),
         required: false,
         minSelected: "",
@@ -182,6 +201,8 @@ function registerGroup(type: GroupType, label: string, defaultName: string) {
       name: z.string(),
       label: looseValue,
       layout: z.enum(["vertical", "horizontal"]),
+      optionsSource: z.enum(OPTIONS_SOURCES),
+      valueType: z.enum(OPTION_VALUE_TYPES),
       ...(chips ? { multiple: looseValue } : {}),
       required: looseValue,
       minSelected: looseValue,
@@ -203,6 +224,23 @@ function registerGroup(type: GroupType, label: string, defaultName: string) {
       text("label", "Label", GROUP.content),
       text("helpText", "Help text", GROUP.content),
       { key: "layout", label: "Layout", kind: "select", options: LAYOUTS, group: GROUP.content },
+      {
+        key: "optionsSource",
+        label: "Options",
+        kind: "select",
+        options: [
+          { value: "static", label: "Fixed (written by hand)" },
+          { value: "dynamic", label: "Dynamic (from a query)" }
+        ],
+        group: GROUP.options
+      },
+      {
+        key: "valueType",
+        label: "Value data type",
+        kind: "select",
+        options: OPTION_VALUE_TYPES.map((value) => ({ value, label: STATE_TYPE_LABELS[value] })),
+        group: GROUP.options
+      },
       ...(chips ? [toggle("multiple", "Choose several", GROUP.options)] : []),
       toggle("required", "Required", GROUP.validation),
       ...(counts
@@ -224,6 +262,14 @@ function registerGroup(type: GroupType, label: string, defaultName: string) {
       name: { reason: FORM_NAME_REASON },
       label: true,
       layout: { reason: "A fixed layout choice, not data." },
+      optionsSource: {
+        reason:
+          "Whether the options are written by hand or come from a query decides how the field is built, so it is fixed when the page is saved."
+      },
+      valueType: {
+        reason:
+          "The value data type decides how every option value is checked and how the field's value is typed, so it is fixed when the page is saved."
+      },
       ...(chips
         ? {
             multiple: {
@@ -264,6 +310,7 @@ function registerGroup(type: GroupType, label: string, defaultName: string) {
           "data-nxt-field": name,
           "data-nxt-kind": many ? "many" : "one",
           "data-nxt-variant": chips ? "chips" : undefined,
+          "data-nxt-value-type": optionValueTypeOf(node),
           "data-nxt-rules": JSON.stringify({
             kind: many ? "many" : "text",
             type: "text",

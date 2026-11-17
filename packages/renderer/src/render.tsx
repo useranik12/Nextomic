@@ -172,7 +172,7 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
   if (result?.failed && query?.fallback.enabled && query.fallback.text !== "")
     return resolveText(query.fallback.text, scope.resolveToken);
   const rows = result ? result.rows : options.loopPlaceholder ? [{}] : [];
-  return rows.map((item, index) => {
+  const drawn = rows.map((item, index) => {
     const frames = [loopFrame(node, item, index), ...scope.frames];
     return copy(
       {
@@ -184,7 +184,19 @@ function renderChildren(node: ElementNode, options: RenderOptions, scope: Render
       `#${index}`
     );
   });
+  // The editor canvas shows ghost copies of a dynamic option so it is clear the options come from a query.
+  if (!options.loopPlaceholder || node.props.optionsSource !== "dynamic" || drawn.length === 0)
+    return drawn;
+  const ghosts = Array.from({ length: GHOST_OPTIONS }, (_, n) => (
+    <span key={`ghost${n}`} data-nxt-ghost="" aria-hidden="true" inert>
+      {drawn[drawn.length - 1]}
+    </span>
+  ));
+  return [...drawn, ...ghosts];
 }
+
+/** How many ghost copies of a dynamic option the editor canvas shows. */
+const GHOST_OPTIONS = 5;
 
 /** The data attributes the client runtime reads (only with `loopMarkers`). */
 function loopMarkers(
@@ -282,6 +294,7 @@ function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderSc
     attrs: options.loopMarkers ? { ...attrs, ...loopMarkers(node, options, scope) } : attrs,
     children: definition.canHaveChildren ? renderChildren(node, options, scope) : null,
     parent: scope.parent,
+    mode: options.dynamic?.mode,
     icon: (library, name, opts) => drawIcon(options.icons, library, name, opts)
   });
 }

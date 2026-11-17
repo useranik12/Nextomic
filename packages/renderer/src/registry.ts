@@ -34,6 +34,8 @@ export interface RenderContext {
   /** Attributes every element receives (data-nid, id, custom attributes). */
   attrs: Record<string, string>;
   children: ReactNode;
+  /** Where the page is shown (the editor canvas, the owner preview or the live site), when known. */
+  mode?: "editor" | "preview" | "live";
   /** The element this one sits in, with its props resolved where that element stands. */
   parent?: { node: ElementNode; text: (key: string) => string };
   /** A library icon drawn as inline SVG or an icon-font class; null when it is not known. */

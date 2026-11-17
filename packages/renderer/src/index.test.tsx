@@ -322,6 +322,51 @@ describe("forms", () => {
       expect(after.indexOf("data-nxt-ico")).toBeGreaterThan(after.indexOf("Solo"));
     });
 
+    it("checks option values against the field's value type: shown in the editor, left out live", () => {
+      const tree = node({
+        id: "root",
+        type: "page",
+        children: [
+          node({
+            id: "f",
+            type: "form",
+            props: { name: "s", status: "active", validateOn: "blur" },
+            children: [
+              node({
+                id: "g",
+                type: "radio",
+                props: { name: "n", label: "N", layout: "vertical", valueType: "int" },
+                children: [
+                  node({ id: "ok", type: "option", props: { label: "One", value: "1" } }),
+                  node({ id: "bad", type: "option", props: { label: "Two", value: "two" } })
+                ]
+              })
+            ]
+          })
+        ]
+      });
+      const draw = (mode: "editor" | "live") =>
+        renderToStaticMarkup(
+          <PageRenderer
+            tree={tree}
+            breakpoints={DEFAULT_BREAKPOINTS}
+            dynamic={buildDynamicContext({
+              page: { name: "P", route: "/", settings: defaultPageSettings() },
+              mode
+            })}
+          />
+        ).replace(/^[\s\S]*?(?=<form)/, "");
+      const editor = draw("editor");
+      expect(editor).toContain(
+        'data-nxt-invalid="&quot;two&quot; is not valid: Expected a whole number."'
+      );
+      expect(editor).toContain('data-nxt-value-type="int"');
+      const live = draw("live");
+      expect(live).not.toContain("data-nxt-invalid");
+      expect(live).not.toContain("Two");
+      expect(live).toContain("One");
+    });
+
     it("puts each input inside its own label, so no ids are needed", () => {
       const html = markup("checkboxGroup");
       expect(html.match(/<label[^>]*data-nxt-choice=""[^>]*><input/g)).toHaveLength(2);
@@ -801,6 +846,78 @@ describe("query loops", () => {
       />
     );
     expect(html).toContain('<p data-nid="t">A #0</p><p data-nid="t">B #1</p>');
+  });
+
+  it("repeats the one option of a field with dynamic options once per row", () => {
+    const tree = node({
+      id: "root",
+      type: "page",
+      children: [
+        node({
+          id: "f",
+          type: "form",
+          props: { name: "s", status: "active", validateOn: "blur" },
+          children: [
+            node({
+              id: "g",
+              type: "radio",
+              props: {
+                name: "n",
+                label: "N",
+                layout: "vertical",
+                valueType: "int",
+                optionsSource: "dynamic"
+              },
+              query: { ...newElementQuery(), name: "sizes" },
+              children: [
+                node({
+                  id: "o",
+                  type: "option",
+                  props: {
+                    label: { kind: "mixed", parts: [{ token: "%sizes.item.name" }] },
+                    value: { kind: "mixed", parts: [{ token: "%sizes.item.id" }] }
+                  }
+                })
+              ]
+            })
+          ]
+        })
+      ]
+    });
+    const draw = (mode: "editor" | "live") =>
+      renderToStaticMarkup(
+        <PageRenderer
+          tree={tree}
+          breakpoints={DEFAULT_BREAKPOINTS}
+          dynamic={{ ...dynamic, mode }}
+          loopRows={{
+            g: {
+              rows: [
+                { name: "Small", id: 1 },
+                { name: "Big", id: "x" }
+              ],
+              hasMore: false
+            }
+          }}
+        />
+      );
+    const editor = draw("editor");
+    expect(editor).toContain("Small");
+    expect(editor).toContain("Big");
+    expect(editor).toContain("data-nxt-invalid");
+    expect(editor.slice(editor.indexOf("<form"))).not.toContain("data-nxt-ghost");
+    const canvas = renderToStaticMarkup(
+      <PageRenderer
+        tree={tree}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        loopPlaceholder
+      />
+    );
+    expect(canvas.slice(canvas.indexOf("<form")).match(/data-nxt-ghost/g)).toHaveLength(5);
+    const live = draw("live");
+    expect(live).toContain("Small");
+    expect(live).not.toContain("Big");
   });
 
   it("shows the fail fallback only when the query failed, not when it has no rows", () => {

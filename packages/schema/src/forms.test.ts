@@ -11,6 +11,8 @@ import {
   formsOf,
   freeFormName,
   listText,
+  optionLockProblem,
+  optionValueProblem,
   parseList,
   uniquifyFormNames,
   validateValue,
@@ -139,6 +141,59 @@ describe("option fields", () => {
     const single = page(form("f", "s", [group("choiceChips", kids, { multiple: false })]));
     expect(withFormDefaults(blank, single).forms.s?.pick).toBe("A");
     expect(withFormDefaults(blank, single).types["form.s.pick"]).toBeUndefined();
+  });
+
+  it("types the values of a list by the field's value type", () => {
+    const kids = [
+      option("A", { value: "1", selected: true }),
+      option("B", { value: "2", selected: true })
+    ];
+    const ints = page(form("f", "s", [group("checkboxGroup", kids, { valueType: "int" })]));
+    const out = withFormDefaults(blank, ints);
+    expect(out.forms.s?.pick).toBe("[1,2]");
+    expect(out.types["form.s.pick"]).toEqual({ type: "int", isList: true, ref: "" });
+    expect(parseList("[1,2]")).toEqual(["1", "2"]);
+    expect(listText(["true", "x"], "boolean")).toBe('[true,"x"]');
+    const one = page(form("f", "s", [group("radio", kids, { valueType: "int" })]));
+    expect(withFormDefaults(blank, one).types["form.s.pick"]).toEqual({
+      type: "int",
+      isList: false,
+      ref: ""
+    });
+  });
+
+  it("keeps one template option when the options are dynamic", () => {
+    const query = { enabled: true, name: "sizes" };
+    const dyn = (kids: unknown[], extra = {}) =>
+      page(form("f", "s", [{ ...group("radio", kids, { optionsSource: "dynamic" }), ...extra }]));
+    const tree = dyn([option("A")], { query });
+    expect(formProblems(tree as never)).toEqual([]);
+    expect(optionLockProblem(tree as never, "A")).toMatch(/template/);
+    expect(optionLockProblem(tree as never, "g")).toBeNull();
+    expect(formProblems(dyn([option("A")]) as never)[0]).toMatch(/no query is set up/);
+    expect(formProblems(dyn([option("A"), option("B")], { query }) as never)[0]).toMatch(
+      /exactly one option/
+    );
+    expect(formPlacementProblem(tree as never, "g", option("C") as never)).toMatch(/query/);
+    const fixed = page(form("f", "s", [group("radio", [option("A")])]));
+    expect(optionLockProblem(fixed as never, "A")).toBeNull();
+  });
+
+  it("refuses a written option value that does not fit the value type", () => {
+    const text = (value: string) =>
+      formProblems(
+        page(form("f", "s", [group("radio", [option("A", { value })], { valueType: "int" })]))
+      );
+    expect(text("12")).toEqual([]);
+    expect(text("twelve")[0]).toMatch(/not a valid int value: Expected a whole number/);
+    // The label is the value when none is written; dynamic values are checked when the page is drawn.
+    expect(
+      formProblems(page(form("f", "s", [group("radio", [option("Big")], { valueType: "int" })])))
+    ).toHaveLength(1);
+    const dynamic = { kind: "mixed", parts: [{ token: "page.name" }] };
+    expect(text(dynamic as never)).toEqual([]);
+    expect(optionValueProblem("string", "anything")).toBeNull();
+    expect(optionValueProblem("boolean", "yes")).toMatch(/true or false/);
   });
 
   it("lists the group as a field of its form", () => {
