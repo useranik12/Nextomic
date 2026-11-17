@@ -126,3 +126,37 @@ Run lint, typecheck, and tests before declaring any task done.
 - Matches the Figma frame (or the inspiration structure with Nextomic styling)
 - Docs updated for any schema, behavior, or decision change
 - Summary: what changed, how to test, known limits
+
+## Working agreements (owner preferences)
+
+- When the owner says to build something, build it. Do not stop for an extra OK on items already agreed. Ask only when requirements conflict or a screen is not designed.
+- Never push to GitHub (or trigger a deploy) until the owner says so. Push with an explicit target, `git push origin <local>:<remote-branch>`, never `-u`. Local `production-test` tracks `origin/main` on purpose, so a plain `git push` refusing is the wanted safety.
+- Commit messages and PR text carry no co-author or tool-attribution lines, and docs, code comments and commits do not name the AI tooling used.
+- Record progress in `docs/phases.md` and decisions in `docs/spec.md` so any session can resume from the docs alone.
+
+## Local Docker (the owner tests on Docker Desktop)
+
+- After every code or file change, rebuild so the owner can test: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build`. Always include the dev override file; without it no host port is published.
+- Verify after each rebuild: the build output has no `failed` / `Failed to compile` (a failed build can silently keep the old container, so tests pass on stale code), `curl http://127.0.0.1:3000` answers (307 redirect or 200), and `docker ps` shows `127.0.0.1:3000->3000`. Never leave a host `next start` on port 3000.
+- Clean up after a verified rebuild: `docker builder prune -af` and `docker image prune -f`. Never prune volumes (Postgres data). Delete stale test output (`test-results`, `playwright-report`, scratch files).
+- `app` and `migrate` share one image (`nextomic-builder:latest`); `app` owns the build.
+
+## Testing economy
+
+- While iterating run only affected unit tests (`bun x vitest run <paths>`). Run the full `bun run test` and `bun run test:node` once at the end and read only the summary line.
+- Never run bare `bun test` at the repo root: it picks up Playwright e2e specs and hangs. Unit tests are `bun run test` (vitest).
+- e2e: run only the affected spec files with `--reporter=dot`; run the full suite only when shared code (shell, auth, store) changed. Use `E2E_BASE_URL=http://localhost:3000` (Better Auth rejects other origins as "Invalid origin"). Use `--workers=2` or 3 for full runs, since a few specs are flaky under heavy parallel load.
+- e2e selectors: BoltInput fields share their label with the bolt button, so use `getByRole("textbox", { name })`, not `getByLabel`. HeroUI v3 switches need `click({ force: true })`. Menu items are `getByRole("menuitem")`. Select options inside a modal are found with `page.locator("[role=option]", { hasText })`.
+- No screenshot probes unless a visual question needs one. Do not re-run gates that already passed.
+
+## Test Supabase instance
+
+- The owner's self-hosted test instance is `https://platform.kovidaa.com`. Keys live in the root `.env` (gitignored) as `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, `E2E_SUPABASE_SERVICE_ROLE_KEY`. Never copy keys into docs, commits or chat.
+- Do not run Supabase in Docker. Built apps use only the anon key. e2e against it is read-only: never write rows and never sign up accounts there. Tests that need it skip when the variables are unset.
+
+## Environment gotchas
+
+- There is no Python on the owner's Windows machine: write file-edit scripts in Node. Prettier is `node_modules/.bin/prettier`.
+- App Router files must not import modules that import `react-dom/server` (the Docker build fails while local tsc passes). The public site endpoints that need `renderToStaticMarkup` live under `src/pages/api` (Pages Router).
+- Dynamic props are `{ kind: "mixed", parts }` values, not raw `"{{ }}"` strings. Dynamic tags need spaces: `{{ tag }}`.
+- `packages/db` migrations: `bun run --filter @nextomic/db generate` then `migrate`. The `migrate` service runs them on deploy.
