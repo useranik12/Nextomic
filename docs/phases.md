@@ -167,7 +167,8 @@ Docs: `ui-reference.md` (4.6), `elements.md` (Icon, SVG, Image, Video, Audio)
 Docs: `elements.md`
 
 - [ ] Forms group (inputs with clear, mask/toggle, regex and built-in validation)
-  - 7b-1 slice: Form wrapper (name, status, validateOn), Input with validators, `{{ form.* }}` tags, Form actions (Set, Reset, Clear, Validate). 7b-2: Checkbox, Radio, Select, Dropdown, Checkbox group, Choice chips, Pin/OTP, Date/time, Range slider. 7b-3: default classes, a11y, e2e. Auth presets: Phase 8.
+  - [x] 7b-1 slice: Form wrapper (name, status, validateOn), Input with validators, `{{ form.* }}` tags, Form actions (Set, Reset, Clear, Validate) _Built 2026-11-16 to 2026-11-17: schema helpers, Form and Input elements, form values in dynamic data, runtime and actions, Form tag group and save checks, default messages, input icons, Design > Form Input part styles and states, e2e. See `elements.md` Forms._
+  - [ ] 7b-2: Checkbox, Radio, Select, Dropdown, Checkbox group, Choice chips, Pin/OTP, Date/time, Range slider. 7b-3: default classes, a11y, e2e. Auth presets: Phase 8.
 - [ ] General group (accordion, tabs, dropdown, off-canvas, list, icon list, divider, progress, rating, switch, counter)
 - [x] Icon and SVG elements, icon picker (7a) _Built 2026-11-14, see `elements.md`. Picker: search, library tabs, Recent and Favorites (kept in this browser, per project). Open: size and color preview in the picker, a toast Icon parameter, favorites per account (needs a DB column), "load SVG from Media" for the SVG code._
 - [ ] Rich text, code block, HTML, video, audio
