@@ -26,6 +26,7 @@ function resolveInstalledVersion(name: string): string | null {
 function main(): void {
   const manifest: Manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
   const pending: string[] = [];
+  const before = JSON.stringify(manifest);
 
   for (const group of Object.values(manifest.groups)) {
     for (const dep of group) {
@@ -41,10 +42,17 @@ function main(): void {
     }
   }
 
-  manifest.generatedAt = new Date().toISOString();
+  // The timestamp only moves when the content does, so regenerating an up-to-date manifest is a
+  // no-op and the CI check (`git diff --exit-code`) stays meaningful.
+  const unchanged = JSON.stringify(manifest) === before;
+  if (!unchanged) manifest.generatedAt = new Date().toISOString();
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   // eslint-disable-next-line no-console
-  console.log(`builder-dependencies.json regenerated at ${manifest.generatedAt}`);
+  console.log(
+    unchanged
+      ? "builder-dependencies.json already up to date"
+      : `builder-dependencies.json regenerated at ${manifest.generatedAt}`
+  );
   if (pending.length > 0) {
     // eslint-disable-next-line no-console
     console.log(`Not yet installed (later phase): ${pending.join(", ")}`);

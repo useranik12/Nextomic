@@ -25,10 +25,10 @@ services:
       timeout: 5s
       retries: 10
 
+  # migrate reuses the image that app builds (one build, one export, not two).
   migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: nextomic-builder:latest
+    pull_policy: never
     restart: "no"
     working_dir: /app/packages/db
     command: ["bun", "run", "migrate"]
@@ -39,6 +39,7 @@ services:
         condition: service_healthy
 
   app:
+    image: nextomic-builder:latest
     build:
       context: .
       dockerfile: Dockerfile

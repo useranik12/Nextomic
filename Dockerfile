@@ -20,7 +20,9 @@ COPY . .
 # Next evaluates route modules while collecting page data, and lib/auth.ts builds its DB pool at
 # import time. These placeholders exist only for this RUN (not persisted in the image); no
 # connection is opened during the build, and real values come from the container environment.
-RUN DATABASE_URL=postgres://build:build@localhost:5432/build \
+# The cache mount keeps Next's compile cache between deploys (it is not part of the image).
+RUN --mount=type=cache,target=/app/apps/editor/.next/cache \
+    DATABASE_URL=postgres://build:build@localhost:5432/build \
     BETTER_AUTH_SECRET=build-time-placeholder \
     bun run icons:build && \
     DATABASE_URL=postgres://build:build@localhost:5432/build \
