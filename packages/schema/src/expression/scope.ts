@@ -36,6 +36,21 @@ export function typedGroup(
   return out;
 }
 
+/** Typed values of every form field ("form.<form>.<field>" in `types`): lists show as lists. */
+export function typedForms(
+  forms: Readonly<Record<string, Readonly<Record<string, string>>>>,
+  types: Readonly<Record<string, TypedText>>
+): Record<string, Record<string, unknown>> {
+  const out: Record<string, Record<string, unknown>> = {};
+  for (const [form, values] of Object.entries(forms)) {
+    const typed: Record<string, unknown> = {};
+    for (const [name, text] of Object.entries(values))
+      typed[name] = typedValue(text, types[`form.${form}.${name}`]);
+    out[form] = typed;
+  }
+  return out;
+}
+
 /** $now and $today in a time zone (UTC when the zone is unknown). */
 export function nowValues(nowIso: string, timeZone: string): { $now: DateTime; $today: DateTime } {
   const base = DateTime.fromISO(nowIso);

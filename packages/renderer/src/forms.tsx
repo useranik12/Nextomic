@@ -11,24 +11,19 @@ import {
 import { createElement } from "react";
 import { z } from "zod";
 import { iconInner, iconWrapper } from "./elements";
-import { registerElement, type ControlDef, type RenderContext } from "./registry";
+import {
+  FORM_NAME_REASON,
+  GROUP,
+  fieldNotes,
+  flag,
+  messageControlsFor,
+  numberOrNull,
+  on
+} from "./field-parts";
+import { registerElement, type RenderContext } from "./registry";
 
 // Form wrapper and Input (elements.md "Forms"). The wrapper has no action flow; the runtime reads
 // the data-nxt-* attributes written here to keep field values, show errors and answer Form actions.
-
-const FORM_NAME_REASON =
-  "Form and field names are identifiers the Form tags and actions refer to; they must be known when the page is saved.";
-
-const numberOrNull = (value: string): number | null => {
-  if (value.trim() === "") return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-};
-
-/** A switch prop is on when its text, after dynamic data resolves, is `true`. */
-const on = (ctx: RenderContext, key: string): boolean => ctx.text(key) === "true";
-
-const flag = (value: boolean): "true" | undefined => (value ? "true" : undefined);
 
 registerElement({
   type: "form",
@@ -96,31 +91,14 @@ const ICON_LIBRARY_REASON =
 
 const INPUT_TYPE_OPTIONS = INPUT_TYPES.map((value) => ({ value, label: value, icon: value }));
 
-const GROUP = {
-  field: "Field",
-  content: "Content",
-  validation: "Validation",
-  icons: "Icons",
-  messages: "Messages",
-  behavior: "Behavior"
-} as const;
-
-const messageControls: ControlDef[] = (
-  [
-    { key: "requiredMessage", label: "Required message", message: "required" },
-    { key: "typeMessage", label: "Format message", message: "type" },
-    { key: "lengthMessage", label: "Length message", message: "length" },
-    { key: "rangeMessage", label: "Range message", message: "range" },
-    { key: "patternMessage", label: "Pattern message", message: "pattern" },
-    { key: "matchMessage", label: "Match message", message: "match" }
-  ] satisfies { key: string; label: string; message: keyof typeof DEFAULT_MESSAGES }[]
-).map(({ key, label, message }) => ({
-  key,
-  label,
-  kind: "text",
-  group: GROUP.messages,
-  placeholder: DEFAULT_MESSAGES[message]
-}));
+const messageControls = messageControlsFor([
+  { key: "requiredMessage", label: "Required message", message: "required" },
+  { key: "typeMessage", label: "Format message", message: "type" },
+  { key: "lengthMessage", label: "Length message", message: "length" },
+  { key: "rangeMessage", label: "Range message", message: "range" },
+  { key: "patternMessage", label: "Pattern message", message: "pattern" },
+  { key: "matchMessage", label: "Match message", message: "match" }
+]);
 
 const MESSAGE_PROPS = [
   ["required", "requiredMessage"],
@@ -149,11 +127,6 @@ function inputRules(ctx: RenderContext, type: InputType) {
     matchField: ctx.text("matchField"),
     messages
   };
-}
-
-/** The message an error preview shows: the first one the author wrote, else the required text. */
-function errorSample(ctx: RenderContext): string {
-  return ctx.text("requiredMessage") || DEFAULT_MESSAGES.required;
 }
 
 registerElement({
@@ -385,11 +358,7 @@ registerElement({
           });
     const label = ctx.text("label");
     const required = on(ctx, "required");
-    const help = ctx.text("helpText");
-    const success = ctx.text("successMessage");
-    // The editor canvas can pin an input in one state (Design > Form Input) to style it.
-    const force = attrs["data-nxt-force"];
-    const sample = force === "error" ? errorSample(ctx) : "";
+    const notes = fieldNotes(ctx, { help: helpId, error: errorId });
     const slot = (index: number, extra: Record<string, string> = {}) => {
       const { library, name } = INPUT_ICON_SLOTS[index] as (typeof INPUT_ICON_SLOTS)[number];
       const icon = ctx.text(name);
@@ -436,21 +405,7 @@ registerElement({
             )
           : null
       ),
-      help ? createElement("p", { id: helpId, "data-nxt-help": "" }, help) : null,
-      createElement(
-        "p",
-        { id: errorId, role: "alert", hidden: sample === "" || undefined, "data-nxt-error": "" },
-        sample
-      ),
-      createElement(
-        "p",
-        {
-          role: "status",
-          hidden: force === "success" && success ? undefined : true,
-          "data-nxt-success": ""
-        },
-        success
-      )
+      ...notes.nodes
     );
   }
 });

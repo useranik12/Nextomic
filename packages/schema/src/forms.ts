@@ -8,7 +8,7 @@ import type { DynamicContext } from "./dynamic-context";
 // and show up as {{ form.<formName>.<fieldName> }}. Forms never nest and never sit in a query loop.
 
 export const FORM_TYPE = "form";
-export const FORM_FIELD_TYPES = ["input"] as const;
+export const FORM_FIELD_TYPES = ["input", "checkbox"] as const;
 
 /** Names are identifiers so the dotted tag path never needs quoting. */
 export const FORM_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
@@ -44,6 +44,18 @@ const propText = (node: ElementNode, key: string): string => {
   const v = node.props[key];
   return typeof v === "string" ? v : typeof v === "number" ? String(v) : "";
 };
+
+/** How a field of this element holds its value (see `FIELD_VALUE_KINDS`). */
+export const valueKindOf = (node: ElementNode): FieldValueKind =>
+  node.type === "checkbox" ? "check" : "text";
+
+/** The value a field starts with: plain text only (a dynamic default starts empty). */
+export function startValueOf(node: ElementNode): string {
+  if (node.type === "checkbox")
+    return node.props.checked === true || node.props.checked === "true" ? "true" : "false";
+  if (node.props.type === "password") return "";
+  return typeof node.props.value === "string" ? node.props.value : "";
+}
 
 export const formName = (node: ElementNode): string => propText(node, "name");
 export const fieldName = (node: ElementNode): string => propText(node, "name");
@@ -125,7 +137,34 @@ export function formProblems(root: ElementNode): string[] {
 
 // ---- validation ----
 
+/**
+ * How a field holds its value. `text` is one string (Input, Pin, Range, Date/time, Radio group).
+ * `check` is "true" or "false". `many` is a list kept as JSON text (Checkbox group, Choice chips),
+ * the way list variables are kept, so an option value may hold any character.
+ */
+export const FIELD_VALUE_KINDS = ["text", "check", "many"] as const;
+export type FieldValueKind = (typeof FIELD_VALUE_KINDS)[number];
+
+/** The items of a list value; anything that is not a JSON array of text gives []. */
+export function parseList(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export const listText = (items: readonly string[]): string => JSON.stringify(items);
+
 export interface FieldRules {
+  /** Defaults to `text`. */
+  kind?: FieldValueKind;
+  /** `many` fields: the fewest and most items that may be chosen. */
+  minSelected?: number | null;
+  maxSelected?: number | null;
   type: InputType;
   required: boolean;
   minLength: number | null;
@@ -150,7 +189,7 @@ const urlOk = (value: string): boolean => {
   }
 };
 
-type MessageKey = "required" | "type" | "length" | "range" | "pattern" | "match";
+type MessageKey = "required" | "type" | "length" | "range" | "pattern" | "match" | "selection";
 
 /**
  * The messages a field shows when it has no message of its own. {type}, {length} and {range} are
@@ -162,7 +201,8 @@ export const DEFAULT_MESSAGES: Readonly<Record<MessageKey, string>> = {
   length: "Use {length} characters.",
   range: "Enter {range}.",
   pattern: "This does not match the expected format.",
-  match: "The values do not match."
+  match: "The values do not match.",
+  selection: "Choose {range}."
 };
 
 const TYPE_WORDS: Partial<Record<InputType, string>> = {
@@ -177,8 +217,22 @@ function message(rules: FieldRules, key: MessageKey, words: Record<string, strin
   return text.replace(/{(type|length|range)}/g, (all, name: string) => words[name] ?? all);
 }
 
+function validateSelection(items: readonly string[], rules: FieldRules): string | null {
+  if (items.length === 0) return rules.required ? message(rules, "required") : null;
+  const least = rules.minSelected ?? null;
+  const most = rules.maxSelected ?? null;
+  if (least !== null && items.length < least)
+    return message(rules, "selection", { range: `at least ${least}` });
+  if (most !== null && items.length > most)
+    return message(rules, "selection", { range: `at most ${most}` });
+  return null;
+}
+
 /** The first problem with `value`, as the message to show, or null when it passes. */
 export function validateValue(value: string, rules: FieldRules): string | null {
+  if (rules.kind === "check")
+    return value === "true" || !rules.required ? null : message(rules, "required");
+  if (rules.kind === "many") return validateSelection(parseList(value), rules);
   if (value.trim() === "") return rules.required ? message(rules, "required") : null;
   const type = { type: TYPE_WORDS[rules.type] ?? "a valid value" };
   if (rules.type === "email" && !EMAIL.test(value)) return message(rules, "type", type);
@@ -215,6 +269,7 @@ export function validateValue(value: string, rules: FieldRules): string | null {
  */
 export function withFormDefaults(dynamic: DynamicContext, tree: ElementNode): DynamicContext {
   const forms: Record<string, Record<string, string>> = {};
+  const types = { ...dynamic.types };
   walkElements(tree, (node) => {
     if (node.type !== FORM_TYPE || !formIsActive(node) || !FORM_NAME_PATTERN.test(formName(node)))
       return;
@@ -222,13 +277,19 @@ export function withFormDefaults(dynamic: DynamicContext, tree: ElementNode): Dy
     walkElements(node, (child) => {
       if (child === node || !isFormField(child) || !FORM_NAME_PATTERN.test(fieldName(child)))
         return;
-      const start = typeof child.props.value === "string" ? child.props.value : "";
       const given = dynamic.forms[formName(node)]?.[fieldName(child)];
-      values[fieldName(child)] = child.props.type === "password" ? "" : (given ?? start);
+      values[fieldName(child)] =
+        child.props.type === "password" ? "" : (given ?? startValueOf(child));
+      if (valueKindOf(child) === "many")
+        types[`form.${formName(node)}.${fieldName(child)}`] = {
+          type: "string",
+          isList: true,
+          ref: ""
+        };
     });
     forms[formName(node)] = values;
   });
-  return { ...dynamic, forms };
+  return { ...dynamic, forms, types };
 }
 
 // ---- placing forms in a tree ----

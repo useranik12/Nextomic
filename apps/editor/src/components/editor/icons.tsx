@@ -31,6 +31,18 @@ export function ElementIcon({ type, size = 28 }: { type: string; size?: number }
       return <Icon name="ph:list-checks" {...props} />;
     case "input":
       return <Icon name="ph:textbox" {...props} />;
+    case "checkbox":
+      return <Icon name="ph:check-square" {...props} />;
+    case "radio":
+      return <Icon name="ph:radio-button" {...props} />;
+    case "checkboxGroup":
+      return <Icon name="ph:checks" {...props} />;
+    case "choiceChips":
+      return <Icon name="ph:tag-simple" {...props} />;
+    case "pinInput":
+      return <Icon name="ph:password" {...props} />;
+    case "rangeSlider":
+      return <Icon name="ph:sliders-horizontal" {...props} />;
     default:
       return <Icon name="ph:square" {...props} />;
   }

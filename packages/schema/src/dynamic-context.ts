@@ -7,7 +7,7 @@ import type { PageParam } from "./params";
 import type { PropValue } from "./value";
 import { stateTypeSchema, type StateType } from "./state";
 import { runExpression, toText } from "./expression/evaluate";
-import { nowValues, typedGroup } from "./expression/scope";
+import { nowValues, typedForms, typedGroup } from "./expression/scope";
 import { splitTemplate } from "./expression/template";
 
 // The values dynamic tokens ({{page.name}}, {{param.id}}, {{now.date}} ...) resolve to. The editor
@@ -333,7 +333,7 @@ export function expressionScope(
     state: typedGroup(context.state, context.types, "state"),
     app: typedGroup(context.app, context.types, "app"),
     const: typedGroup(context.constants, context.types, "const"),
-    form: context.forms,
+    form: typedForms(context.forms, context.types),
     ...nowValues(context.nowIso, context.timeZone)
   };
 }

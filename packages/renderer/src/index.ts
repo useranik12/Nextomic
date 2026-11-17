@@ -1,6 +1,7 @@
 // Element JSON -> React/Next output. Astro output lands with the exporter phase.
 import "./elements";
 import "./forms";
+import "./form-choices";
 
 export * from "./css";
 export * from "./registry";

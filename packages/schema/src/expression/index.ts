@@ -17,7 +17,7 @@ export {
   type ExpressionPart,
   type UnspacedTag
 } from "./template";
-export { nowValues, ROOT_DOCS, typedGroup, typedValue, type TypedText } from "./scope";
+export { nowValues, ROOT_DOCS, typedForms, typedGroup, typedValue, type TypedText } from "./scope";
 export { expressionProblem, firstExpressionProblem } from "./check";
 export {
   chainKinds,

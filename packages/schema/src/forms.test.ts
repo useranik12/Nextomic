@@ -10,6 +10,8 @@ import {
   formProblems,
   formsOf,
   freeFormName,
+  listText,
+  parseList,
   uniquifyFormNames,
   validateValue,
   withFormDefaults,
@@ -75,6 +77,46 @@ describe("forms of a tree", () => {
   it("finds a free name", () => {
     expect(freeFormName(["form", "Form2"], "form")).toBe("form3");
     expect(freeFormName([], "form")).toBe("form");
+  });
+});
+
+describe("validateValue for checks and lists", () => {
+  it("a required checkbox must be checked", () => {
+    const r = rules({ kind: "check", required: true });
+    expect(validateValue("false", r)).toBe("This field is required.");
+    expect(validateValue("true", r)).toBeNull();
+    expect(validateValue("false", rules({ kind: "check" }))).toBeNull();
+  });
+  it("a list counts its items and keeps commas inside an item", () => {
+    const r = rules({ kind: "many", required: true, minSelected: 2, maxSelected: 3 });
+    expect(parseList('["a,b","c"]')).toEqual(["a,b", "c"]);
+    expect(parseList("not json")).toEqual([]);
+    expect(validateValue("[]", r)).toBe("This field is required.");
+    expect(validateValue(listText(["a"]), r)).toBe("Choose at least 2.");
+    expect(validateValue(listText(["a", "b", "c", "d"]), r)).toBe("Choose at most 3.");
+    expect(validateValue(listText(["a", "b"]), r)).toBeNull();
+    expect(validateValue("[]", rules({ kind: "many", minSelected: 2 }))).toBeNull();
+  });
+});
+
+describe("checkbox fields", () => {
+  const blank = buildDynamicContext({
+    page: { name: "P", route: "/", settings: defaultPageSettings() },
+    mode: "live"
+  });
+  const checkbox = (id: string, name: string, props = {}) => el(id, "checkbox", { name, ...props });
+  it("is a form field with its own start value", () => {
+    const root = page(
+      form("f1", "signup", [checkbox("a", "agree", { checked: true }), checkbox("b", "news")])
+    );
+    expect(formsOf(root)[0]?.fields.map((f) => f.name)).toEqual(["agree", "news"]);
+    const dynamic = withFormDefaults(blank, root);
+    expect(dynamic.forms.signup).toEqual({ agree: "true", news: "false" });
+  });
+  it("keeps the visitor's value over the start value", () => {
+    const root = page(form("f1", "signup", [checkbox("a", "agree", { checked: true })]));
+    const dynamic = withFormDefaults({ ...blank, forms: { signup: { agree: "false" } } }, root);
+    expect(dynamic.forms.signup?.agree).toBe("false");
   });
 });
 

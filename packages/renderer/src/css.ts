@@ -8,8 +8,12 @@ import {
   type PseudoState,
   type StyleMap
 } from "@nextomic/schema";
+import { CHOICE_BASE_CSS } from "./choice-css";
 import { INPUT_BASE_CSS, inputPartCss } from "./input-css";
 import { getElementDefinition } from "./registry";
+
+/** Element types drawn as choice fields (the built-in choice look is added when a page has one). */
+const CHOICE_TYPES: readonly string[] = ["checkbox", "radio", "checkboxGroup", "choiceChips"];
 
 const PSEUDO_SELECTOR: Record<PseudoState, string> = {
   default: "",
@@ -150,10 +154,13 @@ export function pageCss(
 ): string {
   const chunks: string[] = [];
   let hasInput = false;
+  let hasChoice = false;
   walkElements(root, (node) => {
     if (node.type === "input") hasInput = true;
+    if (CHOICE_TYPES.includes(node.type)) hasChoice = true;
   });
-  if (hasInput) chunks.push(INPUT_BASE_CSS);
+  if (hasInput || hasChoice) chunks.push(INPUT_BASE_CSS);
+  if (hasChoice) chunks.push(CHOICE_BASE_CSS);
   for (const [name, styles] of Object.entries(classes)) {
     const css = classCss(name, styles, breakpoints, resolve);
     if (css) chunks.push(css);

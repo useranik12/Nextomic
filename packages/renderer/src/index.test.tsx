@@ -48,7 +48,8 @@ describe("registry", () => {
       "icon",
       "svg",
       "form",
-      "input"
+      "input",
+      "checkbox"
     ]);
   });
 
@@ -71,7 +72,8 @@ describe("registry", () => {
       "icon.svg",
       "svg.svg",
       ...["required", "disabled", "readOnly", "clearable", "showToggle"].map((k) => `input.${k}`),
-      ...["minLength", "maxLength", "min", "max"].map((k) => `input.${k}`)
+      ...["minLength", "maxLength", "min", "max"].map((k) => `input.${k}`),
+      ...["required", "checked", "disabled"].map((k) => `checkbox.${k}`)
     ]);
     const icons = {
       svg: (_library: string, name: string) =>
@@ -212,6 +214,31 @@ describe("forms", () => {
     expect(html).toContain("noValidate");
     expect(html).not.toContain("action=");
     expect(html).toContain('data-nxt-form="signup"');
+  });
+
+  describe("checkbox", () => {
+    const checkbox = (props: Record<string, unknown>) =>
+      node({ id: "c", type: "checkbox", props: { name: "agree", label: "I agree", ...props } });
+
+    it("is a check field with its own rules and no text box", () => {
+      const html = render([checkbox({ required: true, checked: true, subtext: "Sure?" })]).replace(
+        /^[\s\S]*?(?=<form)/,
+        ""
+      );
+      expect(html).toContain('data-nxt-kind="check"');
+      expect(html).toContain('type="checkbox"');
+      expect(html).toContain("checked");
+      expect(html).toContain("&quot;kind&quot;:&quot;check&quot;");
+      expect(html).toContain(">Sure?<");
+      expect(html).toContain("data-nxt-mark");
+      expect(html).not.toContain("data-nxt-box");
+    });
+
+    it("is unchecked and optional by default", () => {
+      const html = render([checkbox({})]);
+      expect(html).not.toMatch(/<input[^>]* checked/);
+      expect(html).toContain("&quot;required&quot;:false");
+    });
   });
 
   describe("icons and messages", () => {

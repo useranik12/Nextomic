@@ -22,9 +22,9 @@ export const INPUT_BASE_CSS =
   `:where(${FIELD} label[data-required])::after{content:" *";color:#dc2626}` +
   `:where(${FIELD} [data-nxt-box]){order:1;display:flex;align-items:center;gap:8px;flex-grow:1;min-width:0;min-height:40px;padding:0 12px;border:1px solid ${NEUTRAL};border-radius:8px;background:#fff;transition:border-color .15s,box-shadow .15s}` +
   `:where(${FIELD}:has(textarea) [data-nxt-box]){align-items:flex-start}` +
-  `:where(${FIELD} [data-nxt-control]){flex:1 1 auto;width:100%;min-width:0;padding:8px 0;border:0;outline:0;background:transparent;color:inherit;font:inherit}` +
+  `:where(${FIELD} [data-nxt-box] [data-nxt-control]){flex:1 1 auto;width:100%;min-width:0;padding:8px 0;border:0;outline:0;background:transparent;color:inherit;font:inherit}` +
   `:where(${FIELD} textarea[data-nxt-control]){min-height:96px;resize:vertical}` +
-  `:where(${FIELD} [data-nxt-control])::placeholder{color:#a1a1aa;opacity:1}` +
+  `:where(${FIELD} [data-nxt-box] [data-nxt-control])::placeholder{color:#a1a1aa;opacity:1}` +
   `:where(${FIELD}:focus-within [data-nxt-box],${forced("focus")} [data-nxt-box]){border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.25)}` +
   `:where(${FIELD}[data-invalid] [data-nxt-box],${forced("error")} [data-nxt-box]){border-color:#dc2626}` +
   `:where(${FIELD}[data-invalid]:focus-within [data-nxt-box],${forced("error")}:focus-within [data-nxt-box]){box-shadow:0 0 0 3px rgba(220,38,38,.2)}` +

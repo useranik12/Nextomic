@@ -1,4 +1,19 @@
-import { validateValue, type FieldRules, type InputType, INPUT_TYPES } from "@nextomic/schema";
+import {
+  validateValue,
+  type FieldValueKind,
+  type FieldRules,
+  type InputType,
+  INPUT_TYPES
+} from "@nextomic/schema";
+import {
+  controlsOf,
+  defaultOf,
+  focusTarget,
+  isEmptyField,
+  readField,
+  writeField,
+  type Control
+} from "./field-values";
 
 // Form behavior of a built page (elements.md "Forms"): the DOM is the source of values. The runtime
 // shows validation errors, runs the clear and show/hide-password buttons, stops the browser's own
@@ -25,14 +40,11 @@ export interface FormRuntime {
   stop: () => void;
 }
 
-type Control = HTMLInputElement | HTMLTextAreaElement;
-
 const FORM = "form[data-nxt-form]:not([data-nxt-inactive])";
 const NUMBER = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
-const controlOf = (field: Element): Control | null =>
-  field.querySelector<Control>("[data-nxt-control]");
+const controlOf = (field: Element): Control | null => controlsOf(field)[0] ?? null;
 const fieldNameOf = (field: Element) => field.getAttribute("data-nxt-field") ?? "";
 const fieldsOf = (form: Element) => [...form.querySelectorAll("[data-nxt-field]")];
 
@@ -48,6 +60,9 @@ function parseRules(field: Element): Omit<FieldRules, "matchValue"> & { matchFie
   const messages = raw.messages && typeof raw.messages === "object" ? raw.messages : {};
   return {
     type,
+    kind: (["text", "check", "many"] as const).find((k): k is FieldValueKind => k === raw.kind),
+    minSelected: NUMBER(raw.minSelected),
+    maxSelected: NUMBER(raw.maxSelected),
     required: raw.required === true,
     minLength: NUMBER(raw.minLength),
     maxLength: NUMBER(raw.maxLength),
@@ -86,33 +101,31 @@ export function startFormRuntime(
       error.textContent = message ?? "";
       error.toggleAttribute("hidden", !message);
     }
-    const control = controlOf(field);
-    if (control) control.setAttribute("aria-invalid", message ? "true" : "false");
+    for (const control of controlsOf(field))
+      control.setAttribute("aria-invalid", message ? "true" : "false");
     field.toggleAttribute("data-invalid", Boolean(message));
     // A checked, filled field that passes shows its success text (when it has any).
-    const valid = mark && !message && (control?.value.trim() ?? "") !== "";
+    const valid = mark && !message && !isEmptyField(field);
     field.toggleAttribute("data-valid", valid);
     const success = field.querySelector("[data-nxt-success]");
     if (success) success.toggleAttribute("hidden", !valid || !success.textContent);
   };
 
   const checkField = (form: Element, field: Element, show: boolean): string | null => {
-    const control = controlOf(field);
-    if (!control) return null;
+    if (controlsOf(field).length === 0) return null;
     const { matchField, ...rest } = parseRules(field);
     const other = matchField
       ? fieldsOf(form).find((f) => fieldNameOf(f) === matchField)
       : undefined;
-    const matchValue = other ? (controlOf(other)?.value ?? "") : null;
-    const message = validateValue(control.value, { ...rest, matchValue });
+    const matchValue = other ? readField(other) : null;
+    const message = validateValue(readField(field), { ...rest, matchValue });
     if (show) showError(field, message);
     return message;
   };
 
   const syncButtons = (field: Element) => {
-    const control = controlOf(field);
     const clear = field.querySelector<HTMLElement>("[data-nxt-clear]");
-    if (clear && control) clear.toggleAttribute("hidden", control.value === "");
+    if (clear) clear.toggleAttribute("hidden", isEmptyField(field));
   };
 
   const fieldOfTarget = (target: EventTarget | null) => {
@@ -121,11 +134,13 @@ export function startFormRuntime(
     const form = field?.closest(FORM) ?? null;
     return field && form ? { field, form } : null;
   };
+  const isControl = (target: EventTarget | null) =>
+    target instanceof Element && target.matches("[data-nxt-control]");
   const mode = (form: Element) => form.getAttribute("data-nxt-validate-on") ?? "blurThenChange";
 
   listen("input", (e) => {
     const hit = fieldOfTarget(e.target);
-    if (!hit || e.target !== controlOf(hit.field)) return;
+    if (!hit || !isControl(e.target)) return;
     syncButtons(hit.field);
     const when = mode(hit.form);
     if (when === "change" || (when === "blurThenChange" && touched.has(hit.field)))
@@ -134,7 +149,9 @@ export function startFormRuntime(
   });
   listen("focusout", (e) => {
     const hit = fieldOfTarget(e.target);
-    if (!hit || e.target !== controlOf(hit.field)) return;
+    if (!hit || !isControl(e.target)) return;
+    // Focus moving between the controls of one field (radios, cells) is not leaving the field.
+    if (e.relatedTarget instanceof Node && hit.field.contains(e.relatedTarget)) return;
     touched.add(hit.field);
     const when = mode(hit.form);
     if (when === "blur" || when === "blurThenChange") checkField(hit.form, hit.field, true);
@@ -143,14 +160,13 @@ export function startFormRuntime(
     const el = e.target instanceof Element ? e.target : null;
     const hit = fieldOfTarget(el);
     if (!el || !hit) return;
-    const control = controlOf(hit.field);
-    if (!control) return;
     if (el.closest("[data-nxt-clear]")) {
-      control.value = "";
+      writeField(hit.field, "");
       syncButtons(hit.field);
-      control.focus();
+      focusTarget(hit.field)?.focus();
       onChange([tag(hit.form, hit.field)]);
     }
+    const control = controlOf(hit.field);
     const toggle = el.closest<HTMLElement>("[data-nxt-toggle]");
     if (toggle && control instanceof HTMLInputElement) {
       const show = control.type === "password";
@@ -170,9 +186,8 @@ export function startFormRuntime(
   );
 
   const write = (form: Element, field: Element, value: string): string | null => {
-    const control = controlOf(field);
-    if (!control || control.value === value) return null;
-    control.value = value;
+    if (controlsOf(field).length === 0 || readField(field) === value) return null;
+    writeField(field, value);
     syncButtons(field);
     return tag(form, field);
   };
@@ -190,11 +205,9 @@ export function startFormRuntime(
       for (const form of forms()) {
         const values: Record<string, string> = {};
         for (const field of fieldsOf(form)) {
-          const control = controlOf(field);
-          if (!control) continue;
-          const secret = control instanceof HTMLInputElement && field.matches("[data-nxt-secret]");
-          if (secret && !includePasswords) continue;
-          values[fieldNameOf(field)] = control.value;
+          if (controlsOf(field).length === 0) continue;
+          if (field.matches("[data-nxt-secret]") && !includePasswords) continue;
+          values[fieldNameOf(field)] = readField(field);
         }
         out[form.getAttribute("data-nxt-form") ?? ""] = values;
       }
@@ -213,7 +226,7 @@ export function startFormRuntime(
       const first = errors[0];
       if (first) {
         const field = fieldsOf(form).find((f) => fieldNameOf(f) === first.field);
-        (field ? controlOf(field) : null)?.focus();
+        (field ? focusTarget(field) : null)?.focus();
       }
       return { valid: errors.length === 0, errors };
     },
@@ -234,7 +247,7 @@ export function startFormRuntime(
         fieldsOf(form).map((field) => {
           touched.delete(field);
           showError(field, null, false);
-          return write(form, field, controlOf(field)?.defaultValue ?? "");
+          return write(form, field, defaultOf(field));
         })
       );
     },

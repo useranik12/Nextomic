@@ -212,3 +212,45 @@ test("form input design: Form Input group first, error style on canvas and previ
   ).toBeVisible();
   await expect.poll(border).toBe("rgb(255, 0, 0)");
 });
+
+test("checkbox: tile, form tag, required check validates and toggles in the preview", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await expect(
+    page
+      .getByRole("dialog", { name: "Elements" })
+      .getByRole("button", { name: "Checkbox", exact: true })
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await add(page, "Form");
+  await add(page, "Checkbox");
+  await page.getByLabel("Field name", { exact: true }).fill("agree");
+  await page.getByRole("switch", { name: "Must be checked" }).click({ force: true });
+  await add(page, "Heading");
+  await page.getByRole("button", { name: "Dynamic value for Text" }).click();
+  await page
+    .getByRole("group", { name: "Tag groups" })
+    .getByRole("button", { name: "Form" })
+    .click();
+  await expect(page.getByText("form.form.agree")).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const box = preview.locator('input[name="agree"]');
+  const error = preview.getByRole("alert").filter({ hasText: "This field is required." });
+  await box.check({ force: true });
+  await expect(error).toBeHidden();
+  await box.uncheck({ force: true });
+  await box.blur();
+  await expect(error).toBeVisible();
+  await box.check({ force: true });
+  await expect(error).toBeHidden();
+});
