@@ -113,9 +113,7 @@ describe("registry", () => {
                     showToggle: true
                   }
                 : {}),
-              ...(def.type === "option" && /Icon$|^icon$/.test(key)
-                ? { library: "ph", endLibrary: "ph" }
-                : {}),
+              ...(def.type === "option" && /Icon$|^icon$/.test(key) ? { library: "ph" } : {}),
               [key]: { kind: "mixed", parts: ["x-", { token: "page.name" }] }
             }
           })
@@ -214,6 +212,10 @@ describe("forms", () => {
           ]
         })}
         breakpoints={DEFAULT_BREAKPOINTS}
+        icons={{
+          svg: (_l: string, name: string) => `<svg data-icon="${name}"></svg>`,
+          font: () => false
+        }}
       />
     );
   const input = (props: Record<string, unknown>) =>
@@ -295,6 +297,31 @@ describe("forms", () => {
       expect(single).toContain('type="radio"');
     });
 
+    it("draws the one option icon before, after or on both sides of the text", () => {
+      const withIcon = (iconPosition: string) =>
+        render([
+          node({
+            id: "g",
+            type: "radio",
+            props: { name: "pick", label: "Pick", layout: "vertical" },
+            children: [
+              node({
+                id: "o",
+                type: "option",
+                props: { label: "Solo", library: "ph", icon: "star", iconPosition }
+              })
+            ]
+          })
+        ]);
+      const count = (html: string) => (html.match(/data-nxt-ico=/g) ?? []).length;
+      // The page style sheet names the attribute too, so count only inside the form.
+      const inForm = (html: string) => html.replace(/^[\s\S]*?(?=<form)/, "");
+      expect(count(inForm(withIcon("before")))).toBe(1);
+      expect(count(inForm(withIcon("both")))).toBe(2);
+      const after = inForm(withIcon("after"));
+      expect(after.indexOf("data-nxt-ico")).toBeGreaterThan(after.indexOf("Solo"));
+    });
+
     it("puts each input inside its own label, so no ids are needed", () => {
       const html = markup("checkboxGroup");
       expect(html.match(/<label[^>]*data-nxt-choice=""[^>]*><input/g)).toHaveLength(2);
@@ -327,9 +354,16 @@ describe("forms", () => {
     it("draws the field icon on the chosen side, and no box without a library", () => {
       const left = draw({ library: "ph", icon: "mail" });
       expect(left.indexOf("data-nxt-icon")).toBeLessThan(left.indexOf("<input"));
-      const right = draw({ library: "ph", icon: "mail", iconPosition: "right" });
+      const right = draw({ library: "ph", icon: "mail", iconPosition: "after" });
       expect(right.indexOf("data-nxt-icon")).toBeGreaterThan(right.indexOf("<input"));
       expect(draw({ icon: "mail" })).not.toContain("data-nxt-icon");
+      // One icon, drawn on both sides on request; saves from before read left and right as before and after.
+      const both = draw({ library: "ph", icon: "mail", iconPosition: "both" });
+      expect(both.match(/data-nxt-icon/g)).toHaveLength(2);
+      expect(both.indexOf("data-nxt-icon")).toBeLessThan(both.indexOf("<input"));
+      expect(both.lastIndexOf("data-nxt-icon")).toBeGreaterThan(both.indexOf("<input"));
+      const old = draw({ library: "ph", icon: "mail", iconPosition: "right" });
+      expect(old.indexOf("data-nxt-icon")).toBeGreaterThan(old.indexOf("<input"));
       expect(left).toContain('aria-hidden="true"');
     });
 

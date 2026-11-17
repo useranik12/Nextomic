@@ -165,7 +165,7 @@ test("form input design: Form Input group first, error style on canvas and previ
   await picker.getByRole("button", { name: "square, my-shapes" }).click();
   await picker.getByRole("button", { name: "Use icon" }).click();
   await page.getByRole("button", { name: /Icon position$/ }).click();
-  await page.locator("[role=option]", { hasText: "Right" }).click();
+  await page.locator("[role=option]", { hasText: "After" }).click();
   const canvas = page.frameLocator('iframe[title="Page canvas"]');
   await expect(canvas.locator("[data-nxt-icon] svg")).toBeVisible({ timeout: 15_000 });
 

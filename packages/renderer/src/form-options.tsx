@@ -6,7 +6,10 @@ import {
   FORM_NAME_REASON,
   GROUP,
   fieldNotes,
+  ICON_POSITIONS,
   flag,
+  iconPositionControl,
+  iconSides,
   looseValue,
   messageControlsFor,
   numberOrNull,
@@ -36,9 +39,10 @@ function renderOption(ctx: RenderContext) {
   const group = optionInput(ctx);
   const label = ctx.text("label");
   const subtext = ctx.text("subtext");
-  const slot = (library: string, icon: string) => {
-    const name = ctx.text(icon);
-    const drawn = name ? ctx.icon(ctx.text(library), name, { size: "1em", label: "" }) : null;
+  const sides = iconSides(ctx.text("iconPosition"));
+  const slot = () => {
+    const name = ctx.text("icon");
+    const drawn = name ? ctx.icon(ctx.text("library"), name, { size: "1em", label: "" }) : null;
     return drawn === null ? null : iconWrapper({ "data-nxt-ico": "" }, "", iconInner(drawn));
   };
   return createElement(
@@ -53,14 +57,14 @@ function renderOption(ctx: RenderContext) {
       "data-nxt-control": ""
     }),
     createElement("span", { "data-nxt-mark": "", "aria-hidden": "true" }),
-    slot("library", "icon"),
+    sides.before ? slot() : null,
     createElement(
       "span",
       { "data-nxt-text": "" },
       label,
       subtext ? createElement("span", { "data-nxt-sub": "" }, subtext) : null
     ),
-    slot("endLibrary", "endIcon")
+    sides.after ? slot() : null
   );
 }
 
@@ -78,8 +82,7 @@ registerElement({
       disabled: false,
       library: "",
       icon: "",
-      endLibrary: "",
-      endIcon: ""
+      iconPosition: "before"
     },
     name: "Option"
   }),
@@ -91,8 +94,7 @@ registerElement({
     disabled: looseValue,
     library: z.string().optional(),
     icon: looseValue,
-    endLibrary: z.string().optional(),
-    endIcon: looseValue
+    iconPosition: z.enum(ICON_POSITIONS).optional()
   }),
   controls: [
     { key: "label", label: "Label", kind: "text", group: GROUP.content },
@@ -105,14 +107,8 @@ registerElement({
       group: GROUP.content
     },
     { key: "selected", label: "Chosen at start", kind: "switch", group: GROUP.content },
-    { key: "icon", label: "Icon before", kind: "icon", libraryKey: "library", group: GROUP.icons },
-    {
-      key: "endIcon",
-      label: "Icon after",
-      kind: "icon",
-      libraryKey: "endLibrary",
-      group: GROUP.icons
-    },
+    { key: "icon", label: "Icon", kind: "icon", libraryKey: "library", group: GROUP.icons },
+    iconPositionControl,
     { key: "disabled", label: "Disabled", kind: "switch", group: GROUP.behavior }
   ],
   bindable: {
@@ -123,8 +119,7 @@ registerElement({
     disabled: true,
     library: { reason: ICON_REASON },
     icon: true,
-    endLibrary: { reason: ICON_REASON },
-    endIcon: true
+    iconPosition: { reason: "A fixed layout choice, not data." }
   },
   render: renderOption
 });

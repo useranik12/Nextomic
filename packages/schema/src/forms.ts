@@ -429,7 +429,6 @@ export const INPUT_ICON_SLOTS = [
 /** The prop names that can hold an icon library key (Icon element and Input slots). */
 export const ICON_LIBRARY_PROPS: readonly string[] = [
   "library",
-  "endLibrary",
   ...INPUT_ICON_SLOTS.slice(1).map((slot) => slot.library)
 ];
 
@@ -439,7 +438,7 @@ export function iconLibrariesOf(node: ElementNode): string[] {
     node.type === "icon"
       ? [node.props.source === "svg" ? "" : node.props.library]
       : node.type === OPTION_TYPE
-        ? [node.props.library, node.props.endLibrary]
+        ? [node.props.library]
         : node.type === "input"
           ? INPUT_ICON_SLOTS.map((slot) => node.props[slot.library])
           : [];

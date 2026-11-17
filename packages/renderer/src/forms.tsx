@@ -15,7 +15,10 @@ import {
   FORM_NAME_REASON,
   GROUP,
   fieldNotes,
+  ICON_POSITIONS,
   flag,
+  iconPositionControl,
+  iconSides,
   looseValue,
   messageControlsFor,
   numberOrNull,
@@ -81,8 +84,6 @@ registerElement({
       children
     )
 });
-
-const ICON_POSITIONS = ["left", "right"] as const;
 
 const ICON_LIBRARY_REASON =
   "Only the icon name is dynamic; the library decides which icon sets a page loads.";
@@ -150,7 +151,7 @@ registerElement({
       successMessage: "Looks good.",
       library: "",
       icon: "",
-      iconPosition: "left",
+      iconPosition: "before",
       clearLibrary: "",
       clearIcon: "",
       showLibrary: "",
@@ -240,16 +241,7 @@ registerElement({
       libraryKey: "library",
       group: GROUP.icons
     },
-    {
-      key: "iconPosition",
-      label: "Icon position",
-      kind: "select",
-      options: [
-        { value: "left", label: "Left", icon: "align-left" },
-        { value: "right", label: "Right", icon: "align-right" }
-      ],
-      group: GROUP.icons
-    },
+    iconPositionControl,
     {
       key: "clearIcon",
       label: "Clear button icon",
@@ -363,8 +355,8 @@ registerElement({
       const drawn = icon ? ctx.icon(ctx.text(library), icon, { size: "1em", label: "" }) : null;
       return drawn === null ? null : iconWrapper({ ...extra }, "", iconInner(drawn));
     };
-    const fieldIcon = slot(0, { "data-nxt-icon": "" });
-    const side = ctx.text("iconPosition") === "right" ? "right" : "left";
+    const fieldIcon = () => slot(0, { "data-nxt-icon": "" });
+    const sides = iconSides(ctx.text("iconPosition"));
     return createElement(
       "div",
       {
@@ -379,9 +371,9 @@ registerElement({
       createElement(
         "div",
         { "data-nxt-box": "" },
-        side === "left" ? fieldIcon : null,
+        sides.before ? fieldIcon() : null,
         control,
-        side === "right" ? fieldIcon : null,
+        sides.after ? fieldIcon() : null,
         on(ctx, "clearable")
           ? createElement(
               "button",

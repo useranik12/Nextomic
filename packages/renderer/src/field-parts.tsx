@@ -33,6 +33,30 @@ export const GROUP = {
   behavior: "Behavior"
 } as const;
 
+/**
+ * Where a field draws its one icon: before the text, after it, or on both sides. `left` and `right`
+ * are what earlier saves hold; they read as before and after.
+ */
+export const ICON_POSITIONS = ["before", "after", "both", "left", "right"] as const;
+
+export const iconSides = (position: string): { before: boolean; after: boolean } => ({
+  before: position === "both" || position === "before" || position === "left" || position === "",
+  after: position === "both" || position === "after" || position === "right"
+});
+
+/** The one "Icon position" select every field with an icon uses. */
+export const iconPositionControl: ControlDef = {
+  key: "iconPosition",
+  label: "Icon position",
+  kind: "select",
+  options: [
+    { value: "before", label: "Before", icon: "icon-before" },
+    { value: "after", label: "After", icon: "icon-after" },
+    { value: "both", label: "Both sides", icon: "icon-both" }
+  ],
+  group: GROUP.icons
+};
+
 /** The controls for the messages a field may show; `keys` picks which of them it has. */
 export const messageControlsFor = (
   keys: readonly { key: string; label: string; message: keyof typeof DEFAULT_MESSAGES }[]
