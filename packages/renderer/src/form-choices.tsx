@@ -1,14 +1,19 @@
 import { DEFAULT_MESSAGES } from "@nextomic/schema";
 import { createElement } from "react";
 import { z } from "zod";
-import { FORM_NAME_REASON, GROUP, fieldNotes, flag, messageControlsFor, on } from "./field-parts";
+import {
+  FORM_NAME_REASON,
+  GROUP,
+  fieldNotes,
+  flag,
+  looseValue,
+  messageControlsFor,
+  on
+} from "./field-parts";
 import { registerElement, type RenderContext } from "./registry";
 
 // Choice fields (elements.md "Forms"): Checkbox first; Radio, Checkbox group and Choice chips share
 // the same parts (`data-nxt-choice` row, `data-nxt-mark` box) and the same runtime shapes.
-
-// Static text, a number or a switch; dynamic text is checked by the shared prop value schema.
-const looseValue = z.union([z.string(), z.number(), z.boolean()]).optional();
 
 const requiredMessage = (ctx: RenderContext): Record<string, string> => {
   const text = ctx.text("requiredMessage");

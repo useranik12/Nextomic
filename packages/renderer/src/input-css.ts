@@ -18,8 +18,8 @@ const forced = (state: string) => `${FIELD}[data-nxt-force="${state}"]`;
 
 export const INPUT_BASE_CSS =
   `:where(${FIELD}){display:flex;flex-direction:column;flex-wrap:wrap;gap:6px;width:100%}` +
-  `:where(${FIELD} label){order:0;font-size:.875rem;font-weight:500}` +
-  `:where(${FIELD} label[data-required])::after{content:" *";color:#dc2626}` +
+  `:where(${FIELD} label,${FIELD} [data-nxt-label]){order:0;font-size:.875rem;font-weight:500}` +
+  `:where(${FIELD} label[data-required],${FIELD} [data-nxt-label][data-required])::after{content:" *";color:#dc2626}` +
   `:where(${FIELD} [data-nxt-box]){order:1;display:flex;align-items:center;gap:8px;flex-grow:1;min-width:0;min-height:40px;padding:0 12px;border:1px solid ${NEUTRAL};border-radius:8px;background:#fff;transition:border-color .15s,box-shadow .15s}` +
   `:where(${FIELD}:has(textarea) [data-nxt-box]){align-items:flex-start}` +
   `:where(${FIELD} [data-nxt-box] [data-nxt-control]){flex:1 1 auto;width:100%;min-width:0;padding:8px 0;border:0;outline:0;background:transparent;color:inherit;font:inherit}` +

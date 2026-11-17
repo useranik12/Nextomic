@@ -34,6 +34,8 @@ export interface RenderContext {
   /** Attributes every element receives (data-nid, id, custom attributes). */
   attrs: Record<string, string>;
   children: ReactNode;
+  /** The element this one sits in, with its props resolved where that element stands. */
+  parent?: { node: ElementNode; text: (key: string) => string };
   /** A library icon drawn as inline SVG or an icon-font class; null when it is not known. */
   icon: (
     library: string,
@@ -62,6 +64,8 @@ export interface ElementDefinition {
   /** Tags the user may pick for `htmlTag` (first one is the default). */
   htmlTags?: string[];
   defaults: () => { props: Record<string, PropValue>; htmlTag?: string; name: string };
+  /** Children a new element starts with (for example the options of a Radio). */
+  starterChildren?: () => { type: string; props: Record<string, PropValue>; name: string }[];
   propsSchema: ZodObject<ZodRawShape>;
   controls: ControlDef[];
   bindable: Record<string, BindableFlag>;

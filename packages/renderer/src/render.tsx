@@ -120,6 +120,8 @@ interface RenderScope {
   resolveToken: TokenResolver | undefined;
   /** Set on the top elements of one loop copy: the row position they show. */
   row?: number;
+  /** The element whose children are being drawn (what an Option reads of its field). */
+  parent?: { node: ElementNode; text: (key: string) => string };
 }
 
 function elementAttrs(
@@ -154,9 +156,15 @@ function loopResolver(options: RenderOptions, frames: LoopFrame[]): TokenResolve
  * copy reading its row as `item` and its position as `index` (outer loops become `parent`).
  */
 function renderChildren(node: ElementNode, options: RenderOptions, scope: RenderScope): ReactNode {
+  const parent = {
+    node,
+    text: (key: string) => resolveText(node.props[key], scope.resolveToken)
+  };
   const copy = (inner: RenderScope, suffix: string) =>
     node.children.map((child) => (
-      <Fragment key={child.id + suffix}>{renderScoped(child, options, inner)}</Fragment>
+      <Fragment key={child.id + suffix}>
+        {renderScoped(child, options, { ...inner, parent })}
+      </Fragment>
     ));
   if (!activeQuery(node)) return copy({ ...scope, row: undefined }, "");
   const query = activeQuery(node);
@@ -273,6 +281,7 @@ function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderSc
     bool: (key) => resolveBoolean(node.props[key]),
     attrs: options.loopMarkers ? { ...attrs, ...loopMarkers(node, options, scope) } : attrs,
     children: definition.canHaveChildren ? renderChildren(node, options, scope) : null,
+    parent: scope.parent,
     icon: (library, name, opts) => drawIcon(options.icons, library, name, opts)
   });
 }

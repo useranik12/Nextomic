@@ -282,6 +282,13 @@ export function createElementNode(
     taken.add(htmlId);
     node.htmlId = htmlId;
   }
+  for (const starter of definition.starterChildren?.() ?? []) {
+    const child = createElementNode(starter.type, taken, withHtmlId);
+    if (!child) continue;
+    child.name = starter.name;
+    child.props = { ...child.props, ...starter.props };
+    node.children.push(child);
+  }
   return node;
 }
 

@@ -16,6 +16,7 @@ import {
   GROUP,
   fieldNotes,
   flag,
+  looseValue,
   messageControlsFor,
   numberOrNull,
   on
@@ -80,9 +81,6 @@ registerElement({
       children
     )
 });
-
-// Static text, a number or a switch; dynamic text is checked by the shared prop value schema.
-const looseValue = z.union([z.string(), z.number(), z.boolean()]).optional();
 
 const ICON_POSITIONS = ["left", "right"] as const;
 

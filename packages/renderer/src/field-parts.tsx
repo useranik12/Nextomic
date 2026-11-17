@@ -1,5 +1,6 @@
 import { DEFAULT_MESSAGES } from "@nextomic/schema";
 import { createElement, type ReactNode } from "react";
+import { z } from "zod";
 import type { ControlDef, RenderContext } from "./registry";
 
 // Pieces every form field element shares (elements.md "Forms"): the settings groups, switch and
@@ -7,6 +8,9 @@ import type { ControlDef, RenderContext } from "./registry";
 
 export const FORM_NAME_REASON =
   "Form and field names are identifiers the Form tags and actions refer to; they must be known when the page is saved.";
+
+/** Static text, a number or a switch; dynamic text is checked by the shared prop value schema. */
+export const looseValue = z.union([z.string(), z.number(), z.boolean()]).optional();
 
 export const numberOrNull = (value: string): number | null => {
   if (value.trim() === "") return null;

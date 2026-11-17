@@ -18,4 +18,13 @@ export const CHOICE_BASE_CSS =
   `:where([data-invalid] ${CHOICE} ${MARK}){border-color:#dc2626}` +
   `:where(${CHOICE}:has(${INPUT}:disabled)){cursor:not-allowed;opacity:.6}` +
   `:where(${CHOICE} [data-nxt-text]){display:flex;flex-direction:column;gap:2px}` +
-  `:where(${CHOICE} [data-nxt-sub]){font-size:.8125rem;color:#71717a}`;
+  `:where(${CHOICE} [data-nxt-sub]){font-size:.8125rem;color:#71717a}` +
+  `:where([data-nxt-options]){display:flex;flex-direction:column;gap:8px}` +
+  `:where([data-nxt-options][data-nxt-layout="horizontal"]){flex-direction:row;flex-wrap:wrap;gap:8px 16px}` +
+  `:where(${CHOICE} [data-nxt-ico]){display:inline-flex;flex:none;align-items:center;font-size:1.125rem;color:#52525b}` +
+  `:where([data-nxt-variant="chips"] [data-nxt-options]){flex-direction:row;flex-wrap:wrap;gap:8px}` +
+  `:where([data-nxt-variant="chips"] ${CHOICE}){align-items:center;gap:6px;padding:6px 14px;border:1px solid #d4d4d8;border-radius:999px;background:#fff;transition:background-color .15s,border-color .15s,color .15s}` +
+  `:where([data-nxt-variant="chips"] ${MARK}){display:none}` +
+  `:where([data-nxt-variant="chips"] ${CHOICE}:has(${INPUT}:checked)){border-color:#6366f1;background:rgba(99,102,241,.1);color:#4338ca}` +
+  `:where([data-nxt-variant="chips"] ${CHOICE}:has(${INPUT}:focus-visible)){box-shadow:0 0 0 3px rgba(99,102,241,.35)}` +
+  `:where([data-nxt-variant="chips"][data-invalid] ${CHOICE}){border-color:#dc2626}`;

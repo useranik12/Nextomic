@@ -2,6 +2,7 @@
 import "./elements";
 import "./forms";
 import "./form-choices";
+import "./form-options";
 
 export * from "./css";
 export * from "./registry";

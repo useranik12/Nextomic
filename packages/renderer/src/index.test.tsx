@@ -49,7 +49,11 @@ describe("registry", () => {
       "svg",
       "form",
       "input",
-      "checkbox"
+      "checkbox",
+      "option",
+      "radio",
+      "checkboxGroup",
+      "choiceChips"
     ]);
   });
 
@@ -73,7 +77,11 @@ describe("registry", () => {
       "svg.svg",
       ...["required", "disabled", "readOnly", "clearable", "showToggle"].map((k) => `input.${k}`),
       ...["minLength", "maxLength", "min", "max"].map((k) => `input.${k}`),
-      ...["required", "checked", "disabled"].map((k) => `checkbox.${k}`)
+      ...["required", "checked", "disabled"].map((k) => `checkbox.${k}`),
+      ...["selected", "disabled"].map((k) => `option.${k}`),
+      ...["radio", "checkboxGroup", "choiceChips"].flatMap((t) =>
+        ["required", "disabled", "minSelected", "maxSelected"].map((k) => `${t}.${k}`)
+      )
     ]);
     const icons = {
       svg: (_library: string, name: string) =>
@@ -104,6 +112,9 @@ describe("registry", () => {
                     clearable: true,
                     showToggle: true
                   }
+                : {}),
+              ...(def.type === "option" && /Icon$|^icon$/.test(key)
+                ? { library: "ph", endLibrary: "ph" }
                 : {}),
               [key]: { kind: "mixed", parts: ["x-", { token: "page.name" }] }
             }
@@ -238,6 +249,55 @@ describe("forms", () => {
       const html = render([checkbox({})]);
       expect(html).not.toMatch(/<input[^>]* checked/);
       expect(html).toContain("&quot;required&quot;:false");
+    });
+  });
+
+  describe("option fields", () => {
+    const option = (id: string, props: Record<string, unknown> = {}) =>
+      node({ id, type: "option", props: { label: id, ...props } });
+    const group = (type: string, props: Record<string, unknown> = {}) =>
+      node({
+        id: "g",
+        type,
+        props: { name: "pick", label: "Pick", layout: "vertical", ...props },
+        children: [option("A", { selected: true }), option("B", { value: "bee" })]
+      });
+    const markup = (type: string, props: Record<string, unknown> = {}) =>
+      render([group(type, props)]).replace(/^[\s\S]*?(?=<form)/, "");
+
+    it("radio shares one name and holds one value", () => {
+      const html = markup("radio", { required: true });
+      expect(html).toContain('role="radiogroup"');
+      expect(html).toContain('data-nxt-kind="one"');
+      expect(html.match(/type="radio"/g)).toHaveLength(2);
+      expect(html.match(/name="pick"/g)).toHaveLength(2);
+      expect(html).toContain('value="bee"');
+      expect(html).toContain('value="A"');
+      expect(html).toMatch(/<input[^>]* checked/);
+      expect(html).toContain("&quot;kind&quot;:&quot;text&quot;");
+    });
+
+    it("checkbox group holds a list and counts what was chosen", () => {
+      const html = markup("checkboxGroup", { minSelected: 1, maxSelected: 2 });
+      expect(html).toContain('role="group"');
+      expect(html).toContain('data-nxt-kind="many"');
+      expect(html.match(/type="checkbox"/g)).toHaveLength(2);
+      expect(html).toContain("&quot;minSelected&quot;:1");
+      expect(html).toContain("&quot;maxSelected&quot;:2");
+    });
+
+    it("choice chips are chip styled, and one choice unless several are allowed", () => {
+      const several = markup("choiceChips", { multiple: true });
+      expect(several).toContain('data-nxt-variant="chips"');
+      expect(several).toContain('data-nxt-kind="many"');
+      const single = markup("choiceChips", { multiple: false });
+      expect(single).toContain('data-nxt-kind="one"');
+      expect(single).toContain('type="radio"');
+    });
+
+    it("puts each input inside its own label, so no ids are needed", () => {
+      const html = markup("checkboxGroup");
+      expect(html.match(/<label[^>]*data-nxt-choice=""[^>]*><input/g)).toHaveLength(2);
     });
   });
 

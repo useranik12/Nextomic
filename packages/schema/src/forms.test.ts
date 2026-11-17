@@ -120,6 +120,40 @@ describe("checkbox fields", () => {
   });
 });
 
+describe("option fields", () => {
+  const option = (id: string, props = {}) => el(id, "option", { label: id, ...props });
+  const group = (type: string, children: unknown[], props = {}) =>
+    el("g", type, { name: "pick", ...props }, children);
+  const blank = buildDynamicContext({
+    page: { name: "P", route: "/", settings: defaultPageSettings() },
+    mode: "live"
+  });
+
+  it("starts with the chosen options: one value for radio, a list for several", () => {
+    const kids = [option("A", { selected: true }), option("B", { value: "bee", selected: true })];
+    const radio = page(form("f", "s", [group("radio", kids)]));
+    expect(withFormDefaults(blank, radio).forms.s?.pick).toBe("A");
+    const many = page(form("f", "s", [group("checkboxGroup", kids)]));
+    expect(withFormDefaults(blank, many).forms.s?.pick).toBe('["A","bee"]');
+    expect(withFormDefaults(blank, many).types["form.s.pick"]?.isList).toBe(true);
+    const single = page(form("f", "s", [group("choiceChips", kids, { multiple: false })]));
+    expect(withFormDefaults(blank, single).forms.s?.pick).toBe("A");
+    expect(withFormDefaults(blank, single).types["form.s.pick"]).toBeUndefined();
+  });
+
+  it("lists the group as a field of its form", () => {
+    const root = page(form("f", "s", [group("radio", [option("A")])]));
+    expect(formsOf(root)[0]?.fields).toEqual([{ id: "g", name: "pick", type: "radio" }]);
+  });
+
+  it("keeps options inside option fields and nothing else", () => {
+    const root = page(form("f", "s", [group("radio", [option("A")])]), el("p", "container"));
+    expect(formPlacementProblem(root, "g", option("B"))).toBeNull();
+    expect(formPlacementProblem(root, "p", option("B"))).toMatch(/option goes inside/);
+    expect(formPlacementProblem(root, "g", el("x", "container"))).toMatch(/can only hold options/);
+  });
+});
+
 describe("validateValue", () => {
   it("handles required and empty optional", () => {
     expect(validateValue("  ", rules({ required: true }))).toBe("This field is required.");

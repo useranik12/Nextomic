@@ -254,3 +254,74 @@ test("checkbox: tile, form tag, required check validates and toggles in the prev
   await box.check({ force: true });
   await expect(error).toBeHidden();
 });
+
+test("option fields: starter options, placement, radio and checkbox group validate in the preview", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+
+  // An option cannot sit loose in the form.
+  await add(page, "Option");
+  await expect(page.getByText(/option goes inside a Radio/)).toBeVisible();
+
+  // Radio starts with three options and the Form tag group lists its field.
+  await add(page, "Radio");
+  await expect(page.getByRole("treeitem")).toHaveCount(5);
+  await page.getByLabel("Field name", { exact: true }).fill("plan");
+  await page.getByRole("switch", { name: "Required" }).click({ force: true });
+  // A field of options takes only options, so each new element is added with the form selected.
+  const selectForm = () =>
+    page
+      .getByRole("tree", { name: "Page elements" })
+      .getByText("Form", { exact: true })
+      .first()
+      .click();
+  await selectForm();
+  await add(page, "Checkbox group");
+  await page.getByLabel("Field name", { exact: true }).fill("toppings");
+  await page.getByLabel("Fewest chosen", { exact: true }).fill("2");
+  await selectForm();
+  await add(page, "Choice chips");
+  await page.getByLabel("Field name", { exact: true }).fill("tags");
+  await selectForm();
+  await add(page, "Heading");
+  await page.getByRole("button", { name: "Dynamic value for Text" }).click();
+  await page
+    .getByRole("group", { name: "Tag groups" })
+    .getByRole("button", { name: "Form" })
+    .click();
+  for (const tag of ["form.form.plan", "form.form.toppings", "form.form.tags"])
+    await expect(page.getByText(tag)).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+
+  // Radio: leaving it unchosen shows the required message; choosing clears it.
+  const radios = preview.locator('input[name="plan"]');
+  await expect(radios).toHaveCount(3);
+  const required = preview.getByRole("alert").filter({ hasText: "This field is required." });
+  await radios.first().focus();
+  await preview.locator('input[name="toppings"]').first().focus();
+  await expect(required).toBeVisible();
+  await radios.nth(1).check({ force: true });
+  await expect(required).toBeHidden();
+  // Moving between the radios of one group never counts as leaving it.
+  await radios.nth(1).focus();
+  await radios.nth(2).focus();
+  await expect(required).toBeHidden();
+
+  // Checkbox group: two must be chosen.
+  const boxes = preview.locator('input[name="toppings"]');
+  await boxes.nth(0).check({ force: true });
+  await boxes.nth(0).blur();
+  await preview.locator('input[name="plan"]').first().focus();
+  await expect(preview.getByRole("alert").filter({ hasText: "Choose at least 2." })).toBeVisible();
+  await boxes.nth(1).check({ force: true });
+  await expect(preview.getByRole("alert").filter({ hasText: "Choose at least 2." })).toBeHidden();
+});

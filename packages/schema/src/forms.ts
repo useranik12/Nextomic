@@ -8,7 +8,19 @@ import type { DynamicContext } from "./dynamic-context";
 // and show up as {{ form.<formName>.<fieldName> }}. Forms never nest and never sit in a query loop.
 
 export const FORM_TYPE = "form";
-export const FORM_FIELD_TYPES = ["input", "checkbox"] as const;
+export const FORM_FIELD_TYPES = [
+  "input",
+  "checkbox",
+  "radio",
+  "checkboxGroup",
+  "choiceChips"
+] as const;
+
+/** Option elements sit directly inside these fields; a query loop on the field repeats them. */
+export const OPTION_TYPE = "option";
+export const OPTION_GROUP_TYPES = ["radio", "checkboxGroup", "choiceChips"] as const;
+export const isOptionGroup = (node: ElementNode): boolean =>
+  (OPTION_GROUP_TYPES as readonly string[]).includes(node.type);
 
 /** Names are identifiers so the dotted tag path never needs quoting. */
 export const FORM_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_]{0,39}$/;
@@ -46,13 +58,35 @@ const propText = (node: ElementNode, key: string): string => {
 };
 
 /** How a field of this element holds its value (see `FIELD_VALUE_KINDS`). */
-export const valueKindOf = (node: ElementNode): FieldValueKind =>
-  node.type === "checkbox" ? "check" : "text";
+export function valueKindOf(node: ElementNode): FieldValueKind {
+  if (node.type === "checkbox") return "check";
+  return node.type === "checkboxGroup" || isMultiChips(node) ? "many" : "text";
+}
+
+/** Choice chips take several options unless `multiple` is switched off (a fixed choice, not data). */
+export const isMultiChips = (node: ElementNode): boolean =>
+  node.type === "choiceChips" && node.props.multiple !== false && node.props.multiple !== "false";
+
+const isOn = (value: unknown): boolean => value === true || value === "true";
+
+/** Options of a field that are chosen at the start (plain text values only). */
+function startOptions(node: ElementNode): string[] {
+  const chosen: string[] = [];
+  for (const child of node.children) {
+    if (child.type !== OPTION_TYPE || !isOn(child.props.selected)) continue;
+    const value = propText(child, "value") || propText(child, "label");
+    if (value) chosen.push(value);
+  }
+  return chosen;
+}
 
 /** The value a field starts with: plain text only (a dynamic default starts empty). */
 export function startValueOf(node: ElementNode): string {
-  if (node.type === "checkbox")
-    return node.props.checked === true || node.props.checked === "true" ? "true" : "false";
+  if (node.type === "checkbox") return isOn(node.props.checked) ? "true" : "false";
+  if (isOptionGroup(node)) {
+    const chosen = startOptions(node);
+    return valueKindOf(node) === "many" ? listText(chosen) : (chosen[0] ?? "");
+  }
   if (node.props.type === "password") return "";
   return typeof node.props.value === "string" ? node.props.value : "";
 }
@@ -318,8 +352,13 @@ export function formPlacementProblem(
   parentId: string,
   subtree: ElementNode
 ): string | null {
-  if (!containsForm(subtree)) return null;
   const path = pathTo(root, parentId);
+  const parent = path[path.length - 1];
+  if (subtree.type === OPTION_TYPE && !(parent && isOptionGroup(parent)))
+    return "An option goes inside a Radio, Checkbox group or Choice chips.";
+  if (parent && isOptionGroup(parent) && subtree.type !== OPTION_TYPE)
+    return "Radio, Checkbox group and Choice chips can only hold options.";
+  if (!containsForm(subtree)) return null;
   if (path.some((n) => n.type === FORM_TYPE)) return "A form cannot sit inside another form.";
   if (path.some((n) => n.query?.enabled)) return "A form cannot sit inside a query loop.";
   return null;
@@ -390,6 +429,7 @@ export const INPUT_ICON_SLOTS = [
 /** The prop names that can hold an icon library key (Icon element and Input slots). */
 export const ICON_LIBRARY_PROPS: readonly string[] = [
   "library",
+  "endLibrary",
   ...INPUT_ICON_SLOTS.slice(1).map((slot) => slot.library)
 ];
 
@@ -398,8 +438,10 @@ export function iconLibrariesOf(node: ElementNode): string[] {
   const keys: unknown[] =
     node.type === "icon"
       ? [node.props.source === "svg" ? "" : node.props.library]
-      : isFormField(node)
-        ? INPUT_ICON_SLOTS.map((slot) => node.props[slot.library])
-        : [];
+      : node.type === OPTION_TYPE
+        ? [node.props.library, node.props.endLibrary]
+        : node.type === "input"
+          ? INPUT_ICON_SLOTS.map((slot) => node.props[slot.library])
+          : [];
   return keys.filter((key): key is string => typeof key === "string" && key !== "");
 }
