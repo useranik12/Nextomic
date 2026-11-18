@@ -46,6 +46,15 @@ Design sources (`blueprint/`) and how to follow them: see `apps/editor/CLAUDE.md
 - CSS parsing: PostCSS or lightningcss (for bidirectional CSS)
 - Hosting: Dokploy on Ubuntu 24.04 VPS (Docker, Bun image)
 
+## Dependency versions (owner rule, always)
+
+- Any new package, dependency, base image, Docker image, GitHub Action or tool must be added at its latest STABLE release, found by checking the registry or official docs at the time (not from memory).
+- Pin the EXPLICIT full version number (for example `16.4.6`, `postgres:18.1-alpine`, `oven/bun:1.4.4`). Never `latest`, `lts`, a bare major (`postgres:18`, `oven/bun:1`), `^`, `~`, `*`, or `x` ranges.
+- No nightly, canary, beta, alpha, rc, next, dev or testing builds, ever.
+- If the newest stable release is blocked by a peer dependency or breaks the app, stop and tell the owner; do not silently fall back to an older version or a pre-release.
+- Upgrades follow the same rule. After any add or upgrade run `bun run deps:manifest` and record a decision in `docs/spec.md` if the choice is not obvious.
+- Existing exceptions to clean up when next touched: `postgres:18-alpine` and `oven/bun:1` in `docker-compose.yml` and `Dockerfile` use a major tag only.
+
 ## Repo layout
 
 - `blueprint/` design sources (READ-ONLY): `pages/`, `components/`, `inspiration/`, `design-system/`, `tokens.json`, `tools/`
