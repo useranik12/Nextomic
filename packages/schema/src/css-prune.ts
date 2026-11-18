@@ -22,7 +22,7 @@ const CLASS_REF = /\.((?:\\.|[\w-])+)/g;
  */
 export function requiredClasses(selector: string): string[] {
   let text = selector.replace(ATTRIBUTE, "");
-  for (let before = ""; before !== text; ) {
+  for (let before = ""; before !== text;) {
     before = text;
     text = text.replace(FUNCTIONAL_PSEUDO, "");
   }

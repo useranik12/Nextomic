@@ -189,14 +189,17 @@ test("form input design: Form Input group first, error style on canvas and previ
   // Error state of the box: a red border, pinned on the canvas while it is edited.
   const box = first.locator('[data-input-part="box"]');
   await box.getByRole("button", { name: "Input box", exact: true }).click();
-  await box.getByRole("tab", { name: "Error" }).click();
+  await page.getByRole("button", { name: "State being edited" }).click();
+  await page.locator("[role=option]", { hasText: "Error" }).click();
+  await box.getByRole("button", { name: "Background and border" }).click();
   await box.getByLabel("Border color", { exact: true }).fill("rgb(255, 0, 0)");
   const canvasBox = canvas.locator("[data-nxt-box]");
   await expect
     .poll(() => canvasBox.evaluate((el) => getComputedStyle(el).borderTopColor))
     .toBe("rgb(255, 0, 0)");
   // Back to Default, the canvas shows the normal look again (the error style is only pinned).
-  await box.getByRole("tab", { name: "Default" }).click();
+  await page.getByRole("button", { name: "State being edited" }).click();
+  await page.locator("[role=option]", { hasText: "Default" }).click();
   await expect
     .poll(() => canvasBox.evaluate((el) => getComputedStyle(el).borderTopColor))
     .not.toBe("rgb(255, 0, 0)");

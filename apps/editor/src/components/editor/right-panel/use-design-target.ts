@@ -1,13 +1,20 @@
 "use client";
 
-import { getStyle, type ElementNode, type PseudoState, type StyleMap } from "@nextomic/schema";
+import {
+  getStyle,
+  pseudoOf,
+  type EditState,
+  type ElementNode,
+  type PseudoState,
+  type StyleMap
+} from "@nextomic/schema";
 import { useEditorStore } from "../store/editor-store";
 
 export interface DesignTarget {
   /** The class being edited, or null when the element itself is. */
   activeClass: string | null;
   breakpointId: string;
-  state: PseudoState;
+  state: EditState;
   styles: StyleMap;
   /** The value of a property set on this target at the current breakpoint and state. */
   own: (property: string) => string | undefined;
@@ -26,7 +33,9 @@ export function useDesignTarget(node: ElementNode, pinned?: PseudoState): Design
   const activeClass = useEditorStore((s) => s.activeClass);
   const breakpointId = useEditorStore((s) => s.activeBreakpointId);
   const globalState = useEditorStore((s) => s.activeState);
-  const state = pinned ?? globalState;
+  const state: EditState = pinned ?? globalState;
+  // Form-only states hold no ordinary settings (they live in the Form design group).
+  const pseudo = pseudoOf(state);
   const classStyles = useEditorStore((s) =>
     s.activeClass ? s.project.classes[s.activeClass] : undefined
   );
@@ -37,10 +46,11 @@ export function useDesignTarget(node: ElementNode, pinned?: PseudoState): Design
     breakpointId,
     state,
     styles,
-    own: (property) => getStyle(holder, breakpointId, state, property),
+    own: (property) => (pseudo ? getStyle(holder, breakpointId, pseudo, property) : undefined),
     inherited: (property) =>
-      breakpointId === "base" ? undefined : getStyle(holder, "base", state, property),
-    ownDeclarations: styles.breakpoints[breakpointId]?.[state],
-    inheritedDeclarations: breakpointId === "base" ? undefined : styles.breakpoints.base?.[state]
+      breakpointId === "base" || !pseudo ? undefined : getStyle(holder, "base", pseudo, property),
+    ownDeclarations: pseudo ? styles.breakpoints[breakpointId]?.[pseudo] : undefined,
+    inheritedDeclarations:
+      breakpointId === "base" || !pseudo ? undefined : styles.breakpoints.base?.[pseudo]
   };
 }

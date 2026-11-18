@@ -58,7 +58,9 @@ import {
   type TemplateType,
   type Theme,
   type PropValue,
-  type InputState,
+  type EditState,
+  editStatesFor,
+  pseudoOf,
   type PseudoState
 } from "@nextomic/schema";
 import { current, produce } from "immer";
@@ -109,7 +111,8 @@ interface EditorState {
   classesTick: number;
   pageDrafts: PageDrafts;
   activeBreakpointId: string;
-  activeState: PseudoState;
+  /** The state the Design tab edits (browser states, plus Checked, Error and Success on form fields). */
+  activeState: EditState;
   clipboard: ElementNode | null;
   saveStatus: SaveStatus;
   saveError: string | null;
@@ -145,7 +148,7 @@ interface EditorState {
   setPageDraft: <K extends keyof PageDrafts>(kind: K, value: PageDrafts[K]) => void;
   clearPageDrafts: () => void;
   setActiveBreakpoint: (id: string) => void;
-  setActiveState: (state: PseudoState) => void;
+  setActiveState: (state: EditState) => void;
 
   insertElement: (type: string, parentId?: string, index?: number) => string | null;
   moveElement: (id: string, parentId: string, index: number) => boolean;
@@ -186,8 +189,6 @@ interface EditorState {
   hideSelection: boolean;
   setHideSelection: (hide: boolean) => void;
   /** The state the canvas pins the selected Input in while Design > Form Input is edited. */
-  inputPreview: InputState;
-  setInputPreview: (state: InputState) => void;
   designGroup: string | null;
   setDesignGroup: (group: string | null) => void;
   designMemory: Record<string, { group: string; property: string }>;
@@ -372,8 +373,6 @@ export const useEditorStore = create<EditorState>((set, get) => {
     selectedId: null,
     activeClass: null,
     stylePreview: null,
-    inputPreview: "default",
-    setInputPreview: (inputPreview) => set({ inputPreview }),
     classesTick: 0,
     pageDrafts: NO_DRAFTS,
     activeBreakpointId: BASE_BREAKPOINT_ID,
@@ -449,7 +448,10 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (htmlId) picker.onPick(`#${htmlId}`);
         return;
       }
-      set({ selectedId: id, activeClass: null });
+      // The state belongs to the element it was picked on: another element may not have it.
+      const found = id && doc ? findNode(doc.tree, id) : null;
+      const stays = found && editStatesFor(found.node.type).includes(get().activeState);
+      set({ selectedId: id, activeClass: null, ...(stays ? {} : { activeState: "default" }) });
     },
     setElementAnimation: (id, animation) =>
       void edit(`anim:${id}`, (draft) => {
@@ -1072,7 +1074,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
 
     setElementStyle: (id, property, value, pinned) => {
       const { activeBreakpointId, activeClass, project } = get();
-      const activeState = pinned ?? get().activeState;
+      const activeState = pinned ?? pseudoOf(get().activeState);
+      // Checked, Error and Success are styled in the Form design group, never here.
+      if (!activeState) return;
       if (activeClass) {
         const styles: StyleMap = structuredClone(
           project.classes[activeClass] ?? { breakpoints: {} }
@@ -1095,7 +1099,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
     },
 
     setElementStyles: (id, patch) => {
-      const { activeBreakpointId, activeState, activeClass, project } = get();
+      const { activeBreakpointId, activeClass, project } = get();
+      const activeState = pseudoOf(get().activeState);
+      if (!activeState) return;
       const entries = Object.entries(patch);
       if (activeClass) {
         const styles: StyleMap = structuredClone(

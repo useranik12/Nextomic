@@ -22,8 +22,7 @@ const SUFFIX: Record<PseudoState, string> = {
 const MAX_VALUE = 2000;
 
 export type CssParseResult =
-  | { ok: true; styles: StyleMap }
-  | { ok: false; error: string; line: number | null };
+  { ok: true; styles: StyleMap } | { ok: false; error: string; line: number | null };
 
 function mediaFor(def: BreakpointDef): string | null {
   if (def.kind === "base" || def.width === null) return null;

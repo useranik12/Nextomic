@@ -5,9 +5,7 @@ import type { StateType } from "./state";
 // list. The builder reads responses with JSON.parse, so paths only walk plain values.
 
 export type PathStep =
-  | { kind: "key"; key: string }
-  | { kind: "index"; index: number }
-  | { kind: "all" };
+  { kind: "key"; key: string } | { kind: "index"; index: number } | { kind: "all" };
 
 /** The steps of a path, or an error message. */
 export function parseJsonPath(path: string): { steps: PathStep[] } | { error: string } {

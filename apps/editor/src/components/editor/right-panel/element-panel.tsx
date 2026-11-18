@@ -6,6 +6,8 @@ import {
   designGroupTitle,
   designPartsFor,
   dynamicTextOf,
+  editStateLabel,
+  pseudoOf,
   findNode,
   hasConditions,
   isOptionGroup,
@@ -252,6 +254,9 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const showElement = q ? controls.length > 0 : tab === "element";
   const hasFormInput = formInputMatches(node.type, q);
   const isOption = node.type === "option";
+  const activeState = useEditorStore((s) => s.activeState);
+  // Checked, Error and Success hold no ordinary settings, only the Form design parts do.
+  const formOnlyState = pseudoOf(activeState) === null;
   const showDesign = q ? groups.length > 0 || hasFormInput : tab === "design";
   const showAction = !q && tab === "action";
 
@@ -446,6 +451,13 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 <FormInputGroup key={node.id} node={node} query={q} />
               </AccordionSection>
             ) : null}
+            {formOnlyState ? (
+              <p className="px-3 py-2 text-xs text-muted" role="note">
+                {editStateLabel(node.type, activeState)} is styled in {designGroupTitle(node.type)}.
+                Switch the state to Default, Hover, Focus, Active or Disabled to edit the groups
+                below.
+              </p>
+            ) : null}
             {groups.map((group) => (
               <AccordionSection
                 key={group.id}
@@ -455,7 +467,9 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 open={q ? true : designGroup === group.id}
                 onToggle={toggleGroup}
               >
-                <GroupBody node={node} groupId={group.id} properties={group.properties} />
+                <div inert={formOnlyState} className={formOnlyState ? "opacity-40" : undefined}>
+                  <GroupBody node={node} groupId={group.id} properties={group.properties} />
+                </div>
               </AccordionSection>
             ))}
             {!q || "animations".includes(q) ? (

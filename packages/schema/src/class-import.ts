@@ -21,8 +21,7 @@ export function exportClassesCss(
 }
 
 export type ClassImport =
-  | { ok: true; classes: Record<string, StyleMap>; skipped: number }
-  | { ok: false; error: string };
+  { ok: true; classes: Record<string, StyleMap>; skipped: number } | { ok: false; error: string };
 
 const SIMPLE = /^\.(-?[_a-zA-Z][\w-]*)(?::(?:hover|focus|active|disabled))?$/;
 
