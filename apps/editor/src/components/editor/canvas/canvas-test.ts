@@ -121,6 +121,7 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
       search: "",
       flows: {},
       resultReads: [],
+      rereadable: [],
       blocks: message.blocks,
       deps: {},
       rootIds: [],

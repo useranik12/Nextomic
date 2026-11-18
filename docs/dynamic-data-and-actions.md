@@ -273,3 +273,5 @@ Token parsing and scope validation, universal bindability, loop duplication, tra
 ## Action results on the page
 
 An output is flow-scoped by default. Turn on "Keep result on the page" in the node and any element, query setting, condition or later flow reads it as `{{ results.name }}` (picker group "Action results"). Use `?.` for fields (`{{ results.posts?.[0]?.title }}`), or pass the whole value as the list of a Query Loop. Last writer wins when two nodes share a name. Browser-only, 100k cap, never saved; see the 2026-11-18 decision in `spec.md`.
+
+Loop over a kept result: Query Loop > Other Loops > Source "Action Result", pick the result. Inside the loop read each field as `{{ %loop.item.title }}` (the fields come from the action's table or API type). Static JSON stays for literal lists and Expression for computed lists (map, filter). Results above 100,000 characters work for read-only actions (Supabase query, GET API call): the server reads them again on redraw. Copy any tag with the copy button in the Dynamic data modal.

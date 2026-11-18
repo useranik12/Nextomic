@@ -54,6 +54,8 @@ describe("withResults", () => {
     expect(next.results).toEqual({ posts: '[{"title":"A"}]' });
     const huge = withResults(context(), { posts: "y".repeat(100_001) }, declared);
     expect(huge.results).toEqual({});
+    const again = withResults(context(), {}, declared, { posts: "y".repeat(150_000), other: "z" });
+    expect(Object.keys(again.results)).toEqual(["posts"]);
     const title = node({
       id: "t",
       type: "text",

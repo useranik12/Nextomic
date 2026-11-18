@@ -24,6 +24,8 @@ export interface RuntimePayload {
   deps: Record<string, string[]>;
   /** Names of the kept action results that something on the page reads ("results.products"); only these ride along with a redraw. */
   resultReads: string[];
+  /** Kept results whose action only reads: when one is too large to send, the server reads it again. */
+  rereadable: string[];
   /** Ids of the page root and template roots: their flows hold page-level triggers. */
   rootIds: string[];
   /** The page's dynamic context; the access token is always blank. */
@@ -51,6 +53,8 @@ export interface FragmentRequest {
   forms?: Record<string, Record<string, string>>;
   /** The kept action results the page reads, by name (JSON text). */
   results?: Record<string, string>;
+  /** Too-large results of read-only actions: the saved action and the values it ran with. */
+  resultRefs?: Record<string, { node: string; values: string[] }>;
   /** Changes class, ID and attribute actions made: the redraw applies them first. */
   edits?: ElementEdits;
   /** Loops Refresh Query ran (by loop id): the action node and its filled values. */

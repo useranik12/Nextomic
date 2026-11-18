@@ -115,7 +115,7 @@ export function startActionRuntime(
       ids: wanted,
       app,
       state,
-      results: live.readResults(),
+      ...live.resultRequest(),
       forms: forms.values(false),
       edits: edits.snapshot(),
       refreshes
@@ -170,6 +170,8 @@ export function startActionRuntime(
       browserNavigation.reload();
     }
   };
+  // The values each server action last ran with, so a large kept result can be read again.
+  const lastRuns = new Map<string, { node: string; values: string[] }>();
   const handlers: Record<string, ActionHandler> = starterHandlers({
     payload,
     forms,
@@ -181,6 +183,7 @@ export function startActionRuntime(
     touched: (names) => onChange(names),
     redrawElement: async (id) => (await redraw([id])).includes(id),
     runServer: async (nodeId, values) => {
+      lastRuns.set(nodeId, { node: nodeId, values });
       try {
         const result = await options.runServerAction({ node: nodeId, values });
         if (result.after) afterFlow = result.after;
@@ -217,7 +220,7 @@ export function startActionRuntime(
       const response = await options.fetchFragments({
         app,
         state,
-        results: live.readResults(),
+        ...live.resultRequest(),
         overlay: { templateId, params }
       });
       if (!response.overlay) throw new FlowError("no-template", "The template cannot be shown.");
@@ -233,7 +236,7 @@ export function startActionRuntime(
       handlers,
       blocks: payload.blocks,
       elementId: nodeId && !roots.has(nodeId) ? nodeId : null,
-      share: (name, value) => live.setResult(name, value),
+      share: (name, value, id) => live.setResult(name, value, lastRuns.get(id)),
       log
     });
     const after = afterFlow as { redirect: string | null } | null;

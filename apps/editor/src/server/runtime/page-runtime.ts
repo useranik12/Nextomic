@@ -1,5 +1,8 @@
 import {
   calledBlocks,
+  rereadableResults,
+  sharedResults,
+  type RestConfig,
   stateDependencies,
   stateRefs,
   hasActiveForm,
@@ -15,6 +18,7 @@ import { getDb, projects } from "@nextomic/db";
 import { eq } from "drizzle-orm";
 import type { RuntimePayload } from "@nextomic/runtime";
 import { loopFreeIds } from "@/server/runtime/loop-free";
+import { querySources } from "@/server/queries/run-query";
 import { flowsOf, listBlocks } from "@/server/action-flows";
 import { listPages } from "@/server/pages";
 import type { PublishedView } from "@/server/publish";
@@ -64,6 +68,15 @@ interface PayloadInput {
   blocks: readonly ActionBlock[];
   rootIds: string[];
   routes: Record<string, string>;
+  /** The project's API Data calls, when a kept result comes from one (read-only check). */
+  rest?: RestConfig | null;
+}
+
+/** The API Data calls, read only when a kept result comes from one. */
+async function restForResults(projectId: string, flows: FlowsByNode): Promise<RestConfig | null> {
+  return sharedResults(flows).some((r) => r.type === "rest.call")
+    ? (await querySources(projectId)).rest
+    : null;
 }
 
 /** Which state each element reads; elements inside query loops redraw with their loop. */
@@ -92,6 +105,7 @@ export function runtimePayload(input: PayloadInput): RuntimePayload | null {
         ...Object.values(stateDependencies(input.tree)).flat()
       ])
     ].filter((ref) => ref.startsWith("results.")),
+    rereadable: rereadableResults(sharedResults(input.flows), input.rest ?? null),
     rootIds: input.rootIds,
     dynamic: { ...input.dynamic, user, exposeAccessToken: false },
     appState: input.settings.appState,
@@ -173,7 +187,8 @@ export async function livePayload(
     settings: view.settings,
     flows,
     blocks,
-    routes: view.routes
+    routes: view.routes,
+    rest: await restForResults(projectId, flows)
   });
 }
 
@@ -196,6 +211,7 @@ export async function previewPayload(
     settings,
     flows,
     blocks,
-    routes: Object.fromEntries(pages.map((p) => [p.id, p.route]))
+    routes: Object.fromEntries(pages.map((p) => [p.id, p.route])),
+    rest: await restForResults(projectId, flows)
   });
 }

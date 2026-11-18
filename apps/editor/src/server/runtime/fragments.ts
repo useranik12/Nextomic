@@ -16,7 +16,8 @@ import {
   type PublishedTemplate,
   withFormDefaults,
   withTemplateParams,
-  RESULT_LIMIT
+  RESULT_LIMIT,
+  RESULT_MAX
 } from "@nextomic/schema";
 import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -51,11 +52,16 @@ export function withClientState(
 export function withResults(
   dynamic: DynamicContext,
   given: Readonly<Record<string, string>>,
-  declared: ReadonlySet<string>
+  declared: ReadonlySet<string>,
+  /** Results the server read again (already checked); they may be larger than a request carries. */
+  reread: Readonly<Record<string, string>> = {}
 ): DynamicContext {
   const results: Record<string, string> = {};
   for (const [name, value] of Object.entries(given)) {
     if (declared.has(name) && value.length <= RESULT_LIMIT) results[name] = value;
+  }
+  for (const [name, value] of Object.entries(reread)) {
+    if (declared.has(name) && value.length <= RESULT_MAX) results[name] = value;
   }
   return { ...dynamic, results };
 }

@@ -1,7 +1,7 @@
-import { expressionScope, RESULT_LIMIT, type DynamicContext } from "@nextomic/schema";
+import { expressionScope, RESULT_LIMIT, RESULT_MAX, type DynamicContext } from "@nextomic/schema";
 import { FlowError } from "./engine";
 import { writePersisted, type PersistEnv } from "../persisted-state";
-import type { RuntimePayload } from "./payload";
+import type { FragmentRequest, RuntimePayload } from "./payload";
 import { applyStateOp } from "./state-ops";
 
 // The page's live app and page state, as text like the dynamic context stores it. Changes are
@@ -20,6 +20,8 @@ export class LiveState {
   readonly state: Record<string, string>;
   /** Action results kept on the page, by name, as JSON text. Never saved anywhere. */
   readonly results: Record<string, string>;
+  /** For results too large to send: the read-only action and values that made each. */
+  private readonly sources = new Map<string, { node: string; values: string[] }>();
   private readonly initial: { app: Record<string, string>; state: Record<string, string> };
   private scopeCache: Record<string, unknown> | null = null;
   /** Reads the visitor's form values (set by the page runtime once the forms exist). */
@@ -86,27 +88,41 @@ export class LiveState {
   }
 
   /** Keeps what an action answered under `results.<name>`; the elements that read it redraw. */
-  setResult(name: string, value: unknown): void {
+  setResult(name: string, value: unknown, source?: { node: string; values: string[] }): void {
     const text = value === undefined ? "" : (JSON.stringify(value) ?? "");
-    if (text.length > RESULT_LIMIT)
+    const big = text.length > RESULT_LIMIT;
+    // A large result of a read-only action stays here; redraws carry a reference to it instead.
+    const fits =
+      !big || (this.payload.rereadable.includes(name) && source && text.length <= RESULT_MAX);
+    if (!fits)
       throw new FlowError(
         "result-too-large",
-        `The result "${name}" is too large to keep on the page. Ask for fewer rows or columns.`
+        `The result "${name}" is too large to keep on the page. Ask for fewer rows or columns${
+          big && !this.payload.rereadable.includes(name)
+            ? " (only a read-only action's result can be larger than 100,000 characters)"
+            : ""
+        }.`
       );
+    if (big && source) this.sources.set(name, source);
+    else this.sources.delete(name);
     if (this.results[name] === text) return;
     this.results[name] = text;
     this.scopeCache = null;
     this.onChange([`results.${name}`]);
   }
 
-  /** The kept results something on the page reads (what a redraw sends to the server). */
-  readResults(): Record<string, string> {
-    const out: Record<string, string> = {};
+  /** The kept results something on the page reads: what a redraw sends (text, or a reference when too large). */
+  resultRequest(): Pick<FragmentRequest, "results" | "resultRefs"> {
+    const results: Record<string, string> = {};
+    const resultRefs: Record<string, { node: string; values: string[] }> = {};
     for (const ref of this.payload.resultReads) {
       const name = ref.slice("results.".length);
-      if (name in this.results) out[name] = this.results[name] ?? "";
+      if (!(name in this.results)) continue;
+      const source = this.sources.get(name);
+      if (source) resultRefs[name] = source;
+      else results[name] = this.results[name] ?? "";
     }
-    return out;
+    return { results, resultRefs };
   }
 
   private save(name: string, value: string): void {

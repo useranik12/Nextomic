@@ -5,17 +5,24 @@ import {
   overlayRanks,
   findRefreshQuery,
   refreshRequestSchema,
+  findServerAction,
+  MAX_REREADS,
+  rereadableResults,
   sharedResults,
+  withActionValues,
   resolveOverlay,
   type ElementQuery
 } from "@nextomic/schema";
+import { ConnectorError } from "@nextomic/integrations";
 import { z } from "zod";
+import { runServerAction } from "@/server/runtime/run-action";
 import { headersOf, previewMember, sameOrigin, visitorKey } from "@/server/runtime/site-request";
 import {
   asVisitor,
   editorExecutor,
   pageLoopRows,
   projectWorkspaceId,
+  querySources,
   siteExecutor,
   type Executor
 } from "@/server/queries/run-query";
@@ -53,6 +60,17 @@ const bodySchema = z.object({
   state: values,
   /** Action results the page keeps, by name (JSON text); only names its flows keep are used. */
   results: values,
+  /** Too-large results of read-only actions: the saved action and the values it ran with. */
+  resultRefs: z
+    .record(
+      z.string().max(64),
+      z.object({
+        node: z.string().min(1).max(64),
+        values: z.array(z.string().max(5000)).max(50)
+      })
+    )
+    .refine((refs) => Object.keys(refs).length <= MAX_REREADS)
+    .default({}),
   /** Visitor form values by form then field; the tree decides which exist. */
   forms: z
     .record(z.string().max(40), z.record(z.string().max(40), z.string().max(5000)))
@@ -111,10 +129,6 @@ export default async function handler(request: NextApiRequest, response: NextApi
       : "page" in laid
         ? draftFlows(id, laid.page.id, laid.templateIds)
         : Promise.resolve({ flows: {}, blocks: [] });
-  if (Object.keys(body.results).length > 0) {
-    const { flows } = await pageFlowsOf();
-    dynamic = withResults(dynamic, body.results, new Set(sharedResults(flows).map((r) => r.name)));
-  }
   // Loops inside a redrawn element run here, with the connector of this mode: the site's own in
   // its workspace, or the signed-in member's in the preview.
   let executor: Executor | null = null;
@@ -128,6 +142,46 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }
     return asVisitor(executor, laid.visitor?.accessToken)(row, request);
   };
+  // Kept action results: names a flow of the page keeps, as sent; a too-large result of a read-only
+  // action comes as a reference, and the saved action runs again here with its values (the saved
+  // action only, never one the browser wrote). Writing actions are never run again.
+  if (Object.keys(body.results).length > 0 || Object.keys(body.resultRefs).length > 0) {
+    const { flows, blocks } = await pageFlowsOf();
+    const shared = sharedResults(flows);
+    const reread: Record<string, string> = {};
+    const refs = Object.entries(body.resultRefs);
+    if (refs.length > 0) {
+      const ok = new Set(rereadableResults(shared, (await querySources(id)).rest));
+      const lists = [
+        ...Object.values(flows).flatMap((list) => list.map((flow) => flow.nodes)),
+        ...blocks.map((block) => block.nodes)
+      ];
+      try {
+        await Promise.all(
+          refs.map(async ([name, ref]) => {
+            const kept = shared.find((r) => r.name === name);
+            const saved =
+              kept && kept.nodeId === ref.node && ok.has(name)
+                ? findServerAction(lists, ref.node)
+                : null;
+            if (!saved) return;
+            const data = await runServerAction({
+              projectId: id,
+              def: saved.def,
+              params: withActionValues(saved.def, saved.params, ref.values),
+              execute,
+              userIp: visitorKey(headers)
+            });
+            reread[name] = JSON.stringify(data) ?? "";
+          })
+        );
+      } catch (error) {
+        if (error instanceof ConnectorError) return fail(502, error.message);
+        return fail(500, "Could not read an action result again.");
+      }
+    }
+    dynamic = withResults(dynamic, body.results, new Set(shared.map((r) => r.name)), reread);
+  }
   // Refresh Query: the query comes from the saved flow (published or draft), never the browser.
   let savedQuery: ((nodeId: string, loopId: string) => ElementQuery | null) | undefined;
   if (Object.keys(body.refreshes).length > 0) {

@@ -68,7 +68,7 @@ export interface RunEnv {
   log?: (entry: RunLogEntry) => void;
   signal?: AbortSignal;
   /** Keeps an output on the page (`results.name`) when its node has "Keep result on the page" on. */
-  share?: (name: string, value: unknown) => void;
+  share?: (name: string, value: unknown, nodeId: string) => void;
 }
 
 const BREAK = Symbol("break");
@@ -146,7 +146,7 @@ async function runAction(node: Extract<FlowNode, { kind: "action" }>, f: Frame) 
     }
   });
   if (node.outputName) f.names[node.outputName] = output;
-  if (node.outputName && node.shareOutput) f.env.share?.(node.outputName, output);
+  if (node.outputName && node.shareOutput) f.env.share?.(node.outputName, output, node.id);
 }
 
 const textParam = (value: unknown) => (typeof value === "string" ? value : "");

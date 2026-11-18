@@ -247,3 +247,4 @@ Docs: `platform.md`
 Do not start until every phase above is approved. The schema reserves `componentInstance`. Scope (props, slots, variants, instances, overrides, library) will be written then.
 
 - 7b-3 Action results (`results.<name>`) built; see spec.md 2026-11-18.
+- 7b-4 Action Result loop source, parent list field suggestions + publish check, large read-only results, tag copy button.

@@ -1,3 +1,4 @@
+import type { RestConfig } from "../rest";
 import { walkFlow, type TriggerFlow } from "./flow";
 import type { Params } from "./fields";
 import type { FlowsByNode } from "./storage";
@@ -10,8 +11,18 @@ import type { FlowsByNode } from "./storage";
 /** The word that opens the tag: `results.products`. */
 export const RESULTS_NAMESPACE = "results";
 
-/** Longest kept result (JSON text). A longer one fails its action; it is never cut short. */
+/** Longest result a redraw carries in its request (JSON text). */
 export const RESULT_LIMIT = 100_000;
+
+/**
+ * Longest result kept at all. One longer than RESULT_LIMIT is not sent with a redraw: the server
+ * reads it again (only for read-only actions, see `rereadableResults`). Longer than this, or not
+ * read-only, it fails its action; it is never cut short.
+ */
+export const RESULT_MAX = 2_000_000;
+
+/** Most results one redraw reads again. */
+export const MAX_REREADS = 10;
 
 /** The one-line form of a result's tag. */
 export const resultTag = (name: string): string => `${RESULTS_NAMESPACE}.${name}`;
@@ -24,6 +35,25 @@ export interface SharedResult {
   /** Catalog action type of that node. */
   type: string;
   params: Params;
+}
+
+/**
+ * Names of kept results whose action only reads (Supabase query, API Data GET call): the server can
+ * run it again with the same values when a redraw needs a result too large to send. Anything that
+ * writes (insert, update, delete, RPC, other methods) is never run again.
+ */
+export function rereadableResults(
+  shared: readonly SharedResult[],
+  rest: RestConfig | null
+): string[] {
+  return shared
+    .filter((r) => {
+      if (r.type === "supabase.query") return true;
+      if (r.type !== "rest.call") return false;
+      const id = typeof r.params.call === "string" ? r.params.call : "";
+      return rest?.calls.find((c) => c.id === id)?.method === "GET";
+    })
+    .map((r) => r.name);
 }
 
 /**

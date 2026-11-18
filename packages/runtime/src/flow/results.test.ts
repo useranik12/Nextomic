@@ -9,7 +9,7 @@ import { runFlow, type RunEnv } from "./engine";
 import { LiveState } from "./live-state";
 import type { RuntimePayload } from "./payload";
 
-const payload = (resultReads: string[]): RuntimePayload => ({
+const payload = (resultReads: string[], rereadable: string[] = []): RuntimePayload => ({
   projectId: "p",
   mode: "live",
   route: "/",
@@ -18,6 +18,7 @@ const payload = (resultReads: string[]): RuntimePayload => ({
   blocks: [],
   deps: {},
   resultReads,
+  rereadable,
   rootIds: [],
   dynamic: buildDynamicContext({
     page: { name: "Home", route: "/", settings: defaultPageSettings() },
@@ -46,9 +47,31 @@ describe("kept action results", () => {
     const live = new LiveState(payload(["results.posts"]), {}, null, () => {});
     live.setResult("posts", [1]);
     live.setResult("unused", [2]);
-    expect(live.readResults()).toEqual({ posts: "[1]" });
+    expect(live.resultRequest()).toEqual({ results: { posts: "[1]" }, resultRefs: {} });
     expect(() => live.setResult("posts", "x".repeat(RESULT_LIMIT))).toThrow(/too large/);
     expect(live.results.posts).toBe("[1]");
+  });
+
+  it("sends a reference, not the data, for a large result of a read-only action", () => {
+    const live = new LiveState(payload(["results.big"], ["big"]), {}, null, () => {});
+    const rows = Array.from({ length: 5000 }, (_, i) => ({ id: i, title: "x".repeat(30) }));
+    live.setResult("big", rows, { node: "n1", values: ["a"] });
+    expect(live.results.big?.length).toBeGreaterThan(RESULT_LIMIT);
+    expect(live.resultRequest()).toEqual({
+      results: {},
+      resultRefs: { big: { node: "n1", values: ["a"] } }
+    });
+    // Small again: sent as text, and the reference is dropped.
+    live.setResult("big", [1], { node: "n1", values: ["a"] });
+    expect(live.resultRequest()).toEqual({ results: { big: "[1]" }, resultRefs: {} });
+  });
+
+  it("refuses a large result of an action that may write, or without its values", () => {
+    const rows = Array.from({ length: 5000 }, (_, i) => ({ id: i, title: "x".repeat(30) }));
+    const writes = new LiveState(payload(["results.big"], []), {}, null, () => {});
+    expect(() => writes.setResult("big", rows, { node: "n", values: [] })).toThrow(/read-only/);
+    const reads = new LiveState(payload(["results.big"], ["big"]), {}, null, () => {});
+    expect(() => reads.setResult("big", rows)).toThrow(/too large/);
   });
 
   it("shares an output only when its node asks for it", async () => {
