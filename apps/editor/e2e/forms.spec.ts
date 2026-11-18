@@ -22,6 +22,17 @@ async function signUpAndCreateProject(page: Page): Promise<string> {
   return page.url().split("/editor/")[1] ?? "";
 }
 
+// A click on a parent row folds it; select it and unfold again so the rows stay in view.
+const selectRow = async (page: Page, text: string) => {
+  const label = page
+    .getByRole("tree", { name: "Page elements" })
+    .getByText(text, { exact: true })
+    .first();
+  await label.click();
+  const row = label.locator("xpath=ancestor::*[@role='treeitem']");
+  if ((await row.getAttribute("aria-expanded")) === "false") await label.click();
+};
+
 const add = async (page: Page, tile: string) => {
   await page.getByRole("button", { name: "Add element" }).click();
   await page
@@ -66,10 +77,7 @@ test("forms: tiles, tags, no nesting, blur validation and no submit on Enter", a
   await expect(page.getByRole("treeitem")).toHaveCount(3);
 
   // A form cannot go inside a form: the form is selected, so the new one is refused.
-  await page
-    .getByRole("tree", { name: "Page elements" })
-    .getByText("Form", { exact: true })
-    .click();
+  await selectRow(page, "Form");
   await add(page, "Form");
   await expect(page.getByText("A form cannot sit inside another form.")).toBeVisible();
   await expect(page.getByRole("treeitem")).toHaveCount(3);
@@ -344,11 +352,7 @@ test("dynamic options: one locked template option, ghost copies on the canvas, v
   await expect(page.getByRole("alert").filter({ hasText: /whole number/ })).toBeHidden();
 
   // Dynamic Query keeps one option and shows the ghost copies.
-  await page
-    .getByRole("tree", { name: "Page elements" })
-    .getByText("Radio", { exact: true })
-    .first()
-    .click();
+  await selectRow(page, "Radio");
   await page.locator('button[aria-label="Options"]').click();
   await page.locator("[role=option]", { hasText: "Dynamic Query" }).click();
   await expect(page.getByRole("treeitem")).toHaveCount(3);
