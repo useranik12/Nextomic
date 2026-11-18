@@ -3,6 +3,13 @@ import { patternProblem } from "./condition";
 import type { DynamicContext } from "./dynamic-context";
 import { fieldQueryProblem } from "./query";
 import type { SupabaseStructure } from "./supabase";
+import {
+  isNumberField,
+  numberFieldProblems,
+  numberSpecOf,
+  numberText,
+  numberTypeOf
+} from "./number-field";
 import { pinLengthProblem } from "./pin";
 import { checkStateValue, type StateType } from "./state";
 
@@ -18,7 +25,8 @@ export const FORM_FIELD_TYPES = [
   "radio",
   "checkboxGroup",
   "choiceChips",
-  "pinInput"
+  "pinInput",
+  "counter"
 ] as const;
 
 /** The data types an option value can be set to (the owner's FlutterFlow-style value type). */
@@ -125,6 +133,7 @@ export function startValueOf(node: ElementNode): string {
       : (chosen[0] ?? "");
   }
   if (node.props.type === "password") return "";
+  if (isNumberField(node.type)) return numberText(numberSpecOf((key) => propText(node, key)).start);
   return typeof node.props.value === "string" ? node.props.value : "";
 }
 
@@ -204,6 +213,7 @@ export function formProblems(root: ElementNode): string[] {
   };
   visit(root, false, false);
   walkElements(root, (node) => {
+    if (isNumberField(node.type)) problems.push(...numberFieldProblems(node));
     if (node.type === "pinInput") {
       const unfit = pinLengthProblem(node);
       if (unfit) problems.push(unfit);
@@ -432,6 +442,12 @@ export function withFormDefaults(dynamic: DynamicContext, tree: ElementNode): Dy
       const given = dynamic.forms[formName(node)]?.[fieldName(child)];
       values[fieldName(child)] =
         child.props.type === "password" ? "" : (given ?? startValueOf(child));
+      if (isNumberField(child.type))
+        types[`form.${formName(node)}.${fieldName(child)}`] = {
+          type: numberTypeOf((key) => propText(child, key)),
+          isList: false,
+          ref: ""
+        };
       if (isOptionGroup(child) || child.type === "checkbox") {
         const many = valueKindOf(child) === "many";
         const type = isOptionGroup(child) ? optionValueTypeOf(child) : "boolean";
@@ -549,6 +565,8 @@ export const INPUT_ICON_SLOTS = [
 /** The prop names that can hold an icon library key (Icon element and Input slots). */
 export const ICON_LIBRARY_PROPS: readonly string[] = [
   "library",
+  "decLibrary",
+  "incLibrary",
   ...INPUT_ICON_SLOTS.slice(1).map((slot) => slot.library)
 ];
 
@@ -561,7 +579,9 @@ export function iconLibrariesOf(node: ElementNode): string[] {
         ? [node.props.library]
         : node.type === "input"
           ? INPUT_ICON_SLOTS.map((slot) => node.props[slot.library])
-          : [];
+          : node.type === "counter"
+            ? [node.props.decLibrary, node.props.incLibrary]
+            : [];
   return keys.filter((key): key is string => typeof key === "string" && key !== "");
 }
 

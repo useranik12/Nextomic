@@ -431,3 +431,46 @@ test("pin: one box per character, typing, Backspace, paste and the incomplete me
   expect(await values()).toEqual(["6", "5", "4", "3", "2", "1"]);
   await expect(incomplete).toBeHidden();
 });
+
+test("count controller: limits, buttons, keys, a typed tag and the Form Counter design", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Count Controller");
+  await page.getByLabel("Field name", { exact: true }).fill("qty");
+  await page.getByRole("textbox", { name: "Initial count" }).fill("1");
+  await page.getByRole("textbox", { name: "Minimum" }).fill("0");
+  await page.getByRole("textbox", { name: "Maximum" }).fill("3");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nxt-count]")).toHaveValue("1", { timeout: 15_000 });
+
+  await page.getByRole("tab", { name: /design/i }).click();
+  const group = page.locator('[aria-label="Design settings"] > section').first();
+  for (const part of ["Field", "Counter box", "Decrease button", "Increase button", "Count"])
+    await expect(group.getByRole("button", { name: part, exact: true })).toBeVisible();
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const count = preview.locator("[data-nxt-count]");
+  const up = preview.getByRole("button", { name: "Increase" });
+  const down = preview.getByRole("button", { name: "Decrease" });
+  await expect(count).toHaveValue("1");
+  await up.click();
+  await up.click();
+  await expect(count).toHaveValue("3");
+  await expect(up).toBeDisabled();
+  await down.click();
+  await expect(count).toHaveValue("2");
+  await count.focus();
+  await preview.keyboard.press("Home");
+  await expect(count).toHaveValue("0");
+  await expect(down).toBeDisabled();
+  await preview.keyboard.press("ArrowUp");
+  await expect(count).toHaveValue("1");
+  await expect(count).toHaveAttribute("aria-valuenow", "1");
+});

@@ -1,3 +1,4 @@
+import { writeNumber } from "./number-field";
 import { OPTION_VALUE_TYPES, listText, parseList, type OptionValueType } from "@nextomic/schema";
 
 // How the runtime reads and writes the value of a form field (elements.md "Forms"). A field is the
@@ -8,11 +9,12 @@ import { OPTION_VALUE_TYPES, listText, parseList, type OptionValueType } from "@
 //   one    a group of radios, the checked one's value ("" when none)
 //   many   a group of checkboxes, the checked values as a JSON list
 //   pin    several one-character cells, joined
+//   number one number (Count Controller, Range slider), always inside its limits
 
 export type Control = HTMLInputElement | HTMLTextAreaElement;
-export type FieldShape = "text" | "check" | "one" | "many" | "pin";
+export type FieldShape = "text" | "check" | "one" | "many" | "pin" | "number";
 
-const SHAPES: readonly string[] = ["text", "check", "one", "many", "pin"];
+const SHAPES: readonly string[] = ["text", "check", "one", "many", "pin", "number"];
 
 export const controlsOf = (field: Element): Control[] => [
   ...field.querySelectorAll<Control>("[data-nxt-control]")
@@ -71,6 +73,9 @@ export function writeField(field: Element, value: string): void {
       });
       return;
     }
+    case "number":
+      writeNumber(field, value);
+      return;
     default:
       if (controls[0]) controls[0].value = value;
   }

@@ -54,7 +54,8 @@ describe("registry", () => {
       "radio",
       "checkboxGroup",
       "choiceChips",
-      "pinInput"
+      "pinInput",
+      "counter"
     ]);
   });
 
@@ -81,6 +82,7 @@ describe("registry", () => {
       ...["required", "checked", "disabled"].map((k) => `checkbox.${k}`),
       ...["selected", "disabled"].map((k) => `option.${k}`),
       ...["required", "disabled", "mask", "value"].map((k) => `pinInput.${k}`),
+      ...["value", "step", "min", "max", "disabled"].map((k) => `counter.${k}`),
       ...["radio", "checkboxGroup", "choiceChips"].flatMap((t) =>
         ["required", "disabled", "minSelected", "maxSelected"].map((k) => `${t}.${k}`)
       )
@@ -116,6 +118,9 @@ describe("registry", () => {
                   }
                 : {}),
               ...(def.type === "option" && /Icon$|^icon$/.test(key) ? { library: "ph" } : {}),
+              ...(def.type === "counter" && /Icon$/.test(key)
+                ? { decLibrary: "ph", incLibrary: "ph" }
+                : {}),
               [key]: { kind: "mixed", parts: ["x-", { token: "page.name" }] }
             }
           })
@@ -253,6 +258,30 @@ describe("forms", () => {
       const html = render([checkbox({})]);
       expect(html).not.toMatch(/<input[^>]* checked/);
       expect(html).toContain("&quot;required&quot;:false");
+    });
+  });
+
+  describe("counter", () => {
+    const counter = (props: Record<string, unknown>) =>
+      node({ id: "c", type: "counter", props: { name: "qty", label: "Qty", ...props } });
+
+    it("draws the buttons, a spinbutton count and the number rules", () => {
+      const html = render([counter({ value: "2", min: "0", max: "5", step: "0.5" })]);
+      expect(html).toContain('data-nxt-kind="number"');
+      expect(html).toContain('role="spinbutton"');
+      expect(html).toContain('aria-valuenow="2"');
+      expect(html).toContain('data-nxt-step="-1"');
+      expect(html).toContain('data-nxt-step="1"');
+      expect(html).toContain('data-nxt-step-size="0.5"');
+      expect(html).toContain("&quot;type&quot;:&quot;number&quot;");
+      expect(html).toContain("−");
+    });
+
+    it("starts inside its limits and disables the button at the limit", () => {
+      const html = render([counter({ value: "9", min: "0", max: "5" })]);
+      expect(html).toContain('aria-valuenow="5"');
+      expect(html).toMatch(/<button[^>]*disabled=""[^>]*data-nxt-step="1"/);
+      expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*data-nxt-step="-1"/);
     });
   });
 

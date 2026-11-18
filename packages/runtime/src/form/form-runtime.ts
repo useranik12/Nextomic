@@ -11,9 +11,11 @@ import {
   focusTarget,
   isEmptyField,
   readField,
+  shapeOf,
   writeField,
   type Control
 } from "./field-values";
+import { startNumberFields, syncNumbers } from "./number-field";
 import { startPinCells } from "./pin-cells";
 
 // Form behavior of a built page (elements.md "Forms"): the DOM is the source of values. The runtime
@@ -90,7 +92,7 @@ export function startFormRuntime(
     stops.push(() => root.removeEventListener(type, fn, capture));
   };
 
-  stops.push(startPinCells(root));
+  stops.push(startPinCells(root), startNumberFields(root));
   const forms = () => [...root.querySelectorAll<HTMLFormElement>(FORM)];
   const formNamed = (name: string) =>
     forms().find((f) => f.getAttribute("data-nxt-form") === name) ?? null;
@@ -107,9 +109,14 @@ export function startFormRuntime(
       control.setAttribute("aria-invalid", message ? "true" : "false");
     field.toggleAttribute("data-invalid", Boolean(message));
     // A checked, filled field that passes shows its success text (when it has any).
-    const valid = mark && !message && !isEmptyField(field);
-    field.toggleAttribute("data-valid", valid);
     const success = field.querySelector("[data-nxt-success]");
+    // A number is never empty, so it counts as passed only when it has a success text to show.
+    const valid =
+      mark &&
+      !message &&
+      !isEmptyField(field) &&
+      (shapeOf(field) !== "number" || Boolean(success?.textContent));
+    field.toggleAttribute("data-valid", valid);
     if (success) success.toggleAttribute("hidden", !valid || !success.textContent);
   };
 
@@ -264,7 +271,10 @@ export function startFormRuntime(
         })
       );
     },
-    sync: (scope) => scope.querySelectorAll("[data-nxt-field]").forEach(syncButtons),
+    sync: (scope) => {
+      scope.querySelectorAll("[data-nxt-field]").forEach(syncButtons);
+      syncNumbers(scope);
+    },
     stop: () => stops.splice(0).forEach((stop) => stop())
   };
 }

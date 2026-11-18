@@ -9,12 +9,20 @@ import {
   type StyleMap
 } from "@nextomic/schema";
 import { CHOICE_BASE_CSS } from "./choice-css";
+import { COUNTER_BASE_CSS } from "./counter-css";
 import { INPUT_BASE_CSS, inputPartCss } from "./input-css";
 import { PIN_BASE_CSS } from "./pin-css";
 import { getElementDefinition } from "./registry";
 
 /** Element types drawn as choice fields (the built-in choice look is added when a page has one). */
 const CHOICE_TYPES: readonly string[] = ["checkbox", "radio", "checkboxGroup", "choiceChips"];
+
+/** The built-in look of each kind of form field, added once for a page that has one. */
+const FIELD_LOOKS: readonly { types: readonly string[]; css: string }[] = [
+  { types: CHOICE_TYPES, css: CHOICE_BASE_CSS },
+  { types: ["pinInput"], css: PIN_BASE_CSS },
+  { types: ["counter"], css: COUNTER_BASE_CSS }
+];
 
 const PSEUDO_SELECTOR: Record<PseudoState, string> = {
   default: "",
@@ -154,17 +162,12 @@ export function pageCss(
   resolve?: TokenResolver
 ): string {
   const chunks: string[] = [];
-  let hasInput = false;
-  let hasChoice = false;
-  let hasPin = false;
-  walkElements(root, (node) => {
-    if (node.type === "input") hasInput = true;
-    if (node.type === "pinInput") hasPin = true;
-    if (CHOICE_TYPES.includes(node.type)) hasChoice = true;
-  });
-  if (hasInput || hasChoice || hasPin) chunks.push(INPUT_BASE_CSS);
-  if (hasChoice) chunks.push(CHOICE_BASE_CSS);
-  if (hasPin) chunks.push(PIN_BASE_CSS);
+  const types = new Set<string>();
+  walkElements(root, (node) => types.add(node.type));
+  // Every form field shares the Input base; each kind of field adds its own look once.
+  const looks = FIELD_LOOKS.filter((look) => look.types.some((type) => types.has(type)));
+  if (types.has("input") || looks.length > 0) chunks.push(INPUT_BASE_CSS);
+  for (const look of looks) chunks.push(look.css);
   for (const [name, styles] of Object.entries(classes)) {
     const css = classCss(name, styles, breakpoints, resolve);
     if (css) chunks.push(css);

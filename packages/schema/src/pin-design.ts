@@ -3,46 +3,24 @@
 // are one repeated part, so one setting styles every box of the field (a filled box is the
 // "Checked" state, shown to the visitor as "Filled").
 
-import {
-  DESIGN_KIT,
-  INPUT_PARTS,
-  type InputPart,
-  type InputState,
-  type StateTail
-} from "./input-design";
+import { DESIGN_KIT, INPUT_PARTS, type InputPart } from "./input-design";
+import { repeatedStates } from "./part-states";
 
 const { p, TEXT, BORDER, EFFECTS, SIZE, SPACING } = DESIGN_KIT;
 
 const CELL = "[data-nxt-cell]";
 
-/**
- * How each state reaches one box. Tests sit inside :where() so every state weighs the same and the
- * cascade order decides; a state weighs one more than the default through the doubled box
- * selector, so it also wins at another breakpoint. Error and success mark all boxes at once.
- */
-const cellStates = (): Partial<Record<InputState, StateTail[]>> => {
-  const forced = (state: string) => `:where([data-nxt-force="${state}"])`;
-  const box = (test: string) => `${CELL}${CELL}${test}`;
-  const at = (state: string, test: string): StateTail[] => [
-    { field: "", tail: ` ${box(test)}` },
-    { field: forced(state), tail: ` ${box("")}` }
-  ];
-  return {
-    default: [{ field: "", tail: ` ${CELL}` }],
-    hover: at("hover", ":where(:hover)"),
-    focus: at("focus", ":where(:focus)"),
-    checked: at("checked", ":where([data-filled])"),
-    error: [
-      { field: ":where([data-invalid])", tail: ` ${box("")}` },
-      { field: forced("error"), tail: ` ${box("")}` }
-    ],
-    success: [
-      { field: ":where([data-valid])", tail: ` ${box("")}` },
-      { field: forced("success"), tail: ` ${box("")}` }
-    ],
-    disabled: at("disabled", ":where(:disabled)")
-  };
-};
+const cellStates = () =>
+  repeatedStates(
+    CELL,
+    {
+      hover: ":where(:hover)",
+      focus: ":where(:focus)",
+      checked: ":where([data-filled])",
+      disabled: ":where(:disabled)"
+    },
+    { error: ":where([data-invalid])", success: ":where([data-valid])" }
+  );
 
 const cellsPart: InputPart = {
   id: "cells",

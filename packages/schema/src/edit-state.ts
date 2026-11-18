@@ -16,7 +16,8 @@ const FIELD_STATES: Record<string, EditState[]> = {
   checkboxGroup: ["checked", "error", "success"],
   radio: ["checked", "error", "success"],
   choiceChips: ["checked", "error", "success"],
-  pinInput: ["checked", "error", "success"]
+  pinInput: ["checked", "error", "success"],
+  counter: ["error", "success"]
 };
 
 /** The states an element can be edited in, in select order. */

@@ -150,7 +150,8 @@ registerElement({
     if (patternText) messages.pattern = patternText;
     const boxes = Array.from({ length }, (_, i) =>
       createElement("input", {
-        key: i,
+        // A new starting character remounts the box; React keeps what an input shows once mounted.
+        key: `${i}:${chars[i] ?? ""}`,
         id: i === 0 ? controlId : `${controlId}-${i + 1}`,
         type: mask ? "password" : "text",
         inputMode: charset === "numeric" ? "numeric" : "text",
