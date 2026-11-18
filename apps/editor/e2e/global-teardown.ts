@@ -24,11 +24,12 @@ export default async function globalTeardown(): Promise<void> {
   if (host !== "localhost" && host !== "127.0.0.1") return;
   process.env.DATABASE_URL = url;
   const db = getDb();
+  // Separate statements: a project restricts deleting its creator, so projects and workspaces go first.
+  const gone = sql`select id from "user" where email like '%@example.com'`;
+  await db.execute(sql`delete from projects where created_by in (${gone})`);
   await db.execute(sql`
-    with gone as (select id from "user" where email like '%@example.com'),
-    ws as (delete from workspaces
-           where id in (select workspace_id from workspace_members where user_id in (select id from gone))
-           and id not in (select workspace_id from workspace_members where user_id not in (select id from gone))
-           returning id)
-    delete from "user" where id in (select id from gone)`);
+    delete from workspaces
+    where id in (select workspace_id from workspace_members where user_id in (${gone}))
+    and id not in (select workspace_id from workspace_members where user_id not in (${gone}))`);
+  await db.execute(sql`delete from "user" where id in (${gone})`);
 }
