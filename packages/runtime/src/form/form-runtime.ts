@@ -1,6 +1,7 @@
 import {
   validateValue,
   type FieldValueKind,
+  DATE_MODES,
   type FieldRules,
   type InputType,
   INPUT_TYPES
@@ -71,6 +72,9 @@ function parseRules(field: Element): Omit<FieldRules, "matchValue"> & { matchFie
     maxLength: NUMBER(raw.maxLength),
     min: NUMBER(raw.min),
     max: NUMBER(raw.max),
+    dateMode: DATE_MODES.find((m) => m === raw.dateMode) ?? null,
+    minDate: typeof raw.minDate === "string" ? raw.minDate : "",
+    maxDate: typeof raw.maxDate === "string" ? raw.maxDate : "",
     pattern: typeof raw.pattern === "string" ? raw.pattern : "",
     matchField: typeof raw.matchField === "string" ? raw.matchField : "",
     messages: messages as FieldRules["messages"]

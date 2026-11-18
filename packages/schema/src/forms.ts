@@ -4,6 +4,13 @@ import type { DynamicContext } from "./dynamic-context";
 import { fieldQueryProblem } from "./query";
 import type { SupabaseStructure } from "./supabase";
 import {
+  DATE_TYPE,
+  dateFieldProblems,
+  dateModeOf,
+  normalizeDate,
+  type DateMode
+} from "./date-field";
+import {
   isNumberField,
   numberFieldProblems,
   numberSpecOf,
@@ -27,7 +34,8 @@ export const FORM_FIELD_TYPES = [
   "choiceChips",
   "pinInput",
   "counter",
-  "rangeSlider"
+  "rangeSlider",
+  "dateTime"
 ] as const;
 
 /** The data types an option value can be set to (the owner's FlutterFlow-style value type). */
@@ -135,6 +143,8 @@ export function startValueOf(node: ElementNode): string {
   }
   if (node.props.type === "password") return "";
   if (isNumberField(node.type)) return numberText(numberSpecOf((key) => propText(node, key)).start);
+  if (node.type === DATE_TYPE)
+    return normalizeDate(dateModeOf(propText(node, "mode")), propText(node, "value"));
   return typeof node.props.value === "string" ? node.props.value : "";
 }
 
@@ -215,6 +225,7 @@ export function formProblems(root: ElementNode): string[] {
   visit(root, false, false);
   walkElements(root, (node) => {
     if (isNumberField(node.type)) problems.push(...numberFieldProblems(node));
+    if (node.type === DATE_TYPE) problems.push(...dateFieldProblems(node));
     if (node.type === "pinInput") {
       const unfit = pinLengthProblem(node);
       if (unfit) problems.push(unfit);
@@ -334,6 +345,10 @@ export interface FieldRules {
   maxLength: number | null;
   min: number | null;
   max: number | null;
+  /** A Date and time field: its mode and its limits as canonical text ("" for no limit). */
+  dateMode?: DateMode | null;
+  minDate?: string;
+  maxDate?: string;
   /** A regular expression; ignored when it fails `patternProblem`. */
   pattern: string;
   /** The current value of the field named in `matchField` (empty when there is none). */
@@ -391,12 +406,29 @@ function validateSelection(items: readonly string[], rules: FieldRules): string 
   return null;
 }
 
+const DATE_WORDS: Record<DateMode, string> = {
+  date: "a valid date",
+  time: "a valid time",
+  datetime: "a valid date and time"
+};
+
+function validateDate(value: string, rules: FieldRules, mode: DateMode): string | null {
+  const text = normalizeDate(mode, value);
+  if (text === "") return message(rules, "type", { type: DATE_WORDS[mode] });
+  const min = rules.minDate ?? "";
+  const max = rules.maxDate ?? "";
+  if (min !== "" && text < min) return message(rules, "range", { range: `${min} or later` });
+  if (max !== "" && text > max) return message(rules, "range", { range: `${max} or earlier` });
+  return null;
+}
+
 /** The first problem with `value`, as the message to show, or null when it passes. */
 export function validateValue(value: string, rules: FieldRules): string | null {
   if (rules.kind === "check")
     return value === "true" || !rules.required ? null : message(rules, "required");
   if (rules.kind === "many") return validateSelection(parseList(value), rules);
   if (value.trim() === "") return rules.required ? message(rules, "required") : null;
+  if (rules.dateMode) return validateDate(value, rules, rules.dateMode);
   const type = { type: TYPE_WORDS[rules.type] ?? "a valid value" };
   if (rules.type === "email" && !EMAIL.test(value)) return message(rules, "type", type);
   if (rules.type === "url" && !urlOk(value)) return message(rules, "type", type);
@@ -443,6 +475,12 @@ export function withFormDefaults(dynamic: DynamicContext, tree: ElementNode): Dy
       const given = dynamic.forms[formName(node)]?.[fieldName(child)];
       values[fieldName(child)] =
         child.props.type === "password" ? "" : (given ?? startValueOf(child));
+      if (child.type === DATE_TYPE && dateModeOf(propText(child, "mode")) !== "time")
+        types[`form.${formName(node)}.${fieldName(child)}`] = {
+          type: "timestamptz",
+          isList: false,
+          ref: ""
+        };
       if (isNumberField(child.type))
         types[`form.${formName(node)}.${fieldName(child)}`] = {
           type: numberTypeOf((key) => propText(child, key)),
@@ -568,6 +606,7 @@ export const ICON_LIBRARY_PROPS: readonly string[] = [
   "library",
   "decLibrary",
   "incLibrary",
+  "iconLibrary",
   ...INPUT_ICON_SLOTS.slice(1).map((slot) => slot.library)
 ];
 
@@ -582,7 +621,9 @@ export function iconLibrariesOf(node: ElementNode): string[] {
           ? INPUT_ICON_SLOTS.map((slot) => node.props[slot.library])
           : node.type === "counter"
             ? [node.props.decLibrary, node.props.incLibrary]
-            : [];
+            : node.type === DATE_TYPE
+              ? [node.props.iconLibrary]
+              : [];
   return keys.filter((key): key is string => typeof key === "string" && key !== "");
 }
 

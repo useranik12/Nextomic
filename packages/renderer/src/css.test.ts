@@ -51,6 +51,12 @@ describe("Form Input part styles", () => {
   const css = (decls: Record<string, string>, breakpoint = "base") =>
     classCss("f", { breakpoints: { [breakpoint]: { default: decls } } }, DEFAULT_BREAKPOINTS);
 
+  it("keeps a custom property setting (the slider thumb size) in the page CSS", () => {
+    const out = css({ "--nxt-ip-slider---nxt-thumb": "28px" });
+    expect(out).toContain("[data-nxt-range]");
+    expect(out).toContain("--nxt-thumb:28px");
+  });
+
   it("writes a part setting as a plain declaration on the part, never as a variable", () => {
     const out = css({ "--nxt-ip-box-border-color": "#f00" });
     expect(out).toBe(
