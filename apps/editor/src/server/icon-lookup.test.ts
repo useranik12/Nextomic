@@ -61,12 +61,12 @@ describe("libraries of input icons", () => {
 describe("pageIcons", () => {
   it("looks an icon up by a name only known at render time, even when the library is disabled", async () => {
     const { library } = await importIconUpload(
-      "p1",
+      "00000000-0000-4000-8000-0000000000a1",
       { name: "Shapes", kind: "svg", rights: true, takenKeys: [] },
       [{ name: "square.svg", data: enc(svg) }]
     );
     const drawn = await pageIcons(
-      "p1",
+      "00000000-0000-4000-8000-0000000000a1",
       [{ ...library, enabled: false }],
       [icon({ source: "library", library: "shapes", name: "{{ row }}" })]
     );
@@ -79,23 +79,35 @@ describe("pageIcons", () => {
   });
 
   it("draws a library the project no longer has as nothing, and loads only libraries in use", async () => {
-    const drawn = await pageIcons("p1", [], [icon({ library: "gone", name: "x" })]);
+    const drawn = await pageIcons(
+      "00000000-0000-4000-8000-0000000000a1",
+      [],
+      [icon({ library: "gone", name: "x" })]
+    );
     expect(drawn.icons.svg("gone", "x", { size: "1em", label: "" })).toBeNull();
   });
 
   it("gives icon fonts a class and their CSS, only for fonts the page uses", async () => {
     const { library } = await importIconUpload(
-      "p1",
+      "00000000-0000-4000-8000-0000000000a1",
       { name: "Brand Font", kind: "font", rights: true, takenKeys: [] },
       [woff2, { name: "selection.json", data: enc(selection) }]
     );
-    const used = await pageIcons("p1", [library], [icon({ library: "brand-font", name: "star" })]);
+    const used = await pageIcons(
+      "00000000-0000-4000-8000-0000000000a1",
+      [library],
+      [icon({ library: "brand-font", name: "star" })]
+    );
     expect(used.icons.font("brand-font", "star")).toBe(true);
     expect(used.icons.font("brand-font", "nope")).toBe(false);
     expect(used.iconCss).toContain('font-family:"nxt-brand-font"');
     expect(used.iconCss).toContain(".nxt-brand-font-star::before");
-    expect(used.iconCss).toContain("/icons/p1/");
-    const unused = await pageIcons("p1", [library], [icon({ library: "other", name: "x" })]);
+    expect(used.iconCss).toContain("/icons/00000000-0000-4000-8000-0000000000a1/");
+    const unused = await pageIcons(
+      "00000000-0000-4000-8000-0000000000a1",
+      [library],
+      [icon({ library: "other", name: "x" })]
+    );
     expect(unused.iconCss).toBe("");
   });
 });

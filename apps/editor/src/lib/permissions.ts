@@ -1,4 +1,5 @@
 import { getDb, projects, workspaceMembers } from "@nextomic/db";
+import { isUuid } from "@nextomic/schema";
 import { and, eq } from "drizzle-orm";
 import { getUserWorkspace } from "./auth";
 
@@ -24,6 +25,8 @@ export function canManageWorkspace(role: "owner" | "admin" | "member"): boolean 
 /** Verifies the project exists AND belongs to the user's workspace before any read/write. */
 export async function requireProjectAccess(userId: string, projectId: string) {
   const membership = await requireWorkspaceMembership(userId);
+  if (!isUuid(projectId))
+    throw new AccessDeniedError("Project not found or not in your workspace.");
   const db = getDb();
   const [project] = await db
     .select()

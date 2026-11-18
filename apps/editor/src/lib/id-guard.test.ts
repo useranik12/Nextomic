@@ -7,10 +7,8 @@ const ID = "ae8d4220-315c-46fa-840e-c6e9c18a32ff";
 describe("hasBadId", () => {
   it("lets uuids through on every guarded route", () => {
     for (const path of [
-      `/editor/${ID}`,
-      `/preview/${ID}`,
-      `/site/${ID}/about/team`,
-      `/media/${ID}/0be681a6b626e813e7f146f5/photo.webp`,
+      `/media/${ID}/${ID}/photo.webp`,
+      `/avatars/${ID}/a.webp`,
       `/fonts/${ID}/some-font/file.woff2`,
       `/icons/${ID}/x.svg`,
       `/theme-css/${ID}/theme.css`
@@ -20,10 +18,9 @@ describe("hasBadId", () => {
 
   it("refuses a bad id on every guarded route", () => {
     for (const path of [
-      "/editor/abc",
-      "/preview/1",
-      "/site/not-a-uuid/home",
       "/media/nope/a/f.webp",
+      `/media/${ID}/0be681a6b626e813e7f146f5/f.webp`,
+      "/avatars/P1GQWNeRc7ohaNf6dhX75x8UJvYtFd79/a.webp",
       "/fonts/%E0%A4%A/x",
       "/icons/..%2F..%2Fetc/x.svg",
       "/theme-css/x/y.css"

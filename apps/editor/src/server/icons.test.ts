@@ -59,7 +59,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("installIconSet", () => {
   it("downloads, verifies and stores a set under the project, and describes it", async () => {
     jsdelivr({ "1.2.4": setJson(["ring", "dots"]) }, "1.2.4");
-    const lib = await installIconSet("p1", "svg-spinners");
+    const lib = await installIconSet("00000000-0000-4000-8000-0000000000a1", "svg-spinners");
     expect(lib).toMatchObject({
       key: "svg-spinners",
       source: "iconify",
@@ -70,22 +70,30 @@ describe("installIconSet", () => {
       enabled: true
     });
     expect(lib.sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(stored.has(`icons/p1/${lib.file}`)).toBe(true);
+    expect(stored.has(`icons/00000000-0000-4000-8000-0000000000a1/${lib.file}`)).toBe(true);
     expect(stored.size).toBe(1);
   });
 
   it("stores nothing when the integrity check fails", async () => {
     jsdelivr({ "1.3.0": setJson(["ring"]) }, "1.3.0", "AAAA");
-    await expect(installIconSet("p1", "svg-spinners")).rejects.toThrow(/integrity/);
+    await expect(
+      installIconSet("00000000-0000-4000-8000-0000000000a1", "svg-spinners")
+    ).rejects.toThrow(/integrity/);
     expect(stored.size).toBe(0);
   });
 
   it("refuses a set that is not in the catalog and data that is not an icon set", async () => {
-    await expect(installIconSet("p1", "not-a-set")).rejects.toThrow(/not in the catalog/);
+    await expect(
+      installIconSet("00000000-0000-4000-8000-0000000000a1", "not-a-set")
+    ).rejects.toThrow(/not in the catalog/);
     jsdelivr({ "1.0.0": "<html>nope</html>" }, "1.0.0");
-    await expect(installIconSet("p1", "line-md")).rejects.toThrow(/could not be read/);
+    await expect(installIconSet("00000000-0000-4000-8000-0000000000a1", "line-md")).rejects.toThrow(
+      /could not be read/
+    );
     jsdelivr({ "1.0.1": setJson(["a"], "another") }, "1.0.1");
-    await expect(installIconSet("p1", "line-md")).rejects.toThrow(/another set/);
+    await expect(installIconSet("00000000-0000-4000-8000-0000000000a1", "line-md")).rejects.toThrow(
+      /another set/
+    );
     expect(stored.size).toBe(0);
   });
 
@@ -98,17 +106,21 @@ describe("installIconSet", () => {
       );
     });
     vi.stubGlobal("fetch", big);
-    await expect(installIconSet("p1", "line-md")).rejects.toThrow(/limit/);
+    await expect(installIconSet("00000000-0000-4000-8000-0000000000a1", "line-md")).rejects.toThrow(
+      /limit/
+    );
     expect(big).toHaveBeenCalledTimes(2);
   });
 
   it("refuses the 3D Fluent Emoji set up front", async () => {
-    await expect(installIconSet("p1", "fluent-emoji")).rejects.toThrow(/limit/);
+    await expect(
+      installIconSet("00000000-0000-4000-8000-0000000000a1", "fluent-emoji")
+    ).rejects.toThrow(/limit/);
   });
 
   it("only talks to the allowlisted package hosts, over https, without redirects", async () => {
     jsdelivr({ "1.4.0": setJson(["ring"]) }, "1.4.0");
-    await installIconSet("p1", "svg-spinners");
+    await installIconSet("00000000-0000-4000-8000-0000000000a1", "svg-spinners");
     const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls as [URL, RequestInit][];
     for (const [url, init] of calls) {
       expect(url.protocol).toBe("https:");
@@ -143,12 +155,16 @@ describe("updates", () => {
       { "1.5.0": setJson(["ring", "dots", "gone"]), "1.5.1": setJson(["ring", "dots", "fresh"]) },
       "1.5.0"
     );
-    const lib = await installIconSet("p1", "svg-spinners");
+    const lib = await installIconSet("00000000-0000-4000-8000-0000000000a1", "svg-spinners");
     jsdelivr({ "1.5.0": "", "1.5.1": setJson(["ring", "dots", "fresh"]) }, "1.5.1");
-    const preview = await previewIconUpdate("p1", lib);
+    const preview = await previewIconUpdate("00000000-0000-4000-8000-0000000000a1", lib);
     expect(preview).toEqual({ latest: "1.5.1", added: 1, removed: ["gone"], removedCount: 1 });
     const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.length;
-    const updated = await installIconSet("p1", "svg-spinners", "1.5.1");
+    const updated = await installIconSet(
+      "00000000-0000-4000-8000-0000000000a1",
+      "svg-spinners",
+      "1.5.1"
+    );
     expect(updated.version).toBe("1.5.1");
     // The preview's download is reused, so installing makes no second file request.
     const files = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls
@@ -161,15 +177,23 @@ describe("updates", () => {
 describe("update keeps earlier releases", () => {
   it("names the file by content, so an old library entry still reads its own release", async () => {
     jsdelivr({ "1.7.0": setJson(["old-icon"]), "1.7.1": setJson(["new-icon"]) }, "1.7.0");
-    const v1 = await installIconSet("p1", "svg-spinners");
+    const v1 = await installIconSet("00000000-0000-4000-8000-0000000000a1", "svg-spinners");
     jsdelivr({ "1.7.0": setJson(["old-icon"]), "1.7.1": setJson(["new-icon"]) }, "1.7.1");
-    const v2 = await installIconSet("p1", "svg-spinners", "1.7.1");
+    const v2 = await installIconSet(
+      "00000000-0000-4000-8000-0000000000a1",
+      "svg-spinners",
+      "1.7.1"
+    );
     expect(v1.file).not.toBe(v2.file);
     expect(v1.file).toMatch(/^svg-spinners-[0-9a-f]{8}.json$/);
-    expect(stored.has(`icons/p1/${v1.file}`)).toBe(true);
-    expect(stored.has(`icons/p1/${v2.file}`)).toBe(true);
+    expect(stored.has(`icons/00000000-0000-4000-8000-0000000000a1/${v1.file}`)).toBe(true);
+    expect(stored.has(`icons/00000000-0000-4000-8000-0000000000a1/${v2.file}`)).toBe(true);
     // Discarding the update brings back the v1 entry; it must still find v1's icons.
-    const old = await searchIcons("p1", [v1], { query: "", library: "", offset: 0 });
+    const old = await searchIcons("00000000-0000-4000-8000-0000000000a1", [v1], {
+      query: "",
+      library: "",
+      offset: 0
+    });
     expect(old.hits.map((h) => h.name)).toEqual(["old-icon"]);
   });
 });
@@ -185,25 +209,37 @@ describe("search", () => {
 
   it("searches enabled libraries, one page at a time, with drawn icons", async () => {
     jsdelivr({ "1.6.0": setJson(["ring", "ring-2", "dots"]) }, "1.6.0");
-    const lib = await installIconSet("p1", "svg-spinners");
-    const found = await searchIcons("p1", [lib], { query: "ring", library: "", offset: 0 });
-    expect(found.total).toBe(2);
-    expect(found.hits.map((h) => h.name)).toEqual(["ring", "ring-2"]);
-    expect(found.hits[0]?.svg).toContain("<svg");
-    const off = await searchIcons("p1", [{ ...lib, enabled: false }], {
-      query: "",
+    const lib = await installIconSet("00000000-0000-4000-8000-0000000000a1", "svg-spinners");
+    const found = await searchIcons("00000000-0000-4000-8000-0000000000a1", [lib], {
+      query: "ring",
       library: "",
       offset: 0
     });
+    expect(found.total).toBe(2);
+    expect(found.hits.map((h) => h.name)).toEqual(["ring", "ring-2"]);
+    expect(found.hits[0]?.svg).toContain("<svg");
+    const off = await searchIcons(
+      "00000000-0000-4000-8000-0000000000a1",
+      [{ ...lib, enabled: false }],
+      {
+        query: "",
+        library: "",
+        offset: 0
+      }
+    );
     expect(off).toEqual({ hits: [], total: 0 });
   });
 
   it("does not serve one project's cached icons to another project", async () => {
     jsdelivr({ "1.6.1": setJson(["ring"]) }, "1.6.1");
-    const lib = await installIconSet("p1", "svg-spinners");
+    const lib = await installIconSet("00000000-0000-4000-8000-0000000000a1", "svg-spinners");
     // Same hash and key, but project p2 never stored this library.
-    await expect(searchIcons("p2", [lib], { query: "", library: "", offset: 0 })).rejects.toThrow(
-      /missing from storage/
-    );
+    await expect(
+      searchIcons("00000000-0000-4000-8000-0000000000a2", [lib], {
+        query: "",
+        library: "",
+        offset: 0
+      })
+    ).rejects.toThrow(/missing from storage/);
   });
 });

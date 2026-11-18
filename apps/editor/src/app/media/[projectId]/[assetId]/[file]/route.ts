@@ -1,4 +1,4 @@
-import { MEDIA_FILE, MEDIA_ID, MEDIA_SEGMENT } from "@nextomic/schema";
+import { MEDIA_FILE, MEDIA_ID, isUuid } from "@nextomic/schema";
 import { getMedia, readMediaBytes } from "@/server/media";
 import { isVariantWidth, variantBytes, wantsVariant } from "@/server/media-variants";
 
@@ -13,7 +13,7 @@ type Params = Promise<{ projectId: string; assetId: string; file: string }>;
 // rendering. `*` CORS is needed because the editor canvas runs in a sandboxed iframe.
 export async function GET(request: Request, { params }: { params: Params }) {
   const { projectId, assetId, file } = await params;
-  if (!MEDIA_SEGMENT.test(projectId) || !MEDIA_ID.test(assetId) || !MEDIA_FILE.test(file))
+  if (!isUuid(projectId) || !MEDIA_ID.test(assetId) || !MEDIA_FILE.test(file))
     return new Response("Not found", { status: 404 });
   const asset = await getMedia(projectId, assetId);
   if (!asset) return new Response("Not found", { status: 404 });

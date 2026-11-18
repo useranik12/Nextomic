@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   actionBlocks,
   actionFlows,
@@ -332,7 +332,7 @@ export async function storeMedia(
   await assertFolder(projectId, file.folderId);
   const { data, format, fileName } = prepareUpload(file.name, file.data);
   const dims = format.kind === "image" ? imageSize(data) : null;
-  const id = randomBytes(12).toString("hex");
+  const id = randomUUID();
   await getStorageAdapter().put({ key: storageKey(projectId, id), data, contentType: format.mime });
   try {
     const [row] = await getDb()

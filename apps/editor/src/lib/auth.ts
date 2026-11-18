@@ -55,7 +55,10 @@ const PASSWORD_FIELDS: Record<string, string> = {
   "/email-otp/reset-password": "password"
 };
 
-const OTP_PURPOSE: Record<"sign-in" | "email-verification" | "forget-password" | "change-email", string> = {
+const OTP_PURPOSE: Record<
+  "sign-in" | "email-verification" | "forget-password" | "change-email",
+  string
+> = {
   "sign-in": "sign in",
   "change-email": "change your email",
   "email-verification": "verify your email",
@@ -69,6 +72,8 @@ export const auth = betterAuth({
   // container's internal one (behind Traefik the app itself sees http://localhost:3000).
   baseURL,
   trustedOrigins: authTrustedOrigins(),
+  // Row ids are native uuids (Supabase style); the database makes them with gen_random_uuid().
+  advanced: { database: { generateId: "uuid" } },
   database: drizzleAdapter(getDb(), {
     provider: "pg",
     schema: {

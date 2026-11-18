@@ -132,7 +132,7 @@ test("an Image element picks its file from Media and the library shows where it 
   await page.getByRole("button", { name: "Choose Hero" }).click();
   await page.getByRole("button", { name: "Use file" }).click();
   await expect(page.getByPlaceholder("https://...")).toHaveValue(
-    /^\/media\/[^/]+\/[a-f0-9]{24}\/hero\.png$/
+    /^\/media\/[^/]+\/[0-9a-f-]{36}\/hero\.png$/
   );
   await expect(page.getByRole("note").filter({ hasText: "Missing alt text" })).toHaveCount(0);
   // The file's alt text came along.

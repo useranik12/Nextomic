@@ -11,7 +11,7 @@ import {
   iconSvg,
   iconifyNames,
   iconifySetSchema,
-  MEDIA_SEGMENT,
+  isUuid,
   type IconFontData,
   type IconifySet,
   type IconLibrary
@@ -66,13 +66,13 @@ const sha256Base64 = (data: Uint8Array): string =>
  * so an update never overwrites the release a saved or published project still points at.
  */
 export const iconSetKey = (projectId: string, file: string): string => {
-  if (!MEDIA_SEGMENT.test(projectId)) throw new IconError("Invalid project.");
+  if (!isUuid(projectId)) throw new IconError("Invalid project.");
   return `icons/${projectId}/${iconFileSchema.parse(file)}`;
 };
 
 /** Storage key of an uploaded icon font file (served by app/icons/[projectId]/[file]). */
 export const iconFontKey = (projectId: string, file: string): string => {
-  if (!MEDIA_SEGMENT.test(projectId) || !ICON_FONT_FILE_PATTERN.test(file))
+  if (!isUuid(projectId) || !ICON_FONT_FILE_PATTERN.test(file))
     throw new IconError("Invalid icon font file.");
   return `icons/${projectId}/${file}`;
 };

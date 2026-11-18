@@ -106,6 +106,13 @@
       "when": 1795040265403,
       "tag": "0014_fk_indexes_version_cap",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795041549770,
+      "tag": "0015_native_uuid_ids",
+      "breakpoints": true
     }
   ]
 }

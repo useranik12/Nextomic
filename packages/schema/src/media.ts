@@ -136,7 +136,8 @@ export function mediaTitleFromName(original: string): string {
   );
 }
 
-export const MEDIA_ID = /^[a-f0-9]{24}$/;
+// A media asset id is a lowercase uuid (older 24-character ids no longer exist).
+export const MEDIA_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const MEDIA_FILE = /^[a-z0-9][a-z0-9._-]{0,80}\.[a-z0-9]{2,5}$/;
 export const MEDIA_SEGMENT = /^[A-Za-z0-9_-]{1,100}$/;
 

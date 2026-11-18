@@ -1,4 +1,5 @@
 import { getPublishedView, type PublishedView } from "@/server/publish";
+import { isUuid } from "@nextomic/schema";
 import { dynamicUser, visitorState, type Visitor } from "@/server/runtime/auth-session";
 import { requestFacts } from "@/server/request-facts";
 import { layoutForPage } from "@/server/site-layout";
@@ -24,6 +25,7 @@ export async function gatedView(
   route: string | null,
   headers: Headers
 ): Promise<GatedView | null> {
+  if (!isUuid(projectId)) return null;
   const view = await getPublishedView(projectId, route, { includeProtected: true });
   if (!view) return null;
   const session = await visitorState("live", projectId, headers, view.settings.appAuth);

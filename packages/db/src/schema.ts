@@ -20,7 +20,9 @@ import {
   primaryKey,
   text,
   timestamp,
-  uniqueIndex
+  uniqueIndex,
+  bigint,
+  uuid
 } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 
@@ -30,9 +32,7 @@ export const workspaceRoleEnum = pgEnum("workspace_role", ["owner", "admin", "me
 export const colorModeEnum = pgEnum("color_mode", ["dark", "light", "system"]);
 
 export const workspaces = pgTable("workspaces", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
@@ -41,10 +41,10 @@ export const workspaces = pgTable("workspaces", {
 export const workspaceMembers = pgTable(
   "workspace_members",
   {
-    workspaceId: text("workspace_id")
+    workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     role: workspaceRoleEnum("role").notNull(),
@@ -60,15 +60,13 @@ export const workspaceMembers = pgTable(
 export const projects = pgTable(
   "projects",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    workspaceId: text("workspace_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description"),
-    createdBy: text("created_by")
+    createdBy: uuid("created_by")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -93,10 +91,8 @@ export const projects = pgTable(
 export const pages = pgTable(
   "pages",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    projectId: text("project_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
@@ -106,7 +102,7 @@ export const pages = pgTable(
     // Incremented on every save; saves send the base version and a mismatch is a conflict.
     version: integer("version").notNull().default(1),
     publishedSnapshot: jsonb("published_snapshot").$type<PublishedPage>(),
-    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
     // When this page last went live; cleared by Unpublish.
     publishedAt: timestamp("published_at", { withTimezone: true }),
     // When its screenshot was last generated (the file lives in storage at a fixed key).
@@ -123,10 +119,8 @@ export const pages = pgTable(
 export const templates = pgTable(
   "templates",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    projectId: text("project_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     type: text("type")
@@ -138,7 +132,7 @@ export const templates = pgTable(
     // Incremented on every save; saves send the base version and a mismatch is a conflict.
     version: integer("version").notNull().default(1),
     publishedSnapshot: jsonb("published_snapshot").$type<PublishedTemplate>(),
-    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     screenshotAt: timestamp("screenshot_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -155,10 +149,8 @@ export const templates = pgTable(
 export const mediaFolders = pgTable(
   "media_folders",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    projectId: text("project_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
@@ -171,11 +163,11 @@ export const mediaAssets = pgTable(
   "media_assets",
   {
     // 24 lowercase hex characters; it is part of the public path, so it is not a uuid.
-    id: text("id").primaryKey(),
-    projectId: text("project_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    folderId: text("folder_id").references(() => mediaFolders.id, { onDelete: "set null" }),
+    folderId: uuid("folder_id").references(() => mediaFolders.id, { onDelete: "set null" }),
     // Empty until someone names the file; the library then shows the original name.
     title: text("title").notNull().default(""),
     originalName: text("original_name").notNull(),
@@ -192,7 +184,7 @@ export const mediaAssets = pgTable(
     hash: text("hash").notNull(),
     replacedAt: timestamp("replaced_at", { withTimezone: true }),
     trashedAt: timestamp("trashed_at", { withTimezone: true }),
-    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
@@ -206,10 +198,8 @@ export const mediaAssets = pgTable(
 export const pageVersions = pgTable(
   "page_versions",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    pageId: text("page_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    pageId: uuid("page_id")
       .notNull()
       .references(() => pages.id, { onDelete: "cascade" }),
     version: integer("version").notNull(),
@@ -217,7 +207,7 @@ export const pageVersions = pgTable(
     route: text("route").notNull(),
     settings: jsonb("settings").$type<PageSettings>().notNull(),
     tree: jsonb("tree").$type<ElementNode>().notNull(),
-    savedBy: text("saved_by").references(() => user.id, { onDelete: "set null" }),
+    savedBy: uuid("saved_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
@@ -232,19 +222,17 @@ export const pageVersions = pgTable(
 export const actionFlows = pgTable(
   "action_flows",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    projectId: text("project_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    pageId: text("page_id").references(() => pages.id, { onDelete: "cascade" }),
-    templateId: text("template_id").references(() => templates.id, { onDelete: "cascade" }),
+    pageId: uuid("page_id").references(() => pages.id, { onDelete: "cascade" }),
+    templateId: uuid("template_id").references(() => templates.id, { onDelete: "cascade" }),
     nodeId: text("node_id").notNull(),
     flows: jsonb("flows").$type<TriggerFlow[]>().notNull(),
     // Incremented on every save; a save with an older base version is a conflict.
     version: integer("version").notNull().default(1),
-    updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+    updatedBy: uuid("updated_by").references(() => user.id, { onDelete: "set null" }),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
@@ -260,13 +248,13 @@ export const actionFlows = pgTable(
 export const actionBlocks = pgTable(
   "action_blocks",
   {
-    id: text("id").primaryKey(),
-    projectId: text("project_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     block: jsonb("block").$type<ActionBlock>().notNull(),
     version: integer("version").notNull().default(1),
-    updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+    updatedBy: uuid("updated_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
@@ -277,7 +265,7 @@ export const actionBlocks = pgTable(
 );
 
 export const userPreferences = pgTable("user_preferences", {
-  userId: text("user_id")
+  userId: uuid("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
   colorMode: colorModeEnum("color_mode").notNull().default("dark")
@@ -288,10 +276,8 @@ export const userPreferences = pgTable("user_preferences", {
 export const connectors = pgTable(
   "connectors",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    projectId: text("project_id")
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     type: text("type").$type<"supabase" | "rest">().notNull(),
@@ -302,7 +288,7 @@ export const connectors = pgTable(
     secretIv: text("secret_iv"),
     secretTag: text("secret_tag"),
     keyVersion: integer("key_version"),
-    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
@@ -314,7 +300,7 @@ export const connectors = pgTable(
 
 // The saved STRUCTURE of a connected source (tables, columns, buckets, response shapes). Never rows.
 export const connectorSchemas = pgTable("connector_schemas", {
-  connectorId: text("connector_id")
+  connectorId: uuid("connector_id")
     .primaryKey()
     .references(() => connectors.id, { onDelete: "cascade" }),
   structure: jsonb("structure").$type<unknown>().notNull(),
@@ -326,13 +312,12 @@ export const connectorSchemas = pgTable("connector_schemas", {
 export const connectorAuditLog = pgTable(
   "connector_audit_log",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    connectorId: text("connector_id")
+    // Nothing refers to a log row, so a small sequential number beats a uuid here.
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    connectorId: uuid("connector_id")
       .notNull()
       .references(() => connectors.id, { onDelete: "cascade" }),
-    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
     operation: text("operation").$type<"test" | "resources" | "execute">().notNull(),
     resourceId: text("resource_id"),
     status: text("status").notNull(),
@@ -353,9 +338,7 @@ export type EmailKind =
 export const emailQueue = pgTable(
   "email_queue",
   {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
+    id: uuid("id").primaryKey().defaultRandom(),
     kind: text("kind").$type<EmailKind>().notNull(),
     toAddress: text("to_address").notNull(),
     subject: text("subject").notNull(),
