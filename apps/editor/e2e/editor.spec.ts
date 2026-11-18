@@ -1170,7 +1170,7 @@ test("connector proxy guards: sign-in, same origin, JSON, project scope", async 
   playwright
 }) => {
   const projectId = await signUpAndCreateProject(page);
-  const path = `/api/projects/${projectId}/connectors/missing`;
+  const path = `/api/projects/${projectId}/connectors/00000000-0000-4000-8000-000000000000`;
   const json = { "content-type": "application/json" };
 
   const anonymous = await playwright.request.newContext({ baseURL: page.url() });
@@ -1190,11 +1190,21 @@ test("connector proxy guards: sign-in, same origin, JSON, project scope", async 
   });
   expect(notJson.status()).toBe(415);
 
-  const otherProject = await page.request.post(`/api/projects/not-mine/connectors/missing`, {
+  const otherProject = await page.request.post(
+    `/api/projects/00000000-0000-4000-8000-000000000000/connectors/00000000-0000-4000-8000-000000000000`,
+    {
+      headers: json,
+      data: { op: "test" }
+    }
+  );
+  expect(otherProject.status()).toBe(403);
+
+  // A id that is not a uuid is not found, not a server error.
+  const badId = await page.request.post(`/api/projects/${projectId}/connectors/missing`, {
     headers: json,
     data: { op: "test" }
   });
-  expect(otherProject.status()).toBe(403);
+  expect(badId.status()).toBe(404);
 
   const badOp = await page.request.post(path, { headers: json, data: { op: "drop" } });
   expect(badOp.status()).toBe(400);

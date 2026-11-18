@@ -1,14 +1,12 @@
 import { isUuid } from "@nextomic/schema";
 
-// Routes whose path holds row ids. Each entry lists the path segments (after the first one) that
+// Page and file routes whose path holds row ids. (API routes check their ids in the handler: the
+// proxy would buffer large upload bodies.) Each entry lists the path segments (after the first one) that
 // must be uuids; a bad one is answered 404 before any code reaches the database.
 const GUARDED: ReadonlyArray<{ prefix: string; uuidAt: readonly number[] }> = [
   { prefix: "editor", uuidAt: [1] },
   { prefix: "preview", uuidAt: [1] },
   { prefix: "site", uuidAt: [1] },
-  { prefix: "api/site", uuidAt: [2] },
-  { prefix: "api/projects", uuidAt: [2, 4] },
-  { prefix: "api/screenshots", uuidAt: [2, 4] },
   { prefix: "media", uuidAt: [1] },
   { prefix: "fonts", uuidAt: [1] },
   { prefix: "icons", uuidAt: [1] },

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isUuid } from "@nextomic/schema";
 import { auth } from "@/lib/auth";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { proxyConnectorCall } from "@/server/connectors/proxy";
@@ -38,6 +39,7 @@ export async function POST(
   const session = await auth.api.getSession({ headers: req.headers });
   if (!session) return deny(401, "Sign in to continue.");
   const { projectId, connectorId } = await params;
+  if (!isUuid(projectId) || !isUuid(connectorId)) return deny(404, "Not found.");
   let workspaceId: string;
   try {
     ({

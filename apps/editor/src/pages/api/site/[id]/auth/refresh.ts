@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { isUuid } from "@nextomic/schema";
 import { getProjectSettings } from "@/server/pages";
 import { createRateLimiter } from "@/server/rate-limit";
 import { siteHref } from "@/server/runtime/auth-action";
@@ -25,7 +26,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     response.setHeader("allow", "GET");
     return response.status(405).end();
   }
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) return response.status(404).end();
+  if (!isUuid(id)) return response.status(404).end();
   const headers = headersOf(request);
   if (!PER_VISITOR.take(`${id}:${visitorKey(headers)}`).ok) return response.status(429).end();
   const mode = request.query.mode === "preview" ? "preview" : "live";

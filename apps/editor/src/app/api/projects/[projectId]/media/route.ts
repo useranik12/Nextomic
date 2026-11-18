@@ -1,4 +1,5 @@
-import { MEDIA_ID, MEDIA_MAX_UPLOAD_BYTES, MEDIA_SEGMENT } from "@nextomic/schema";
+import { MEDIA_ID, MEDIA_MAX_UPLOAD_BYTES } from "@nextomic/schema";
+import { isUuid } from "@nextomic/schema";
 import { AccessDeniedError } from "@/lib/permissions";
 import { authorizeProject } from "@/server/authorize";
 import { MediaError, replaceMedia, storeMedia, takeMediaWrite } from "@/server/media";
@@ -50,7 +51,7 @@ function fileNameOf(request: Request): string {
 // swaps the bytes of an existing asset. The type comes from the bytes (see sniffMedia).
 export async function POST(request: Request, { params }: { params: Params }) {
   const { projectId } = await params;
-  if (!MEDIA_SEGMENT.test(projectId)) return json({ error: "Not found." }, 404);
+  if (!isUuid(projectId)) return json({ error: "Not found." }, 404);
   try {
     const userId = await authorizeProject(projectId);
     takeMediaWrite(userId, "upload");

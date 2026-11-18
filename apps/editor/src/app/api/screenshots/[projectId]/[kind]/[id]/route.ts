@@ -1,4 +1,5 @@
 import { getDb, pages, templates } from "@nextomic/db";
+import { isUuid } from "@nextomic/schema";
 import { and, eq } from "drizzle-orm";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
@@ -6,7 +7,6 @@ import { getStorageAdapter } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
-const SEGMENT = /^[A-Za-z0-9_-]{1,100}$/;
 const MAX_BYTES = 1_500_000;
 
 type Params = Promise<{ projectId: string; kind: string; id: string }>;
@@ -17,8 +17,7 @@ const keyOf = (projectId: string, kind: string, id: string) =>
 
 async function authorized(params: Params) {
   const { projectId, kind, id } = await params;
-  if (!SEGMENT.test(projectId) || !SEGMENT.test(id) || (kind !== "page" && kind !== "template"))
-    return null;
+  if (!isUuid(projectId) || !isUuid(id) || (kind !== "page" && kind !== "template")) return null;
   const session = await getServerSession();
   if (!session) return null;
   try {

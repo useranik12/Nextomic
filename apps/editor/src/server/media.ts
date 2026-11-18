@@ -15,7 +15,7 @@ import {
   MEDIA_MAX_BYTES,
   MEDIA_NEEDS_ALT,
   MEDIA_PAGE_SIZE,
-  MEDIA_SEGMENT,
+  isUuid,
   imageSize,
   mediaEditSchema,
   mediaFileName,
@@ -91,7 +91,7 @@ function toAsset(row: Row): MediaAsset {
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 function assertProjectId(projectId: string) {
-  if (!MEDIA_SEGMENT.test(projectId)) throw new MediaError("Invalid project.");
+  if (!isUuid(projectId)) throw new MediaError("Invalid project.");
 }
 
 function assertIds(ids: readonly string[]): string[] {
@@ -226,7 +226,7 @@ export async function mediaCounts(projectId: string): Promise<MediaCounts> {
 }
 
 export async function getMedia(projectId: string, id: string): Promise<MediaAsset | null> {
-  if (!MEDIA_SEGMENT.test(projectId) || !MEDIA_ID.test(id)) return null;
+  if (!isUuid(projectId) || !MEDIA_ID.test(id)) return null;
   const [row] = await getDb()
     .select()
     .from(mediaAssets)

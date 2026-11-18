@@ -1,4 +1,5 @@
 import { pageIcons } from "@/server/icon-lookup";
+import { isUuid } from "@nextomic/schema";
 import { renderLoopCopies } from "@nextomic/renderer";
 import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -51,7 +52,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     return fail(405, "Use POST.");
   }
   const id = typeof request.query.id === "string" ? request.query.id : "";
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) return fail(404, "Not found.");
+  if (!isUuid(id)) return fail(404, "Not found.");
   let headers = headersOf(request);
   const visitor = PER_VISITOR.take(`${id}:${visitorKey(headers)}`);
   const project = PER_PROJECT.take(id);

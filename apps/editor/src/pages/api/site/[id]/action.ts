@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { isUuid } from "@nextomic/schema";
 import {
   actionRunRequestSchema,
   findServerAction,
@@ -60,7 +61,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     return fail(405, "Use POST.");
   }
   const id = typeof request.query.id === "string" ? request.query.id : "";
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) return fail(404, "Not found.");
+  if (!isUuid(id)) return fail(404, "Not found.");
   let headers = headersOf(request);
   if (!sameOrigin(headers)) return fail(403, "Cross-origin requests are not allowed.");
   if (!PER_VISITOR.take(`${id}:${visitorKey(headers)}`).ok || !PER_PROJECT.take(id).ok) {
