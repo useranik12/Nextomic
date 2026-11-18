@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@nextomic/schema": "workspace:*",
-    "@supabase/realtime-js": "2.118.0",
+    "@supabase/realtime-js": "2.119.0",
     "zod": "3.24.1"
   },
   "devDependencies": {

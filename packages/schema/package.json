@@ -11,10 +11,10 @@
   "dependencies": {
     "@iconify/utils": "2.1.33",
     "luxon": "3.7.2",
-    "postcss": "^8.5.32",
+    "postcss": "^8.5.33",
     "zod": "3.24.1"
   },
   "devDependencies": {
-    "@types/luxon": "3.7.1"
+    "@types/luxon": "3.7.6"
   }
 }
