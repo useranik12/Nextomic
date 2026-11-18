@@ -7,7 +7,7 @@ import {
   type ElementNode
 } from "@nextomic/schema";
 import { describe, expect, it } from "vitest";
-import { renderParts, withClientState } from "./fragments";
+import { renderParts, withClientState, withResults } from "./fragments";
 
 const settings = projectSettingsSchema.parse({});
 
@@ -40,6 +40,28 @@ describe("withClientState", () => {
     const next = withClientState(context(), { theme: "dark", extra: "x" }, { open: "true" });
     expect(next.app).toEqual({ theme: "dark" });
     expect(next.state).toEqual({ open: "true" });
+  });
+});
+
+describe("withResults", () => {
+  it("takes only declared names of bounded size and reads them as values", async () => {
+    const declared = new Set(["posts"]);
+    const next = withResults(
+      context(),
+      { posts: '[{"title":"A"}]', other: "x", big: "y".repeat(100_001) },
+      declared
+    );
+    expect(next.results).toEqual({ posts: '[{"title":"A"}]' });
+    const huge = withResults(context(), { posts: "y".repeat(100_001) }, declared);
+    expect(huge.results).toEqual({});
+    const title = node({
+      id: "t",
+      type: "text",
+      props: { text: { kind: "mixed", parts: [{ token: "results.posts?.[0]?.title" }] } }
+    });
+    const root = node({ id: "root", type: "section", children: [title] });
+    const parts = await renderParts({ tree: root, dynamic: next, settings, ids: ["t"] });
+    expect(parts[0]?.html).toContain(">A<");
   });
 });
 

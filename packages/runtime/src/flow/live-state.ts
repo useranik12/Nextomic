@@ -1,4 +1,5 @@
-import { expressionScope, type DynamicContext } from "@nextomic/schema";
+import { expressionScope, RESULT_LIMIT, type DynamicContext } from "@nextomic/schema";
+import { FlowError } from "./engine";
 import { writePersisted, type PersistEnv } from "../persisted-state";
 import type { RuntimePayload } from "./payload";
 import { applyStateOp } from "./state-ops";
@@ -17,6 +18,8 @@ export interface StateUpdate {
 export class LiveState {
   readonly app: Record<string, string>;
   readonly state: Record<string, string>;
+  /** Action results kept on the page, by name, as JSON text. Never saved anywhere. */
+  readonly results: Record<string, string>;
   private readonly initial: { app: Record<string, string>; state: Record<string, string> };
   private scopeCache: Record<string, unknown> | null = null;
   /** Reads the visitor's form values (set by the page runtime once the forms exist). */
@@ -30,6 +33,7 @@ export class LiveState {
   ) {
     this.app = { ...payload.dynamic.app, ...restoredApp };
     this.state = { ...payload.dynamic.state };
+    this.results = { ...payload.dynamic.results };
     this.initial = { app: { ...payload.dynamic.app }, state: { ...payload.dynamic.state } };
   }
 
@@ -39,6 +43,7 @@ export class LiveState {
       ...this.payload.dynamic,
       app: { ...this.app },
       state: { ...this.state },
+      results: { ...this.results },
       forms: this.formValues()
     };
   }
@@ -78,6 +83,30 @@ export class LiveState {
     if (changed.length === 0) return;
     this.scopeCache = null;
     this.onChange(changed);
+  }
+
+  /** Keeps what an action answered under `results.<name>`; the elements that read it redraw. */
+  setResult(name: string, value: unknown): void {
+    const text = value === undefined ? "" : (JSON.stringify(value) ?? "");
+    if (text.length > RESULT_LIMIT)
+      throw new FlowError(
+        "result-too-large",
+        `The result "${name}" is too large to keep on the page. Ask for fewer rows or columns.`
+      );
+    if (this.results[name] === text) return;
+    this.results[name] = text;
+    this.scopeCache = null;
+    this.onChange([`results.${name}`]);
+  }
+
+  /** The kept results something on the page reads (what a redraw sends to the server). */
+  readResults(): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const ref of this.payload.resultReads) {
+      const name = ref.slice("results.".length);
+      if (name in this.results) out[name] = this.results[name] ?? "";
+    }
+    return out;
   }
 
   private save(name: string, value: string): void {

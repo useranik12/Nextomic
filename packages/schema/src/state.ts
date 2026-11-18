@@ -107,6 +107,7 @@ export const RESERVED_STATE_NAMES: ReadonlySet<string> = new Set([
   "const",
   "constants",
   "state",
+  "results",
   "page",
   "param",
   "params",

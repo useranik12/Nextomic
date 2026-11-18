@@ -15,7 +15,8 @@ import {
   type ProjectSettings,
   type PublishedTemplate,
   withFormDefaults,
-  withTemplateParams
+  withTemplateParams,
+  RESULT_LIMIT
 } from "@nextomic/schema";
 import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -41,6 +42,22 @@ export function withClientState(
     return out;
   };
   return { ...dynamic, app: pick(dynamic.app, app), state: pick(dynamic.state, state) };
+}
+
+/**
+ * The action results the page keeps (docs: "Action results"). Only names a flow of the page keeps
+ * are taken, as text of bounded size; anything else the browser sends is dropped.
+ */
+export function withResults(
+  dynamic: DynamicContext,
+  given: Readonly<Record<string, string>>,
+  declared: ReadonlySet<string>
+): DynamicContext {
+  const results: Record<string, string> = {};
+  for (const [name, value] of Object.entries(given)) {
+    if (declared.has(name) && value.length <= RESULT_LIMIT) results[name] = value;
+  }
+  return { ...dynamic, results };
 }
 
 /**

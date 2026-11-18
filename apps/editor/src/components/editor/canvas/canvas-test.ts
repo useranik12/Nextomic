@@ -120,6 +120,7 @@ export function createCanvasTester({ current, setOverride, post }: TesterDeps) {
       route: render.dynamic.page.route,
       search: "",
       flows: {},
+      resultReads: [],
       blocks: message.blocks,
       deps: {},
       rootIds: [],

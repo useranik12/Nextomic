@@ -5,7 +5,7 @@ import { walkElements, type ElementNode } from "./element";
 // only those elements when an action changes app or page state.
 
 const TAG = /\{\{([\s\S]*?)\}\}/g;
-const REF = /\b(app|state)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)/g;
+const REF = /\b(app|state|results)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)/g;
 const FORM_REF = /\bform\s*\.\s*([A-Za-z][A-Za-z0-9_]*)\s*\.\s*([A-Za-z][A-Za-z0-9_]*)/g;
 
 /** The state names ("app.cart", "state.open") the {{ tags }} of a text read. */

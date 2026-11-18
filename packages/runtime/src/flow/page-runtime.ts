@@ -115,6 +115,7 @@ export function startActionRuntime(
       ids: wanted,
       app,
       state,
+      results: live.readResults(),
       forms: forms.values(false),
       edits: edits.snapshot(),
       refreshes
@@ -216,6 +217,7 @@ export function startActionRuntime(
       const response = await options.fetchFragments({
         app,
         state,
+        results: live.readResults(),
         overlay: { templateId, params }
       });
       if (!response.overlay) throw new FlowError("no-template", "The template cannot be shown.");
@@ -231,6 +233,7 @@ export function startActionRuntime(
       handlers,
       blocks: payload.blocks,
       elementId: nodeId && !roots.has(nodeId) ? nodeId : null,
+      share: (name, value) => live.setResult(name, value),
       log
     });
     const after = afterFlow as { redirect: string | null } | null;

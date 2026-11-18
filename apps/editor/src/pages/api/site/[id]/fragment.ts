@@ -5,6 +5,7 @@ import {
   overlayRanks,
   findRefreshQuery,
   refreshRequestSchema,
+  sharedResults,
   resolveOverlay,
   type ElementQuery
 } from "@nextomic/schema";
@@ -25,7 +26,8 @@ import {
   MAX_FRAGMENT_IDS,
   renderParts,
   renderOverlay,
-  withClientState
+  withClientState,
+  withResults
 } from "@/server/runtime/fragments";
 import { draftFlows, liveFlows } from "@/server/runtime/page-runtime";
 import { draftView, liveView } from "@/server/runtime/view-layout";
@@ -49,6 +51,8 @@ const bodySchema = z.object({
   ids: z.array(z.string().min(1).max(64)).max(MAX_FRAGMENT_IDS).default([]),
   app: values,
   state: values,
+  /** Action results the page keeps, by name (JSON text); only names its flows keep are used. */
+  results: values,
   /** Visitor form values by form then field; the tree decides which exist. */
   forms: z
     .record(z.string().max(40), z.record(z.string().max(40), z.string().max(5000)))
@@ -100,7 +104,17 @@ export default async function handler(request: NextApiRequest, response: NextApi
       : await draftView(id, body.route, body.search, headers, member);
   if (!laid) return fail(404, "Not found.");
 
-  const dynamic = { ...withClientState(laid.dynamic, body.app, body.state), forms: body.forms };
+  let dynamic = { ...withClientState(laid.dynamic, body.app, body.state), forms: body.forms };
+  const pageFlowsOf = () =>
+    body.mode === "live" && "pageFlows" in laid
+      ? liveFlows(id, laid.pageFlows, laid.templateIds)
+      : "page" in laid
+        ? draftFlows(id, laid.page.id, laid.templateIds)
+        : Promise.resolve({ flows: {}, blocks: [] });
+  if (Object.keys(body.results).length > 0) {
+    const { flows } = await pageFlowsOf();
+    dynamic = withResults(dynamic, body.results, new Set(sharedResults(flows).map((r) => r.name)));
+  }
   // Loops inside a redrawn element run here, with the connector of this mode: the site's own in
   // its workspace, or the signed-in member's in the preview.
   let executor: Executor | null = null;
@@ -117,12 +131,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   // Refresh Query: the query comes from the saved flow (published or draft), never the browser.
   let savedQuery: ((nodeId: string, loopId: string) => ElementQuery | null) | undefined;
   if (Object.keys(body.refreshes).length > 0) {
-    const { flows, blocks } =
-      body.mode === "live" && "pageFlows" in laid
-        ? await liveFlows(id, laid.pageFlows, laid.templateIds)
-        : "page" in laid
-          ? await draftFlows(id, laid.page.id, laid.templateIds)
-          : { flows: {}, blocks: [] };
+    const { flows, blocks } = await pageFlowsOf();
     const lists = [
       ...Object.values(flows).flatMap((list) => list.map((flow) => flow.nodes)),
       ...blocks.map((block) => block.nodes)

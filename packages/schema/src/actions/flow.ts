@@ -26,6 +26,8 @@ export interface ActionNode extends NodeBase {
   params: Params;
   /** Name of the output variable later nodes read; empty = the output is not kept. */
   outputName?: string | undefined;
+  /** Also keep the output on the page, where every element reads it as `{{ results.name }}`. */
+  shareOutput?: boolean | undefined;
   /** Nested flows of the action's `flow` fields (Show Toast's Button Action), by field key. */
   slots?: Record<string, FlowNode[]> | undefined;
 }
@@ -126,6 +128,7 @@ export const flowNodeSchema: z.ZodType<FlowNode, z.ZodTypeDef, unknown> = z.lazy
       type: z.string().max(64),
       params: paramsSchema,
       outputName,
+      shareOutput: z.boolean().optional(),
       slots: z.record(z.string().max(64), nodes).optional()
     }),
     z.object({

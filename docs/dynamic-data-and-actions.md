@@ -269,3 +269,7 @@ Token parsing and scope validation, universal bindability, loop duplication, tra
 - **Available only when** the project has the primary theme plus at least one active theme that follows the primary (`templates-and-themes.md` 3.4). Otherwise the action is greyed in the picker with the reason, and a saved Set Theme node fails with "This page cannot switch themes". The Theme field lists only those themes.
 - **What ships:** a page ships the CSS of the other switchable themes (inline on preview, linked `/theme-css/<project>/<slug>.css` on the live site) and the boot script holds each theme's mode rules. A saved cookie wins over theme conditions but never over a theme forced in Page Settings, and never on a page whose theme is neither the primary nor a follower; on those pages nothing extra ships and Set Theme reports it cannot switch.
 - **Known limits:** Set UI Mode does not yet stop a switch to dark on a theme without dark mode; the choice is per browser (cookie), not per signed-in user yet.
+
+## Action results on the page
+
+An output is flow-scoped by default. Turn on "Keep result on the page" in the node and any element, query setting, condition or later flow reads it as `{{ results.name }}` (picker group "Action results"). Use `?.` for fields (`{{ results.posts?.[0]?.title }}`), or pass the whole value as the list of a Query Loop. Last writer wins when two nodes share a name. Browser-only, 100k cap, never saved; see the 2026-11-18 decision in `spec.md`.

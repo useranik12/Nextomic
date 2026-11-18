@@ -245,3 +245,5 @@ Docs: `platform.md`
 ## Phase 14: Reusable components (deferred)
 
 Do not start until every phase above is approved. The schema reserves `componentInstance`. Scope (props, slots, variants, instances, overrides, library) will be written then.
+
+- 7b-3 Action results (`results.<name>`) built; see spec.md 2026-11-18.

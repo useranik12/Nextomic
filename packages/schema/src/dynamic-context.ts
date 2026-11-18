@@ -70,6 +70,11 @@ export const dynamicContextSchema = z.object({
   state: z.record(z.string(), z.string().max(100_000)),
   /** App state variables by name: their default value as text (persisted values join in the runtime). */
   app: z.record(z.string(), z.string().max(100_000)).default({}),
+  /**
+   * Action results kept on the page, by name: JSON text of what the action answered
+   * (`{{ results.products }}`). Empty until the action has run; never stored with the project.
+   */
+  results: z.record(z.string(), z.string().max(100_000)).default({}),
   /** Constants by name: their fixed value as text. */
   constants: z.record(z.string(), z.string().max(100_000)).default({}),
   /**
@@ -254,6 +259,7 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
     state,
     app,
     constants,
+    results: {},
     forms: {},
     types,
     nowIso: input.nowIso ?? new Date().toISOString(),
@@ -306,6 +312,19 @@ function fromElement(context: DynamicContext, match: RegExpExecArray): string {
   return element?.attrs[match[2] as string] ?? "";
 }
 
+/** The kept action results as values (they were stored as JSON text; text that is not JSON stays text). */
+function parsedResults(results: Readonly<Record<string, string>>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [name, text] of Object.entries(results)) {
+    try {
+      out[name] = JSON.parse(text);
+    } catch {
+      out[name] = text;
+    }
+  }
+  return out;
+}
+
 /** The names an expression can use for this context. */
 export function expressionScope(
   context: DynamicContext,
@@ -333,6 +352,7 @@ export function expressionScope(
     state: typedGroup(context.state, context.types, "state"),
     app: typedGroup(context.app, context.types, "app"),
     const: typedGroup(context.constants, context.types, "const"),
+    results: parsedResults(context.results),
     form: typedForms(context.forms, context.types),
     ...nowValues(context.nowIso, context.timeZone)
   };

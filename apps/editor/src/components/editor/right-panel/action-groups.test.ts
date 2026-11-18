@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actionGroups } from "./action-groups";
+import { actionGroups, resultGroups } from "./action-groups";
 
 const lookup = {
   columns: (ref: string) =>
@@ -11,6 +11,22 @@ const lookup = {
       : null,
   restFields: () => null
 };
+
+describe("resultGroups", () => {
+  it("offers a kept list with optional chaining, for every element", () => {
+    const [group] = resultGroups(
+      [{ name: "rows", nodeId: "n", type: "supabase.query", params: { table: "public.posts" } }],
+      lookup
+    );
+    expect(group?.tags.map((t) => t.token)).toEqual([
+      "results.rows",
+      "results.rows?.[0]",
+      "results.rows?.[0]?.id",
+      "results.rows?.[0]?.title"
+    ]);
+    expect(group?.section?.id).toBe("results");
+  });
+});
 
 describe("actionGroups", () => {
   it("offers the columns of a Supabase response, as a list", () => {

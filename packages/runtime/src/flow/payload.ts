@@ -22,6 +22,8 @@ export interface RuntimePayload {
   blocks: ActionBlock[];
   /** Per element id, the state names it reads ("app.cart", "state.open"); loop-free elements only. */
   deps: Record<string, string[]>;
+  /** Names of the kept action results that something on the page reads ("results.products"); only these ride along with a redraw. */
+  resultReads: string[];
   /** Ids of the page root and template roots: their flows hold page-level triggers. */
   rootIds: string[];
   /** The page's dynamic context; the access token is always blank. */
@@ -47,6 +49,8 @@ export interface FragmentRequest {
   state: Record<string, string>;
   /** Visitor form values by form and field; password fields are never sent. */
   forms?: Record<string, Record<string, string>>;
+  /** The kept action results the page reads, by name (JSON text). */
+  results?: Record<string, string>;
   /** Changes class, ID and attribute actions made: the redraw applies them first. */
   edits?: ElementEdits;
   /** Loops Refresh Query ran (by loop id): the action node and its filled values. */

@@ -9,6 +9,7 @@ import {
   type FlowNode
 } from "@nextomic/schema";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
+import { SwitchRow } from "@/components/ui/switch-row";
 import { BoltInput } from "../../right-panel/bolt-input";
 import { ActionPicker } from "./action-picker";
 import { ContainerSettings } from "./container-settings";
@@ -26,6 +27,20 @@ function OutputName({ value, onChange }: { value: string; onChange: (v: string) 
       value={value}
       onValueChange={onChange}
       description="Later nodes read the result by this name (bolt: Actions). Leave empty to drop it."
+    />
+  );
+}
+
+/** Keep the output on the page, where every element, query and flow reads it as {{ results.name }}. */
+function KeepResult({ node, update }: { node: Of<"action">; update: (n: FlowNode) => void }) {
+  const name = node.outputName ?? "";
+  if (!name) return null;
+  return (
+    <SwitchRow
+      label="Keep result on the page"
+      tip={`Also keep the result for the whole page while it is open: read it anywhere as {{ results.${name} }}, or use it as the list of a Query Loop. It lives only in the visitor's browser and is gone when the page is closed.`}
+      selected={node.shareOutput === true}
+      onChange={(on) => update({ ...node, shareOutput: on })}
     />
   );
 }
@@ -66,10 +81,22 @@ function ActionSettings({ node, update }: { node: Of<"action">; update: (n: Flow
         onChange={(params) => update({ ...node, params })}
       />
       {action.output ? (
-        <OutputName
-          value={node.outputName ?? ""}
-          onChange={(v) => update({ ...node, outputName: v || undefined })}
-        />
+        <>
+          <OutputName
+            value={node.outputName ?? ""}
+            onChange={(v) =>
+              update({
+                ...node,
+                outputName: v || undefined,
+                // A newly named result is kept on the page unless it is switched off.
+                shareOutput: v
+                  ? (node.shareOutput ?? (node.outputName ? undefined : true))
+                  : undefined
+              })
+            }
+          />
+          <KeepResult node={node} update={update} />
+        </>
       ) : null}
     </div>
   );
