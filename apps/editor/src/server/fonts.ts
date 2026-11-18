@@ -44,7 +44,7 @@ const fetchAllowed = (url: string, maxBytes: number): Promise<Uint8Array> =>
     fail: (message) => new FontError(message)
   });
 
-async function fetchJson<T>(url: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>): Promise<T> {
+async function fetchJson<T>(url: string, schema: z.ZodType<T>): Promise<T> {
   const data = await fetchAllowed(url, MAX_JSON_BYTES);
   try {
     return schema.parse(JSON.parse(new TextDecoder().decode(data)));
@@ -121,7 +121,7 @@ export async function searchFonts(input: {
 
 const detailSchema = z.object({
   npmVersion: z.string().regex(/^[0-9A-Za-z.\-+]+$/),
-  unicodeRange: z.record(z.string(), z.string()).default({}),
+  unicodeRange: z.record(z.string(), z.string()).prefault({}),
   variants: z.record(
     z.string(),
     z.record(
@@ -326,9 +326,7 @@ export const uploadMetaSchema = z.object({
     .max(64),
   category: fontSchema.shape.category,
   license: z.string().trim().max(80),
-  rights: z.literal(true, {
-    errorMap: () => ({ message: "Confirm you have the right to use and distribute this font." })
-  }),
+  rights: z.literal(true, { message: "Confirm you have the right to use and distribute this font." }),
   files: z
     .array(
       z.object({

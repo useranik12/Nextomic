@@ -124,7 +124,7 @@ export const restGroupSchema = z.object({
   headers: z.array(restHeaderSchema).max(100).default([]),
   /** Shared variables: every call in the group can use them (a call's own variable wins). */
   variables: z.array(restVariableSchema).max(200).default([]),
-  auth: restAuthSchema.default({}),
+  auth: restAuthSchema.prefault({}),
   includeCredentials: z.boolean().default(false)
 });
 
@@ -153,9 +153,9 @@ export const restCallSchema = z.object({
   fields: z.array(restFieldSchema).max(200).default([]),
   variables: z.array(restVariableSchema).max(200).default([]),
   /** Ungrouped calls only; a grouped call uses its group's auth. */
-  auth: restAuthSchema.default({}),
+  auth: restAuthSchema.prefault({}),
   includeCredentials: z.boolean().default(false),
-  response: restResponseSchema.default({})
+  response: restResponseSchema.prefault({})
 });
 
 export const restConfigSchema = z.object({

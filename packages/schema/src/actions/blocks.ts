@@ -51,7 +51,7 @@ export const blockParamSchema = z.object({
   required: z.boolean().default(false)
 });
 
-export const actionBlockSchema: z.ZodType<ActionBlock, z.ZodTypeDef, unknown> = z.object({
+export const actionBlockSchema: z.ZodType<ActionBlock> = z.object({
   id: z.string().min(1).max(64),
   name: z.string().trim().min(1).max(100),
   description: z.string().max(500).default(""),

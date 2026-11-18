@@ -27,7 +27,7 @@ const definitionSchema = z
   .object({
     description: z.string().optional(),
     required: z.array(z.string()).optional(),
-    properties: z.record(propertySchema).optional()
+    properties: z.record(z.string(), propertySchema).optional()
   })
   .passthrough();
 
@@ -37,7 +37,7 @@ const parameterSchema = z
     in: z.string().optional(),
     format: z.string().optional(),
     schema: z
-      .object({ properties: z.record(propertySchema).optional() })
+      .object({ properties: z.record(z.string(), propertySchema).optional() })
       .passthrough()
       .optional()
   })
@@ -48,8 +48,8 @@ const operationSchema = z.object({ parameters: z.array(z.unknown()).optional() }
 export const openApiSchema = z
   .object({
     swagger: z.string().optional(),
-    definitions: z.record(definitionSchema).default({}),
-    paths: z.record(z.record(z.unknown())).default({})
+    definitions: z.record(z.string(), definitionSchema).prefault({}),
+    paths: z.record(z.string(), z.record(z.string(), z.unknown())).prefault({})
   })
   .passthrough();
 

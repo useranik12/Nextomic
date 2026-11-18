@@ -129,7 +129,7 @@ export const paramValueSchema = z.union([
 ]);
 export type ParamValue = z.infer<typeof paramValueSchema>;
 
-export const paramsSchema = z.record(z.string().max(64), paramValueSchema).default({});
+export const paramsSchema = z.record(z.string().max(64), paramValueSchema).prefault({});
 export type Params = Record<string, ParamValue>;
 
 const textOf = (value: ParamValue | undefined): string => (typeof value === "string" ? value : "");

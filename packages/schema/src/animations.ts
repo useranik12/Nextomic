@@ -71,7 +71,7 @@ const propertyValue = z.union([z.string().max(300), z.number()]);
 export const ANIMATION_PROPERTY_PATTERN = /^[A-Za-z][A-Za-z0-9]*$/;
 const propertiesSchema = z
   .record(z.string().regex(ANIMATION_PROPERTY_PATTERN).max(48), propertyValue)
-  .default({});
+  .prefault({});
 
 export const animationSchema = z.object({
   id: z.string().min(1).max(64),
@@ -95,7 +95,7 @@ export const animationSchema = z.object({
         .regex(/^[0-9a-zA-Z.+\-=<>% ]*$/)
         .default("")
     })
-    .default({}),
+    .prefault({}),
   // The values the animation moves to (and from, for the "from" and "fromTo" methods).
   properties: propertiesSchema,
   fromProperties: propertiesSchema,
@@ -106,7 +106,7 @@ export const animationSchema = z.object({
       enabled: z.boolean().default(false),
       type: z.enum(["chars", "words", "lines"]).default("chars")
     })
-    .default({}),
+    .prefault({}),
   stagger: z
     .object({
       enabled: z.boolean().default(false),
@@ -114,7 +114,7 @@ export const animationSchema = z.object({
       from: z.enum(["start", "end", "center", "edges", "random"]).default("start"),
       ease: easeSchema.default("none")
     })
-    .default({})
+    .prefault({})
 });
 export type Animation = z.infer<typeof animationSchema>;
 
@@ -152,7 +152,7 @@ export const scrollTriggerSchema = z.object({
         .regex(/^[A-Za-z_-][\w-]*$/)
         .default("active")
     })
-    .default({}),
+    .prefault({}),
   snap: z
     .object({
       enabled: z.boolean().default(false),
@@ -160,7 +160,7 @@ export const scrollTriggerSchema = z.object({
       duration: z.number().min(0).max(5).default(0.3),
       delay: z.number().min(0).max(5).default(0.1)
     })
-    .default({})
+    .prefault({})
 });
 export type ScrollTriggerSettings = z.infer<typeof scrollTriggerSchema>;
 
@@ -182,7 +182,7 @@ export const timelineSchema = z.object({
   pageIds: z.array(z.string().max(64)).max(500).default([]),
   // 0 = once, -1 = forever.
   repeat: z.number().int().min(-1).max(1000).default(0),
-  scrollTrigger: scrollTriggerSchema.default({}),
+  scrollTrigger: scrollTriggerSchema.prefault({}),
   // Click and hover.
   interaction: z
     .object({
@@ -192,7 +192,7 @@ export const timelineSchema = z.object({
       excludedSelectors: z.string().max(300).default(""),
       timeScale: z.number().min(0.1).max(10).default(1)
     })
-    .default({}),
+    .prefault({}),
   animations: z.array(animationSchema).max(200).default([])
 });
 export type Timeline = z.infer<typeof timelineSchema>;

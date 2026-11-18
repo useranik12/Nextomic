@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { z } from "zod";
 import {
   breakpointListSchema,
   createPageInputSchema,
@@ -32,7 +32,7 @@ const parts = [
   ""
 ];
 for (const [name, schema] of entries) {
-  const json = zodToJsonSchema(schema, { name, $refStrategy: "root" });
+  const json = { $schema: undefined, title: name, ...z.toJSONSchema(schema, { unrepresentable: "any" }) };
   parts.push(`## ${name}`, "", "```json", JSON.stringify(json, null, 2), "```", "");
 }
 writeFileSync(new URL("../docs/schema.md", import.meta.url), parts.join("\n"));

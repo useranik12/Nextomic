@@ -50,7 +50,7 @@ import { getDraftTemplates, getPublishedTemplates } from "@/server/templates";
 const PER_VISITOR = createRateLimiter(240, 60_000);
 const PER_PROJECT = createRateLimiter(3000, 60_000);
 
-const values = z.record(z.string().max(100), z.string().max(100_000)).default({});
+const values = z.record(z.string().max(100), z.string().max(100_000)).prefault({});
 const bodySchema = z.object({
   mode: z.enum(["live", "preview"]),
   route: z.string().startsWith("/").max(2000),
@@ -70,17 +70,17 @@ const bodySchema = z.object({
       })
     )
     .refine((refs) => Object.keys(refs).length <= MAX_REREADS)
-    .default({}),
+    .prefault({}),
   /** Visitor form values by form then field; the tree decides which exist. */
   forms: z
     .record(z.string().max(40), z.record(z.string().max(40), z.string().max(5000)))
-    .default({}),
-  edits: elementEditsSchema.default({}),
-  refreshes: refreshRequestSchema.default({}),
+    .prefault({}),
+  edits: elementEditsSchema.prefault({}),
+  refreshes: refreshRequestSchema.prefault({}),
   overlay: z
     .object({
       templateId: z.string().min(1).max(64),
-      params: z.record(z.string().max(64), z.string().max(5000)).default({})
+      params: z.record(z.string().max(64), z.string().max(5000)).prefault({})
     })
     .optional()
 });

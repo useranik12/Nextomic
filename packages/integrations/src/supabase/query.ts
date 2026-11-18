@@ -25,7 +25,7 @@ export const filterSchema = z.discriminatedUnion("operator", [
         .array(z.union([z.string().max(1000), z.number()]))
         .min(1)
         .max(500),
-      z.record(z.unknown())
+      z.record(z.string(), z.unknown())
     ])
   }),
   z.object({
@@ -81,7 +81,7 @@ export const supabaseRequestSchema = z.discriminatedUnion("op", [
   // Updates and deletes need at least one filter so a missing condition never hits every row.
   z.object({ op: z.literal("update"), schema, values: row, filters: filters.min(1) }),
   z.object({ op: z.literal("delete"), schema, filters: filters.min(1) }),
-  z.object({ op: z.literal("rpc"), schema, args: z.record(z.unknown()).default({}) }),
+  z.object({ op: z.literal("rpc"), schema, args: z.record(z.string(), z.unknown()).prefault({}) }),
   z.object({ op: z.literal("storage.list"), prefix: z.string().max(1024).default("") }),
   // Stores one file (base64 bytes) at a path of a bucket. The bucket's policies decide who may.
   z.object({

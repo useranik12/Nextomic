@@ -150,7 +150,7 @@ export const supabaseLoopQuerySchema = z.object({
 export const restLoopQuerySchema = z.object({
   callId: z.string().max(64).default(""),
   /** A value for each of the call's variables, by variable name (unset uses its default). */
-  values: z.record(z.string().max(64), template).default({}),
+  values: z.record(z.string().max(64), template).prefault({}),
   /** The id of a saved JSON path whose value is the list, or "" for the whole response. */
   listPath: z.string().max(64).default(""),
   single: z.boolean().default(false),
@@ -247,10 +247,10 @@ export const elementQuerySchema = z.object({
     .default(""),
   enabled: z.boolean().default(false),
   source: z.enum(QUERY_SOURCES).default("supabase"),
-  supabase: supabaseLoopQuerySchema.default({}),
-  rest: restLoopQuerySchema.default({}),
-  local: localLoopQuerySchema.default({}),
-  fallback: queryFallbackSchema.default({})
+  supabase: supabaseLoopQuerySchema.prefault({}),
+  rest: restLoopQuerySchema.prefault({}),
+  local: localLoopQuerySchema.prefault({}),
+  fallback: queryFallbackSchema.prefault({})
 });
 
 export type QueryFilter = z.infer<typeof queryFilterSchema>;

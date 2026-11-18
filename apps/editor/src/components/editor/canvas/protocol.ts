@@ -75,9 +75,9 @@ export const renderMessageSchema = z.object({
       z.string().max(4000),
       z.object({ rows: z.array(z.unknown()).max(1000), hasMore: z.boolean() })
     )
-    .default({}),
+    .prefault({}),
   // Auto / Show / Hide preview switch per element (conditional visibility; never saved).
-  visibilityPreview: z.record(z.string().max(64), z.enum(["show", "hide"])).default({}),
+  visibilityPreview: z.record(z.string().max(64), z.enum(["show", "hide"])).prefault({}),
   // Icons the canvas asked for, drawn by the server.
   icons: canvasIconsSchema.default({ svg: {}, fonts: {}, css: "" })
 });

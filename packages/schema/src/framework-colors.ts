@@ -35,7 +35,7 @@ export const colorOptionSchema = z.object({
   /** Shades the user set by hand, by shade key (`l-1`, `d-2`, `t-20`); they replace the generated mix. */
   overrides: z
     .record(z.string().regex(/^(?:l|d)-\d{1,2}$|^t-\d{2}$/), z.string().trim().min(1).max(120))
-    .default({})
+    .prefault({})
 });
 export type ColorOptions = z.infer<typeof colorOptionSchema>;
 

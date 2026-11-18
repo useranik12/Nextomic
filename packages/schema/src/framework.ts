@@ -83,7 +83,7 @@ export const frameworkSchema = z.object({
   /** Palettes that have no colors yet, so an empty group survives a reload. */
   colorGroups: z.array(z.string().trim().min(1).max(48)).max(40).default([]),
   /** Shades and utility classes to generate per color name. */
-  colorOptions: colorOptionsMapSchema.default({}),
+  colorOptions: colorOptionsMapSchema.prefault({}),
   /** Counts exports, so exported files get distinct names: nextomic-framework-<site>-<version>.css. */
   version: z.number().int().min(1).max(100000).default(1)
 });

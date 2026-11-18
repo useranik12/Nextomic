@@ -36,9 +36,9 @@ export const saveConnectorInputSchema = z.object({
   type: z.enum(["supabase", "rest"]),
   name: z.string().trim().min(1, "Give the connector a name.").max(80),
   active: z.boolean(),
-  config: z.record(z.unknown()),
+  config: z.record(z.string(), z.unknown()),
   /** Blank or missing keeps the saved value, null removes it. */
-  secrets: z.record(z.string().max(20_000).nullable()).default({})
+  secrets: z.record(z.string(), z.string().max(20_000).nullable()).prefault({})
 });
 
 export type SaveConnectorInput = z.input<typeof saveConnectorInputSchema>;

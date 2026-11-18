@@ -52,7 +52,7 @@ const shapeSchema: z.ZodType<JsonShape> = z.lazy(() =>
     z.object({ kind: z.enum(["string", "int", "float", "boolean", "null"]) })
   ])
 );
-const shapesSchema = z.object({ calls: z.record(z.string().max(64), shapeSchema).default({}) });
+const shapesSchema = z.object({ calls: z.record(z.string().max(64), shapeSchema).prefault({}) });
 
 /** Secrets a form may send for one owner: blank keeps, null removes. */
 export const secretsInputSchema = z.record(z.string().max(200), z.string().max(20_000).nullable());

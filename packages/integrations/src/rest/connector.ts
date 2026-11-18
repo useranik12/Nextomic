@@ -25,13 +25,13 @@ export const restExecuteSchema = z
     /** A saved call, or the unsaved definition being tested in the builder. */
     callId: z.string().min(1).max(64).optional(),
     call: restCallSchema.optional(),
-    values: z.record(z.string().max(64), z.unknown()).default({}),
+    values: z.record(z.string().max(64), z.unknown()).prefault({}),
     /** Builder test only: sample values for the server-filled variables. */
     builtIns: z
       .object({ jwt: z.string().max(16_384).default(""), user_ip: z.string().max(64).default("") })
-      .default({}),
+      .prefault({}),
     /** Builder test only: auth values typed but not saved yet, keyed `<owner id>.<field>`. */
-    secrets: z.record(z.string().max(200), z.string().max(20_000)).default({})
+    secrets: z.record(z.string().max(200), z.string().max(20_000)).prefault({})
   })
   .refine((v) => v.callId !== undefined || v.call !== undefined, "Name the call to run.");
 

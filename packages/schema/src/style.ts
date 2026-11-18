@@ -15,8 +15,8 @@ export type StyleDeclarations = z.infer<typeof styleDeclarationsSchema>;
 export const styleMapSchema = z.object({
   raw: z.string().max(100_000).optional(),
   breakpoints: z
-    .record(z.string(), z.record(pseudoStateSchema, styleDeclarationsSchema))
-    .default({})
+    .record(z.string(), z.partialRecord(pseudoStateSchema, styleDeclarationsSchema))
+    .prefault({})
 });
 export type StyleMap = z.infer<typeof styleMapSchema>;
 

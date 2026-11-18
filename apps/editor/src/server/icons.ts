@@ -48,7 +48,7 @@ const fetchBytes = (url: string, maxBytes: number, timeoutMs?: number) =>
     fail: (message) => new IconError(message)
   });
 
-async function fetchApi<T>(url: string, schema: z.ZodType<T, z.ZodTypeDef, unknown>): Promise<T> {
+async function fetchApi<T>(url: string, schema: z.ZodType<T>): Promise<T> {
   const data = await fetchBytes(url, MAX_API_BYTES);
   try {
     return schema.parse(JSON.parse(new TextDecoder().decode(data)));

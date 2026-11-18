@@ -30,9 +30,9 @@ export const supabaseConfigSchema = z.object({
           enabled: z.boolean().default(false),
           webClientId: z.string().trim().max(300).default("")
         })
-        .default({})
+        .prefault({})
     })
-    .default({})
+    .prefault({})
 });
 
 export const supabaseSecretsSchema = z.object({

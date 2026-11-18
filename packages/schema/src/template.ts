@@ -100,7 +100,7 @@ export const templateSettingsSchema = z.object({
   status: z.enum(ITEM_STATUSES).default("draft"),
   scheduledAt: scheduledAtSchema,
   /** Header templates only. */
-  sticky: stickyHeaderSchema.default({}),
+  sticky: stickyHeaderSchema.prefault({}),
   /** A 404 template may hide the header or footer. */
   header: layoutChoiceSchema,
   footer: layoutChoiceSchema,
@@ -109,11 +109,11 @@ export const templateSettingsSchema = z.object({
   /** Values the template's elements read as {{ param.* }}; Show Toast passes them. */
   params: z.array(pageParamSchema).max(20).default([]),
   /** Modal and bottom sheet only: the layer behind the template. */
-  overlay: overlaySchema.default({}),
+  overlay: overlaySchema.prefault({}),
   /** Modal and bottom sheet only: other templates of the same type this one sits above. */
   showAbove: z.array(z.string().max(64)).max(50).default([]),
   /** Bottom sheet only: how it slides in. */
-  entry: sheetEntrySchema.default({})
+  entry: sheetEntrySchema.prefault({})
 });
 export type TemplateSettings = z.infer<typeof templateSettingsSchema>;
 

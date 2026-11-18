@@ -49,7 +49,7 @@ export const pageSeoSchema = z.object({
 export type PageSeo = z.infer<typeof pageSeoSchema>;
 
 const pageSettingsShape = z.object({
-  seo: pageSeoSchema.default({}),
+  seo: pageSeoSchema.prefault({}),
   locale: z
     .string()
     .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, "Use a language code like en or en-US")

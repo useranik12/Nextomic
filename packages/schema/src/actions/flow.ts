@@ -119,7 +119,7 @@ const base = {
 };
 const outputName = z.string().max(64).optional();
 
-export const flowNodeSchema: z.ZodType<FlowNode, z.ZodTypeDef, unknown> = z.lazy(() => {
+export const flowNodeSchema: z.ZodType<FlowNode> = z.lazy(() => {
   const nodes = z.array(flowNodeSchema).max(MAX_FLOW_NODES);
   return z.discriminatedUnion("kind", [
     z.object({
@@ -187,7 +187,7 @@ export interface TriggerFlow {
   nodes: FlowNode[];
 }
 
-export const triggerFlowSchema: z.ZodType<TriggerFlow, z.ZodTypeDef, unknown> = z.object({
+export const triggerFlowSchema: z.ZodType<TriggerFlow> = z.object({
   id,
   trigger: z.string().min(1).max(64),
   disabled: z.boolean().optional(),

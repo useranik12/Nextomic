@@ -33,7 +33,7 @@ export interface ElementNode {
   children: ElementNode[];
 }
 
-export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = z.lazy(() =>
+export const elementNodeSchema: z.ZodType<ElementNode> = z.lazy(() =>
   z.object({
     id: z.string().min(1).max(64),
     htmlId: z.string().regex(HTML_ID_PATTERN).max(64).optional(),
@@ -45,7 +45,7 @@ export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = 
       .max(32)
       .optional(),
     classIds: z.array(z.string().regex(CLASS_NAME_PATTERN).max(64)).max(50).default([]),
-    props: z.record(z.string(), propValueSchema).default({}),
+    props: z.record(z.string(), propValueSchema).prefault({}),
     attributes: z.record(z.string(), propValueSchema).optional(),
     styles: styleMapSchema.default({ breakpoints: {} }),
     customCss: z.string().max(100_000).optional(),
@@ -53,7 +53,7 @@ export const elementNodeSchema: z.ZodType<ElementNode, z.ZodTypeDef, unknown> = 
     visibility: storedVisibilitySchema,
     animation: elementAnimationSchema.optional(),
     query: elementQuerySchema.optional(),
-    actions: z.record(z.string(), z.array(z.unknown())).default({}),
+    actions: z.record(z.string(), z.array(z.unknown())).prefault({}),
     children: z.array(elementNodeSchema).default([])
   })
 );

@@ -113,7 +113,7 @@ export interface ConditionGroup {
 export const MAX_CONDITION_DEPTH = 4;
 export const MAX_CONDITIONS = 50;
 
-export const conditionGroupSchema: z.ZodType<ConditionGroup, z.ZodTypeDef, unknown> = z.lazy(() =>
+export const conditionGroupSchema: z.ZodType<ConditionGroup> = z.lazy(() =>
   z.object({
     id: z.string().min(1).max(64),
     match: z.enum(["all", "any"]).default("all"),

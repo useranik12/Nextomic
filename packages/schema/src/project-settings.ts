@@ -42,7 +42,7 @@ export const projectSettingsSchema = z.object({
   // App-wide number of snapshots kept per page (a page can set its own); older ones are deleted.
   versionLimit: versionLimitSchema.default(VERSION_LIMIT_MAX),
   // Styles of each class, shared by every element that carries it. Keyed by class name.
-  classes: z.record(z.string().regex(CLASS_NAME_PATTERN).max(64), styleMapSchema).default({}),
+  classes: z.record(z.string().regex(CLASS_NAME_PATTERN).max(64), styleMapSchema).prefault({}),
   // Class manager organisation: categories (also empty ones) and per-class category and lock.
   classCategories: z.array(z.string().trim().min(1).max(48)).max(100).default([]),
   classMeta: z
@@ -53,7 +53,7 @@ export const projectSettingsSchema = z.object({
         locked: z.boolean().optional()
       })
     )
-    .default({}),
+    .prefault({}),
   // Variable manager categories (also empty ones); a variable's own category is its `group`.
   variableCategories: z.array(z.string().trim().min(1).max(48)).max(100).default([]),
   // Design system variables, written to the output as --nxt-* custom properties.
@@ -79,7 +79,7 @@ export const projectSettingsSchema = z.object({
   enums: appEnumListSchema.default([]),
   dataTypes: dataTypeListSchema.default([]),
   // Authentication of the built app (App Settings > Authentication).
-  appAuth: appAuthSettingsSchema.default({})
+  appAuth: appAuthSettingsSchema.prefault({})
 });
 export type ProjectSettings = z.infer<typeof projectSettingsSchema>;
 

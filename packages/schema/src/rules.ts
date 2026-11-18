@@ -187,7 +187,7 @@ export interface RuleGroup {
   items: (Rule | RuleGroup)[];
 }
 
-export const ruleGroupSchema: z.ZodType<RuleGroup, z.ZodTypeDef, unknown> = z.lazy(() =>
+export const ruleGroupSchema: z.ZodType<RuleGroup> = z.lazy(() =>
   z.object({
     id: z.string().min(1).max(64),
     match: z.enum(["all", "any"]).default("all"),

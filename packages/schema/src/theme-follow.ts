@@ -35,8 +35,8 @@ export const variableOverrideSchema = z.object({
 export type VariableOverride = z.infer<typeof variableOverrideSchema>;
 
 export const followOverridesSchema = z.object({
-  variables: z.record(z.string().max(64), variableOverrideSchema).default({}),
-  scales: z.record(z.string().max(24), scaleOverrideSchema).default({})
+  variables: z.record(z.string().max(64), variableOverrideSchema).prefault({}),
+  scales: z.record(z.string().max(24), scaleOverrideSchema).prefault({})
 });
 export type FollowOverrides = z.infer<typeof followOverridesSchema>;
 

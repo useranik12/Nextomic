@@ -21,7 +21,7 @@ const challenge = z
   .string()
   .regex(/^[A-Za-z0-9_-]{43}$/, "The code challenge is not valid.")
   .optional();
-const metadata = z.record(z.unknown()).default({});
+const metadata = z.record(z.string(), z.unknown()).prefault({});
 
 export const authRequestSchema = z.discriminatedUnion("op", [
   z.object({
@@ -64,7 +64,7 @@ export const authRequestSchema = z.discriminatedUnion("op", [
     password: text(1000).optional(),
     email: email.optional(),
     phone: phone.optional(),
-    data: z.record(z.unknown()).optional(),
+    data: z.record(z.string(), z.unknown()).optional(),
     redirectTo: redirect.optional()
   }),
   z.object({ op: z.literal("resend"), email, redirectTo: redirect.optional() }),

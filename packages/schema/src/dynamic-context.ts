@@ -69,14 +69,14 @@ export const dynamicContextSchema = z.object({
   /** Page state variables by name: their starting value as text (json stays JSON text). */
   state: z.record(z.string(), z.string().max(100_000)),
   /** App state variables by name: their default value as text (persisted values join in the runtime). */
-  app: z.record(z.string(), z.string().max(100_000)).default({}),
+  app: z.record(z.string(), z.string().max(100_000)).prefault({}),
   /**
    * Action results kept on the page, by name: JSON text of what the action answered
    * (`{{ results.products }}`). Empty until the action has run; never stored with the project.
    */
-  results: z.record(z.string(), z.string().max(100_000)).default({}),
+  results: z.record(z.string(), z.string().max(100_000)).prefault({}),
   /** Constants by name: their fixed value as text. */
-  constants: z.record(z.string(), z.string().max(100_000)).default({}),
+  constants: z.record(z.string(), z.string().max(100_000)).prefault({}),
   /**
    * Declared types of variables, keyed "app.name", "const.name", "state.name", "param.name", so
    * expressions see numbers, booleans, JSON and dates instead of text.
@@ -86,12 +86,12 @@ export const dynamicContextSchema = z.object({
       z.string(),
       z.object({ type: stateTypeSchema, isList: z.boolean(), ref: z.string().default("") })
     )
-    .default({}),
+    .prefault({}),
   /**
    * Form field values by form name, then field name (`{{ form.signup.email }}`). The renderer fills
    * the starting values from the tree (`withFormDefaults`); the runtime sends the visitor's values.
    */
-  forms: z.record(z.string(), z.record(z.string(), z.string().max(5000))).default({}),
+  forms: z.record(z.string(), z.record(z.string(), z.string().max(5000))).prefault({}),
   /** The moment `now.*` tokens show, as an ISO string. */
   nowIso: z.string().max(40),
   /** IANA time zone `now.date` and `now.time` are shown in. */
@@ -114,7 +114,7 @@ export const dynamicContextSchema = z.object({
         attrs: z.record(z.string(), z.string().max(5000))
       })
     )
-    .default({}),
+    .prefault({}),
   /** The signed-in user of the built app, if any. Empty fields while nobody is signed in. */
   user: z
     .object({
@@ -125,7 +125,7 @@ export const dynamicContextSchema = z.object({
       name: z.string().max(200).default(""),
       role: z.string().max(64).default(""),
       /** Decoded access token claims; filled only when App Settings keeps token data. */
-      jwt: z.record(z.string(), z.unknown()).default({}),
+      jwt: z.record(z.string(), z.unknown()).prefault({}),
       /** Raw access token; filled only when the project opts in (never for custom code). */
       accessToken: z.string().max(16_384).default("")
     })

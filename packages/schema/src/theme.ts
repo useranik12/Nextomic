@@ -124,7 +124,7 @@ export const themeSchema = z.object({
       z.string().regex(VARIABLE_NAME_PATTERN).max(48),
       z.record(z.string().max(32), z.string().trim().min(1).max(500).regex(SAFE_VALUE))
     )
-    .default({})
+    .prefault({})
     .transform((byName) =>
       Object.fromEntries(
         Object.entries(byName).map(([name, byMode]) => [

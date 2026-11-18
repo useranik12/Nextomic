@@ -16,7 +16,7 @@ import { editorExecutor, querySources, runElementQuery } from "@/server/queries/
 
 const inputSchema = z.object({
   query: elementQuerySchema,
-  resolved: z.record(z.string().max(10_000), z.string().max(10_000)).default({}),
+  resolved: z.record(z.string().max(10_000), z.string().max(10_000)).prefault({}),
   offset: z.number().int().min(0).max(1_000_000).default(0)
 });
 
