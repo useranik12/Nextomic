@@ -7,13 +7,22 @@
 
 export const INPUT_DESIGN_PREFIX = "--nxt-ip-";
 
-export const INPUT_STATES = ["default", "hover", "focus", "error", "success", "disabled"] as const;
+export const INPUT_STATES = [
+  "default",
+  "hover",
+  "focus",
+  "checked",
+  "error",
+  "success",
+  "disabled"
+] as const;
 export type InputState = (typeof INPUT_STATES)[number];
 
 export const INPUT_STATE_LABELS: Record<InputState, string> = {
   default: "Default",
   hover: "Hover",
   focus: "Focus",
+  checked: "Checked",
   error: "Error",
   success: "Success",
   disabled: "Disabled"
@@ -41,6 +50,12 @@ interface StateSelector {
   inner: string;
 }
 
+/** One way a state reaches a part: a test on the field element and the rest of the selector below it. */
+export interface StateTail {
+  field: string;
+  tail: string;
+}
+
 export interface InputPart {
   id: string;
   label: string;
@@ -51,6 +66,11 @@ export interface InputPart {
   /** The states this part can be styled in (default is always there). */
   states: InputState[];
   groups: InputDesignGroup[];
+  /**
+   * Parts that sit on a repeated row (the options of a choice field) say per state how the state
+   * reaches them; without it the state is a test on the field (Input parts).
+   */
+  stateTails?: Partial<Record<InputState, StateTail[]>>;
 }
 
 const p = (prop: string, label: string, extra: Partial<InputDesignProp> = {}): InputDesignProp => ({
@@ -405,6 +425,10 @@ const STATE_SELECTORS: Record<InputState, StateSelector[]> = {
     { field: "[data-valid]", inner: "" },
     { field: '[data-nxt-force="success"]', inner: "" }
   ],
+  checked: [
+    { field: ":has([data-nxt-control]:checked)", inner: "" },
+    { field: '[data-nxt-force="checked"]', inner: "" }
+  ],
   disabled: [
     { field: ":has([data-nxt-control]:disabled)", inner: "" },
     { field: '[data-nxt-force="disabled"]', inner: "" }
@@ -417,7 +441,20 @@ const BUTTON_STATES: Partial<Record<InputState, StateSelector[]>> = {
   focus: [{ field: "", inner: ":focus-visible" }]
 };
 
-const partOf = (id: string): InputPart | undefined => INPUT_PARTS.find((part) => part.id === id);
+const partOf = (id: string, parts: readonly InputPart[]): InputPart | undefined =>
+  parts.find((part) => part.id === id);
+
+/** Pieces the choice-field parts (choice-design.ts) are built from. */
+export const DESIGN_KIT = {
+  p,
+  TEXT,
+  SPACING,
+  BORDER,
+  EFFECTS,
+  SIZE,
+  ORDER,
+  MESSAGE_GROUPS
+};
 
 /** The style key of one setting. */
 export function inputDesignKey(part: string, prop: string, state: InputState): string {
@@ -431,11 +468,14 @@ export interface ParsedInputKey {
 }
 
 /** The part, property and state a style key stands for; null for anything the table does not list. */
-export function parseInputDesignKey(key: string): ParsedInputKey | null {
+export function parseInputDesignKey(
+  key: string,
+  parts: readonly InputPart[] = INPUT_PARTS
+): ParsedInputKey | null {
   if (!key.startsWith(INPUT_DESIGN_PREFIX)) return null;
   const rest = key.slice(INPUT_DESIGN_PREFIX.length);
   const dash = rest.indexOf("-");
-  const part = dash > 0 ? partOf(rest.slice(0, dash)) : undefined;
+  const part = dash > 0 ? partOf(rest.slice(0, dash), parts) : undefined;
   if (!part) return null;
   let prop = rest.slice(dash + 1);
   let state: InputState = "default";
@@ -456,10 +496,18 @@ export function parseInputDesignKey(key: string): ParsedInputKey | null {
  * owner may be the field itself or anything around it, so both forms are returned.
  */
 export function inputPartSelectors(owner: string, part: InputPart, state: InputState): string[] {
+  const out: string[] = [];
+  const tails = part.stateTails?.[state];
+  if (tails) {
+    for (const { field, tail } of tails) {
+      const compound = `[data-nxt-field]${field}`;
+      out.push(`${owner}${compound}${tail}`, `${owner} ${compound}${tail}`);
+    }
+    return out;
+  }
   const alternatives =
     (part.id === "clear" || part.id === "toggle" ? BUTTON_STATES[state] : undefined) ??
     STATE_SELECTORS[state];
-  const out: string[] = [];
   for (const { field, inner } of alternatives) {
     const compound = `[data-nxt-field]${field}`;
     const tail = part.selector === "" ? inner : ` ${part.selector}${inner}`;

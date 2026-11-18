@@ -3,6 +3,8 @@
 import { getElementDefinition, type ControlDef } from "@nextomic/renderer";
 import {
   canHaveQuery,
+  designGroupTitle,
+  designPartsFor,
   dynamicTextOf,
   findNode,
   hasConditions,
@@ -248,7 +250,8 @@ export function ElementPanel({ node }: { node: ElementNode }) {
     )
   })).filter((g) => g.properties.length > 0);
   const showElement = q ? controls.length > 0 : tab === "element";
-  const hasFormInput = node.type === "input" && formInputMatches(q);
+  const hasFormInput = formInputMatches(node.type, q);
+  const isOption = node.type === "option";
   const showDesign = q ? groups.length > 0 || hasFormInput : tab === "design";
   const showAction = !q && tab === "action";
 
@@ -260,7 +263,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
     // An element never opened keeps the group that was open last.
     if (memoryGroup !== undefined) setDesignGroup(memoryGroup);
     // An Input opens on its own group first: that is where its parts are designed.
-    else if (node.type === "input") setDesignGroup(FORM_INPUT_GROUP);
+    else if (designPartsFor(node.type).length > 0) setDesignGroup(FORM_INPUT_GROUP);
     if (!memoryProperty) return;
     const frame = requestAnimationFrame(() => {
       scroller.current
@@ -424,12 +427,18 @@ export function ElementPanel({ node }: { node: ElementNode }) {
             ) : null}
           </div>
         ) : null}
-        {showDesign ? (
+        {showDesign && isOption ? (
+          <p className="px-3 py-4 text-sm text-muted" aria-label="Option design">
+            An option has no design of its own. Select its Radio, Checkbox group or Choice chips and
+            open Design &gt; Form Options: every option of the field is styled from there.
+          </p>
+        ) : null}
+        {showDesign && !isOption ? (
           <div className="flex flex-col" aria-label="Design settings">
             {hasFormInput ? (
               <AccordionSection
                 id={FORM_INPUT_GROUP}
-                title="Form Input"
+                title={designGroupTitle(node.type)}
                 icon={<Icon name="ph:textbox" width={18} height={18} />}
                 open={q ? true : designGroup === FORM_INPUT_GROUP}
                 onToggle={toggleGroup}

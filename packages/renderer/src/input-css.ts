@@ -1,8 +1,8 @@
 import {
-  INPUT_PARTS,
+  FORM_DESIGN_PARTS,
   INPUT_STATES,
   inputPartSelectors,
-  parseInputDesignKey,
+  parseFormDesignKey,
   type InputState,
   type ParsedInputKey
 } from "@nextomic/schema";
@@ -53,13 +53,13 @@ export function inputPartCss(
 ): string {
   const parsed: [ParsedInputKey, string][] = [];
   for (const [key, value] of Object.entries(declarations)) {
-    const hit = parseInputDesignKey(key);
+    const hit = parseFormDesignKey(key);
     if (hit) parsed.push([hit, value]);
   }
   if (parsed.length === 0) return "";
   const out: string[] = [];
   for (const state of INPUT_STATES as readonly InputState[]) {
-    for (const part of INPUT_PARTS) {
+    for (const part of FORM_DESIGN_PARTS) {
       const body = parsed
         .filter(([hit]) => hit.part.id === part.id && hit.state === state)
         .map(([hit, value]) => `${hit.prop}:${value}`);

@@ -5,6 +5,7 @@ import {
   customCssFor,
   findNode,
   INPUT_DESIGN_PREFIX,
+  designPartsFor,
   setStyle,
   type PseudoState,
   type StyleMap
@@ -330,7 +331,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     if (inputPreview !== "default" && selectedId) {
       if (tree === doc.tree) tree = structuredClone(doc.tree);
       const found = findNode(tree, selectedId);
-      if (found?.node.type === "input")
+      if (found && designPartsFor(found.node.type).length > 0)
         found.node.attributes = { ...found.node.attributes, "data-nxt-force": inputPreview };
     }
     // With a pseudo state chosen, the canvas shows that state's design (hover, focus ...) on the

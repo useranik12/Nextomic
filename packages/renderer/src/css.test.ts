@@ -111,3 +111,23 @@ describe("Form Input part styles", () => {
     expect(INPUT_BASE_CSS).toContain("[hidden]{display:none}");
   });
 });
+
+describe("Form Options part styles", () => {
+  const css = (decls: Record<string, string>) =>
+    classCss("f", { breakpoints: { base: { default: decls } } }, DEFAULT_BREAKPOINTS);
+
+  it("writes option parts on every option of the field", () => {
+    expect(css({ "--nxt-ip-mark-border-radius": "50%" })).toBe(
+      ".f[data-nxt-field] [data-nxt-choice] [data-nxt-mark],.f [data-nxt-field] [data-nxt-choice] [data-nxt-mark]{border-radius:50%}"
+    );
+  });
+
+  it("styles the chosen state and orders it before error and disabled", () => {
+    const out = css({
+      "--nxt-ip-mark-background-color-disabled": "#111",
+      "--nxt-ip-mark-background-color-checked": "#222"
+    });
+    expect(out).toContain(":has(:where([data-nxt-control]:checked))");
+    expect(out.indexOf("#222")).toBeLessThan(out.indexOf("#111"));
+  });
+});

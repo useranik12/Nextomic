@@ -63,4 +63,5 @@ export * from "./actions";
 export * from "./media";
 export * from "./svg-sanitize";
 export * from "./input-design";
+export * from "./choice-design";
 export * from "./query-shape";

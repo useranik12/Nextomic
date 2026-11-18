@@ -1,8 +1,9 @@
 "use client";
 
 import {
-  INPUT_PARTS,
-  parseInputDesignKey,
+  designGroupTitle,
+  designPartsFor,
+  parseFormDesignKey,
   type ElementNode,
   type InputPart,
   type InputState
@@ -17,15 +18,22 @@ const partMatches = (part: InputPart, query: string): boolean =>
   part.label.toLowerCase().includes(query) ||
   part.groups.some((g) => g.props.some((item) => item.label.toLowerCase().includes(query)));
 
-/** Whether anything of the table matches a settings search (so the group stays in the list). */
-export function formInputMatches(query: string): boolean {
-  return !query || "form input".includes(query) || INPUT_PARTS.some((p) => partMatches(p, query));
+/** Whether anything of the element's parts matches a settings search (so the group stays in the list). */
+export function formInputMatches(type: string, query: string): boolean {
+  const parts = designPartsFor(type);
+  if (parts.length === 0) return false;
+  return (
+    !query ||
+    designGroupTitle(type).toLowerCase().includes(query) ||
+    parts.some((p) => partMatches(p, query))
+  );
 }
 
 /**
- * Design > Form Input: every part of an Input is a sub-group (field, label, box, text,
- * placeholder, icon, buttons, messages) with its own settings and states. The open part and its
- * state are also pinned on the canvas, so an Error or Focus style can be seen while it is edited.
+ * Design > Form Input (and Form Checkbox, Form Options): every part of a form field is a sub-group
+ * (field, label, box, text, icon, buttons, messages, options ...) with its own settings and states.
+ * The open part and its state are also pinned on the canvas, so an Error, Focus or Checked style
+ * can be seen while it is edited.
  */
 export function FormInputGroup({ node, query }: { node: ElementNode; query: string }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -33,6 +41,8 @@ export function FormInputGroup({ node, query }: { node: ElementNode; query: stri
   const setPreview = useEditorStore((s) => s.setInputPreview);
   const target = useDesignTarget(node, "default");
   const setKeys = Object.keys(target.ownDeclarations ?? {});
+  const title = designGroupTitle(node.type);
+  const partList = designPartsFor(node.type);
 
   const shown = !query && open ? (states[open] ?? "default") : "default";
   useEffect(() => {
@@ -40,18 +50,18 @@ export function FormInputGroup({ node, query }: { node: ElementNode; query: stri
     return () => setPreview("default");
   }, [shown, setPreview, node.id]);
 
-  const all = !query || "form input".includes(query);
-  const parts = INPUT_PARTS.filter((part) => all || partMatches(part, query));
+  const all = !query || title.toLowerCase().includes(query);
+  const parts = partList.filter((part) => all || partMatches(part, query));
   // Under a search that matches a part's name, its settings all show.
   const settingQuery = (part: InputPart) =>
     all || part.label.toLowerCase().includes(query) ? "" : query;
 
   return (
-    <div className="flex flex-col gap-1" aria-label="Form Input parts">
+    <div className="flex flex-col gap-1" aria-label={`${title} parts`}>
       {parts.map((part) => {
         const isOpen = query ? true : open === part.id;
         const state = states[part.id] ?? "default";
-        const changed = setKeys.some((key) => parseInputDesignKey(key)?.part.id === part.id);
+        const changed = setKeys.some((key) => parseFormDesignKey(key)?.part.id === part.id);
         return (
           <section key={part.id} data-input-part={part.id} aria-label={part.label}>
             <button
