@@ -6,7 +6,8 @@ import { InfoTip } from "./info-tip";
 
 export interface SearchSelectSection {
   title: string;
-  options: { value: string; label: string }[];
+  /** `hint` is shown beside the label and is never part of the text the field takes. */
+  options: { value: string; label: string; hint?: string }[];
 }
 
 // A small searchable dropdown (HeroUI v3 ComboBox) with titled sections, the same 32px pill as the
@@ -88,6 +89,9 @@ export function SearchSelect({
                   className="text-body data-[selected=true]:font-medium data-[selected=true]:text-foreground"
                 >
                   {option.label}
+                  {option.hint ? (
+                    <span className="ml-2 text-xs text-muted">{option.hint}</span>
+                  ) : null}
                   <ListBox.ItemIndicator />
                 </ListBox.Item>
               ))}

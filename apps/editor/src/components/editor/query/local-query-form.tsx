@@ -181,7 +181,8 @@ export function LocalQueryForm({
                   title: `List fields of %${value.parentLoop || "loop"}`,
                   options: (parentLists ?? []).map((f) => ({
                     value: f.name,
-                    label: `${f.name} (${f.isList ? `${f.type} list` : f.type})`
+                    label: f.name,
+                    hint: f.isList ? `${f.type} list` : f.type
                   }))
                 }
               ]}
