@@ -82,7 +82,7 @@ export function detectFaceFromBytes(bytes: Uint8Array): Partial<DetectedFace> | 
 /** Weight and style of a font file the user picked: from its bytes when they can be read, else its name. */
 export async function detectFace(file: File): Promise<DetectedFace> {
   const named = detectFaceFromName(file.name);
-  let read: Partial<DetectedFace> | null = null;
+  let read: Partial<DetectedFace> | null;
   try {
     read = detectFaceFromBytes(new Uint8Array(await file.arrayBuffer()));
   } catch {

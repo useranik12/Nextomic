@@ -102,7 +102,7 @@ export async function generateScreenshot(projectId: string, item: LibraryItem): 
           imagePlaceholder: PLACEHOLDER
         });
       } catch (error) {
-        throw new Error(`The page could not be drawn: ${reasonOf(error)}.`);
+        throw new Error(`The page could not be drawn: ${reasonOf(error)}.`, { cause: error });
       }
     }
     const out = document.createElement("canvas");

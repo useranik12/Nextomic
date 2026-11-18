@@ -106,7 +106,7 @@ function checkUrl(url: URL, allowPrivateHosts: boolean) {
 
 async function resolveChecked(url: URL, options: SafeFetchOptions): Promise<string> {
   const host = bareHost(url);
-  let addresses: string[] = [];
+  let addresses: string[];
   if (isIP(host)) addresses = [host];
   else {
     try {

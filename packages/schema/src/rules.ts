@@ -264,7 +264,7 @@ export interface RuleContext {
 function zoned(iso: string, timeZone: string) {
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return null;
-  let zone = "UTC";
+  let zone: string;
   try {
     new Intl.DateTimeFormat("en", { timeZone });
     zone = timeZone;

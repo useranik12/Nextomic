@@ -3,7 +3,7 @@ import type { RequestFacts } from "./site-layout";
 /** The request as rules and tags read it, from the incoming headers. */
 export function requestFacts(headers: Headers, fallbackPath: string, query: string): RequestFacts {
   const raw = headers.get("x-nxt-url");
-  let url: URL | null = null;
+  let url: URL | null;
   try {
     url = raw ? new URL(raw) : null;
   } catch {

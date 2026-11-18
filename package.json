@@ -21,18 +21,19 @@
     "schema:doc": "bun run scripts/gen-schema-doc.ts"
   },
   "devDependencies": {
-    "@eslint/js": "9.17.0",
+    "@eslint/js": "10.0.1",
     "@iconify-json/ph": "1.2.2",
     "@iconify/utils": "2.1.33",
-    "eslint": "9.17.0",
-    "eslint-config-prettier": "9.1.0",
+    "eslint": "10.15.0",
+    "eslint-config-prettier": "10.1.8",
     "husky": "9.1.7",
-    "lint-staged": "15.3.0",
+    "lint-staged": "17.6.1",
     "prettier": "3.10.1",
-    "typescript": "5.7.2",
-    "typescript-eslint": "8.19.0",
-    "vitest": "2.1.8",
-    "zod-to-json-schema": "3.25.2"
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.73.0",
+    "vitest": "5.1.0",
+    "zod-to-json-schema": "3.25.2",
+    "vite": "8.3.8"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

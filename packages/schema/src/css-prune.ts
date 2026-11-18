@@ -55,7 +55,7 @@ export function pruneUnusedClasses(css: string, used: ReadonlySet<string>): stri
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
 
-  let result = css;
+  let result: string;
   try {
     const root = parse(css);
     root.walkRules((rule) => {

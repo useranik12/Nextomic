@@ -81,7 +81,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   });
   if (!query.success) return fail(400, "Invalid request.");
   const info = query.data;
-  let values: string[] = [];
+  let values: string[];
   try {
     const raw = headers.get("x-nx-values");
     values = valuesSchema.parse(raw ? JSON.parse(decodeURIComponent(raw)) : []);
