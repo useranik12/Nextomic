@@ -18,6 +18,7 @@ import { DynamicBolt } from "./dynamic-bolt";
 import { LengthInput } from "./length-input";
 import { SettingRow } from "./setting-row";
 import { useDesignTarget } from "./use-design-target";
+import { useStyleMarks } from "./use-style-marks";
 import { VariablePicker } from "./variable-picker";
 
 type Link = "free" | "pairs" | "all";
@@ -134,12 +135,18 @@ export function SidesField({
   const inherited =
     set && target.inheritedDeclarations ? readSides(target.inheritedDeclarations, set) : null;
   const [link, setLink] = useState<Link | null>(null);
+  const { index, breakpoint, state } = useStyleMarks(node);
   if (!set || !own) return null;
 
   const corners = set.kind === "corners";
   const names = corners ? CORNER_NAME : SIDE_NAME;
   const mode: Link = link ?? (sidesRelation(own) === "free" ? "free" : sidesRelation(own));
   const changed = hasSides(target.ownDeclarations, set);
+  const marks = index.marks(
+    [...set.props, ...(set.shorthand ? [set.shorthand] : [])],
+    breakpoint,
+    state
+  );
 
   function write(values: FourValues) {
     if (set) apply(node.id, sidesPatch(values, set));
@@ -169,6 +176,7 @@ export function SidesField({
       tip={tip}
       icon={icon}
       changed={changed}
+      marks={marks}
       onReset={() => apply(node.id, sidesPatch([undefined, undefined, undefined, undefined], set))}
       responsive
       actions={

@@ -18,6 +18,7 @@ import { LengthInput } from "./length-input";
 import { unitSpecFor } from "./length-units";
 import { SettingRow, bareFieldClass, fieldShellClass } from "./setting-row";
 import { SidesField } from "./sides-field";
+import { useStyleMarks } from "./use-style-marks";
 import { useDesignTarget } from "./use-design-target";
 import { useFontSupport } from "./use-font-support";
 import { VariablePicker, typesForProperty } from "./variable-picker";
@@ -66,6 +67,7 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
   const real = property.as ?? property.property;
   const [focused, setFocused] = useState(false);
   const setStyle = useEditorStore((s) => s.setElementStyle);
+  const { index, breakpoint, state } = useStyleMarks(node);
   const { options, hidden } = useOptions(node, property, target.own(property.property));
   if (property.sides) {
     return (
@@ -84,6 +86,7 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
   // Dimmed hint of the value inherited from the base breakpoint.
   const inherited = target.inherited(property.property);
   const changed = own !== undefined;
+  const marks = index.marks([property.property], breakpoint, state);
   // What the element looks like before anything is set here (a container starts as a flex column).
   const builtin = property.as ? undefined : builtinStyle(node, property.property);
   const effective = own ?? inherited ?? builtin;
@@ -98,6 +101,7 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
         label={property.label}
         htmlFor={id}
         changed={changed}
+        marks={marks}
         onReset={() => set(null)}
         tip={property.tip}
         responsive={!property.half}

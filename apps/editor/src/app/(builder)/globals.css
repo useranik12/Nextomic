@@ -220,3 +220,20 @@
 html[data-draft-guard] iframe {
   pointer-events: none;
 }
+
+/* The state select in the Design tab is always the pink chip (the old active state chip). It sits
+   outside the layers so it beats the field look of the shared select. */
+.state-select .select__trigger {
+  height: 1.75rem;
+  border: 0;
+  border-radius: 9999px;
+  background: rgb(236 72 153 / 0.2) !important;
+  color: #be185d !important;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px #ec4899 !important;
+}
+.dark .state-select .select__trigger {
+  color: #f9a8d4 !important;
+}

@@ -11,7 +11,8 @@ import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import type { DesignProperty } from "./design-groups";
 import { GroupBody } from "./group-body";
-import { useDesignTarget } from "./use-design-target";
+import { ChangeDots } from "./change-dots";
+import { useStyleMarks } from "./use-style-marks";
 
 /** The Design group id the panel remembers for every Form design setting. */
 export const FORM_INPUT_GROUP = "forminput";
@@ -57,19 +58,25 @@ export function PartBody({
   state: InputState;
   query: string;
 }) {
-  const target = useDesignTarget(node, "default");
-  const set = new Set(Object.keys(target.ownDeclarations ?? {}));
+  const { index, breakpoint, state: editState } = useStyleMarks(node);
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   const groups = part.groups
     .map((group) => ({ group, properties: partProperties(part, state, group.label, query) }))
     .filter(({ properties }) => properties.length > 0);
-  const anySet = groups.some(({ properties }) => properties.some((p) => set.has(p.property)));
+  const markOf = (properties: DesignProperty[]) =>
+    index.marks(
+      properties.map((p) => p.property),
+      breakpoint,
+      editState
+    );
+  const anySet = groups.some(({ properties }) => markOf(properties).element === "here");
   return (
     <div className="flex flex-col">
-      {groups.map(({ group, properties }, index) => {
-        const changed = properties.filter((p) => set.has(p.property)).length;
+      {groups.map(({ group, properties }, position) => {
+        const marks = markOf(properties);
+        const changed = marks.element === "here" ? 1 : 0;
         const key = `${part.id}:${state}:${group.label}`;
-        const fallback = query ? true : anySet ? changed > 0 : index === 0;
+        const fallback = query ? true : anySet ? changed > 0 : position === 0;
         const open = toggled[key] ?? fallback;
         return (
           <section
@@ -84,13 +91,7 @@ export function PartBody({
               className="flex h-8 w-full items-center gap-2 text-left text-xs font-semibold uppercase tracking-wide text-muted outline-none transition-colors duration-300 hover:text-foreground focus-visible:ring-1 focus-visible:ring-focus/30"
             >
               {group.label}
-              {changed > 0 ? (
-                <span
-                  role="img"
-                  aria-label={`${changed} changed`}
-                  className="h-1.5 w-1.5 rounded-full bg-warning"
-                />
-              ) : null}
+              <ChangeDots marks={marks} decorative />
               <Icon
                 name="ph:caret-down"
                 width={12}

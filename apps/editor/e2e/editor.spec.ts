@@ -44,7 +44,9 @@ test("create, edit, save, reload and preview a page", async ({ page }) => {
   await page.getByRole("tab", { name: /design/i }).click();
   await page.getByRole("button", { name: "Typography" }).click();
   await page.getByLabel("Font size", { exact: true }).fill("48");
-  await expect(page.getByRole("img", { name: "Changed at this breakpoint" })).toBeVisible();
+  await expect(
+    page.getByRole("img", { name: "Changed on this element at this breakpoint and state" })
+  ).toBeVisible();
 
   // Saving is on request (Ctrl+S).
   await page.keyboard.press("Control+s");

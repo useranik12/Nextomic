@@ -1,8 +1,10 @@
 "use client";
 
+import type { Marks } from "@nextomic/schema";
 import type { ReactNode } from "react";
 import { InfoTip } from "@/components/ui/info-tip";
 import { Icon } from "@/lib/icons/Icon";
+import { ChangeDots, ownMarks } from "./change-dots";
 
 /**
  * One settings row. The label line comes first and may wrap: the label, the responsive icon, a tip
@@ -13,6 +15,7 @@ export function SettingRow({
   label,
   htmlFor,
   changed,
+  marks,
   onReset,
   responsive,
   tip,
@@ -23,6 +26,8 @@ export function SettingRow({
   label: string;
   htmlFor?: string;
   changed?: boolean;
+  /** The change dots (yellow element, blue classes); without it `changed` shows one yellow dot. */
+  marks?: Marks;
   onReset?: (() => void) | undefined;
   /** Shows the small device icon: the value can differ per breakpoint. */
   responsive?: boolean;
@@ -47,13 +52,7 @@ export function SettingRow({
       }
     >
       <div className="flex min-h-6 flex-wrap items-center gap-x-1.5 gap-y-1">
-        {changed ? (
-          <span
-            role="img"
-            aria-label="Changed at this breakpoint"
-            className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning"
-          />
-        ) : null}
+        <ChangeDots marks={marks ?? ownMarks(changed === true)} />
         {icon ? <span className="shrink-0 text-muted">{icon}</span> : null}
         <label htmlFor={htmlFor} className="text-xs font-medium text-body">
           {label}

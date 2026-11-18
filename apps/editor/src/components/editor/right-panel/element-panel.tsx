@@ -4,8 +4,10 @@ import { getElementDefinition, type ControlDef } from "@nextomic/renderer";
 import {
   canHaveQuery,
   designGroupTitle,
+  SIDE_SETS,
   designPartsFor,
   dynamicTextOf,
+  inputDesignKey,
   editStateLabel,
   pseudoOf,
   findNode,
@@ -40,6 +42,7 @@ import { AttributesEditor } from "./attributes-editor";
 import { ConvertToClass } from "./convert-to-class";
 import { CssEditor } from "./css-editor";
 import { DesignIcon } from "./design-icons";
+import { useStyleMarks } from "./use-style-marks";
 import { FormInputGroup, formInputMatches } from "./form-input-group";
 import { FORM_INPUT_GROUP } from "./form-input-part";
 import { DynamicBolt } from "./dynamic-bolt";
@@ -254,6 +257,14 @@ export function ElementPanel({ node }: { node: ElementNode }) {
   const showElement = q ? controls.length > 0 : tab === "element";
   const hasFormInput = formInputMatches(node.type, q);
   const isOption = node.type === "option";
+  const { index: markIndex, breakpoint: markBreakpoint, state: markState } = useStyleMarks(node);
+  const keysOf = (p: { property: string; sides?: string }) => {
+    const set = p.sides ? SIDE_SETS[p.sides] : undefined;
+    return set ? [...set.props, ...(set.shorthand ? [set.shorthand] : [])] : [p.property];
+  };
+  const formKeys = designPartsFor(node.type).flatMap((part) =>
+    part.groups.flatMap((g) => g.props.map((item) => inputDesignKey(part.id, item.prop, "default")))
+  );
   const activeState = useEditorStore((s) => s.activeState);
   // Checked, Error and Success hold no ordinary settings, only the Form design parts do.
   const formOnlyState = pseudoOf(activeState) === null;
@@ -447,6 +458,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 icon={<Icon name="ph:textbox" width={18} height={18} />}
                 open={q ? true : designGroup === FORM_INPUT_GROUP}
                 onToggle={toggleGroup}
+                marks={markIndex.marks(formKeys, markBreakpoint, markState)}
               >
                 <FormInputGroup key={node.id} node={node} query={q} />
               </AccordionSection>
@@ -466,6 +478,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 icon={<DesignIcon id={group.icon} />}
                 open={q ? true : designGroup === group.id}
                 onToggle={toggleGroup}
+                marks={markIndex.marks(group.properties.flatMap(keysOf), markBreakpoint, markState)}
               >
                 <div inert={formOnlyState} className={formOnlyState ? "opacity-40" : undefined}>
                   <GroupBody node={node} groupId={group.id} properties={group.properties} />
@@ -479,7 +492,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 icon={<Icon name="ph:sparkle" width={18} height={18} />}
                 open={q ? true : designGroup === "animations"}
                 onToggle={toggleGroup}
-                changed={node.animation !== undefined}
+                marks={{ element: node.animation !== undefined ? "here" : "none", classes: "none" }}
               >
                 <CssAnimationPanel node={node} />
               </AccordionSection>
@@ -491,6 +504,7 @@ export function ElementPanel({ node }: { node: ElementNode }) {
                 icon={<Icon name="ph:code" width={18} height={18} />}
                 open={q ? true : designGroup === "css"}
                 onToggle={toggleGroup}
+                marks={{ element: node.styles.raw ? "here" : "none", classes: "none" }}
               >
                 <CssEditor key={node.id} node={node} />
                 <ConvertToClass node={node} />

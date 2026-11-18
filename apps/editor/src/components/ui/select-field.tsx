@@ -13,6 +13,8 @@ export interface SelectOption {
   /** Shown but not selectable; `hint` says why when the pointer rests on it. */
   disabled?: boolean;
   hint?: string;
+  /** Drawn at the end of the item in the list only (not in the closed field). */
+  mark?: ReactNode;
   /** Drawn before the label, in the list and in the closed field. */
   icon?: ReactNode;
 }
@@ -31,6 +33,10 @@ export interface SelectFieldProps {
   className?: string;
   /** Info tip beside the label. */
   tip?: string;
+  /** Drawn in the closed field just before the caret (a status dot, for instance). */
+  trailing?: ReactNode;
+  /** Replaces the chosen item in the closed field (when options carry a `mark` of their own). */
+  valueLabel?: ReactNode;
 }
 
 /**
@@ -78,7 +84,7 @@ function Items({ items }: { items: SelectOption[] }) {
     >
       {option.icon ? (
         // Icon and label stay one unit so the closed field shows them on one line too.
-        <span className="flex min-w-0 items-center gap-2">
+        <span data-tip={option.hint} className="flex min-w-0 items-center gap-2">
           <span aria-hidden="true" className="flex shrink-0 items-center text-muted">
             {option.icon}
           </span>
@@ -91,20 +97,30 @@ function Items({ items }: { items: SelectOption[] }) {
       ) : (
         option.label
       )}
+      {option.mark ? <span className="ml-auto flex items-center pl-2">{option.mark}</span> : null}
       <ListBox.ItemIndicator />
     </ListBox.Item>
   ));
 }
 
-function Trigger({ placeholder }: { placeholder?: ReactNode }) {
+function Trigger({
+  placeholder,
+  trailing,
+  valueLabel
+}: {
+  placeholder?: ReactNode;
+  trailing?: ReactNode;
+  valueLabel?: ReactNode;
+}) {
   return (
     <>
       <Select.Trigger>
         <Select.Value>
           {({ isPlaceholder, defaultChildren }) =>
-            isPlaceholder && placeholder ? placeholder : defaultChildren
+            valueLabel ?? (isPlaceholder && placeholder ? placeholder : defaultChildren)
           }
         </Select.Value>
+        {trailing ? <span className="ml-auto mr-1 flex items-center">{trailing}</span> : null}
         <Select.Indicator />
       </Select.Trigger>
     </>
@@ -121,7 +137,9 @@ export function SelectField({
   isDisabled,
   description,
   className,
-  tip
+  tip,
+  trailing,
+  valueLabel
 }: SelectFieldProps) {
   const markOpened = useIgnoreOpeningScroll();
   const known = options.some((option) => option.value === value);
@@ -139,7 +157,7 @@ export function SelectField({
       className={className}
     >
       {hideLabel ? null : <FieldLabel label={label} tip={tip} compact={compact} />}
-      <Trigger />
+      <Trigger trailing={trailing} valueLabel={valueLabel} />
       {description ? <Description>{description}</Description> : null}
       <Select.Popover placement="bottom start" offset={6}>
         <ListBox>

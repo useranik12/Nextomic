@@ -193,6 +193,14 @@ test("form input design: Form Input group first, error style on canvas and previ
   await page.locator("[role=option]", { hasText: "Error" }).click();
   await box.getByRole("button", { name: "Background and border" }).click();
   await box.getByLabel("Border color", { exact: true }).fill("rgb(255, 0, 0)");
+  // Change dots: bright yellow on the state select and the part while Error is open.
+  const stateSelect = page.locator('[aria-label="State being edited"]');
+  await expect(stateSelect.locator(".select__trigger")).toHaveCSS(
+    "background-color",
+    "rgba(236, 72, 153, 0.2)"
+  );
+  await expect(stateSelect.locator('[data-dot="element-here"]')).toBeVisible();
+  await expect(box.locator('[data-dot="element-here"]').first()).toBeVisible();
   const canvasBox = canvas.locator("[data-nxt-box]");
   await expect
     .poll(() => canvasBox.evaluate((el) => getComputedStyle(el).borderTopColor))
@@ -200,6 +208,7 @@ test("form input design: Form Input group first, error style on canvas and previ
   // Back to Default, the canvas shows the normal look again (the error style is only pinned).
   await page.getByRole("button", { name: "State being edited" }).click();
   await page.locator("[role=option]", { hasText: "Default" }).click();
+  await expect(stateSelect.locator('[data-dot="element-elsewhere"]')).toBeVisible();
   await expect
     .poll(() => canvasBox.evaluate((el) => getComputedStyle(el).borderTopColor))
     .not.toBe("rgb(255, 0, 0)");

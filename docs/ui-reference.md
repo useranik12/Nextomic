@@ -282,6 +282,8 @@ Built (4c). Small inputs and buttons throughout (owner rule).
 - Bottom: "Search settings" input that filters all settings across tabs, plus a settings gear.
 - Navigator panel (left rail): holds all elements of the page or template. Filter dropdown ("All", or by element type/class), search, tree with expand/collapse, drag to reorder, and per-row indicators for classes, loop, condition, and actions.
 
+**Change dots (owner decision 2026-11-18, after the Advanced Themer idea for Bricks).** One legend for every Design setting, group header, form part and the state select (`change-dots.tsx`, `style-marks.ts`). Yellow = this element's own value: bright when set at the breakpoint and state being edited, faded when set only at another breakpoint or state. Sky blue = classes: bright when the class being edited sets it here, faded when any class applied to the element sets it. A row shows yellow first, then blue. A group header or part shows the strongest dot of the settings inside. The state select shows one dot before its caret (bright: the chosen state has values at this breakpoint; faded: only other states or breakpoints do) and its list marks every state that holds values. The select itself is always the pink chip (the old active state chip).
+
 ### 4.8 Action flow editor (inspiration: `inspiration/flutterflow-action-flow-editor-*.png`, Nextomic styling)
 
 Opened from the element's Action tab (a trigger card, or "Add action"), from an Action Block in the Action Blocks tab, or from the sky-blue lightning icon of an element row in the Navigator. Large modal with a 16px gap on every side and three columns:

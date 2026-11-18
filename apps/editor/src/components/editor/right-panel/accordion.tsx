@@ -1,7 +1,9 @@
 "use client";
 
+import type { Marks } from "@nextomic/schema";
 import type { ReactNode } from "react";
 import { Icon } from "@/lib/icons/Icon";
+import { ChangeDots, ownMarks } from "./change-dots";
 
 /**
  * One section of an accordion. The parent keeps which section is open, so only one is open at a
@@ -14,6 +16,7 @@ export function AccordionSection({
   open,
   onToggle,
   changed,
+  marks,
   children
 }: {
   id: string;
@@ -23,6 +26,8 @@ export function AccordionSection({
   onToggle: (id: string) => void;
   /** Dot beside the title: something inside is set. */
   changed?: boolean;
+  /** Yellow and blue change dots; they replace `changed` when given. */
+  marks?: Marks;
   children: ReactNode;
 }) {
   const panelId = `acc-${id}`;
@@ -41,13 +46,7 @@ export function AccordionSection({
       >
         <span className="flex shrink-0 text-body">{icon}</span>
         {title}
-        {changed ? (
-          <span
-            role="img"
-            aria-label="Has changes"
-            className="h-1.5 w-1.5 rounded-full bg-warning"
-          />
-        ) : null}
+        <ChangeDots marks={marks ?? ownMarks(changed === true)} decorative />
         <Icon
           name="ph:caret-down"
           width={12}

@@ -4,7 +4,7 @@ import {
   designGroupTitle,
   designPartsFor,
   editStateLabel,
-  parseFormDesignKey,
+  inputDesignKey,
   partStateOf,
   type ElementNode,
   type InputPart
@@ -13,7 +13,8 @@ import { useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useEditorStore } from "../store/editor-store";
 import { PartBody } from "./form-input-part";
-import { useDesignTarget } from "./use-design-target";
+import { ChangeDots } from "./change-dots";
+import { useStyleMarks } from "./use-style-marks";
 
 const partMatches = (part: InputPart, query: string): boolean =>
   part.label.toLowerCase().includes(query) ||
@@ -39,8 +40,7 @@ export function formInputMatches(type: string, query: string): boolean {
 export function FormInputGroup({ node, query }: { node: ElementNode; query: string }) {
   const [open, setOpen] = useState<string | null>(null);
   const activeState = useEditorStore((s) => s.activeState);
-  const target = useDesignTarget(node, "default");
-  const setKeys = Object.keys(target.ownDeclarations ?? {});
+  const { index, breakpoint, state } = useStyleMarks(node);
   const title = designGroupTitle(node.type);
   const partState = partStateOf(activeState);
   const stateLabel = editStateLabel(node.type, activeState);
@@ -60,7 +60,13 @@ export function FormInputGroup({ node, query }: { node: ElementNode; query: stri
       {parts.map((part) => {
         const supported = partState !== null && part.states.includes(partState);
         const isOpen = supported && (query ? true : open === part.id);
-        const changed = setKeys.some((key) => parseFormDesignKey(key)?.part.id === part.id);
+        const marks = index.marks(
+          part.groups.flatMap((g) =>
+            g.props.map((item) => inputDesignKey(part.id, item.prop, "default"))
+          ),
+          breakpoint,
+          state
+        );
         return (
           <section key={part.id} data-input-part={part.id} aria-label={part.label}>
             <button
@@ -72,13 +78,7 @@ export function FormInputGroup({ node, query }: { node: ElementNode; query: stri
               className="flex h-9 w-full items-center gap-2 rounded-xl px-2 text-left text-sm text-foreground outline-none transition-colors duration-300 hover:bg-default focus-visible:ring-1 focus-visible:ring-focus/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             >
               {part.label}
-              {changed ? (
-                <span
-                  role="img"
-                  aria-label="Has changes"
-                  className="h-1.5 w-1.5 rounded-full bg-warning"
-                />
-              ) : null}
+              <ChangeDots marks={marks} decorative />
               {supported ? null : (
                 <span className="text-xs text-muted">no {stateLabel.toLowerCase()}</span>
               )}
