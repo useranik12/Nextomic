@@ -22,6 +22,7 @@ import {
 } from "@nextomic/schema";
 import { getDb, pages, pageVersions, projects } from "@nextomic/db";
 import { copyOwnerFlows, syncFlowsWithTree } from "./action-flows";
+import { isUniqueViolation } from "./db-errors";
 import { and, asc, desc, eq, ne, notInArray, sql } from "drizzle-orm";
 
 // Page persistence. Callers MUST have passed requireProjectAccess for the project first;
@@ -64,10 +65,6 @@ function toStored(row: typeof pages.$inferSelect): StoredPage {
     version: row.version,
     updatedAt: row.updatedAt
   };
-}
-
-function isUniqueViolation(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }
 
 export async function getProjectSettings(projectId: string): Promise<ProjectSettings> {

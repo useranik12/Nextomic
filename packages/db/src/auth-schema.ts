@@ -64,6 +64,10 @@ export const twoFactor = pgTable("two_factor", {
   id: text("id").primaryKey(),
   secret: text("secret").notNull(),
   backupCodes: text("backup_codes").notNull(),
+  // Added by Better Auth 1.7: whether the setup code was confirmed, and the brute-force lockout.
+  verified: boolean("verified").default(true),
+  failedVerificationCount: integer("failed_verification_count").default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" })
@@ -82,5 +86,6 @@ export const passkey = pgTable("passkey", {
   deviceType: text("device_type").notNull(),
   backedUp: boolean("backed_up").notNull(),
   transports: text("transports"),
+  aaguid: text("aaguid"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow()
 });

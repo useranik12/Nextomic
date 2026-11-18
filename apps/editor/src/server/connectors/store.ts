@@ -14,6 +14,7 @@ import { z } from "zod";
 import { platformKeyring } from "../keyring";
 import { allowPrivateConnectorHosts } from "./env";
 import { runOperation, storedSecrets, type StoredConnector } from "./operation";
+import { isUniqueViolation } from "../db-errors";
 
 // Saved connectors of a project. Every function takes a project id the caller has already
 // authorized, and every query is scoped by it. Secrets leave this module only as masks.
@@ -89,10 +90,6 @@ export async function listConnectors(projectId: string): Promise<ConnectorSummar
     };
   });
 }
-
-const isUniqueViolation = (error: unknown) =>
-  (error as { code?: unknown; cause?: { code?: unknown } } | null)?.code === "23505" ||
-  (error as { cause?: { code?: unknown } } | null)?.cause?.code === "23505";
 
 /**
  * Creates or updates a connector. Config and the merged secrets are validated with the

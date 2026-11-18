@@ -37,10 +37,11 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
     setBusy(true);
     setError(null);
     if (action === "enable") {
-      const result = await authClient.twoFactor.enable({ password });
+      const result = await authClient.twoFactor.enable({ password, method: "totp" });
       setBusy(false);
       if (result.error || !result.data)
         return setError(result.error?.message ?? "Could not start two-factor setup.");
+      if (result.data.method !== "totp") return setError("Authenticator setup is not available.");
       setPassword("");
       return setStep({
         kind: "scan",

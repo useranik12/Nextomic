@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP, magicLink, twoFactor } from "better-auth/plugins";
-import { passkey } from "better-auth/plugins/passkey";
+import { passkey } from "@better-auth/passkey";
 import {
   account,
   getDb,
@@ -55,8 +55,9 @@ const PASSWORD_FIELDS: Record<string, string> = {
   "/email-otp/reset-password": "password"
 };
 
-const OTP_PURPOSE: Record<"sign-in" | "email-verification" | "forget-password", string> = {
+const OTP_PURPOSE: Record<"sign-in" | "email-verification" | "forget-password" | "change-email", string> = {
   "sign-in": "sign in",
+  "change-email": "change your email",
   "email-verification": "verify your email",
   "forget-password": "change your password"
 };

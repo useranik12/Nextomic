@@ -35,7 +35,8 @@ test("profile image, first letter fallback and the account menu", async ({ page 
   await expect(page).toHaveURL(/\/settings/);
 
   await expect(page.getByRole("heading", { name: "Profile" })).toBeVisible();
-  await expect(page.getByText(email, { exact: true })).toBeVisible();
+  // Scoped to the profile section: the account menu is still fading out and shows the email too.
+  await expect(page.locator("#profile").getByText(email, { exact: true })).toBeVisible();
   // A member does not see the email settings.
   await expect(page.getByRole("heading", { name: "Email", exact: true })).toHaveCount(0);
 
