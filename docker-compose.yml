@@ -3,8 +3,8 @@
 #
 # Ports: no host ports are published, so nothing can collide with other apps on the server.
 # Dokploy's Traefik reaches the app over the shared external `dokploy-network`; assign the domain
-# in Dokploy (Domains tab: service `app`, container port 3000). Postgres and migrate stay on the
-# stack's private default network and are never exposed.
+# in Dokploy (Domains tab: service `app`, container port 3000; optionally `pgadmin`, port 80).
+# Postgres and migrate stay on the stack's private default network and are never exposed.
 #
 # Variables come from Dokploy's Environment tab (see .env.example). Locally they come from a
 # root .env; see docker-compose.dev.yml.
@@ -96,6 +96,29 @@ services:
       - default
       - dokploy-network
 
+  # pgAdmin: a web UI for the platform database. Optional; it only reads what its login can reach.
+  # Add a server in pgAdmin once: host `postgres`, port 5432, the POSTGRES_* user, password and database.
+  # Dokploy: assign a domain to service `pgadmin`, container port 80, and keep it behind a strong
+  # PGADMIN_DEFAULT_PASSWORD (it can run any SQL as the database user you connect with).
+  pgadmin:
+    image: elestio/pgadmin:9.19
+    restart: unless-stopped
+    environment:
+      # The email must be a real-looking address (pgAdmin rejects reserved domains such as .local).
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?set PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_DISABLE_POSTFIX: "true"
+    expose:
+      - "80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+      - dokploy-network
+
 networks:
   dokploy-network:
     external: true
@@ -104,3 +127,4 @@ volumes:
   postgres-data:
   storage-data:
   backups-data:
+  pgadmin-data:

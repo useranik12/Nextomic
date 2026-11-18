@@ -16,6 +16,12 @@ pointing at the repo's `docker-compose.yml`; this records what to configure so a
 3. **app** — built from the repo's `Dockerfile`. Persistent volumes:
    - `/app/.data/storage` — local storage adapter target (when `STORAGE_ADAPTER=local`)
    - `/app/.data/backups` — backup output (Phase 12)
+4. **pgadmin** — `elestio/pgadmin:9.19`, a web UI for the database. Volume `pgadmin-data` keeps its
+   saved servers and settings. Needs `PGADMIN_DEFAULT_EMAIL` (a real-looking address) and
+   `PGADMIN_DEFAULT_PASSWORD`. In Dokploy, assign a domain to service `pgadmin`, container port 80;
+   without a domain it is not reachable. It can run any SQL as the database user you connect with,
+   so use a strong password or leave it without a domain. First use: Add New Server, host
+   `postgres`, port `5432`, the `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` values.
 
 ## Environment variables
 
@@ -63,6 +69,6 @@ One-time: `docker network create dokploy-network` (the base file joins it, as on
 root `.env` copied from `.env.example`. Always layer the dev file locally:
 
 - Full stack: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build`
-  (app on `127.0.0.1:3000`, Postgres on `127.0.0.1:5432`).
+  (app on `127.0.0.1:3000`, Postgres on `127.0.0.1:5432`, pgAdmin on `127.0.0.1:5050`, or `PGADMIN_PORT`).
 - Host dev (`bun run dev`): same command ending in `up -d postgres`; copy `.env` to
   `apps/editor/.env.local`.

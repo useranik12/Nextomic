@@ -163,7 +163,7 @@ The whole stack deploys as one Docker Compose service on a VPS (Ubuntu 24.04 rec
 5. **Deploy.** Turn on **Auto Deploy** to redeploy on every push to `main`.
 6. Register your owner account. To lock the instance afterwards, set `ALLOW_SIGNUP=false` and redeploy.
 
-The stack contains three services: `postgres` (data volume), `migrate` (applies SQL migrations, then exits) and `app` (the builder). The compose file publishes no host ports, so it does not clash with other apps on the server. More detail is in [`dokploy/README.md`](dokploy/README.md).
+The stack contains four services: `postgres` (data volume), `migrate` (applies SQL migrations, then exits), `app` (the builder) and `pgadmin` (a web UI for the database; set `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD`). The compose file publishes no host ports, so it does not clash with other apps on the server. More detail is in [`dokploy/README.md`](dokploy/README.md).
 
 **Email.** With no `SMTP_HOST`, email verification is skipped so the first user can sign up. Set the `SMTP_*` variables when you are ready to send verification and reset emails.
 
