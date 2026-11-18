@@ -76,3 +76,4 @@ export * from "./query-shape";
 export * from "./edit-state";
 export * from "./form-design-tips";
 export * from "./style-marks";
+export * from "./ids";

@@ -15,3 +15,13 @@ describe("isUniqueViolation", () => {
     expect(isUniqueViolation("23505")).toBe(false);
   });
 });
+
+describe("isInvalidId", () => {
+  it("finds the invalid text code on the error or its cause", async () => {
+    const { isInvalidId } = await import("./db-errors");
+    expect(isInvalidId({ code: "22P02" })).toBe(true);
+    expect(isInvalidId(new Error("x", { cause: { code: "22P02" } }))).toBe(true);
+    expect(isInvalidId({ code: "23505" })).toBe(false);
+    expect(isInvalidId(null)).toBe(false);
+  });
+});

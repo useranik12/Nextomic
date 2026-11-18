@@ -46,7 +46,9 @@ export const iconUploadMetaSchema = z.object({
   /** SVG only: keep the files' own colors instead of recoloring to the text color. */
   keepColors: z.boolean().default(false),
   license: z.string().trim().max(80).default(""),
-  rights: z.literal(true, { message: "Confirm you have the right to use and distribute these icons." }),
+  rights: z.literal(true, {
+    message: "Confirm you have the right to use and distribute these icons."
+  }),
   /** Keys of the libraries the project already has (including unsaved ones). */
   takenKeys: z.array(iconKeySchema).max(100).default([])
 });

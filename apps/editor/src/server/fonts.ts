@@ -326,7 +326,9 @@ export const uploadMetaSchema = z.object({
     .max(64),
   category: fontSchema.shape.category,
   license: z.string().trim().max(80),
-  rights: z.literal(true, { message: "Confirm you have the right to use and distribute this font." }),
+  rights: z.literal(true, {
+    message: "Confirm you have the right to use and distribute this font."
+  }),
   files: z
     .array(
       z.object({

@@ -576,9 +576,11 @@ export async function mediaUsage(projectId: string, id: string): Promise<MediaUs
   return [
     ...pageRows.map((r): MediaUsage => ({ kind: "page", id: r.id, name: r.name })),
     ...templateRows.map((r): MediaUsage => ({ kind: "template", id: r.id, name: r.name })),
-    ...settingsRows.map(
-      (): MediaUsage => ({ kind: "settings", id: projectId, name: "Design system and settings" })
-    ),
+    ...settingsRows.map((): MediaUsage => ({
+      kind: "settings",
+      id: projectId,
+      name: "Design system and settings"
+    })),
     ...flowRows.map((r): MediaUsage => ({ kind: "action", id: r.id, name: "Action flow" })),
     ...blockRows.map((r): MediaUsage => ({ kind: "action", id: r.id, name: "Action block" }))
   ];
