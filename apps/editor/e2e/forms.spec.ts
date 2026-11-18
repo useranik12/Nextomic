@@ -474,3 +474,42 @@ test("count controller: limits, buttons, keys, a typed tag and the Form Counter 
   await expect(count).toHaveValue("1");
   await expect(count).toHaveAttribute("aria-valuenow", "1");
 });
+
+test("range slider: drag fill and value, keys and the Form Range design", async ({ page }) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Range Slider");
+  await page.getByRole("textbox", { name: "Initial value" }).fill("20");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nxt-thumb]")).toBeVisible({ timeout: 15_000 });
+
+  await page.getByRole("tab", { name: /design/i }).click();
+  const group = page.locator('[aria-label="Design settings"] > section').first();
+  for (const part of ["Slider row", "Track", "Filled part", "Thumb", "Value"])
+    await expect(group.getByRole("button", { name: part, exact: true })).toBeVisible();
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const input = preview.locator('input[type="range"]');
+  const value = preview.locator("[data-nxt-value]");
+  await expect(input).toHaveValue("20");
+  await expect(value).toHaveText("20");
+  await input.focus();
+  await preview.keyboard.press("ArrowRight");
+  await preview.keyboard.press("ArrowRight");
+  await expect(value).toHaveText("22");
+  await preview.keyboard.press("End");
+  await expect(value).toHaveText("100");
+  const p = await preview
+    .locator("[data-nxt-range]")
+    .evaluate((el) => (el as HTMLElement).style.getPropertyValue("--nxt-p"));
+  expect(Number(p)).toBe(1);
+  const fill = await preview.locator("[data-nxt-fill]").boundingBox();
+  const track = await preview.locator("[data-nxt-track]").boundingBox();
+  // The fill ends under the centre of the thumb: the track minus half the 20px thumb.
+  expect(fill && track && Math.abs(track.width - fill.width - 10) < 2).toBe(true);
+});

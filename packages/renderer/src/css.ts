@@ -10,6 +10,7 @@ import {
 } from "@nextomic/schema";
 import { CHOICE_BASE_CSS } from "./choice-css";
 import { COUNTER_BASE_CSS } from "./counter-css";
+import { RANGE_BASE_CSS } from "./range-css";
 import { INPUT_BASE_CSS, inputPartCss } from "./input-css";
 import { PIN_BASE_CSS } from "./pin-css";
 import { getElementDefinition } from "./registry";
@@ -21,7 +22,8 @@ const CHOICE_TYPES: readonly string[] = ["checkbox", "radio", "checkboxGroup", "
 const FIELD_LOOKS: readonly { types: readonly string[]; css: string }[] = [
   { types: CHOICE_TYPES, css: CHOICE_BASE_CSS },
   { types: ["pinInput"], css: PIN_BASE_CSS },
-  { types: ["counter"], css: COUNTER_BASE_CSS }
+  { types: ["counter"], css: COUNTER_BASE_CSS },
+  { types: ["rangeSlider"], css: RANGE_BASE_CSS }
 ];
 
 const PSEUDO_SELECTOR: Record<PseudoState, string> = {

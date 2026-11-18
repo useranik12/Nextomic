@@ -26,7 +26,8 @@ export const FORM_FIELD_TYPES = [
   "checkboxGroup",
   "choiceChips",
   "pinInput",
-  "counter"
+  "counter",
+  "rangeSlider"
 ] as const;
 
 /** The data types an option value can be set to (the owner's FlutterFlow-style value type). */

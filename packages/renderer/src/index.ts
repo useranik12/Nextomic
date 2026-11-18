@@ -5,6 +5,7 @@ import "./form-choices";
 import "./form-options";
 import "./form-pin";
 import "./form-counter";
+import "./form-range";
 
 export * from "./css";
 export * from "./registry";

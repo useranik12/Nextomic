@@ -7,7 +7,8 @@ import type { InputState, StateTail } from "./input-design";
 // itself (hover, focus, filled ...); `wide` states belong to the whole field (error, success), so
 // they mark every copy at once. The editor canvas pins a state with `data-nxt-force`.
 
-const forced = (state: string) => `:where([data-nxt-force="${state}"])`;
+/** The test on the field that the editor canvas uses to pin it in a state. */
+export const forcedState = (state: string): string => `:where([data-nxt-force="${state}"])`;
 
 export function repeatedStates(
   selector: string,
@@ -21,12 +22,12 @@ export function repeatedStates(
   for (const [state, test] of Object.entries(own) as [InputState, string][])
     out[state] = [
       { field: "", tail: ` ${copy(test)}` },
-      { field: forced(state), tail: ` ${copy("")}` }
+      { field: forcedState(state), tail: ` ${copy("")}` }
     ];
   for (const [state, test] of Object.entries(wide) as [InputState, string][])
     out[state] = [
       { field: test, tail: ` ${copy("")}` },
-      { field: forced(state), tail: ` ${copy("")}` }
+      { field: forcedState(state), tail: ` ${copy("")}` }
     ];
   return out;
 }

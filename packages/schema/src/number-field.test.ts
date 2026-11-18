@@ -104,3 +104,41 @@ describe("counter field", () => {
     expect(editStatesFor("counter")).toEqual(expect.arrayContaining(["error", "success"]));
   });
 });
+
+describe("range slider field", () => {
+  const blank = buildDynamicContext({
+    page: { name: "P", route: "/", settings: defaultPageSettings() },
+    mode: "live"
+  });
+  const page = (child: ElementNode) =>
+    el("r", "page", {}, [el("f", "form", { name: "f" }, [child])]);
+
+  it("needs both a minimum and a maximum", () => {
+    expect(formProblems(page(el("s", "rangeSlider", { name: "v", min: "0" })))).not.toEqual([]);
+    expect(formProblems(page(el("s", "rangeSlider", { name: "v", min: "0", max: "10" })))).toEqual(
+      []
+    );
+  });
+
+  it("registers a typed value and parses every design key", () => {
+    const root = page(el("s", "rangeSlider", { name: "v", min: "0", max: "10", value: "4" }));
+    const dynamic = withFormDefaults(blank, root);
+    expect(dynamic.forms.f?.v).toBe("4");
+    expect(dynamic.types["form.f.v"]?.type).toBe("int");
+    for (const part of designPartsFor("rangeSlider"))
+      for (const state of part.states)
+        for (const group of part.groups)
+          for (const item of group.props)
+            expect(parseFormDesignKey(inputDesignKey(part.id, item.prop, state))?.part.id).toBe(
+              part.id
+            );
+  });
+
+  it("styles the thumb from the track area hover and the input focus", () => {
+    const thumb = designPartsFor("rangeSlider").find((p) => p.id === "thumb")!;
+    expect(inputPartSelectors("#a", thumb, "hover").join(" ")).toContain(
+      "[data-nxt-slide]:where(:hover)"
+    );
+    expect(inputPartSelectors("#a", thumb, "focus").join(" ")).toContain("focus-visible");
+  });
+});

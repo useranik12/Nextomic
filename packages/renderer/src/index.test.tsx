@@ -55,7 +55,8 @@ describe("registry", () => {
       "checkboxGroup",
       "choiceChips",
       "pinInput",
-      "counter"
+      "counter",
+      "rangeSlider"
     ]);
   });
 
@@ -83,6 +84,9 @@ describe("registry", () => {
       ...["selected", "disabled"].map((k) => `option.${k}`),
       ...["required", "disabled", "mask", "value"].map((k) => `pinInput.${k}`),
       ...["value", "step", "min", "max", "disabled"].map((k) => `counter.${k}`),
+      ...["value", "step", "min", "max", "disabled", "prefix", "suffix", "showLimits"].map(
+        (k) => `rangeSlider.${k}`
+      ),
       ...["radio", "checkboxGroup", "choiceChips"].flatMap((t) =>
         ["required", "disabled", "minSelected", "maxSelected"].map((k) => `${t}.${k}`)
       )
@@ -282,6 +286,29 @@ describe("forms", () => {
       expect(html).toContain('aria-valuenow="5"');
       expect(html).toMatch(/<button[^>]*disabled=""[^>]*data-nxt-step="1"/);
       expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*data-nxt-step="-1"/);
+    });
+  });
+
+  describe("range slider", () => {
+    const slider = (props: Record<string, unknown>) =>
+      node({ id: "s", type: "rangeSlider", props: { name: "vol", label: "Vol", ...props } });
+
+    it("draws the track, fill, thumb and a real range input", () => {
+      const html = render([slider({ value: "25", min: "0", max: "100", suffix: "%" })]);
+      expect(html).toContain('type="range"');
+      expect(html).toContain("data-nxt-track");
+      expect(html).toContain("data-nxt-fill");
+      expect(html).toContain("data-nxt-thumb");
+      expect(html).toContain("--nxt-p:0.25");
+      expect(html).toContain("25%");
+      expect(html).toContain('data-nxt-kind="number"');
+    });
+
+    it("holds the start inside the limits and can show the limits", () => {
+      const html = render([slider({ value: "500", min: "0", max: "10", showLimits: true })]);
+      expect(html).toContain('value="10"');
+      expect(html).toContain('data-nxt-limit="min"');
+      expect(html).toContain('data-nxt-limit="max"');
     });
   });
 

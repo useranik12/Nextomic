@@ -32,10 +32,10 @@ export function specOf(field: Element): NumberSpec {
 
 const controlOf = (field: Element) => field.querySelector<HTMLInputElement>("[data-nxt-control]");
 
-/** The share of the way from the minimum to the maximum, 0 to 100 (0 when a limit is open). */
-function percentOf(value: number, spec: NumberSpec): number {
+/** The share of the way from the minimum to the maximum, 0 to 1 (0 when a limit is open). */
+function fractionOf(value: number, spec: NumberSpec): number {
   if (spec.min === null || spec.max === null || spec.max === spec.min) return 0;
-  return ((value - spec.min) / (spec.max - spec.min)) * 100;
+  return (value - spec.min) / (spec.max - spec.min);
 }
 
 /** Brings everything a visitor sees in line with the value of one number field. */
@@ -53,10 +53,14 @@ export function syncNumberField(field: Element): void {
     button.disabled = control.disabled || atLimit;
   }
   const range = field.querySelector<HTMLElement>("[data-nxt-range]");
-  range?.style.setProperty("--nxt-pct", `${percentOf(value, spec)}%`);
+  range?.style.setProperty("--nxt-p", String(fractionOf(value, spec)));
   const readout = field.querySelector<HTMLElement>("[data-nxt-value]");
-  if (readout)
-    readout.textContent = `${readout.getAttribute("data-prefix") ?? ""}${numberText(value)}${readout.getAttribute("data-suffix") ?? ""}`;
+  if (readout) {
+    const text = `${readout.getAttribute("data-prefix") ?? ""}${numberText(value)}${readout.getAttribute("data-suffix") ?? ""}`;
+    readout.textContent = text;
+    // A slider says its value with the unit (a screen reader reads "40 percent", not just "40").
+    if (control.type === "range") control.setAttribute("aria-valuetext", text);
+  }
 }
 
 /** Writes a number into a field, held inside its limits, and refreshes what the visitor sees. */

@@ -6,6 +6,8 @@ import { FORM_DESIGN_PARTS } from "./choice-design";
 import type { InputDesignProp } from "./input-design";
 
 export const FORM_PROP_TIPS: Readonly<Record<string, string>> = {
+  "--nxt-thumb":
+    "The size of the round handle. The track area is as tall as the handle, and it also sets how far the handle can travel.",
   "align-items":
     "How the items line up across the row. Center puts them in the middle, stretch fills the height.",
   "align-self": "Overrides the alignment of just this part inside its parent.",
