@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@nextomic/schema": "workspace:*",
-    "drizzle-orm": "0.38.2",
+    "drizzle-orm": "0.45.4",
     "pg": "8.23.1"
   },
   "devDependencies": {
-    "drizzle-kit": "0.30.1",
+    "drizzle-kit": "0.31.11",
     "@types/node": "22.10.5",
     "@types/pg": "8.23.1"
   }
