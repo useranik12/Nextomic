@@ -4,6 +4,11 @@ Work one phase at a time. Do not start the next until approved. Reorder only wit
 Platform = own Postgres + Better Auth. Supabase and REST are integrations for built apps only.
 Read the docs named in each phase before starting it.
 
+Priority side track (not a numbered phase, start only on the owner's word): CI/CD release pipeline, see `cicd-pipeline.md`.
+
+- [ ] Private Docker Hub image flow: compose uses `APP_TAG`, `scripts/release`, Dokploy README update
+- [ ] Image shrink: `output: "standalone"`, slim runtime stage, `.dockerignore` additions
+
 ## Phase 0: Foundation
 
 Docs: `spec.md`, `ui-reference.md`, `platform.md`
