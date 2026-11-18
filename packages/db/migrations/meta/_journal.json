@@ -99,6 +99,13 @@
       "when": 1794975207951,
       "tag": "0013_better_auth_17",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795040265403,
+      "tag": "0014_fk_indexes_version_cap",
+      "breakpoints": true
     }
   ]
 }

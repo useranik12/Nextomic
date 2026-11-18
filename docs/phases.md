@@ -255,3 +255,22 @@ Do not start until every phase above is approved. The schema reserves `component
 
 - 7b-3 Action results (`results.<name>`) built; see spec.md 2026-11-18.
 - 7b-4 Action Result loop source, parent list field suggestions + publish check, large read-only results, tag copy button.
+
+## Future scope (not planned, do not start)
+
+Ideas recorded so they are not lost. Each needs an owner-approved plan before any work.
+
+### Flutter native export (Android APK)
+
+A third export target, `flutter`, next to Next.js and Astro. Same editor, same project JSON, no second builder UI and no web wrapper. The export generates a native Flutter project and builds a real APK.
+
+- Flow: export picks `flutter`, a codegen package (`packages/flutter-codegen`) writes the Flutter project, a job runs `flutter build apk --release` in an isolated build container, the APK is saved through `packages/storage` (local or S3) and downloaded from the builder (signed URL for S3, authenticated route for local).
+- Elements: each registry entry gets a Flutter render that emits native widgets (Container, Row, Column, Text, Image, buttons, TextField, ListView and so on). Elements with no native equivalent (raw HTML, custom JS and CSS) are marked unsupported for Flutter and flagged at save time. Never wrapped.
+- Design system: variables, classes and color modes compile to a native Dart design system (`ThemeData`, `ColorScheme`, `ThemeExtension`, typed style objects, `LayoutBuilder` for breakpoints, `ThemeMode` for light and dark). A defined CSS subset is supported, not arbitrary CSS; unmapped CSS stays in `raw` and is ignored for Flutter.
+- Runtime: a fixed, versioned Dart package (`nextomic_runtime`) for state, queries, action flows, transforms, conditions, bindings and auth client. Supabase and REST map to `supabase_flutter` and `dio`; sessions use secure storage; route guards use `go_router`. Shared test fixtures with the TypeScript runtime to keep parity.
+- Build: Docker image with pinned Flutter and Android SDKs, no network except the package registry, CPU, memory and time limits, a cap on concurrent builds (a build needs roughly 4 to 8 GB RAM). Secrets never go into the APK; private calls go through the proxy.
+- Signing: debug-signed APK first; later a per-project release keystore stored encrypted and never sent to the browser; optional Google Play upload through the Play Developer API. iOS later (needs macOS and Xcode).
+- Rough order: (1) element, style and action support matrix, (2) Dart runtime and design-system generator, (3) codegen for the first ~10 elements with a `flutter analyze` golden test, (4) build container, job queue, storage upload, download UI, (5) remaining elements, signing, Play upload, (6) iOS.
+- Main risks: style parity, Dart runtime parity, build server resources.
+
+**Next priority (owner, 2026-11-19), after the pending Docker build changes:** Conditional values (docs: dynamic-data-and-actions.md 7b, ui-reference.md 4.7). Order: schema and resolvers, save-time and output, form-field redraw patching plus disabled-skips-validation, shared adornment component (bolt, condition icon, clear X, tooltips), content-sized condition popover, canvas preview and markers, gates. Not started.

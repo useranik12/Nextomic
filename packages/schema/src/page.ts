@@ -7,6 +7,7 @@ import { flowsByNodeSchema, type FlowsByNode } from "./actions/storage";
 import { propValueSchema } from "./value";
 import { stateTypeSchema } from "./state";
 import { pageParamSchema } from "./params";
+import { versionLimitSchema } from "./project-settings";
 export { pageParamSchema, paramProblems, type PageParam } from "./params";
 
 /** Page parameters and page state use the same types as app state. */
@@ -63,8 +64,8 @@ const pageSettingsShape = z.object({
   themeId: z.string().max(64).nullable().default(null),
   // Keep a version history for this page (needs version control on in App Settings).
   versionControl: z.boolean().default(true),
-  // Snapshots kept for this page (5 to 200); null follows the app-wide limit.
-  versionLimit: z.number().int().min(5).max(200).nullable().default(null),
+  // Snapshots kept for this page (5 to 50); null follows the app-wide limit. An older, higher value is lowered to 50.
+  versionLimit: versionLimitSchema.nullable().default(null),
   // Header and footer: "auto" (rules decide), "none", or the id of one template.
   header: layoutChoiceSchema,
   footer: layoutChoiceSchema,

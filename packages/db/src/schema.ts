@@ -50,34 +50,45 @@ export const workspaceMembers = pgTable(
     role: workspaceRoleEnum("role").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [primaryKey({ columns: [table.workspaceId, table.userId] })]
+  (table) => [
+    primaryKey({ columns: [table.workspaceId, table.userId] }),
+    // Deleting a user finds their memberships without scanning the table.
+    index("workspace_members_user_idx").on(table.userId)
+  ]
 );
 
-export const projects = pgTable("projects", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  workspaceId: text("workspace_id")
-    .notNull()
-    .references(() => workspaces.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  description: text("description"),
-  createdBy: text("created_by")
-    .notNull()
-    .references(() => user.id, { onDelete: "restrict" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-  lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).notNull().defaultNow(),
-  // Breakpoints and the element-ID toggle. null = defaults (see defaultProjectSettings).
-  settings: jsonb("settings").$type<ProjectSettings>(),
-  // Set by Publish, cleared by Unpublish. Visitors only ever see the published snapshots, never the draft.
-  publishedAt: timestamp("published_at", { withTimezone: true }),
-  publishedSettings: jsonb("published_settings").$type<ProjectSettings>(),
-  // A publish set to run later. The first read after this moment publishes the saved draft.
-  scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true }),
-  // Action Blocks as they were at the last publish.
-  publishedActionBlocks: jsonb("published_action_blocks").$type<ActionBlock[]>()
-});
+export const projects = pgTable(
+  "projects",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    lastModifiedAt: timestamp("last_modified_at", { withTimezone: true }).notNull().defaultNow(),
+    // Breakpoints and the element-ID toggle. null = defaults (see defaultProjectSettings).
+    settings: jsonb("settings").$type<ProjectSettings>(),
+    // Set by Publish, cleared by Unpublish. Visitors only ever see the published snapshots, never the draft.
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    publishedSettings: jsonb("published_settings").$type<ProjectSettings>(),
+    // A publish set to run later. The first read after this moment publishes the saved draft.
+    scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true }),
+    // Action Blocks as they were at the last publish.
+    publishedActionBlocks: jsonb("published_action_blocks").$type<ActionBlock[]>()
+  },
+  (table) => [
+    index("projects_workspace_idx").on(table.workspaceId),
+    index("projects_created_by_idx").on(table.createdBy)
+  ]
+);
 
 export const pages = pgTable(
   "pages",
@@ -103,7 +114,10 @@ export const pages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [uniqueIndex("pages_project_route_idx").on(table.projectId, table.route)]
+  (table) => [
+    uniqueIndex("pages_project_route_idx").on(table.projectId, table.route),
+    index("pages_created_by_idx").on(table.createdBy)
+  ]
 );
 
 export const templates = pgTable(
@@ -130,7 +144,10 @@ export const templates = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [index("templates_project_idx").on(table.projectId, table.type)]
+  (table) => [
+    index("templates_project_idx").on(table.projectId, table.type),
+    index("templates_created_by_idx").on(table.createdBy)
+  ]
 );
 
 // Media library. One row per uploaded file; the bytes live in storage under
@@ -179,7 +196,11 @@ export const mediaAssets = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [index("media_assets_project_idx").on(table.projectId, table.createdAt)]
+  (table) => [
+    index("media_assets_project_idx").on(table.projectId, table.createdAt),
+    index("media_assets_folder_idx").on(table.folderId),
+    index("media_assets_created_by_idx").on(table.createdBy)
+  ]
 );
 
 export const pageVersions = pgTable(
@@ -201,7 +222,8 @@ export const pageVersions = pgTable(
   },
   (table) => [
     uniqueIndex("page_versions_page_version_idx").on(table.pageId, table.version),
-    index("page_versions_page_created_idx").on(table.pageId, table.createdAt)
+    index("page_versions_page_created_idx").on(table.pageId, table.createdAt),
+    index("page_versions_saved_by_idx").on(table.savedBy)
   ]
 );
 
@@ -228,6 +250,8 @@ export const actionFlows = pgTable(
   (table) => [
     uniqueIndex("action_flows_page_node_idx").on(table.pageId, table.nodeId),
     uniqueIndex("action_flows_template_node_idx").on(table.templateId, table.nodeId),
+    index("action_flows_project_idx").on(table.projectId),
+    index("action_flows_updated_by_idx").on(table.updatedBy),
     check("action_flows_one_owner", sql`(${table.pageId} is null) <> (${table.templateId} is null)`)
   ]
 );
@@ -246,7 +270,10 @@ export const actionBlocks = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [index("action_blocks_project_idx").on(table.projectId)]
+  (table) => [
+    index("action_blocks_project_idx").on(table.projectId),
+    index("action_blocks_updated_by_idx").on(table.updatedBy)
+  ]
 );
 
 export const userPreferences = pgTable("user_preferences", {
@@ -279,7 +306,10 @@ export const connectors = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [uniqueIndex("connectors_project_name_idx").on(table.projectId, table.name)]
+  (table) => [
+    uniqueIndex("connectors_project_name_idx").on(table.projectId, table.name),
+    index("connectors_created_by_idx").on(table.createdBy)
+  ]
 );
 
 // The saved STRUCTURE of a connected source (tables, columns, buckets, response shapes). Never rows.
@@ -309,15 +339,14 @@ export const connectorAuditLog = pgTable(
     durationMs: integer("duration_ms").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [index("connector_audit_connector_idx").on(table.connectorId, table.createdAt)]
+  (table) => [
+    index("connector_audit_connector_idx").on(table.connectorId, table.createdAt),
+    index("connector_audit_user_idx").on(table.userId)
+  ]
 );
 
 export type EmailKind =
-  | "verify-email"
-  | "reset-password"
-  | "magic-link"
-  | "otp-code"
-  | "email-change";
+  "verify-email" | "reset-password" | "magic-link" | "otp-code" | "email-change";
 
 // The outgoing mail queue and its log. Bodies are kept only until the message is sent or gives
 // up, then cleared, so the log holds who, what kind, when and how it went, never the content.

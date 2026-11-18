@@ -43,7 +43,7 @@ const LOCALES = [
 ].map(([value, label]) => ({ value: value as string, label: `${label} (${value})` }));
 
 /**
- * How many saved versions this page keeps (5 to 200). Greyed out, with a tip, while version control
+ * How many saved versions this page keeps (5 to 50). Greyed out, with a tip, while version control
  * is off in App Settings. Empty follows the app-wide limit.
  */
 function VersionLimit() {

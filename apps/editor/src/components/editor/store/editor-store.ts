@@ -347,7 +347,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       taxonomy: { pageCategories: [], pageTags: [], templateCategories: [], templateTags: [] },
       generateScreenshots: false,
       versionControl: true,
-      versionLimit: 200,
+      versionLimit: 50,
       classes: {},
       classCategories: [],
       classMeta: {},

@@ -19,8 +19,13 @@ import {
 } from "./state";
 
 export const VERSION_LIMIT_MIN = 5;
-export const VERSION_LIMIT_MAX = 200;
-export const versionLimitSchema = z.number().int().min(VERSION_LIMIT_MIN).max(VERSION_LIMIT_MAX);
+export const VERSION_LIMIT_MAX = 50;
+
+/** A stored limit from the time the maximum was 200 is brought down to the maximum, not refused (refusing would drop the whole settings object). */
+export const versionLimitSchema = z.preprocess(
+  (value) => (typeof value === "number" && value > VERSION_LIMIT_MAX ? VERSION_LIMIT_MAX : value),
+  z.number().int().min(VERSION_LIMIT_MIN).max(VERSION_LIMIT_MAX)
+);
 
 /** How many saved versions a page keeps: its own limit, else the app-wide one, never above the maximum. */
 export function effectiveVersionLimit(
