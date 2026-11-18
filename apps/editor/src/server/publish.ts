@@ -19,6 +19,8 @@ import { getDb, pages, projects, templates, user } from "@nextomic/db";
 import { and, asc, eq, lte } from "drizzle-orm";
 import { projectBlocks, projectFlows } from "./action-flows";
 import { getProjectSettings } from "./pages";
+import { assertLoopsPublishable } from "./loop-check";
+import { querySources } from "./queries/run-query";
 
 // Publishing copies the saved draft of every included page into a snapshot that visitors read.
 // Drafts are never served publicly. Callers of publish/unpublish/getPublishState MUST have passed
@@ -53,7 +55,14 @@ export async function runDuePublish(projectId: string): Promise<void> {
     .set({ scheduledPublishAt: null })
     .where(and(eq(projects.id, projectId), lte(projects.scheduledPublishAt, at)))
     .returning({ id: projects.id });
-  if (claimed.length > 0) await publishProject(projectId, at);
+  if (claimed.length === 0) return;
+  try {
+    await publishProject(projectId, at);
+  } catch (error) {
+    // A page that cannot be published (see loop-check.ts) skips the scheduled run; the owner sees
+    // the reason when publishing by hand. Readers of publish state must never fail because of it.
+    if (!(error instanceof Error && error.name === "FormError")) throw error;
+  }
 }
 
 /** Sets (or with null, cancels) the moment the saved draft is published. */
@@ -168,12 +177,17 @@ export async function publishProject(
 ): Promise<PublishState> {
   const settings = await getProjectSettings(projectId);
   const publishedAt = at;
+  const structure = (await querySources(projectId)).supabase?.structure ?? null;
   await getDb().transaction(async (tx) => {
     const flows = await projectFlows(tx, projectId);
     const blocks = await projectBlocks(tx, projectId);
     const rows = await tx.select().from(pages).where(eq(pages.projectId, projectId));
     for (const row of rows) {
       const snapshot: PublishedPage | null = snapshotOfPage(row, flows.pages.get(row.id));
+      if (snapshot)
+        assertLoopsPublishable(structure, [
+          { label: `Page "${row.name}"`, tree: snapshot.tree, flows: flows.pages.get(row.id) }
+        ]);
       await tx
         .update(pages)
         .set({ publishedSnapshot: snapshot, publishedAt: snapshot ? publishedAt : null })

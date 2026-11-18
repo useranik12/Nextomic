@@ -82,7 +82,7 @@ export function loopRowSample(
   if (query.source === "local") {
     const { kind } = query.local;
     if (kind === "json") return jsonSample(query.local.json);
-    if (kind === "parent" || kind === "expression") return {};
+    if (kind === "parent" || kind === "expression" || kind === "result") return {};
     const found = variables[kind]?.find((v) => v.name === query.local.variable);
     return found?.type === "dataType" ? dataTypeSample(found.ref ?? "", registry, 0) : {};
   }

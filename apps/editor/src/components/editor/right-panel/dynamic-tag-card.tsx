@@ -2,6 +2,7 @@
 
 import { tagText } from "@nextomic/schema";
 import { Icon } from "@/lib/icons/Icon";
+import { CopyTagButton } from "./copy-tag-button";
 import type { DynamicTag } from "./dynamic-sources";
 
 /** A tag in the dynamic data modal: click inserts it; the wand opens it in the Transform view. */
@@ -20,7 +21,7 @@ export function TagCard({
         type="button"
         onClick={onPick}
         title={tag.help}
-        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-2xl bg-default py-2 pl-4 pr-11 text-left transition-colors duration-300 hover:bg-default-hover"
+        className="flex min-h-11 w-full items-center justify-between gap-3 rounded-2xl bg-default py-2 pl-4 pr-[4.5rem] text-left transition-colors duration-300 hover:bg-default-hover"
       >
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium text-foreground">{tag.label}</span>
@@ -28,6 +29,11 @@ export function TagCard({
         </span>
         <span className="shrink-0 text-xs text-muted">{tag.hint}</span>
       </button>
+      <CopyTagButton
+        text={tagText(tag.token)}
+        label={`Copy ${tag.label} tag`}
+        className="absolute right-9 top-1/2 -translate-y-1/2"
+      />
       <button
         type="button"
         aria-label={`Transform ${tag.label}`}

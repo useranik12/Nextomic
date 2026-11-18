@@ -21,7 +21,8 @@ export function SearchSelect({
   isDisabled,
   emptyText = "Nothing matches.",
   tip,
-  hideLabel
+  hideLabel,
+  allowCustom
 }: {
   label: string;
   placeholder?: string;
@@ -33,6 +34,8 @@ export function SearchSelect({
   /** Info tip beside the label. */
   tip?: string;
   hideLabel?: boolean;
+  /** The text may be typed freely; the options are suggestions (the value is the written text). */
+  allowCustom?: boolean;
 }) {
   const shown = sections.filter((s) => s.options.length > 0);
   const markOpened = useIgnoreOpeningScroll();
@@ -42,10 +45,21 @@ export function SearchSelect({
       aria-label={label}
       isDisabled={isDisabled}
       onOpenChange={markOpened}
-      value={value || null}
-      onChange={(key) => {
-        if (key !== null) onValueChange(String(key));
-      }}
+      {...(allowCustom
+        ? {
+            allowsCustomValue: true,
+            inputValue: value,
+            onInputChange: onValueChange,
+            onChange: (key: unknown) => {
+              if (key !== null) onValueChange(String(key));
+            }
+          }
+        : {
+            value: value || null,
+            onChange: (key: unknown) => {
+              if (key !== null) onValueChange(String(key));
+            }
+          })}
     >
       {hideLabel ? null : (
         <span className="flex items-center gap-1.5">

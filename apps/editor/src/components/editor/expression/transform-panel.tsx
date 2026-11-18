@@ -17,6 +17,7 @@ import {
 import { useMemo, useState } from "react";
 import { ActionButton, FormInput, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
+import { CopyTagButton } from "../right-panel/copy-tag-button";
 import { TransformStepCard } from "./transform-step";
 
 // The Transform view of the bolt modal (owner decision 2026-11-09, option A): the picked tag, a
@@ -169,7 +170,8 @@ export function TransformPanel({
         </output>
         <code className="break-all font-mono text-xs text-muted">{tagText(code)}</code>
       </div>
-      <div className="flex justify-end gap-2">
+      <div className="flex items-center justify-end gap-2">
+        <CopyTagButton text={tagText(code)} label="Copy the transformed tag" />
         <ActionButton tone="ghost" size="sm" onPress={onBack}>
           Cancel
         </ActionButton>

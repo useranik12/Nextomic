@@ -86,7 +86,12 @@ export function runtimePayload(input: PayloadInput): RuntimePayload | null {
     blocks: usedBlocks(input.flows, input.blocks),
     deps: loopFreeDeps(input.tree),
     // Every element counts, loop rows included: a redraw sends only the results something reads.
-    resultReads: stateRefs(JSON.stringify(input.tree)).filter((ref) => ref.startsWith("results.")),
+    resultReads: [
+      ...new Set([
+        ...stateRefs(JSON.stringify(input.tree)),
+        ...Object.values(stateDependencies(input.tree)).flat()
+      ])
+    ].filter((ref) => ref.startsWith("results.")),
     rootIds: input.rootIds,
     dynamic: { ...input.dynamic, user, exposeAccessToken: false },
     appState: input.settings.appState,

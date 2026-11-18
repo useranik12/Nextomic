@@ -1,5 +1,6 @@
 import { elementConditionRefs, hasConditions } from "./condition";
 import { walkElements, type ElementNode } from "./element";
+import { activeQuery } from "./query";
 
 // Which elements read which state (docs/dynamic-data-and-actions.md section 5): built pages redraw
 // only those elements when an action changes app or page state.
@@ -18,6 +19,15 @@ export function stateRefs(text: string): string[] {
   return [...found];
 }
 
+/** The state a loop reads without a {{ tag }}: its Page State, App State or Action Result variable. */
+function loopRefs(node: ElementNode): string[] {
+  const query = activeQuery(node);
+  if (!query || query.source !== "local" || !query.local.variable) return [];
+  const { kind, variable } = query.local;
+  if (kind === "state" || kind === "app") return [`${kind}.${variable}`];
+  return kind === "result" ? [`results.${variable}`] : [];
+}
+
 /** Per element id, the state names (and "el.<id>" edits of other elements) its own props, attributes, styles, conditions and query read. */
 export function stateDependencies(root: ElementNode): Record<string, string[]> {
   const out: Record<string, string[]> = {};
@@ -29,7 +39,7 @@ export function stateDependencies(root: ElementNode): Record<string, string[]> {
       node.visibility,
       node.query
     ]);
-    const refs = stateRefs(own);
+    const refs = [...stateRefs(own), ...loopRefs(node)];
     if (hasConditions(node.visibility))
       refs.push(...elementConditionRefs(node.visibility.group, node.id));
     if (refs.length > 0) out[node.id] = refs;

@@ -9,13 +9,19 @@ import {
   type ElementNode,
   type LocalLoopKind,
   type LocalLoopQuery,
-  type StateType
+  type StateType,
+  listFieldsOf,
+  parentFieldProblem,
+  rowFields
 } from "@nextomic/schema";
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import { FormInput, SelectField, type SelectOption } from "@/components/ui/controls";
+import { SearchSelect } from "@/components/ui/search-select";
 import { InfoTip } from "@/components/ui/info-tip";
 import { AutoTextarea } from "../right-panel/auto-textarea";
 import { BoltInput } from "../right-panel/bolt-input";
+import { useKeptResults } from "../right-panel/use-kept-results";
+import { useRowShape } from "../right-panel/use-row-shape";
 import { useEditorStore } from "../store/editor-store";
 import { useQueryFormMode } from "./query-form-mode";
 import { RowSettings } from "./row-settings";
@@ -50,7 +56,10 @@ function variableOptions(variables: readonly Variable[], kind: LocalLoopKind): S
   });
 }
 
+const RESULT_AS_LIST: Pick<Variable, "type" | "isList"> = { type: "json", isList: true };
+
 function useVariables(kind: LocalLoopKind): readonly Variable[] {
+  const kept = useKeptResults();
   const settings = useEditorStore((s) => s.doc?.settings);
   const appState = useEditorStore((s) => s.project.appState);
   const constants = useEditorStore((s) => s.project.constants);
@@ -58,6 +67,7 @@ function useVariables(kind: LocalLoopKind): readonly Variable[] {
   if (kind === "state") return settings?.state ?? [];
   if (kind === "app") return appState;
   if (kind === "const") return constants;
+  if (kind === "result") return kept.map((r) => ({ name: r.name, ...RESULT_AS_LIST }));
   return [];
 }
 
@@ -65,7 +75,8 @@ const EMPTY_HINT: Partial<Record<LocalLoopKind, string>> = {
   param: "This page has no parameters. Add them in Page Settings.",
   state: "This page has no state variables. Add them in Page Settings.",
   app: "No app state variables yet. Add them in State Management.",
-  const: "No constants yet. Add them in State Management."
+  const: "No constants yet. Add them in State Management.",
+  result: "No action results yet. In an action flow, name an output and keep it on the page."
 };
 
 export function LocalQueryForm({
@@ -86,6 +97,19 @@ export function LocalQueryForm({
     .map((n) => activeQuery(n)?.name ?? "")
     .filter(Boolean);
   const reads = value.kind in EMPTY_HINT;
+  const shape = useRowShape();
+  // The rows of the chosen parent loop: what its list field can be (null: shape not known).
+  const parentFields = useMemo(() => {
+    const parent = tree
+      ? loopAncestors(tree, node.id).find((n) => activeQuery(n)?.name === value.parentLoop)
+      : undefined;
+    const query = parent ? activeQuery(parent) : null;
+    return query ? rowFields(query, shape) : null;
+  }, [tree, node.id, value.parentLoop, shape]);
+  const parentLists = parentFields ? listFieldsOf(parentFields) : null;
+  const fieldProblem = value.parentLoop
+    ? parentFieldProblem(value.field, value.parentLoop, parentFields)
+    : null;
   const options = variableOptions(variables, value.kind);
 
   return (
@@ -147,16 +171,32 @@ export function LocalQueryForm({
                 The loop %{value.parentLoop} is not around this element any more.
               </p>
             ) : null}
-            <FormInput
-              compact
+            <SearchSelect
+              allowCustom
               label="List field"
               tip={mode.tip("field")}
               placeholder="tags"
-              description={`The field of %${value.parentLoop || "loop"}.item that holds the list, like tags or images[0].sizes.`}
+              sections={[
+                {
+                  title: `List fields of %${value.parentLoop || "loop"}`,
+                  options: (parentLists ?? []).map((f) => ({
+                    value: f.name,
+                    label: `${f.name} (${f.isList ? `${f.type} list` : f.type})`
+                  }))
+                }
+              ]}
+              emptyText="Type the field path, like images[0].sizes."
               value={value.field}
-              spellCheck="false"
               onValueChange={(field) => patch({ field })}
             />
+            <p className="text-xs text-muted">
+              {`The field of %${value.parentLoop || "loop"}.item that holds the list. Pick one or type a path like images[0].sizes.`}
+            </p>
+            {fieldProblem ? (
+              <p role="alert" className="text-xs text-danger">
+                {fieldProblem} It can be saved, but not published.
+              </p>
+            ) : null}
           </>
         )
       ) : null}

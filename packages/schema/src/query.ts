@@ -43,6 +43,7 @@ export const LOCAL_LOOP_KINDS = [
   "app",
   "const",
   "parent",
+  "result",
   "json",
   "expression"
 ] as const;
@@ -53,6 +54,7 @@ export const LOCAL_LOOP_KIND_LABELS: Record<LocalLoopKind, string> = {
   state: "Page State",
   app: "App State",
   const: "Constants",
+  result: "Action Result",
   parent: "Parent Item",
   json: "Static JSON",
   expression: "Expression"
@@ -172,6 +174,7 @@ const LOCAL_NAME_BASES: Record<LocalLoopKind, string> = {
   state: "pageStateLoop",
   app: "appStateLoop",
   const: "constantLoop",
+  result: "resultLoop",
   parent: "parentLoop",
   json: "jsonLoop",
   expression: "expressionLoop"
@@ -334,6 +337,8 @@ function localProblems(query: LocalLoopQuery): string[] {
     case "app":
     case "const":
       return query.variable ? [] : ["Choose a variable."];
+    case "result":
+      return query.variable ? [] : ["Choose the action result."];
     case "parent": {
       if (!query.parentLoop) return ["Choose the loop whose row holds the list."];
       if (!query.field.trim()) return ["Write the field that holds the list, like tags."];

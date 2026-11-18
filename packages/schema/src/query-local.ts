@@ -17,7 +17,8 @@ const GROUPS: Partial<Record<LocalLoopKind, string>> = {
   param: "param",
   state: "state",
   app: "app",
-  const: "const"
+  const: "const",
+  result: "results"
 };
 
 function own(value: unknown, key: string): unknown {
