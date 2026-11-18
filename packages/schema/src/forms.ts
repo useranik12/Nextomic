@@ -3,6 +3,7 @@ import { patternProblem } from "./condition";
 import type { DynamicContext } from "./dynamic-context";
 import { fieldQueryProblem } from "./query";
 import type { SupabaseStructure } from "./supabase";
+import { pinLengthProblem } from "./pin";
 import { checkStateValue, type StateType } from "./state";
 
 // Forms (owner decisions 2026-11-16, elements.md "Forms"): a Form wrapper has a unique `name`, a
@@ -16,7 +17,8 @@ export const FORM_FIELD_TYPES = [
   "checkbox",
   "radio",
   "checkboxGroup",
-  "choiceChips"
+  "choiceChips",
+  "pinInput"
 ] as const;
 
 /** The data types an option value can be set to (the owner's FlutterFlow-style value type). */
@@ -202,6 +204,10 @@ export function formProblems(root: ElementNode): string[] {
   };
   visit(root, false, false);
   walkElements(root, (node) => {
+    if (node.type === "pinInput") {
+      const unfit = pinLengthProblem(node);
+      if (unfit) problems.push(unfit);
+    }
     if (!isOptionGroup(node)) return;
     problems.push(...optionValueProblems(node));
     if (!optionsAreDynamic(node)) return;

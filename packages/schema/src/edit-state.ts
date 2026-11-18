@@ -15,7 +15,8 @@ const FIELD_STATES: Record<string, EditState[]> = {
   checkbox: ["checked", "error", "success"],
   checkboxGroup: ["checked", "error", "success"],
   radio: ["checked", "error", "success"],
-  choiceChips: ["checked", "error", "success"]
+  choiceChips: ["checked", "error", "success"],
+  pinInput: ["checked", "error", "success"]
 };
 
 /** The states an element can be edited in, in select order. */
@@ -25,6 +26,7 @@ export function editStatesFor(type: string): EditState[] {
 
 /** The word for a state. A single-choice field says Selected where the others say Checked. */
 export function editStateLabel(type: string, state: EditState): string {
+  if (state === "checked" && type === "pinInput") return "Filled";
   if (state === "checked")
     return type === "radio" || type === "choiceChips" ? "Selected" : "Checked";
   if (state === "active") return "Active";

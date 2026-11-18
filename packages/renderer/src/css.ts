@@ -10,6 +10,7 @@ import {
 } from "@nextomic/schema";
 import { CHOICE_BASE_CSS } from "./choice-css";
 import { INPUT_BASE_CSS, inputPartCss } from "./input-css";
+import { PIN_BASE_CSS } from "./pin-css";
 import { getElementDefinition } from "./registry";
 
 /** Element types drawn as choice fields (the built-in choice look is added when a page has one). */
@@ -155,12 +156,15 @@ export function pageCss(
   const chunks: string[] = [];
   let hasInput = false;
   let hasChoice = false;
+  let hasPin = false;
   walkElements(root, (node) => {
     if (node.type === "input") hasInput = true;
+    if (node.type === "pinInput") hasPin = true;
     if (CHOICE_TYPES.includes(node.type)) hasChoice = true;
   });
-  if (hasInput || hasChoice) chunks.push(INPUT_BASE_CSS);
+  if (hasInput || hasChoice || hasPin) chunks.push(INPUT_BASE_CSS);
   if (hasChoice) chunks.push(CHOICE_BASE_CSS);
+  if (hasPin) chunks.push(PIN_BASE_CSS);
   for (const [name, styles] of Object.entries(classes)) {
     const css = classCss(name, styles, breakpoints, resolve);
     if (css) chunks.push(css);

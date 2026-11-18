@@ -3,6 +3,7 @@ import "./elements";
 import "./forms";
 import "./form-choices";
 import "./form-options";
+import "./form-pin";
 
 export * from "./css";
 export * from "./registry";

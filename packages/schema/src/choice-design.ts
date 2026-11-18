@@ -13,6 +13,7 @@ import {
   type ParsedInputKey,
   type StateTail
 } from "./input-design";
+import { PIN_PANEL_PARTS, PIN_PARTS } from "./pin-design";
 
 const { p, TEXT, SPACING, BORDER, EFFECTS, SIZE, ORDER } = DESIGN_KIT;
 
@@ -315,7 +316,11 @@ export const CHOICE_PARTS: readonly InputPart[] = [
 ];
 
 /** Every part of every form field: the table style keys are read against. */
-export const FORM_DESIGN_PARTS: readonly InputPart[] = [...INPUT_PARTS, ...CHOICE_PARTS];
+export const FORM_DESIGN_PARTS: readonly InputPart[] = [
+  ...INPUT_PARTS,
+  ...CHOICE_PARTS,
+  ...PIN_PARTS
+];
 
 /** The parts of an element, in panel order; empty for elements without a Design > Form group. */
 export function designPartsFor(type: string): readonly InputPart[] {
@@ -366,6 +371,8 @@ export function designPartsFor(type: string): readonly InputPart[] {
         ERROR,
         SUCCESS
       ];
+    case "pinInput":
+      return PIN_PANEL_PARTS;
     default:
       return [];
   }
@@ -374,6 +381,7 @@ export function designPartsFor(type: string): readonly InputPart[] {
 /** The title of the Design group that holds the parts of this element. */
 export function designGroupTitle(type: string): string {
   if (type === "input") return "Form Input";
+  if (type === "pinInput") return "Form PIN";
   return type === "checkbox" ? "Form Checkbox" : "Form Options";
 }
 

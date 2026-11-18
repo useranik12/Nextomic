@@ -378,3 +378,56 @@ test("dynamic options: one locked template option, ghost copies on the canvas, v
   await expect(page.getByText(/template of a field/)).toBeVisible();
   await expect(page.getByRole("treeitem")).toHaveCount(3);
 });
+
+test("pin: one box per character, typing, Backspace, paste and the incomplete message", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "PIN / OTP");
+  await page.getByLabel("Field name", { exact: true }).fill("otp");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nxt-cell]")).toHaveCount(6, { timeout: 15_000 });
+
+  // Design tab: the Form PIN group holds the boxes, and a box has a Filled state.
+  await page.getByRole("tab", { name: /design/i }).click();
+  const group = page.locator('[aria-label="Design settings"] > section').first();
+  for (const part of ["Field", "Label", "Boxes row", "Box", "Placeholder", "Error message"])
+    await expect(group.getByRole("button", { name: part, exact: true })).toBeVisible();
+  await group.getByRole("button", { name: "Box", exact: true }).click();
+  await page.getByRole("button", { name: "State being edited" }).click();
+  await expect(page.locator("[role=option]", { hasText: "Filled" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const cells = preview.locator("[data-nxt-cell]");
+  const values = async () =>
+    cells.evaluateAll((all) => all.map((c) => (c as HTMLInputElement).value));
+  await expect(cells).toHaveCount(6);
+
+  // A letter is refused, digits move on, Backspace on an empty box clears the one before.
+  await cells.first().click();
+  await preview.keyboard.type("12a3");
+  expect(await values()).toEqual(["1", "2", "3", "", "", ""]);
+  await preview.keyboard.press("Backspace");
+  expect(await values()).toEqual(["1", "2", "", "", "", ""]);
+
+  // Leaving a partly filled code shows the incomplete message; a pasted code fills every box.
+  await cells.nth(2).blur();
+  const incomplete = preview.getByRole("alert").filter({ hasText: "Enter the full code." });
+  await expect(incomplete).toBeVisible();
+  await cells.first().evaluate((el) => {
+    const data = new DataTransfer();
+    data.setData("text", "654 321");
+    el.dispatchEvent(
+      new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true })
+    );
+  });
+  expect(await values()).toEqual(["6", "5", "4", "3", "2", "1"]);
+  await expect(incomplete).toBeHidden();
+});

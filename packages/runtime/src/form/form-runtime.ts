@@ -14,6 +14,7 @@ import {
   writeField,
   type Control
 } from "./field-values";
+import { startPinCells } from "./pin-cells";
 
 // Form behavior of a built page (elements.md "Forms"): the DOM is the source of values. The runtime
 // shows validation errors, runs the clear and show/hide-password buttons, stops the browser's own
@@ -89,6 +90,7 @@ export function startFormRuntime(
     stops.push(() => root.removeEventListener(type, fn, capture));
   };
 
+  stops.push(startPinCells(root));
   const forms = () => [...root.querySelectorAll<HTMLFormElement>(FORM)];
   const formNamed = (name: string) =>
     forms().find((f) => f.getAttribute("data-nxt-form") === name) ?? null;

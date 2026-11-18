@@ -53,7 +53,8 @@ describe("registry", () => {
       "option",
       "radio",
       "checkboxGroup",
-      "choiceChips"
+      "choiceChips",
+      "pinInput"
     ]);
   });
 
@@ -79,6 +80,7 @@ describe("registry", () => {
       ...["minLength", "maxLength", "min", "max"].map((k) => `input.${k}`),
       ...["required", "checked", "disabled"].map((k) => `checkbox.${k}`),
       ...["selected", "disabled"].map((k) => `option.${k}`),
+      ...["required", "disabled", "mask", "value"].map((k) => `pinInput.${k}`),
       ...["radio", "checkboxGroup", "choiceChips"].flatMap((t) =>
         ["required", "disabled", "minSelected", "maxSelected"].map((k) => `${t}.${k}`)
       )
@@ -251,6 +253,30 @@ describe("forms", () => {
       const html = render([checkbox({})]);
       expect(html).not.toMatch(/<input[^>]* checked/);
       expect(html).toContain("&quot;required&quot;:false");
+    });
+  });
+
+  describe("pin field", () => {
+    const pin = (props: Record<string, unknown>) =>
+      node({ id: "p", type: "pinInput", props: { name: "code", label: "Code", ...props } });
+
+    it("draws one box per character and joins them into one value", () => {
+      const html = render([pin({ length: "4", value: "12", required: true })]);
+      expect(html).toContain('data-nxt-kind="pin"');
+      expect(html.match(/data-nxt-cell=/g)).toHaveLength(4);
+      expect(html.match(/data-filled/g)).toHaveLength(2);
+      expect(html).toContain('inputMode="numeric"');
+      expect(html).toContain('autoComplete="one-time-code"');
+      expect(html).toContain("&quot;minLength&quot;:4,&quot;maxLength&quot;:4");
+      expect(html).toContain("^[0-9]*$");
+      expect(html).toContain("character 3 of 4");
+      expect(html).not.toContain("data-nxt-box=");
+    });
+
+    it("keeps the length in range and hides characters on request", () => {
+      expect(render([pin({ length: "40" })]).match(/data-nxt-cell=/g)).toHaveLength(6);
+      expect(render([pin({ mask: true })])).toContain('type="password"');
+      expect(render([pin({ charset: "any" })])).toContain('inputMode="text"');
     });
   });
 

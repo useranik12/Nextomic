@@ -67,6 +67,7 @@ export function writeField(field: Element, value: string): void {
       const chars = [...value];
       controls.forEach((c, i) => {
         c.value = chars[i] ?? "";
+        c.toggleAttribute("data-filled", c.value !== "");
       });
       return;
     }
