@@ -69,6 +69,7 @@ export * from "./pin-design";
 export * from "./part-states";
 export * from "./number-field";
 export * from "./counter-design";
+export * from "./date-design";
 export * from "./date-field";
 export * from "./range-design";
 export * from "./query-shape";

@@ -49,6 +49,13 @@ export const FORM_PROP_TIPS: Readonly<Record<string, string>> = {
     "Space outside the part, pushing neighbours away. Four values set top, right, bottom, left.",
   "margin-left": "Space between the label and the marker.",
   "max-width": "The part never grows wider than this.",
+  right: "How far the part sits from the right edge of the field. Leave Left empty to use it.",
+  "z-index": "Which part is on top when parts overlap. A bigger number is nearer the visitor.",
+  "flex-grow":
+    "How much of the free space in the row this part takes. 1 fills it, 0 keeps its own size.",
+  visibility: "Hidden keeps the space but hides the part. Use it to keep the grid shape.",
+  "max-height": "The part never gets taller than this. When it holds more, it scrolls.",
+  "overflow-y": "What happens when the content is taller than the part: scroll, cut off or show.",
   "min-height": "The part never gets shorter than this.",
   "min-width": "The part never gets narrower than this.",
   opacity: "How see-through the part is. 1 is solid, 0 is invisible.",

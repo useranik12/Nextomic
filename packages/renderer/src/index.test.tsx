@@ -56,7 +56,8 @@ describe("registry", () => {
       "choiceChips",
       "pinInput",
       "counter",
-      "rangeSlider"
+      "rangeSlider",
+      "dateTime"
     ]);
   });
 
@@ -86,6 +87,9 @@ describe("registry", () => {
       ...["value", "step", "min", "max", "disabled"].map((k) => `counter.${k}`),
       ...["value", "step", "min", "max", "disabled", "prefix", "suffix", "showLimits"].map(
         (k) => `rangeSlider.${k}`
+      ),
+      ...["value", "min", "max", "required", "disabled", "clearable", "showToday"].map(
+        (k) => `dateTime.${k}`
       ),
       ...["radio", "checkboxGroup", "choiceChips"].flatMap((t) =>
         ["required", "disabled", "minSelected", "maxSelected"].map((k) => `${t}.${k}`)
@@ -122,6 +126,7 @@ describe("registry", () => {
                   }
                 : {}),
               ...(def.type === "option" && /Icon$|^icon$/.test(key) ? { library: "ph" } : {}),
+              ...(def.type === "dateTime" && key === "icon" ? { iconLibrary: "ph" } : {}),
               ...(def.type === "counter" && /Icon$/.test(key)
                 ? { decLibrary: "ph", incLibrary: "ph" }
                 : {}),
@@ -286,6 +291,57 @@ describe("forms", () => {
       expect(html).toContain('aria-valuenow="5"');
       expect(html).toMatch(/<button[^>]*disabled=""[^>]*data-nxt-step="1"/);
       expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*data-nxt-step="-1"/);
+    });
+  });
+
+  describe("date and time", () => {
+    const date = (props: Record<string, unknown>) =>
+      node({ id: "d", type: "dateTime", props: { name: "when", label: "When", ...props } });
+    const count = (html: string, needle: string) => html.split(needle).length - 1;
+    // The page ends its inline style before the markup, so only the markup is searched.
+    const markup = (html: string) => html.slice(html.lastIndexOf("</style>"));
+
+    it("draws a fixed 42 day grid for the month of its value, with the day chosen", () => {
+      const html = render([date({ value: "2026-11-18", weekStart: "1" })]);
+      expect(count(html, "data-nxt-day=")).toBe(42);
+      expect(html).toContain("November 2026");
+      expect(html).toContain('data-date="2026-11-18"');
+      expect(html).toMatch(/aria-selected="true"[^>]*data-nxt-day=""[^>]*data-date="2026-11-18"/);
+      expect(html).toContain('data-nxt-kind="date"');
+      expect(html).toContain('type="hidden"');
+      expect(html).toContain("&quot;dateMode&quot;:&quot;date&quot;");
+      // The popover starts closed on a page.
+      expect(html).toMatch(/<div[^>]*hidden=""[^>]*data-nxt-popover/);
+    });
+
+    it("greys out days outside the limits and shows the value in the locale", () => {
+      const html = render([
+        date({ value: "2026-11-18", min: "2026-11-10", max: "2026-11-20", locale: "de-DE" })
+      ]);
+      expect(html).toMatch(/aria-disabled="true"[^>]*data-date="2026-11-09"/);
+      expect(html).not.toMatch(/aria-disabled="true"[^>]*data-date="2026-11-15"/);
+      expect(html).toContain("18.11.2026");
+      expect(html).toContain('data-nxt-min="2026-11-10"');
+    });
+
+    it("draws only the clock for a time and both for a date and time", () => {
+      const time = render([date({ mode: "time", value: "14:30", clock: "24", minuteStep: "15" })]);
+      expect(markup(time)).not.toContain("data-nxt-calendar");
+      expect(time).toContain("14:30");
+      expect(count(time, 'data-nxt-time="minute"')).toBe(4);
+      expect(time).not.toContain('data-nxt-time="meridiem"');
+      const both = render([date({ mode: "datetime", value: "2026-11-18T14:30", clock: "12" })]);
+      expect(markup(both)).toContain("data-nxt-calendar");
+      expect(count(both, 'data-nxt-time="hour"')).toBe(12);
+      expect(both).toContain('data-nxt-time="meridiem"');
+      expect(both).toMatch(/aria-selected="true"[^>]*data-nxt-time="meridiem"[^>]*data-v="1"/);
+    });
+
+    it("ignores a value of the wrong shape and shows the empty text", () => {
+      const html = render([date({ value: "yesterday", placeholder: "Pick a day" })]);
+      expect(html).toContain("Pick a day");
+      expect(html).toMatch(/data-empty=""/);
+      expect(markup(html)).not.toMatch(/aria-selected="true"[^>]*data-nxt-day/);
     });
   });
 

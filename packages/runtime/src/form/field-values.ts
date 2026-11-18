@@ -1,3 +1,4 @@
+import { writeDate } from "./date-field";
 import { writeNumber } from "./number-field";
 import { OPTION_VALUE_TYPES, listText, parseList, type OptionValueType } from "@nextomic/schema";
 
@@ -9,12 +10,13 @@ import { OPTION_VALUE_TYPES, listText, parseList, type OptionValueType } from "@
 //   one    a group of radios, the checked one's value ("" when none)
 //   many   a group of checkboxes, the checked values as a JSON list
 //   pin    several one-character cells, joined
+//   date   one date, time or date and time as ISO text, picked in a popover
 //   number one number (Count Controller, Range slider), always inside its limits
 
 export type Control = HTMLInputElement | HTMLTextAreaElement;
-export type FieldShape = "text" | "check" | "one" | "many" | "pin" | "number";
+export type FieldShape = "text" | "check" | "one" | "many" | "pin" | "number" | "date";
 
-const SHAPES: readonly string[] = ["text", "check", "one", "many", "pin", "number"];
+const SHAPES: readonly string[] = ["text", "check", "one", "many", "pin", "number", "date"];
 
 export const controlsOf = (field: Element): Control[] => [
   ...field.querySelectorAll<Control>("[data-nxt-control]")
@@ -76,6 +78,9 @@ export function writeField(field: Element, value: string): void {
     case "number":
       writeNumber(field, value);
       return;
+    case "date":
+      writeDate(field, value);
+      return;
     default:
       if (controls[0]) controls[0].value = value;
   }
@@ -117,9 +122,11 @@ export function isEmptyField(field: Element): boolean {
 }
 
 /** The control that takes focus when the field is cleared or has an error. */
-export function focusTarget(field: Element): Control | null {
+export function focusTarget(field: Element): HTMLElement | null {
   const controls = controlsOf(field);
   switch (shapeOf(field)) {
+    case "date":
+      return field.querySelector<HTMLElement>("[data-nxt-trigger]") ?? controls[0] ?? null;
     case "one":
     case "many":
       return checkedOf(controls)[0] ?? controls.find((c) => !c.disabled) ?? null;

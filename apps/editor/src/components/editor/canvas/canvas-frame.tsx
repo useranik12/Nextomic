@@ -337,6 +337,15 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       if (found && designPartsFor(found.node.type).length > 0)
         found.node.attributes = { ...found.node.attributes, "data-nxt-force": activeState };
     }
+    // A selected Date and time field shows its popover open, so its calendar parts can be designed.
+    if (selectedId) {
+      const picker = findNode(tree, selectedId);
+      if (picker?.node.type === "dateTime") {
+        if (tree === doc.tree) tree = structuredClone(doc.tree);
+        const found = findNode(tree, selectedId);
+        if (found) found.node.attributes = { ...found.node.attributes, "data-nxt-open": "" };
+      }
+    }
     // With a pseudo state chosen, the canvas shows that state's design (hover, focus ...) on the
     // element or class being edited, by drawing a copy where the state's values are the default.
     const shown = pseudoOf(activeState);

@@ -513,3 +513,141 @@ test("range slider: drag fill and value, keys and the Form Range design", async 
   // The fill ends under the centre of the thumb: the track minus half the 20px thumb.
   expect(fill && track && Math.abs(track.width - fill.width - 10) < 2).toBe(true);
 });
+
+test("date picker: open, pick, keys, limits, clear and the Form Date and Time design", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Date and Time");
+  await page.getByLabel("Field name", { exact: true }).fill("when");
+  await page.getByRole("textbox", { name: "Default value" }).fill("2026-11-18");
+  await page.getByRole("textbox", { name: "Earliest" }).fill("2026-11-10");
+  await page.getByRole("textbox", { name: "Latest" }).fill("2026-11-25");
+  // A selected field shows its popover open so the calendar parts can be designed.
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nxt-popover]")).toBeVisible({ timeout: 15_000 });
+  await expect(canvas.locator("[data-nxt-day]")).toHaveCount(42);
+
+  await page.getByRole("tab", { name: /design/i }).click();
+  const group = page.locator('[aria-label="Design settings"] > section').first();
+  for (const part of ["Popover", "Day", "Today", "Month buttons", "Time choice"])
+    await expect(group.getByRole("button", { name: part, exact: true })).toBeVisible();
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const control = preview.locator('input[type="hidden"][data-nxt-control]');
+  const trigger = preview.locator("[data-nxt-trigger]");
+  const popover = preview.locator("[data-nxt-popover]");
+  await expect(control).toHaveValue("2026-11-18");
+  await expect(popover).toBeHidden();
+
+  // Open with the keyboard: focus lands on the chosen day; one tab stop in the grid.
+  await trigger.focus();
+  await preview.keyboard.press("Enter");
+  await expect(popover).toBeVisible();
+  const chosen = preview.locator('[data-nxt-day][data-date="2026-11-18"]');
+  await expect(chosen).toBeFocused();
+  await expect(preview.locator('[data-nxt-day][tabindex="0"]')).toHaveCount(1);
+  await expect(preview.locator("[data-nxt-title]")).toHaveText(/November 2026/);
+
+  // Limits: days outside them cannot be chosen and the previous month button is off.
+  const early = preview.locator('[data-nxt-day][data-date="2026-11-09"]');
+  await expect(early).toHaveAttribute("aria-disabled", "true");
+  await early.click({ force: true });
+  await expect(control).toHaveValue("2026-11-18");
+  await expect(preview.locator('[data-nxt-nav="-1"]')).toBeDisabled();
+  // The click above moved the focus onto that day; put it back on the chosen one.
+  await chosen.focus();
+
+  // Arrow keys move the focus. A day past the limit takes focus but Enter does not choose it.
+  await preview.keyboard.press("ArrowRight");
+  await expect(preview.locator('[data-nxt-day][data-date="2026-11-19"]')).toBeFocused();
+  await preview.keyboard.press("ArrowDown");
+  await expect(preview.locator('[data-nxt-day][data-date="2026-11-26"]')).toBeFocused();
+  await preview.keyboard.press("Enter");
+  await expect(control).toHaveValue("2026-11-18");
+  await expect(popover).toBeVisible();
+  // Enter on a day in range chooses it, closes the popover and gives focus back to the field.
+  await preview.keyboard.press("ArrowUp");
+  await preview.keyboard.press("Enter");
+  await expect(control).toHaveValue("2026-11-19");
+  await expect(popover).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(trigger).not.toHaveAttribute("data-empty", "");
+
+  // Page Down moves a month, Escape closes without choosing.
+  await preview.keyboard.press("Enter");
+  await expect(popover).toBeVisible();
+  await preview.keyboard.press("PageDown");
+  await expect(preview.locator("[data-nxt-title]")).toHaveText(/December 2026/);
+  await preview.keyboard.press("Escape");
+  await expect(popover).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(control).toHaveValue("2026-11-19");
+
+  // A click on a day chooses it; a click outside closes the popover; Clear empties the field.
+  await trigger.click();
+  await preview.locator('[data-nxt-day][data-date="2026-11-12"]').click();
+  await expect(control).toHaveValue("2026-11-12");
+  await trigger.click();
+  await expect(popover).toBeVisible();
+  // The label sits at that spot: pressing it closes the popover and must not open it again.
+  await preview.mouse.click(5, 5);
+  await expect(popover).toBeHidden();
+  await preview.locator("[data-nxt-clear]").click();
+  await expect(control).toHaveValue("");
+  await expect(trigger).toHaveAttribute("data-empty", "");
+});
+
+test("date picker: a time of day with a minute step, 24-hour clock and the Today button", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Date and Time");
+  await page.getByRole("button", { name: /Picks/ }).click();
+  await page.getByRole("option", { name: "A time", exact: true }).click();
+  await page.getByRole("button", { name: /Clock/ }).click();
+  await page.locator("[role=option]", { hasText: "24-hour" }).click();
+  await page.getByRole("button", { name: /Minute step/ }).click();
+  await page.locator("[role=option]", { hasText: "15 min" }).click();
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator('[data-nxt-time="minute"]')).toHaveCount(4, { timeout: 15_000 });
+  await expect(canvas.locator("[data-nxt-calendar]")).toHaveCount(0);
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const control = preview.locator('input[type="hidden"][data-nxt-control]');
+  await preview.locator("[data-nxt-trigger]").click();
+  await preview.locator('[data-nxt-time="hour"][data-v="14"]').click();
+  await expect(control).toHaveValue(/^14:\d{2}$/);
+  await preview.locator('[data-nxt-time="minute"][data-v="45"]').click();
+  await expect(control).toHaveValue("14:45");
+  await expect(preview.locator("[data-nxt-trigger]")).toHaveText("14:45");
+  await expect(preview.locator('[data-nxt-time="hour"][data-v="14"]')).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
+  // The chosen time is drawn as chosen (the built-in look puts a filled background on it).
+  await expect(preview.locator('[data-nxt-time="hour"][data-v="14"]')).toHaveCSS(
+    "background-color",
+    "rgb(99, 102, 241)"
+  );
+  // Arrow keys move inside a list; the Now button puts the time on the step nearest below.
+  await preview.locator('[data-nxt-time="minute"][data-v="45"]').focus();
+  await preview.keyboard.press("ArrowUp");
+  await expect(preview.locator('[data-nxt-time="minute"][data-v="30"]')).toBeFocused();
+  await preview.locator("[data-nxt-today-btn]").click();
+  await expect(control).toHaveValue(/^\d{2}:(00|15|30|45)$/);
+  await preview.locator("[data-nxt-done]").click();
+  await expect(preview.locator("[data-nxt-popover]")).toBeHidden();
+});

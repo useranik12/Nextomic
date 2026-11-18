@@ -16,6 +16,7 @@ import {
   writeField,
   type Control
 } from "./field-values";
+import { startDateFields, syncDates } from "./date-field";
 import { startNumberFields, syncNumbers } from "./number-field";
 import { startPinCells } from "./pin-cells";
 
@@ -96,7 +97,7 @@ export function startFormRuntime(
     stops.push(() => root.removeEventListener(type, fn, capture));
   };
 
-  stops.push(startPinCells(root), startNumberFields(root));
+  stops.push(startPinCells(root), startNumberFields(root), startDateFields(root));
   const forms = () => [...root.querySelectorAll<HTMLFormElement>(FORM)];
   const formNamed = (name: string) =>
     forms().find((f) => f.getAttribute("data-nxt-form") === name) ?? null;
@@ -278,6 +279,7 @@ export function startFormRuntime(
     sync: (scope) => {
       scope.querySelectorAll("[data-nxt-field]").forEach(syncButtons);
       syncNumbers(scope);
+      syncDates(scope);
     },
     stop: () => stops.splice(0).forEach((stop) => stop())
   };

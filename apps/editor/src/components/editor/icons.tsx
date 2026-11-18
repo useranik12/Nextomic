@@ -45,6 +45,8 @@ export function ElementIcon({ type, size = 28 }: { type: string; size?: number }
       return <Icon name="ph:password" {...props} />;
     case "counter":
       return <Icon name="ph:plus-minus" {...props} />;
+    case "dateTime":
+      return <Icon name="ph:calendar-dots" {...props} />;
     case "rangeSlider":
       return <Icon name="ph:sliders-horizontal" {...props} />;
     default:
