@@ -111,7 +111,7 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
   }
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()} size="2xl">
+    <Modal isOpen={isOpen} onOpenChange={(open) => !open && onClose()} size="4xl">
       <ModalContent>
         <ModalHeader>Breakpoints</ModalHeader>
         <ModalBody className="gap-4">
@@ -119,70 +119,82 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
             Desktop is the base. Breakpoints order themselves by width, larger screens on the left.
             Canvas width is only used while editing.
           </p>
-          <ul className="grid grid-cols-[repeat(5,max-content)_auto] gap-3">
+          <ul className="flex flex-col gap-3">
             {draft.map((bp, index) => {
               const isBase = bp.id === BASE_BREAKPOINT_ID;
               return (
                 <li
                   key={bp.id}
-                  className="col-span-full grid grid-cols-subgrid items-end gap-3 rounded-2xl border border-border p-3"
+                  className="flex flex-wrap items-end gap-3 rounded-2xl border border-border p-3"
                 >
-                  <FormInput
-                    compact
-                    label="Name"
-                    value={bp.name}
-                    onValueChange={(name) => patch(index, { name })}
-                  />
-                  <SelectField
-                    compact
-                    label="Icon"
-                    value={bp.icon}
-                    options={ICON_OPTIONS}
-                    onValueChange={(icon) => patch(index, { icon: icon as BreakpointDef["icon"] })}
-                  />
-                  {isBase ? (
-                    <FormInput compact label="Kind" value="Base (all sizes)" isReadOnly />
-                  ) : (
+                  <div className="w-36 shrink-0">
+                    <FormInput
+                      compact
+                      label="Name"
+                      value={bp.name}
+                      onValueChange={(name) => patch(index, { name })}
+                    />
+                  </div>
+                  <div className="w-36 shrink-0">
                     <SelectField
                       compact
-                      label="Kind"
-                      value={bp.kind}
-                      options={KIND_OPTIONS}
-                      onValueChange={(kind) => {
-                        patch(index, { kind: kind as BreakpointKind });
-                        queueMicrotask(settle);
+                      label="Icon"
+                      value={bp.icon}
+                      options={ICON_OPTIONS}
+                      onValueChange={(icon) =>
+                        patch(index, { icon: icon as BreakpointDef["icon"] })
+                      }
+                    />
+                  </div>
+                  <div className="w-52 shrink-0">
+                    {isBase ? (
+                      <FormInput compact label="Kind" value="Base (all sizes)" isReadOnly />
+                    ) : (
+                      <SelectField
+                        compact
+                        label="Kind"
+                        value={bp.kind}
+                        options={KIND_OPTIONS}
+                        onValueChange={(kind) => {
+                          patch(index, { kind: kind as BreakpointKind });
+                          queueMicrotask(settle);
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="w-24 shrink-0">
+                    <FormInput
+                      compact
+                      label="Width (px)"
+                      type="number"
+                      isDisabled={isBase}
+                      value={bp.width === null ? "" : String(bp.width)}
+                      onValueChange={(v) => patch(index, { width: v === "" ? null : Number(v) })}
+                      onBlur={settle}
+                    />
+                  </div>
+                  <div className="w-24 shrink-0">
+                    <FormInput
+                      compact
+                      label="Canvas (px)"
+                      type="number"
+                      value={bp.previewWidth === undefined ? "" : String(bp.previewWidth)}
+                      onValueChange={(v) => {
+                        const next: Partial<BreakpointDef> = {};
+                        if (v !== "") next.previewWidth = Number(v);
+                        patch(index, v === "" ? { previewWidth: undefined } : next);
                       }}
                     />
-                  )}
-                  <FormInput
-                    compact
-                    label="Width (px)"
-                    type="number"
-                    isDisabled={isBase}
-                    value={bp.width === null ? "" : String(bp.width)}
-                    onValueChange={(v) => patch(index, { width: v === "" ? null : Number(v) })}
-                    onBlur={settle}
-                  />
-                  <FormInput
-                    compact
-                    label="Canvas (px)"
-                    type="number"
-                    value={bp.previewWidth === undefined ? "" : String(bp.previewWidth)}
-                    onValueChange={(v) => {
-                      const next: Partial<BreakpointDef> = {};
-                      if (v !== "") next.previewWidth = Number(v);
-                      patch(index, v === "" ? { previewWidth: undefined } : next);
-                    }}
-                  />
-                  <div className="flex items-end gap-1">
+                  </div>
+                  <div className="flex shrink-0 items-end gap-1">
                     <button
                       type="button"
                       aria-label={`Delete ${bp.name}`}
                       disabled={isBase}
                       onClick={() => remove(index)}
-                      className="rounded p-1.5 text-muted hover:text-danger disabled:opacity-30"
+                      className="shrink-0 rounded p-1.5 text-muted hover:text-danger disabled:opacity-30"
                     >
-                      <Icon name="ph:trash" width={16} height={16} />
+                      <Icon name="ph:trash" width={16} height={16} className="shrink-0" />
                     </button>
                   </div>
                 </li>
