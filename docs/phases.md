@@ -6,6 +6,8 @@ Read the docs named in each phase before starting it.
 
 Priority side track (not a numbered phase, start only on the owner's word): CI/CD release pipeline, see `cicd-pipeline.md`.
 
+Done 2026-11-18: full stack upgrade to the latest stable versions (Next 16.4.6, React 19.3.1, Zod 4, Drizzle 0.45, TypeScript 6.0, ESLint 10, Vitest 5, Better Auth 1.7, Bun 1.4.x image). Details and the Postgres error-code fix are in the `spec.md` decisions log. New dependencies from now on follow the pinned latest-stable rule in `CLAUDE.md`.
+
 - [ ] Private Docker Hub image flow: compose uses `APP_TAG`, `scripts/release`, Dokploy README update
 - [ ] Image shrink: `output: "standalone"`, slim runtime stage, `.dockerignore` additions
 
