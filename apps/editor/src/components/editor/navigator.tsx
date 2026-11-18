@@ -66,6 +66,7 @@ const NavigatorRow = memo(function NavigatorRow({
   const select = useEditorStore((s) => s.select);
   const duplicate = useEditorStore((s) => s.duplicateElement);
   const remove = useEditorStore((s) => s.removeElement);
+  const shift = useEditorStore((s) => s.shiftElement);
   const openContextMenu = useEditorStore((s) => s.openContextMenu);
   const [renaming, setRenaming] = useState(false);
   const drop = useDropTarget();
@@ -111,7 +112,7 @@ const NavigatorRow = memo(function NavigatorRow({
         aria-label={collapsed ? "Expand" : "Collapse"}
         tabIndex={hasChildren ? 0 : -1}
         onClick={() => onToggle(node.id)}
-        className={`flex h-5 w-5 items-center justify-center rounded ${hasChildren ? "" : "invisible"}`}
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded ${hasChildren ? "" : "invisible"}`}
       >
         <Icon
           name="ph:caret-right"
@@ -122,7 +123,9 @@ const NavigatorRow = memo(function NavigatorRow({
       </button>
       {renaming ? (
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <ElementIcon type={node.type} size={16} />
+          <span className="flex shrink-0 items-center">
+            <ElementIcon type={node.type} size={16} />
+          </span>
           <RenameField
             node={node}
             fallback={label}
@@ -134,12 +137,19 @@ const NavigatorRow = memo(function NavigatorRow({
       ) : (
         <button
           type="button"
-          onClick={() => select(node.id)}
+          // A click selects; on a parent it also folds or unfolds it. Double click renames.
+          onClick={() => {
+            select(node.id);
+            if (hasChildren) onToggle(node.id);
+          }}
+          onDoubleClick={() => setRenaming(true)}
           className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
           {...draggable.attributes}
           {...draggable.listeners}
         >
-          <ElementIcon type={node.type} size={16} />
+          <span className="flex shrink-0 items-center">
+            <ElementIcon type={node.type} size={16} />
+          </span>
           <span
             className={"truncate" + (conditionHidden ? " text-warning" : "")}
             title={conditionHidden ? "Hidden by its conditions" : undefined}
@@ -195,12 +205,23 @@ const NavigatorRow = memo(function NavigatorRow({
           <Icon name="ph:lightning" width={14} height={14} />
         </button>
       ) : null}
-      <span className="hidden items-center group-focus-within:flex group-hover:flex">
+      <span className="hidden shrink-0 items-center group-focus-within:flex group-hover:flex">
+        {depth > 0 ? (
+          <button
+            type="button"
+            aria-label={`Unwrap ${label}`}
+            title="Unwrap: move out of its parent, right below it"
+            onClick={() => shift(node.id, "out")}
+            className="shrink-0 rounded p-1 text-muted hover:text-foreground"
+          >
+            <Icon name="ph:arrow-elbow-left-up" width={14} height={14} />
+          </button>
+        ) : null}
         <button
           type="button"
           aria-label={`Duplicate ${label}`}
           onClick={() => duplicate(node.id)}
-          className="rounded p-1 text-muted hover:text-foreground"
+          className="shrink-0 rounded p-1 text-muted hover:text-foreground"
         >
           <Icon name="ph:copy" width={14} height={14} />
         </button>
@@ -208,7 +229,7 @@ const NavigatorRow = memo(function NavigatorRow({
           type="button"
           aria-label={`Rename ${label}`}
           onClick={() => setRenaming(true)}
-          className="rounded p-1 text-muted hover:text-foreground"
+          className="shrink-0 rounded p-1 text-muted hover:text-foreground"
         >
           <Icon name="ph:pencil-simple" width={14} height={14} />
         </button>
@@ -216,7 +237,7 @@ const NavigatorRow = memo(function NavigatorRow({
           type="button"
           aria-label={`Delete ${label}`}
           onClick={() => remove(node.id)}
-          className="rounded p-1 text-muted hover:text-danger"
+          className="shrink-0 rounded p-1 text-muted hover:text-danger"
         >
           <Icon name="ph:trash" width={14} height={14} />
         </button>

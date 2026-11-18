@@ -59,6 +59,8 @@ export const ICON_REGISTRY: readonly RegisteredIcon[] = [
   { id: "ph:arrow-line-right" },
   { id: "ph:arrows-horizontal" },
   { id: "ph:radio-button" },
+  { id: "ph:list-bullets" },
+  { id: "ph:arrow-elbow-left-up" },
   { id: "ph:checks" },
   { id: "ph:tag-simple" },
   { id: "ph:password" },

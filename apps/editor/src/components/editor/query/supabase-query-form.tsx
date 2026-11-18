@@ -167,16 +167,18 @@ export function SupabaseQueryForm({
           Add order
         </ActionButton>
       </fieldset>
-      <SwitchRow
-        label="Enable realtime query"
-        tip={
-          mode.tip("realtime") ??
-          "Streams inserts, updates and deletes to the page with Supabase Realtime (anon key). Turn on Realtime for the table in Supabase."
-        }
-        disabled={mode.refresh}
-        selected={value.realtime}
-        onChange={(realtime) => patch({ realtime })}
-      />
+      {mode.field ? null : (
+        <SwitchRow
+          label="Enable realtime query"
+          tip={
+            mode.tip("realtime") ??
+            "Streams inserts, updates and deletes to the page with Supabase Realtime (anon key). Turn on Realtime for the table in Supabase."
+          }
+          disabled={mode.refresh}
+          selected={value.realtime}
+          onChange={(realtime) => patch({ realtime })}
+        />
+      )}
     </>
   );
 }

@@ -1,6 +1,8 @@
 import { walkElements, type ElementNode } from "./element";
 import { patternProblem } from "./condition";
 import type { DynamicContext } from "./dynamic-context";
+import { fieldQueryProblem } from "./query";
+import type { SupabaseStructure } from "./supabase";
 import { checkStateValue, type StateType } from "./state";
 
 // Forms (owner decisions 2026-11-16, elements.md "Forms"): a Form wrapper has a unique `name`, a
@@ -206,12 +208,24 @@ export function formProblems(root: ElementNode): string[] {
     const name = propText(node, "name");
     if (!node.query?.enabled)
       problems.push(`"${name}" takes its options from a query, but no query is set up.`);
+    else {
+      const unfit = fieldQueryProblem(node.query);
+      if (unfit) problems.push(`The query of "${name}" ${unfit}.`);
+    }
     if (node.children.filter((child) => child.type === OPTION_TYPE).length !== 1)
       problems.push(
         `"${name}" takes its options from a query, so it needs exactly one option as the template.`
       );
   });
   return problems;
+}
+
+/** Why a node cannot move out of its parent to sit below it (the grandparent must accept it), or null. */
+export function outdentProblem(root: ElementNode, id: string): string | null {
+  const path = pathTo(root, id);
+  const grand = path[path.length - 3];
+  const node = path[path.length - 1];
+  return grand && node ? formPlacementProblem(root, grand.id, node) : null;
 }
 
 /** Why this option cannot be removed, duplicated or moved, or null when it can. */
@@ -543,4 +557,40 @@ export function iconLibrariesOf(node: ElementNode): string[] {
           ? INPUT_ICON_SLOTS.map((slot) => node.props[slot.library])
           : [];
   return keys.filter((key): key is string => typeof key === "string" && key !== "");
+}
+
+/** Whether a column of this Nextomic type can fill option values of the field's data type. */
+const columnFits = (column: StateType, wanted: OptionValueType): boolean =>
+  wanted === "string" || column === wanted || (wanted === "float" && column === "int");
+
+/**
+ * Design-time check of a dynamic field: the template option's value reads a column of the
+ * query's Supabase table, and that column's type must fit the field's value data type (an Int
+ * field cannot take a text column). Null when it fits or cannot be told (no structure, a REST or
+ * Other Loops source, a value that is not a plain loop-row column).
+ */
+export function optionColumnProblem(
+  group: ElementNode,
+  structure: SupabaseStructure | null
+): string | null {
+  const query = group.query;
+  if (!structure || !query?.enabled || query.source !== "supabase" || !query.name) return null;
+  const template = group.children.find((child) => child.type === OPTION_TYPE);
+  if (!template) return null;
+  // The value is what reaches the form; the label stands in while the value is empty.
+  const written =
+    JSON.stringify(template.props.value ?? "") + JSON.stringify(template.props.label ?? "");
+  const name = query.name.replace(/[^A-Za-z0-9_]/g, "");
+  const column = new RegExp(`%${name}\\.item\\.([A-Za-z_][A-Za-z0-9_]*)`).exec(written)?.[1];
+  if (!column) return null;
+  const table = structure.schemas
+    .find((s) => s.schema === query.supabase.schema)
+    ?.tables.find((t) => t.name === query.supabase.table);
+  const found = table?.columns.find((c) => c.name === column);
+  if (!found) return null;
+  const wanted = optionValueTypeOf(group);
+  if (found.isList) return `Column "${column}" is a list; an option takes one value.`;
+  return columnFits(found.type, wanted)
+    ? null
+    : `Column "${column}" is ${found.type} (${found.pgType}), but this field expects ${wanted} values.`;
 }

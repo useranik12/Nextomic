@@ -92,7 +92,7 @@ export function QueryOverrideInput({
     });
     const tip = refreshTips(loop, data.rest);
     return (
-      <QueryFormModeProvider value={{ serverRun: false, refresh: true, tip }}>
+      <QueryFormModeProvider value={{ serverRun: false, refresh: true, field: false, tip }}>
         <SelectField
           compact
           isDisabled

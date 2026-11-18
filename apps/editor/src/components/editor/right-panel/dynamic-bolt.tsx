@@ -61,7 +61,7 @@ export function DynamicBolt({
   // Read on pointer down: by click time the field has already lost focus to the bolt.
   const pending = useRef<EditTarget | null>(null);
   const button =
-    "flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-300 " +
+    "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background transition-colors duration-300 " +
     (disabledReason
       ? "text-default-300"
       : "text-yellow-500 hover:bg-default-hover hover:text-yellow-400 dark:text-yellow-400");

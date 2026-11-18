@@ -2,6 +2,7 @@
 
 import { FormInput, SelectField } from "@/components/ui/controls";
 import { SwitchRow } from "@/components/ui/switch-row";
+import { FIELD_OPTION_WARN } from "@nextomic/schema";
 import { useQueryFormMode } from "./query-form-mode";
 
 // Settings both query types share: Single Row or List of Rows and the list's limit. Infinite scroll
@@ -28,14 +29,16 @@ export function RowSettings({
   const mode = useQueryFormMode();
   return (
     <>
-      <SelectField
-        compact
-        label="Rows"
-        tip={mode.tip("rows")}
-        options={SHAPES}
-        value={value.single ? "single" : "list"}
-        onValueChange={(shape) => onChange({ single: shape === "single" })}
-      />
+      {mode.field ? null : (
+        <SelectField
+          compact
+          label="Rows"
+          tip={mode.tip("rows")}
+          options={SHAPES}
+          value={value.single ? "single" : "list"}
+          onValueChange={(shape) => onChange({ single: shape === "single" })}
+        />
+      )}
       {value.single ? null : (
         <>
           <FormInput
@@ -43,7 +46,13 @@ export function RowSettings({
             type="number"
             label="Limit"
             tip={mode.tip("limit")}
-            description="How many rows to load at a time (1 to 1000)."
+            description={
+              mode.field
+                ? value.limit > FIELD_OPTION_WARN
+                  ? `Only the first ${value.limit} rows become options. Over ${FIELD_OPTION_WARN} options are hard to scan: use a searchable Select instead.`
+                  : `Only the first ${value.limit} rows become options (1 to 1000).`
+                : "How many rows to load at a time (1 to 1000)."
+            }
             min={1}
             max={1000}
             value={String(value.limit)}
@@ -52,7 +61,7 @@ export function RowSettings({
               if (Number.isFinite(limit)) onChange({ limit: Math.min(1000, Math.max(1, limit)) });
             }}
           />
-          {value.infiniteScroll === undefined ? null : (
+          {value.infiniteScroll === undefined || mode.field ? null : (
             <SwitchRow
               label="Infinite scroll"
               tip={

@@ -12,11 +12,18 @@ export interface QueryFormMode {
   serverRun: boolean;
   /** Edited in a Refresh Query action. */
   refresh: boolean;
+  /** The query feeds the options of a field: a plain list, so single row, infinite scroll and realtime are not offered. */
+  field: boolean;
   /** The info tip of a field, by key (see refresh-tips.ts); undefined shows none. */
   tip: (key: string) => string | undefined;
 }
 
-const LOOP_MODE: QueryFormMode = { serverRun: true, refresh: false, tip: () => undefined };
+const LOOP_MODE: QueryFormMode = {
+  serverRun: true,
+  refresh: false,
+  field: false,
+  tip: () => undefined
+};
 
 const QueryFormContext = createContext<QueryFormMode>(LOOP_MODE);
 

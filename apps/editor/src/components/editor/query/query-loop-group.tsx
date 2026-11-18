@@ -1,11 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   freeLoopName,
   isDefaultLoopName,
   loopNameBase,
   loopNames,
   newElementQuery,
+  optionsAreDynamic,
   QUERY_SOURCE_LABELS,
   queryProblems,
   type ElementNode,
@@ -22,6 +24,7 @@ import { LocalQueryForm } from "./local-query-form";
 import { RestPreview } from "./rest-preview";
 import { RestQueryForm } from "./rest-query-form";
 import { SupabaseQueryForm } from "./supabase-query-form";
+import { QueryFormModeProvider } from "./query-form-mode";
 import { useQuerySources } from "./use-query-sources";
 import type { QuerySourcesSnapshot } from "@/app/(builder)/editor/[id]/query-actions";
 
@@ -63,6 +66,16 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
   const previewError = useLoopPreview((s) => s.errors[node.id]);
   const query = node.query;
   const enabled = query?.enabled ?? false;
+  // A field's options are a plain list: no single row, infinite scroll or realtime.
+  const fieldMode = useMemo(
+    () => ({
+      serverRun: true,
+      refresh: false,
+      field: optionsAreDynamic(node),
+      tip: () => undefined
+    }),
+    [node]
+  );
 
   const update = (next: ElementQuery) => setQuery(node.id, next);
   const toggle = (on: boolean) => {
@@ -88,98 +101,100 @@ export function QueryLoopGroup({ node }: { node: ElementNode }) {
       : [];
 
   return (
-    <div className="flex flex-col gap-5">
-      <SwitchRow
-        label="Enable Query Loop"
-        tip="Run a query and repeat this element's children once per row. Inside the loop, read the row as %name.item and its position as %name.index (name = the Loop name)."
-        selected={enabled}
-        onChange={toggle}
-      />
-      {error ? (
-        <div role="alert" className="flex items-center gap-2 text-sm text-danger">
-          {error}
-          <ActionButton size="sm" tone="ghost" onPress={() => void reload()}>
-            Retry
-          </ActionButton>
-        </div>
-      ) : null}
-      {loading && !data ? (
-        <p className="text-sm text-muted" aria-live="polite">
-          Loading data sources...
-        </p>
-      ) : null}
-      {query && data ? (
-        <div
-          inert={!enabled}
-          aria-disabled={!enabled}
-          className={"flex flex-col gap-5 transition-opacity " + (enabled ? "" : "opacity-50")}
-        >
-          <LoopNameField node={node} />
-          <SelectField
-            compact
-            label="Query Type"
-            options={sourceOptions(data)}
-            value={query.source}
-            onValueChange={(source) => change({ ...query, source: source as QuerySource })}
-          />
-          {query.source === "supabase" ? (
-            <SupabaseQueryForm
-              value={query.supabase}
-              structure={data.supabase?.structure ?? null}
-              onChange={(supabase) => update({ ...query, supabase })}
+    <QueryFormModeProvider value={fieldMode}>
+      <div className="flex flex-col gap-5">
+        <SwitchRow
+          label="Enable Query Loop"
+          tip="Run a query and repeat this element's children once per row. Inside the loop, read the row as %name.item and its position as %name.index (name = the Loop name)."
+          selected={enabled}
+          onChange={toggle}
+        />
+        {error ? (
+          <div role="alert" className="flex items-center gap-2 text-sm text-danger">
+            {error}
+            <ActionButton size="sm" tone="ghost" onPress={() => void reload()}>
+              Retry
+            </ActionButton>
+          </div>
+        ) : null}
+        {loading && !data ? (
+          <p className="text-sm text-muted" aria-live="polite">
+            Loading data sources...
+          </p>
+        ) : null}
+        {query && data ? (
+          <div
+            inert={!enabled}
+            aria-disabled={!enabled}
+            className={"flex flex-col gap-5 transition-opacity " + (enabled ? "" : "opacity-50")}
+          >
+            <LoopNameField node={node} />
+            <SelectField
+              compact
+              label="Query Type"
+              options={sourceOptions(data)}
+              value={query.source}
+              onValueChange={(source) => change({ ...query, source: source as QuerySource })}
             />
-          ) : query.source === "rest" ? (
-            <RestQueryForm
-              value={query.rest}
-              config={data.rest}
-              onChange={(rest) => update({ ...query, rest })}
-            />
-          ) : (
-            <LocalQueryForm
-              node={node}
-              value={query.local}
-              onChange={(local) => change({ ...query, local })}
-            />
-          )}
-          {query.source !== "local" ? (
-            <div className="flex flex-col gap-3">
-              <SwitchRow
-                label="Enable Query Fail Fallbacks"
-                tip="When the query fails (not when it returns no rows), show this text in place of the loop's children."
-                selected={query.fallback.enabled}
-                onChange={(on) =>
-                  update({ ...query, fallback: { ...query.fallback, enabled: on } })
-                }
+            {query.source === "supabase" ? (
+              <SupabaseQueryForm
+                value={query.supabase}
+                structure={data.supabase?.structure ?? null}
+                onChange={(supabase) => update({ ...query, supabase })}
               />
-              {query.fallback.enabled ? (
-                <BoltInput
-                  label="Fallback text"
-                  placeholder="Something went wrong. Please try again."
-                  value={query.fallback.text}
-                  onValueChange={(text) =>
-                    update({ ...query, fallback: { ...query.fallback, text } })
+            ) : query.source === "rest" ? (
+              <RestQueryForm
+                value={query.rest}
+                config={data.rest}
+                onChange={(rest) => update({ ...query, rest })}
+              />
+            ) : (
+              <LocalQueryForm
+                node={node}
+                value={query.local}
+                onChange={(local) => change({ ...query, local })}
+              />
+            )}
+            {query.source !== "local" ? (
+              <div className="flex flex-col gap-3">
+                <SwitchRow
+                  label="Enable Query Fail Fallbacks"
+                  tip="When the query fails (not when it returns no rows), show this text in place of the loop's children."
+                  selected={query.fallback.enabled}
+                  onChange={(on) =>
+                    update({ ...query, fallback: { ...query.fallback, enabled: on } })
                   }
                 />
-              ) : null}
-            </div>
-          ) : null}
-          {enabled && problems.length === 0 && previewError ? (
-            <p role="status" className="text-xs text-danger">
-              Canvas preview: {previewError}
-            </p>
-          ) : null}
-          {enabled && problems.length > 0 ? (
-            <ul role="status" className="flex flex-col gap-1 text-xs text-warning">
-              {problems.map((problem) => (
-                <li key={problem}>{problem}</li>
-              ))}
-            </ul>
-          ) : null}
-          {enabled && query.source === "rest" ? (
-            <RestPreview id={node.id} query={query} disabled={problems.length > 0} />
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+                {query.fallback.enabled ? (
+                  <BoltInput
+                    label="Fallback text"
+                    placeholder="Something went wrong. Please try again."
+                    value={query.fallback.text}
+                    onValueChange={(text) =>
+                      update({ ...query, fallback: { ...query.fallback, text } })
+                    }
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            {enabled && problems.length === 0 && previewError ? (
+              <p role="status" className="text-xs text-danger">
+                Canvas preview: {previewError}
+              </p>
+            ) : null}
+            {enabled && problems.length > 0 ? (
+              <ul role="status" className="flex flex-col gap-1 text-xs text-warning">
+                {problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            ) : null}
+            {enabled && query.source === "rest" ? (
+              <RestPreview id={node.id} query={query} disabled={problems.length > 0} />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </QueryFormModeProvider>
   );
 }

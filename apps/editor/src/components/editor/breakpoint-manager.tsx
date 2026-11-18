@@ -119,13 +119,13 @@ export function BreakpointManager({ isOpen, onClose }: { isOpen: boolean; onClos
             Desktop is the base. Breakpoints order themselves by width, larger screens on the left.
             Canvas width is only used while editing.
           </p>
-          <ul className="flex flex-col gap-3">
+          <ul className="grid grid-cols-[repeat(5,max-content)_auto] gap-3">
             {draft.map((bp, index) => {
               const isBase = bp.id === BASE_BREAKPOINT_ID;
               return (
                 <li
                   key={bp.id}
-                  className="grid grid-cols-[1fr_1fr] gap-3 rounded-2xl border border-border p-3 sm:grid-cols-[1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto]"
+                  className="col-span-full grid grid-cols-subgrid items-end gap-3 rounded-2xl border border-border p-3"
                 >
                   <FormInput
                     compact

@@ -48,6 +48,7 @@ export function IdentityField({ node }: { node: ElementNode }) {
   const targetStyles = useEditorStore((s) =>
     activeClass ? s.project.classes[activeClass] : node.styles
   );
+  const projectClasses = useEditorStore((s) => s.project.classes);
   const base = activeClass ?? (node.htmlId ? `#${node.htmlId}` : "");
   const [mode, setMode] = useState<FieldMode>("view");
   const [text, setText] = useState(base);
@@ -122,6 +123,19 @@ export function IdentityField({ node }: { node: ElementNode }) {
   }
 
   const editing = mode !== "view";
+  // While adding a class, the project's classes that match what is typed are offered below.
+  const typed = text.trim().replace(/^./, "").toLowerCase();
+  const suggestions =
+    mode === "add"
+      ? Object.keys(projectClasses)
+          .filter((name) => !node.classIds.includes(name) && name.toLowerCase().includes(typed))
+          .sort(
+            (a, b) =>
+              Number(b.toLowerCase().startsWith(typed)) -
+                Number(a.toLowerCase().startsWith(typed)) || a.localeCompare(b)
+          )
+          .slice(0, 8)
+      : [];
   const changed = editing && text.trim() !== (mode === "add" ? "" : base);
   const placeholder = mode === "add" ? "New class name" : "#id or class";
 
@@ -218,6 +232,28 @@ export function IdentityField({ node }: { node: ElementNode }) {
           </div>
         </div>
       </SettingRow>
+      {mode === "add" ? (
+        <ul aria-label="Matching classes" className="flex flex-col gap-0.5">
+          {suggestions.map((name) => (
+            <li key={name}>
+              <button
+                type="button"
+                onClick={() => {
+                  if (applyClass(name)) finish();
+                }}
+                className="flex h-7 w-full items-center rounded-xl px-2.5 text-left font-mono text-xs text-sky-700 transition-colors duration-300 hover:bg-default dark:text-sky-300"
+              >
+                .{name}
+              </button>
+            </li>
+          ))}
+          {suggestions.length === 0 && typed !== "" ? (
+            <li className="px-2.5 text-xs text-muted">
+              No class matches. Enter creates <span className="font-mono">.{typed}</span>.
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
       {error ? (
         <p role="alert" className="text-xs text-danger">
           {error}

@@ -459,10 +459,10 @@ function PublishControl({
             <ActionButton
               isIconOnly
               aria-label="More publish options"
-              className="w-9 rounded-l-none border-l border-default-50/20 px-0"
+              className="flex w-9 min-w-9 items-center justify-center rounded-l-none border-l border-default-50/20 px-0"
               isDisabled={busy === "publish"}
             >
-              <Icon name="ph:caret-down" width={14} height={14} />
+              <Icon name="ph:caret-down" width={14} height={14} className="shrink-0" />
             </ActionButton>
           </DropdownTrigger>
           <DropdownMenu

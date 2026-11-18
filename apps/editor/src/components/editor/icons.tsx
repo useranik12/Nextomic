@@ -39,6 +39,8 @@ export function ElementIcon({ type, size = 28 }: { type: string; size?: number }
       return <Icon name="ph:checks" {...props} />;
     case "choiceChips":
       return <Icon name="ph:tag-simple" {...props} />;
+    case "option":
+      return <Icon name="ph:list-bullets" {...props} />;
     case "pinInput":
       return <Icon name="ph:password" {...props} />;
     case "rangeSlider":

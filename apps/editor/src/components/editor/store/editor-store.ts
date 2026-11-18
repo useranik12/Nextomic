@@ -9,9 +9,11 @@ import {
   formPlacementProblem,
   isOptionGroup,
   loopNames,
+  asFieldQuery,
   newElementQuery,
   OPTION_TYPE,
   optionLockProblem,
+  outdentProblem,
   uniquifyFormNames,
   collectHtmlIds,
   duplicateNode,
@@ -465,9 +467,9 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (source === "dynamic") {
           // One option stays as the template; the rest are dropped.
           node.children = options.slice(0, 1);
-          node.query = node.query
-            ? { ...node.query, enabled: true }
-            : newElementQuery(loopNames(draft.tree));
+          node.query = asFieldQuery(
+            node.query ? { ...node.query, enabled: true } : newElementQuery(loopNames(draft.tree))
+          );
         } else if (node.query) node.query = { ...node.query, enabled: false };
       }),
     setElementQuery: (id, query) =>
@@ -571,6 +573,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
       if (locked) {
         get().showToast(locked);
         return false;
+      }
+      if (direction === "out" && docNow) {
+        // The node lands in its grandparent: refuse what that parent would not accept.
+        const refused = outdentProblem(docNow.tree, id);
+        if (refused) {
+          get().showToast(refused);
+          return false;
+        }
       }
       edit(null, (draft) => {
         if (direction === "up") moved = shiftNode(draft.tree, id, -1);

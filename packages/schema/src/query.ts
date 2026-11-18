@@ -369,3 +369,45 @@ export function queryProblems(query: ElementQuery, sources: QuerySources): strin
         : localProblems(query.local);
   return naming ? [naming, ...problems] : problems;
 }
+
+/** More options than this is slow to scan; the panel points to a searchable Select (owner decision 2026-11-18). */
+export const FIELD_OPTION_WARN = 50;
+
+/** The row limit of the query's active source. */
+export function queryLimit(query: ElementQuery): number {
+  return query.source === "supabase"
+    ? query.supabase.limit
+    : query.source === "rest"
+      ? query.rest.limit
+      : query.local.limit;
+}
+
+/**
+ * A field that takes its options from a query shows every row once, as a plain list: no single
+ * row, no infinite scroll (the field would grow while it is used) and no realtime (options would
+ * shift under the visitor's pick). This is the query with those switched off.
+ */
+export function asFieldQuery(query: ElementQuery): ElementQuery {
+  return {
+    ...query,
+    supabase: { ...query.supabase, single: false, infiniteScroll: false, realtime: false },
+    rest: { ...query.rest, single: false },
+    local: { ...query.local, single: false }
+  };
+}
+
+/** Why the query cannot feed a field's options (a setting that only suits a free-standing loop), or null. */
+export function fieldQueryProblem(query: ElementQuery): string | null {
+  const active =
+    query.source === "supabase"
+      ? query.supabase
+      : query.source === "rest"
+        ? query.rest
+        : query.local;
+  if (active.single) return "must return a list of rows, not a single row";
+  if (query.source === "supabase" && query.supabase.infiniteScroll)
+    return "cannot use infinite scroll (the field would grow while it is used)";
+  if (query.source === "supabase" && query.supabase.realtime)
+    return "cannot use realtime (the options would change under the visitor's choice)";
+  return null;
+}

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildDynamicContext, createTokenResolver } from "./dynamic-context";
 import { elementNodeSchema } from "./element";
 import { defaultPageSettings } from "./page";
-import { stateRefs } from "./state-deps";
+import { asFieldQuery, fieldQueryProblem, queryLimit } from "./query";
+import { stateDependencies, stateRefs } from "./state-deps";
 import {
   DEFAULT_MESSAGES,
   activeForms,
@@ -11,7 +12,9 @@ import {
   formsOf,
   freeFormName,
   listText,
+  optionColumnProblem,
   optionLockProblem,
+  outdentProblem,
   optionValueProblem,
   parseList,
   uniquifyFormNames,
@@ -177,6 +180,110 @@ describe("option fields", () => {
     expect(formPlacementProblem(tree as never, "g", option("C") as never)).toMatch(/query/);
     const fixed = page(form("f", "s", [group("radio", [option("A")])]));
     expect(optionLockProblem(fixed as never, "A")).toBeNull();
+  });
+
+  it("keeps a field query a plain list and warns when a column does not fit", () => {
+    const query = {
+      enabled: true,
+      name: "sizes",
+      supabase: { infiniteScroll: true, realtime: true }
+    };
+    const tree = page(
+      form("f", "s", [
+        {
+          ...group("radio", [option("A", { value: "{{ %sizes.item.id }}" })], {
+            optionsSource: "dynamic",
+            valueType: "int"
+          }),
+          query
+        }
+      ])
+    );
+    const field = tree.children[0]?.children[0];
+    expect(fieldQueryProblem(field?.query as never)).toMatch(/infinite scroll/);
+    expect(formProblems(tree as never).join(" ")).toMatch(/infinite scroll/);
+    const plain = asFieldQuery(field?.query as never);
+    expect(fieldQueryProblem(plain)).toBeNull();
+    expect(plain.supabase.realtime).toBe(false);
+    expect(queryLimit(plain)).toBe(20);
+
+    const structure = (type: string) =>
+      ({
+        schemas: [
+          {
+            schema: "public",
+            functions: [],
+            tables: [
+              {
+                name: "sizes",
+                kind: "table",
+                description: null,
+                operations: ["select"],
+                columns: [
+                  {
+                    name: "id",
+                    pgType: "x",
+                    type,
+                    isList: false,
+                    nullable: false,
+                    primaryKey: true,
+                    references: null,
+                    enumValues: null,
+                    hasDefault: false,
+                    description: null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        buckets: []
+      }) as never;
+    const typed = (value: string) => {
+      const node = field as never as typeof field;
+      return node ? { ...node, children: [option("A", { value })] } : node;
+    };
+    const withTable = (g: unknown) => ({
+      ...(g as object),
+      query: {
+        ...(field?.query as object),
+        supabase: { ...field?.query?.supabase, table: "sizes" }
+      }
+    });
+    const grp = withTable(typed("{{ %sizes.item.id }}"));
+    expect(optionColumnProblem(grp as never, structure("string"))).toMatch(/expects int/);
+    expect(optionColumnProblem(grp as never, structure("int"))).toBeNull();
+    expect(optionColumnProblem(grp as never, null)).toBeNull();
+  });
+
+  it("reads a form field in a field's query as a dependency, so the field redraws on change", () => {
+    const tree = page(
+      form("f", "s", [
+        input("country", "country"),
+        {
+          ...group("radio", [option("A")], { optionsSource: "dynamic" }),
+          id: "city",
+          query: {
+            enabled: true,
+            name: "cities",
+            source: "supabase",
+            supabase: {
+              table: "cities",
+              filters: [{ id: "x", column: "country", value: "{{ form.s.country }}" }]
+            }
+          }
+        }
+      ])
+    );
+    expect(stateDependencies(tree)["city"]).toContain("form.s.country");
+  });
+
+  it("moves a node out only where its new parent accepts it", () => {
+    const tree = page(
+      form("f", "s", [el("box", "container", {}, [option("A")])]),
+      el("g2", "container", {}, [])
+    );
+    expect(outdentProblem(tree as never, "A")).toMatch(/option goes inside/);
   });
 
   it("refuses a written option value that does not fit the value type", () => {

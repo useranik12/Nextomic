@@ -63,7 +63,7 @@ export function VariablePicker({
           type="button"
           aria-label={`Use a variable for ${label}`}
           title="Use a design system variable"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-sky-500 transition-colors duration-300 hover:bg-default-300 hover:text-sky-400 dark:text-sky-400"
+          className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background text-sky-500 transition-colors duration-300 hover:bg-default-300 hover:text-sky-400 dark:text-sky-400"
         >
           <Icon name="ph:brackets-curly" width={14} height={14} />
         </button>
