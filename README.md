@@ -9,7 +9,7 @@
 
 ![License](https://img.shields.io/badge/license-proprietary-red?style=for-the-badge)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![Bun](https://img.shields.io/badge/Bun-runtime-F9F1E1?style=for-the-badge&logo=bun&logoColor=black)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
@@ -32,21 +32,75 @@ Everything you build is stored as JSON. The editor edits the JSON, and the rende
 
 > The builder runs on its own PostgreSQL database and Better Auth. Supabase and REST APIs are _integrations_ that you connect to the apps you build. The builder itself never depends on them.
 
-## Highlights
+## Features (current build)
 
-| Area                | What you get                                                                                              |
-| ------------------- | --------------------------------------------------------------------------------------------------------- |
-| Visual editor       | Drag and drop canvas, layers, element panel with Element, Design and Action tabs, custom breakpoints      |
-| Design system       | Colors with shades, typography and spacing scales, variables, classes, fonts, many themes with conditions |
-| Dynamic data        | Bind any prop, style, condition or action parameter to data with dynamic tokens                           |
-| Data sources        | Supabase and REST connectors (schema only, no row data stored)                                            |
-| Auth for built apps | Providers, sessions, route guards, auth actions and forms                                                 |
-| Platform            | Roles, workspaces, SMTP, backups, export and import, GitHub sync                                          |
-| Output              | Next.js and Astro, using a lightweight CSS framework with no Tailwind needed                              |
+**Editor**
+
+- Drag and drop canvas, navigator tree, copy and paste, undo and redo, autosave with version history and conflict handling.
+- Element panel with Element, Design and Action tabs, user-defined breakpoints with change dots, element IDs (`nxtomc-xxxxxxxx`).
+- Pages and Templates manager with categories, tags and screenshots. Page Settings, route settings and SEO fields.
+
+**Design system and themes**
+
+- Classes with active-target editing, class manager, variables, color palettes with shades, fluid typography and spacing scales.
+- Bidirectional CSS: edit visually or as CSS text, with round trips and `raw` kept for CSS the editor cannot show.
+- Many themes per site chosen by conditions, light, dark and custom color modes with no flash, theme CSS frameworks, custom CSS files.
+- Fonts (Google through Fontsource, uploads, self-hosted) and icon libraries (popular free sets, icon fonts, custom imports) with an icon picker.
+- GSAP visual animation editor with timelines and canvas preview.
+- Per-theme CSS output with unused-class pruning.
+
+**Templates**
+
+- Header, footer and 404 templates applied by rules and priority, with a per-page choice and a "Why is this applied?" explainer.
+- Layout composition (header, main, footer, skip link) in preview and on the published site.
+- Modal and Bottom Sheet overlay templates, with native toasts.
+
+**Dynamic data and logic**
+
+- Bolt-icon dynamic tokens on every prop, attribute, style value, condition, action parameter, route and SEO field, with scope rules enforced on save.
+- App state, page state, constants, custom data types and ENUMs, n8n-style `{{ }}` expressions with suggestions and highlighting.
+- Queries (element, loop and action-triggered), query loops on Container and Section, transforms, date formatting, conditional visibility.
+- Action flow editor (triggers, flow canvas, conditions, parallel lanes) with core actions: queries, state, navigation, element and class actions, wait, theme actions, date and color pickers. Action results (`results.<name>`) with Action Result loops.
+
+**Data sources**
+
+- Supabase connector (schema fetched as structure only, anon key) and REST API Data connector.
+- Encrypted connector secrets, a server proxy with SSRF protection.
+
+**Media**
+
+- Media library with folders, trash, search, details drawer and an asset picker.
+- Image optimization (WebP width copies, `srcset`), alt text checks, SVG sanitization, usage tracking, upload validation by magic bytes.
+
+**Elements**
+
+- Layout and basics: Section, Container, Heading, Text, Button, Image, Icon, SVG.
+- Forms (in progress): Form wrapper, Input with validators, Checkbox, Radio, Checkbox group, Choice chips and Option, with dynamic (query) options. Pin/OTP, Range slider and Date/time are next.
+
+**Platform**
+
+- Own PostgreSQL and Better Auth 1.7 (email and password, passkeys, 2FA columns, rate limiting), roles and workspaces.
+- SMTP from environment variables with queued sending and built-in email templates.
+- Storage adapter (local volume or S3-compatible). Dokploy-ready Docker Compose stack.
+
+## Roadmap
+
+| Phase | Area                                                                | Status      |
+| ----- | ------------------------------------------------------------------- | ----------- |
+| 0-6   | Foundation, editor, design system, templates, data, actions, media  | Done        |
+| 7     | Element library (forms in progress, then General, rich text, media) | In progress |
+| 8     | Authentication for built apps (Supabase and custom API providers)   | Planned     |
+| 9     | Popup, archive, single, search and 500 templates, rendering modes   | Planned     |
+| 10    | Project dependencies and custom code                                | Planned     |
+| 11    | Publish, export (Next.js and Astro), import, GitHub sync            | Planned     |
+| 12    | Platform administration (backups, social sign-in, audit log)        | Planned     |
+| 13    | Dashboard, starter templates, polish                                | Planned     |
+
+Details and checklists are in [`docs/phases.md`](docs/phases.md).
 
 ## Tech stack
 
-TypeScript (strict) · Bun workspaces · Next.js (App Router) · HeroUI + Tailwind (builder UI only) · Zustand + Immer · dnd-kit · PostgreSQL + Drizzle ORM · Better Auth · Zod · Docker.
+TypeScript (strict) · Bun workspaces · Next.js 16 (App Router) · React 19 · HeroUI 3 + Tailwind CSS 4 (builder UI only) · Zustand + Immer · dnd-kit · PostgreSQL 18 + Drizzle ORM · Better Auth 1.7 · Zod 4 · Docker.
 
 ## Repository layout
 
