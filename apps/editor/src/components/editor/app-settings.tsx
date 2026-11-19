@@ -96,7 +96,7 @@ export function AppSettings({
         <SettingsGroup title="Media">
           <Toggle
             label="Compress uploaded images"
-            tip="Shrinks every image you upload to this project into a WebP file before it is sent. It happens in your browser, so the server does no extra work. SVG, GIF, video and other files are uploaded as they are. HEIC photos are always converted, because browsers cannot show them."
+            tip="Shrinks every image you upload to this project into a WebP file before it is sent. It happens in your browser, so the server does no extra work. Images longer than 1500 px on their longer side are scaled down to 1500 px (smaller ones are never enlarged). SVG, GIF, video and other files are uploaded as they are. Off: images are uploaded exactly as they are. HEIC photos are always converted, because browsers cannot show them."
             isSelected={compression.enabled}
             isDisabled={saving}
             onChange={(on) => void change({ imageCompression: { ...compression, enabled: on } })}

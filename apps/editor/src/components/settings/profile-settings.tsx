@@ -7,7 +7,7 @@ import { ActionButton, FormInput } from "@/components/ui/controls";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { isHeicFile, toWebp } from "@/lib/image-compress";
 import { Icon } from "@/lib/icons/Icon";
-import { BUILDER_IMAGE_QUALITY } from "@nextomic/schema";
+import { BUILDER_IMAGE_MAX_SIDE, BUILDER_IMAGE_QUALITY } from "@nextomic/schema";
 import { EmailChange } from "./email-change";
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,.heic,.heif";
@@ -55,7 +55,8 @@ export function ProfileSettings({
     if (chosen.size > MAX_PICK_BYTES) return setError("Images can be up to 25 MB.");
     const file = await toWebp(chosen, BUILDER_IMAGE_QUALITY, {
       includeGif: true,
-      alwaysConvert: true
+      alwaysConvert: true,
+      maxSide: BUILDER_IMAGE_MAX_SIDE
     });
     if (isHeicFile(file))
       return setError("This HEIC photo could not be converted. Use a JPG or PNG.");

@@ -6,6 +6,12 @@ export type ImageQuality = (typeof IMAGE_QUALITY_STEPS)[number];
 
 export const DEFAULT_IMAGE_QUALITY: ImageQuality = 60;
 
+/** Longest side (pixels) of an image uploaded to a project when compression is on. */
+export const PROJECT_IMAGE_MAX_SIDE = 1500;
+
+/** Longest side (pixels) of an image uploaded outside a project, such as a profile image. */
+export const BUILDER_IMAGE_MAX_SIDE = 600;
+
 /** Quality of images uploaded outside a project, such as a profile image. Not a setting. */
 export const BUILDER_IMAGE_QUALITY: ImageQuality = 60;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canConvert, isHeicFile, webpName } from "./image-compress";
+import { canConvert, fitWithin, isHeicFile, webpName } from "./image-compress";
 
 const f = (name: string, type: string) => ({ name, type });
 
@@ -25,5 +25,13 @@ describe("image-compress helpers", () => {
     expect(webpName("Team Photo.PNG")).toBe("Team Photo.webp");
     expect(webpName("a.b.jpeg")).toBe("a.b.webp");
     expect(webpName("noext")).toBe("noext.webp");
+  });
+
+  it("fits the longer side and never enlarges", () => {
+    expect(fitWithin(1536, 2048, 1500)).toEqual({ width: 1125, height: 1500, scaled: true });
+    expect(fitWithin(1536, 2048, 600)).toEqual({ width: 450, height: 600, scaled: true });
+    expect(fitWithin(3000, 1000, 1500)).toEqual({ width: 1500, height: 500, scaled: true });
+    expect(fitWithin(800, 600, 1500)).toEqual({ width: 800, height: 600, scaled: false });
+    expect(fitWithin(800, 600, undefined)).toEqual({ width: 800, height: 600, scaled: false });
   });
 });
