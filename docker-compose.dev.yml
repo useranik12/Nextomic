@@ -1,17 +1,23 @@
 # Local development only. Layer on top of docker-compose.yml:
 #   docker network create dokploy-network        (once; the base file joins it like Dokploy does)
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres   # DB for `bun run dev`
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build    # full stack
+#   (start the local Supabase first: cd supabase-local && docker compose up -d)
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+# The builder and migrate containers join the local Supabase network so they reach the pooler and
+# the API gateway by container name (see DATABASE_URL_INTERNAL / SUPABASE_URL_INTERNAL in .env.example).
 services:
-  postgres:
-    ports:
-      - "127.0.0.1:5432:5432"
-  pgadmin:
-    ports:
-      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
-  auth-studio:
-    ports:
-      - "127.0.0.1:${STUDIO_PORT:-3002}:3002"
+  migrate:
+    networks:
+      - default
+      - supabase
   app:
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
+    networks:
+      - default
+      - dokploy-network
+      - supabase
+
+networks:
+  supabase:
+    external: true
+    name: supabase_default

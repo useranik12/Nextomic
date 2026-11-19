@@ -42,6 +42,12 @@ export const config = {
     "/icons/:path*",
     "/theme-css/:path*",
     "/avatars/:path*",
-    "/((?!_next/|site/|media/|fonts/|icons/|theme-css/|avatars/|brand/|api/site/|favicon[.]ico).*)"
+    {
+      source:
+        "/((?!_next/|site/|media/|fonts/|icons/|theme-css/|avatars/|brand/|api/site/|favicon[.]ico).*)",
+      // Next buffers (and past 10 MB cuts) a request body that passes through this file, so requests
+      // that declare a body of 1 MB or more (uploads) skip the session refresh.
+      missing: [{ type: "header", key: "content-length", value: "[0-9]{7,}" }]
+    }
   ]
 };

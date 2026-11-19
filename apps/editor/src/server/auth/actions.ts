@@ -163,7 +163,7 @@ export async function changePassword(input: {
   if (!session) return fail("Sign in again to continue.");
   const blocked = limited(`pwchange:${session.user.id}`);
   if (blocked) return blocked;
-  if (!/^d{6}$/.test(input.code.trim())) return fail("Enter the 6-digit code.");
+  if (!/^\d{6}$/.test(input.code.trim())) return fail("Enter the 6-digit code.");
   if (input.password.length > MAX_PASSWORD_LENGTH) return fail("That password is too long.");
   const problem = passwordProblem(input.password, passwordPolicy);
   if (problem) return fail(problem);
@@ -181,7 +181,7 @@ export async function signOut(): Promise<never> {
   redirect("/sign-in");
 }
 
-/** Starts an email change: a 6-digit code goes to the NEW address. */
+/** Starts an email change: a confirmation link goes to the NEW address; the email changes when it is opened. */
 export async function requestEmailChange(rawEmail: string): Promise<AuthResult> {
   const session = await getServerSession();
   if (!session) return fail("Sign in again to continue.");
@@ -191,27 +191,11 @@ export async function requestEmailChange(rawEmail: string): Promise<AuthResult> 
   const blocked = limited(`emailchange:${session.user.id}`);
   if (blocked) return blocked;
   const supabase = await createSupabaseServer();
-  const { error } = await supabase.auth.updateUser({ email: email.data });
+  const { error } = await supabase.auth.updateUser(
+    { email: email.data },
+    { emailRedirectTo: `${appUrl()}/auth/callback?next=/settings` }
+  );
   return error ? fail(error.message) : OK;
-}
-
-export async function confirmEmailChange(input: {
-  email: string;
-  code: string;
-}): Promise<AuthResult> {
-  const session = await getServerSession();
-  if (!session) return fail("Sign in again to continue.");
-  const email = emailSchema.safeParse(input.email);
-  if (!email.success || !/^\d{6}$/.test(input.code.trim())) return fail("Enter the 6-digit code.");
-  const blocked = limited(`emailcode:${session.user.id}`);
-  if (blocked) return blocked;
-  const supabase = await createSupabaseServer();
-  const { error } = await supabase.auth.verifyOtp({
-    email: email.data,
-    token: input.code.trim(),
-    type: "email_change"
-  });
-  return error ? fail("That code is wrong or has expired.") : OK;
 }
 
 // ---- Two-step sign-in (authenticator app) -------------------------------------------------------

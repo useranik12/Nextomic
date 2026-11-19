@@ -1,31 +1,16 @@
-# Whole stack in one file: deploy as a single Dokploy "Compose" service (Provider: GitHub,
-# Compose Path: ./docker-compose.yml, build runs on the Dokploy server).
+# The builder as one Dokploy "Compose" service (Provider: GitHub, Compose Path: ./docker-compose.yml,
+# build runs on the Dokploy server). The builder keeps everything in a Supabase project (Auth, the
+# nextomic_builder schema, the public users tables); there is no database in this stack.
 #
 # Ports: no host ports are published, so nothing can collide with other apps on the server.
 # Dokploy's Traefik reaches the app over the shared external `dokploy-network`; assign the domain
-# in Dokploy (Domains tab: service `app`, container port 3000; optionally `auth-studio`, port 3002, and `pgadmin`, port 80).
-# Postgres and migrate stay on the stack's private default network and are never exposed.
+# in Dokploy (Domains tab: service `app`, container port 3000).
 #
 # Variables come from Dokploy's Environment tab (see .env.example). Locally they come from a
-# root .env; see docker-compose.dev.yml.
+# root .env; see docker-compose.dev.yml (it also joins the local Supabase network).
 services:
-  postgres:
-    image: postgres:18-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-nextomic}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-nextomic}
-    volumes:
-      # Postgres 18+ images keep PGDATA in a versioned subdirectory of /var/lib/postgresql.
-      - postgres-data:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  # migrate reuses the image that app builds (one build, one export, not two).
+  # migrate reuses the image that app builds (one build, one export, not two). It applies the SQL
+  # migrations to the Supabase database through a SESSION-mode connection (never the transaction pooler).
   migrate:
     image: nextomic-builder:latest
     pull_policy: never
@@ -33,10 +18,7 @@ services:
     working_dir: /app/packages/db
     command: ["bun", "run", "migrate"]
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-nextomic}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nextomic}
-    depends_on:
-      postgres:
-        condition: service_healthy
+      DATABASE_URL: ${DATABASE_URL_INTERNAL:-${DATABASE_URL:?set DATABASE_URL (Supabase pooler, session mode)}}
 
   app:
     image: nextomic-builder:latest
@@ -45,15 +27,16 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-nextomic}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nextomic}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https origin}
-      BETTER_AUTH_TRUSTED_ORIGINS: ${BETTER_AUTH_TRUSTED_ORIGINS:-}
+      DATABASE_URL: ${DATABASE_URL_INTERNAL:-${DATABASE_URL:?set DATABASE_URL (Supabase pooler, session mode)}}
+      # Server-side address of the Supabase API gateway and its publishable key. The browser never
+      # talks to Supabase: sign-in runs on the server and sessions live in httpOnly cookies.
+      SUPABASE_URL: ${SUPABASE_URL_INTERNAL:-${SUPABASE_URL:?set SUPABASE_URL}}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:?set SUPABASE_PUBLISHABLE_KEY}
+      # The builder's public address (no path): links in auth emails and secure cookies.
+      APP_URL: ${APP_URL:?set APP_URL to the public origin}
       # basic | medium | strong | very-strong (see .env.example)
       AUTH_PASSWORD_POLICY: ${AUTH_PASSWORD_POLICY:-medium}
       ALLOW_SIGNUP: ${ALLOW_SIGNUP:-true}
@@ -68,13 +51,6 @@ services:
       STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT:-}
       STORAGE_S3_ACCESS_KEY_ID: ${STORAGE_S3_ACCESS_KEY_ID:-}
       STORAGE_S3_SECRET_ACCESS_KEY: ${STORAGE_S3_SECRET_ACCESS_KEY:-}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_SECURE: ${SMTP_SECURE:-}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM: ${SMTP_FROM:-Nextomic <no-reply@example.com>}
-      DEV_EMAIL_TO_CONSOLE: ${DEV_EMAIL_TO_CONSOLE:-false}
     expose:
       - "3000"
     healthcheck:
@@ -96,82 +72,10 @@ services:
       - default
       - dokploy-network
 
-  # Auth dashboard: Better Auth Studio on the builder's own accounts (same database, same secret,
-  # same Better Auth configuration through packages/auth). Users, sessions, accounts, plugins and
-  # settings of the builder's auth can be viewed and edited there. It serves only the dashboard
-  # (no sign-up or sign-in endpoints). Only the emails in STUDIO_ADMIN_EMAILS can open it, and it
-  # signs in with email and password only (not passkey or 2FA), so put it behind an IP allowlist
-  # (STUDIO_ALLOWED_IPS) or Traefik basic auth, and give the domain its own hostname.
-  # Dokploy: assign a domain to service `auth-studio`, container port 3002.
-  auth-studio:
-    image: nextomic-auth-studio:latest
-    build:
-      context: .
-      dockerfile: apps/auth-studio/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-nextomic}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nextomic}
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https origin}
-      BETTER_AUTH_TRUSTED_ORIGINS: ${BETTER_AUTH_TRUSTED_ORIGINS:-}
-      AUTH_PASSWORD_POLICY: ${AUTH_PASSWORD_POLICY:-medium}
-      SMTP_HOST: ${SMTP_HOST:-}
-      STUDIO_ADMIN_EMAILS: ${STUDIO_ADMIN_EMAILS:?set STUDIO_ADMIN_EMAILS (comma-separated admin emails)}
-      STUDIO_ALLOWED_IPS: ${STUDIO_ALLOWED_IPS:-}
-      STUDIO_BASE_PATH: ${STUDIO_BASE_PATH:-/studio}
-      PORT: "3002"
-    expose:
-      - "3002"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "bun",
-          "-e",
-          "fetch('http://127.0.0.1:3002/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-        ]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    networks:
-      - default
-      - dokploy-network
-
-  # pgAdmin: a web UI for the platform database. Optional; it only reads what its login can reach.
-  # Add a server in pgAdmin once: host `postgres`, port 5432, the POSTGRES_* user, password and database.
-  # Dokploy: assign a domain to service `pgadmin`, container port 80, and keep it behind a strong
-  # PGADMIN_DEFAULT_PASSWORD (it can run any SQL as the database user you connect with).
-  pgadmin:
-    image: elestio/pgadmin:9.19
-    restart: unless-stopped
-    environment:
-      # The email must be a real-looking address (pgAdmin rejects reserved domains such as .local).
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?set PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set PGADMIN_DEFAULT_PASSWORD}
-      PGADMIN_DISABLE_POSTFIX: "true"
-    expose:
-      - "80"
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - default
-      - dokploy-network
-
 networks:
   dokploy-network:
     external: true
 
 volumes:
-  postgres-data:
   storage-data:
   backups-data:
-  pgadmin-data:

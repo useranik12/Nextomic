@@ -5,7 +5,7 @@ import { getDb, userPreferences } from "@nextomic/db";
 import { getServerSession } from "@/lib/session";
 import { z } from "zod";
 import { AccountError, updateName } from "@/server/account";
-import { confirmEmailChange, requestEmailChange } from "@/server/auth/actions";
+import { requestEmailChange } from "@/server/auth/actions";
 import { AvatarError, removeAvatar, saveAvatar } from "@/server/avatar";
 
 export async function updateColorModeAction(colorMode: string): Promise<{ error: string | null }> {
@@ -64,16 +64,6 @@ export async function saveProfileAction(
 
 export async function requestEmailChangeAction(email: string): Promise<Result<string>> {
   const result = await requestEmailChange(email);
-  return result.error
-    ? { data: null, error: result.error }
-    : { data: email.trim().toLowerCase(), error: null };
-}
-
-export async function confirmEmailChangeAction(
-  email: string,
-  code: string
-): Promise<Result<string>> {
-  const result = await confirmEmailChange({ email, code });
   return result.error
     ? { data: null, error: result.error }
     : { data: email.trim().toLowerCase(), error: null };

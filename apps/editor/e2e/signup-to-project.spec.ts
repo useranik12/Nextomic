@@ -16,8 +16,8 @@ test("sign up, create a project, open its placeholder editor", async ({ page }) 
   await page.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple-9");
   await page.getByRole("button", { name: "Sign up" }).click();
 
-  // Without SMTP_HOST, verification is not required (see lib/auth.ts), so sign-up signs the user
-  // straight in. With SMTP configured the page shows "Check your email" instead.
+  // The local Supabase auto-confirms new accounts, so sign-up signs the user
+  // straight in. With confirmation on, the page shows "Check your email" instead.
   await expect(page).toHaveURL(/\/dashboard/);
 });
 

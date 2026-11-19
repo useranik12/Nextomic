@@ -5,8 +5,6 @@ WORKDIR /app
 FROM base AS deps
 COPY package.json bun.lock* ./
 COPY apps/editor/package.json apps/editor/package.json
-COPY apps/auth-studio/package.json apps/auth-studio/package.json
-COPY packages/auth/package.json packages/auth/package.json
 COPY packages/schema/package.json packages/schema/package.json
 COPY packages/renderer/package.json packages/renderer/package.json
 COPY packages/css-framework/package.json packages/css-framework/package.json
@@ -19,7 +17,7 @@ RUN bun install --frozen-lockfile --ignore-scripts
 
 FROM deps AS build
 COPY . .
-# Next evaluates route modules while collecting page data, and lib/auth.ts builds its DB pool at
+# Next evaluates route modules while collecting page data, and the database pool is built at
 # import time. These placeholders exist only for this RUN (not persisted in the image); no
 # connection is opened during the build, and real values come from the container environment.
 # The cache mount keeps Next's compile cache between deploys (it is not part of the image).

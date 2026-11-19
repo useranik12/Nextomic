@@ -168,7 +168,12 @@ services:
       # Uncomment to bypass nonce check in ID Token flow. Commonly set to true when using Google Sign In on mobile.
       # GOTRUE_EXTERNAL_SKIP_NONCE_CHECK: "true"
 
-      # GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: "true"
+      # Builder: an email change is confirmed once, at the new address (the builder sends the link there).
+      GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: "false"
+      # Builder: password rules beyond this minimum are enforced by the builder (AUTH_PASSWORD_POLICY).
+      GOTRUE_PASSWORD_MIN_LENGTH: "8"
+      # Builder: a password change from Settings needs the code emailed to the account (reauthenticate).
+      GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION: "true"
       # GOTRUE_SMTP_MAX_FREQUENCY: 1s
       GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
       GOTRUE_SMTP_HOST: ${SMTP_HOST}

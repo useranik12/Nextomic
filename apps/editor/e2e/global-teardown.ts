@@ -25,11 +25,12 @@ export default async function globalTeardown(): Promise<void> {
   process.env.DATABASE_URL = url;
   const db = getDb();
   // Separate statements: a project restricts deleting its creator, so projects and workspaces go first.
-  const gone = sql`select id from "user" where email like '%@example.com'`;
-  await db.execute(sql`delete from projects where created_by in (${gone})`);
+  const gone = sql`select user_uid from public.users where email like '%@example.com'`;
+  await db.execute(sql`delete from nextomic_builder.projects where created_by in (${gone})`);
   await db.execute(sql`
-    delete from workspaces
-    where id in (select workspace_id from workspace_members where user_id in (${gone}))
-    and id not in (select workspace_id from workspace_members where user_id not in (${gone}))`);
-  await db.execute(sql`delete from "user" where id in (${gone})`);
+    delete from nextomic_builder.workspaces
+    where id in (select workspace_id from nextomic_builder.workspace_members where user_uid in (${gone}))
+    and id not in (select workspace_id from nextomic_builder.workspace_members where user_uid not in (${gone}))`);
+  // Deleting the auth account cascades to public.users, user_meta, memberships and preferences.
+  await db.execute(sql`delete from auth.users where email like '%@example.com'`);
 }

@@ -85,8 +85,6 @@ test("security settings show password, two-factor and passkeys", async ({ page }
   await expect(page.getByText("Two-factor authentication")).toBeVisible();
   await expect(page.getByText("No passkeys yet.")).toBeVisible();
   await page.getByRole("button", { name: "Turn on" }).click();
-  await page.getByLabel("Confirm your password").fill("correct-horse-battery-staple-9");
-  await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.getByAltText("QR code for your authenticator app")).toBeVisible();
 });
 
@@ -100,10 +98,10 @@ test("sign-in button recovers after an error; remember me and magic link exist",
   await page.getByLabel("Password", { exact: true }).fill("wrong-password-1");
   const submit = page.getByRole("button", { name: "Sign in", exact: true });
   await submit.click();
-  await expect(page.getByText(/invalid/i)).toBeVisible();
+  await expect(page.getByText(/wrong email or password/i)).toBeVisible();
   await page.getByLabel("Password", { exact: true }).fill("wrong-password-2");
   await expect(submit).toBeEnabled();
-  await expect(page.getByText(/invalid/i)).toHaveCount(0);
+  await expect(page.getByText(/wrong email or password/i)).toHaveCount(0);
 });
 
 test("signed-in users are sent away from auth pages; error pages link to the dashboard", async ({

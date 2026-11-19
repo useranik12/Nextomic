@@ -30,7 +30,7 @@ Ports 54322 and 54329 avoid the builder's own Postgres on 5432. API keys: `SUPAB
 
 - Keys are ES256 (asymmetric) plus the opaque `sb_` keys. Production still runs HS256 only.
 - Passkeys use RP ID `localhost` and origin `http://localhost:3000`. Production uses `kovidaa.com`, so passkeys cannot be shared between the two.
-- Email confirmation is on and mail goes to Mailpit (production currently auto-confirms).
+- New accounts are auto-confirmed like production (so sign-up signs in straight away); mail (magic link, reset, email change, password code) goes to Mailpit.
 - Database files are in the named volume `db-data`, not a bind mount (Postgres fails on Windows bind mounts).
 - `volumes/api/envoy/cds.yaml` has `dns_lookup_family: V4_ONLY` on every cluster. Docker Desktop gives the network IPv6 addresses, but the services listen on IPv4 only, so Envoy returned 503 for REST and Storage without it.
 - The `/mcp` route is deny-all (upstream default).
