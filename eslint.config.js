@@ -11,7 +11,8 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/graphify-out/**",
       "**/coverage/**",
-      "blueprint/**"
+      "blueprint/**",
+      "supabase-local/**"
     ]
   },
   js.configs.recommended,
