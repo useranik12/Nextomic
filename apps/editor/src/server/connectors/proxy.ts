@@ -65,7 +65,7 @@ export async function proxyConnectorCall(
     const status = operation === "execute" ? String((data as { status: number }).status) : "ok";
     await audit({
       connectorId: row.id,
-      userId: caller.userId,
+      userUid: caller.userId,
       operation,
       resourceId,
       status,
@@ -77,7 +77,7 @@ export async function proxyConnectorCall(
     if (connectorFound)
       await audit({
         connectorId: connectorFound,
-        userId: caller.userId,
+        userUid: caller.userId,
         operation,
         resourceId,
         status: normalized.code,

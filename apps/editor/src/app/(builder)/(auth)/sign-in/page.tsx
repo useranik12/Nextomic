@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthCard, AuthError, AuthLink, AuthNotice } from "@/components/auth/auth-ui";
 import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
-import { authClient } from "@/lib/auth-client";
+import { getPasskey } from "@/lib/passkey-browser";
+import {
+  passkeyAuthenticationOptions,
+  passkeyAuthenticationVerify,
+  sendMagicLink as sendMagicLinkAction,
+  signInPassword
+} from "@/server/auth/actions";
 import { Icon } from "@/lib/icons/Icon";
 
 type Busy = "password" | "magic" | "passkey" | null;
@@ -36,15 +42,13 @@ export default function SignInPage() {
     setError(null);
     setNotice(null);
     setBusy("password");
-    const { data, error: signInError } = await authClient.signIn.email({
-      email,
-      password,
-      rememberMe
-    });
+    const result = await signInPassword({ email, password, rememberMe });
     setBusy(null);
-    if (signInError) return setError(signInError.message ?? "Could not sign in.");
-    // With two-factor on, the client plugin moves on to /two-factor.
-    if (data && "twoFactorRedirect" in data && data.twoFactorRedirect) return;
+    if (result.error) return setError(result.error);
+    if (result.needsSecondStep) {
+      router.push("/two-factor");
+      return;
+    }
     finish();
   }
 
@@ -53,23 +57,32 @@ export default function SignInPage() {
     setNotice(null);
     if (!email.trim()) return setError("Enter your email first, then ask for a sign-in link.");
     setBusy("magic");
-    const { error: linkError } = await authClient.signIn.magicLink({
-      email,
-      callbackURL: "/dashboard"
-    });
+    const linkResult = await sendMagicLinkAction(email);
     setBusy(null);
-    if (linkError) return setError(linkError.message ?? "Could not send the sign-in link.");
-    setNotice(`If ${email} has an account, a sign-in link is on its way. It expires in 5 minutes.`);
+    if (linkResult.error) return setError(linkResult.error);
+    setNotice(`If ${email} has an account, a sign-in link is on its way.`);
   }
 
   async function signInWithPasskey() {
     setError(null);
     setNotice(null);
     setBusy("passkey");
-    const result = await authClient.signIn.passkey();
-    setBusy(null);
-    if (result?.error) return setError(result.error.message ?? "Passkey sign-in did not finish.");
-    finish();
+    try {
+      const start = await passkeyAuthenticationOptions();
+      if (start.error !== null) throw new Error(start.error);
+      const credential = await getPasskey(start.options);
+      const result = await passkeyAuthenticationVerify({
+        challengeId: start.challengeId,
+        credential,
+        rememberMe
+      });
+      if (result.error) throw new Error(result.error);
+      finish();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Passkey sign-in did not finish.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (

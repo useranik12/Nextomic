@@ -2,7 +2,7 @@
 
 import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@/components/ui/modal";
 import {
-  TEMPLATE_TYPES,
+  CREATABLE_TEMPLATE_TYPES,
   TEMPLATE_TYPE_LABELS,
   createTemplateInputSchema,
   type TemplateType
@@ -69,7 +69,10 @@ export function NewTemplateModal({
               label="Type"
               value={type}
               onValueChange={(v) => setType(v as TemplateType)}
-              options={TEMPLATE_TYPES.map((t) => ({ value: t, label: TEMPLATE_TYPE_LABELS[t] }))}
+              options={CREATABLE_TEMPLATE_TYPES.map((t) => ({
+                value: t,
+                label: TEMPLATE_TYPE_LABELS[t]
+              }))}
             />
           </ModalBody>
           <ModalFooter>

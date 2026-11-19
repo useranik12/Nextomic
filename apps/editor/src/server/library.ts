@@ -1,5 +1,5 @@
 import { pageSettingsSchema, templateSettingsSchema, type TemplateType } from "@nextomic/schema";
-import { getDb, pages, templates, user } from "@nextomic/db";
+import { getDb, pages, templates, users, userDisplayName } from "@nextomic/db";
 import { asc, eq } from "drizzle-orm";
 import { projectFlows } from "./action-flows";
 import { snapshotOfPage, stable, templateSnapshotOf } from "./publish";
@@ -40,15 +40,15 @@ export async function listLibrary(projectId: string): Promise<LibraryItem[]> {
   const db = getDb();
   const flows = await projectFlows(db, projectId);
   const pageRows = await db
-    .select({ page: pages, creator: user.name })
+    .select({ page: pages, creator: userDisplayName })
     .from(pages)
-    .leftJoin(user, eq(user.id, pages.createdBy))
+    .leftJoin(users, eq(users.userUid, pages.createdBy))
     .where(eq(pages.projectId, projectId))
     .orderBy(asc(pages.createdAt));
   const templateRows = await db
-    .select({ template: templates, creator: user.name })
+    .select({ template: templates, creator: userDisplayName })
     .from(templates)
-    .leftJoin(user, eq(user.id, templates.createdBy))
+    .leftJoin(users, eq(users.userUid, templates.createdBy))
     .where(eq(templates.projectId, projectId))
     .orderBy(asc(templates.createdAt));
 

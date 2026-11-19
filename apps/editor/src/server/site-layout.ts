@@ -272,7 +272,7 @@ export function layoutForNotFound(input: {
   });
   const ctx = serverRuleContext({
     kind: "template",
-    templateType: "error-404",
+    templateType: "error",
     page: { id: "", name: "Not found", route: input.request.path, createdBy: "", publishedAt: "" },
     params: {},
     request: input.request,

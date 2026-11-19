@@ -30,8 +30,10 @@ const VARIANT = {
 const SIZE: Record<ActionSize, string> = { sm: "h-8 px-3 text-xs", md: "h-9 px-4 text-sm" };
 const ICON_SIZE: Record<ActionSize, string> = { sm: "w-8 px-0", md: "w-9 px-0" };
 
-export interface ActionButtonProps
-  extends Omit<ButtonProps, "variant" | "size" | "className" | "children" | "isPending"> {
+export interface ActionButtonProps extends Omit<
+  ButtonProps,
+  "variant" | "size" | "className" | "children" | "isPending"
+> {
   tone?: ActionTone;
   size?: ActionSize;
   className?: string;

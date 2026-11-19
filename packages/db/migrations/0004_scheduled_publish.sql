@@ -1,1 +1,0 @@
-ALTER TABLE "projects" ADD COLUMN "scheduled_publish_at" timestamp with time zone;

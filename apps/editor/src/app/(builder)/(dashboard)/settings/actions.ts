@@ -4,7 +4,8 @@ import { colorModeSchema } from "@nextomic/schema";
 import { getDb, userPreferences } from "@nextomic/db";
 import { getServerSession } from "@/lib/session";
 import { z } from "zod";
-import { AccountError, confirmEmailChange, requestEmailChange, updateName } from "@/server/account";
+import { AccountError, updateName } from "@/server/account";
+import { confirmEmailChange, requestEmailChange } from "@/server/auth/actions";
 import { AvatarError, removeAvatar, saveAvatar } from "@/server/avatar";
 
 export async function updateColorModeAction(colorMode: string): Promise<{ error: string | null }> {
@@ -17,9 +18,9 @@ export async function updateColorModeAction(colorMode: string): Promise<{ error:
   const db = getDb();
   await db
     .insert(userPreferences)
-    .values({ userId: sessionData.user.id, colorMode: parsed.data })
+    .values({ userUid: sessionData.user.id, colorMode: parsed.data })
     .onConflictDoUpdate({
-      target: userPreferences.userId,
+      target: userPreferences.userUid,
       set: { colorMode: parsed.data }
     });
 
@@ -62,21 +63,18 @@ export async function saveProfileAction(
 }
 
 export async function requestEmailChangeAction(email: string): Promise<Result<string>> {
-  const sessionData = await getServerSession();
-  if (!sessionData) return { data: null, error: "Not signed in." };
-  try {
-    return { data: await requestEmailChange(sessionData.user, email), error: null };
-  } catch (error) {
-    return failure(error, "Could not send the code.");
-  }
+  const result = await requestEmailChange(email);
+  return result.error
+    ? { data: null, error: result.error }
+    : { data: email.trim().toLowerCase(), error: null };
 }
 
-export async function confirmEmailChangeAction(code: string): Promise<Result<string>> {
-  const sessionData = await getServerSession();
-  if (!sessionData) return { data: null, error: "Not signed in." };
-  try {
-    return { data: await confirmEmailChange(sessionData.user.id, code), error: null };
-  } catch (error) {
-    return failure(error, "Could not change the email.");
-  }
+export async function confirmEmailChangeAction(
+  email: string,
+  code: string
+): Promise<Result<string>> {
+  const result = await confirmEmailChange({ email, code });
+  return result.error
+    ? { data: null, error: result.error }
+    : { data: email.trim().toLowerCase(), error: null };
 }

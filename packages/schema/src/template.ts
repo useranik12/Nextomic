@@ -9,14 +9,26 @@ import { evaluateRules, ruleSetSchema, ruleSpecificity, type RuleContext } from 
 // Templates (docs/templates-and-themes.md section 4): a header, a footer and a 404 page in v1.
 // They are edited on the same canvas as pages and applied to pages by rules.
 
-export const TEMPLATE_TYPES = ["header", "footer", "error-404", "modal", "bottom-sheet"] as const;
+export const TEMPLATE_TYPES = [
+  "header",
+  "footer",
+  "error",
+  "modal",
+  "bottom-sheet",
+  "section"
+] as const;
 export type TemplateType = (typeof TEMPLATE_TYPES)[number];
+/** Types the library offers to create. Section (reusable blocks) is in the database but not built yet. */
+export const CREATABLE_TEMPLATE_TYPES = TEMPLATE_TYPES.filter(
+  (t): t is Exclude<TemplateType, "section"> => t !== "section"
+);
 export const TEMPLATE_TYPE_LABELS: Record<TemplateType, string> = {
   header: "Header",
   footer: "Footer",
-  "error-404": "404 page",
+  error: "404 page",
   modal: "Modal",
-  "bottom-sheet": "Bottom Sheet"
+  "bottom-sheet": "Bottom Sheet",
+  section: "Section"
 };
 
 /** Types an action shows over the page, each with its own overlay (not header, footer or 404). */
@@ -247,7 +259,7 @@ export function resolveNotFound<T extends LayoutCandidate>(
   // The 404 template has no conditions: the best published one applies.
   return (
     templates
-      .filter((t) => t.type === "error-404" && liveAt(t, ctx))
+      .filter((t) => t.type === "error" && liveAt(t, ctx))
       .sort(
         (a, b) => b.settings.priority - a.settings.priority || a.name.localeCompare(b.name)
       )[0] ?? null

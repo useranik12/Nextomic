@@ -148,7 +148,7 @@ async function previewTemplate(
     settings: { ...stored.settings, status: "published" as const },
     tree: stored.tree
   };
-  if (stored.type === "error-404") {
+  if (stored.type === "error") {
     const others = all.filter((t) => t.id !== stored.id);
     return layoutForNotFound({
       templates: [...others, forced],

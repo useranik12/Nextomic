@@ -5,113 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1793903029339,
-      "tag": "0000_massive_human_cannonball",
+      "when": 1795118622670,
+      "tag": "0000_baseline",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1793911277081,
-      "tag": "0001_clear_gabe_jones",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1793916713035,
-      "tag": "0002_narrow_the_professor",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1794002810932,
-      "tag": "0003_grey_lily_hollister",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1794071400502,
-      "tag": "0004_scheduled_publish",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1794075303642,
-      "tag": "0005_connectors",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1794076379083,
-      "tag": "0006_smtp",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1794079580190,
-      "tag": "0007_env_smtp",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1794081148013,
-      "tag": "0008_auth_security",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1794200000000,
-      "tag": "0009_spaced_tags",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1794319079573,
-      "tag": "0010_action_flows",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1794405479573,
-      "tag": "0011_overlay_templates",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1794520998960,
-      "tag": "0012_media",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1794975207951,
-      "tag": "0013_better_auth_17",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1795040265403,
-      "tag": "0014_fk_indexes_version_cap",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "7",
-      "when": 1795041549770,
-      "tag": "0015_native_uuid_ids",
+      "when": 1795118644699,
+      "tag": "0001_auth_sync_and_grants",
       "breakpoints": true
     }
   ]

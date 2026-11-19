@@ -7,6 +7,35 @@ import { z } from "zod";
 export const MEDIA_KINDS = ["image", "svg", "video", "audio", "other"] as const;
 export type MediaKind = (typeof MEDIA_KINDS)[number];
 
+/** The IANA top-level media types, as stored in the database column (nextomic_builder.media_kind). */
+export const MEDIA_MIME_TYPES = [
+  "application",
+  "audio",
+  "font",
+  "haptics",
+  "image",
+  "message",
+  "model",
+  "multipart",
+  "text",
+  "video",
+  "other"
+] as const;
+export type MediaMimeType = (typeof MEDIA_MIME_TYPES)[number];
+
+/** The database value of a mime type: its top-level type, or "other" when unlisted. */
+export function mimeTopLevel(mime: string): MediaMimeType {
+  const top = mime.split("/")[0]?.toLowerCase() ?? "";
+  return (MEDIA_MIME_TYPES as readonly string[]).includes(top) ? (top as MediaMimeType) : "other";
+}
+
+/** The library's kind of a stored file: SVG is told apart by its mime type, not by a column. */
+export function mediaKindOf(mime: string): MediaKind {
+  if (mime.toLowerCase() === "image/svg+xml") return "svg";
+  const top = mimeTopLevel(mime);
+  return top === "image" || top === "video" || top === "audio" ? top : "other";
+}
+
 export interface MediaFormat {
   /** Lowercase extension the stored file name ends with. */
   ext: string;

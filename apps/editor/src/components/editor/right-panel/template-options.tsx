@@ -105,7 +105,7 @@ export function TemplateSettingsFields() {
           onChange={(change) => set(change)}
           tip="A draft template is never used on a page. Scheduled templates apply from their time."
         />
-        {type === "error-404" ? null : (
+        {type === "error" ? null : (
           <label className="flex flex-col gap-1 text-xs text-body">
             Priority
             <input
@@ -136,7 +136,7 @@ export function TemplateSettingsFields() {
           onValueChange={(themeId) => set({ themeId: themeId || null })}
         />
       </section>
-      {type === "error-404" ? (
+      {type === "error" ? (
         <section aria-label="Layout" className="flex flex-col gap-3">
           <h3 className="text-sm text-body">Header and footer</h3>
           <HeaderFooterFields

@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { getDb, user } from "@nextomic/db";
+import { getDb, users } from "@nextomic/db";
 import { eq } from "drizzle-orm";
 import { getStorageAdapter } from "@/lib/storage";
 
@@ -50,15 +50,18 @@ const ownKey = (userId: string, image: string | null) => {
 
 async function currentImage(userId: string): Promise<string | null> {
   const [row] = await getDb()
-    .select({ image: user.image })
-    .from(user)
-    .where(eq(user.id, userId))
+    .select({ image: users.userImage })
+    .from(users)
+    .where(eq(users.userUid, userId))
     .limit(1);
   return row?.image ?? null;
 }
 
 async function setImage(userId: string, image: string | null) {
-  await getDb().update(user).set({ image, updatedAt: new Date() }).where(eq(user.id, userId));
+  await getDb()
+    .update(users)
+    .set({ userImage: image, updatedOn: new Date() })
+    .where(eq(users.userUid, userId));
 }
 
 async function deleteQuietly(key: string | null) {

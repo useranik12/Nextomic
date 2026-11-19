@@ -34,7 +34,7 @@ export function EmailChange({ email }: { email: string }) {
   async function confirm() {
     setBusy(true);
     setError(null);
-    const result = await confirmEmailChangeAction(code);
+    const result = await confirmEmailChangeAction(step.kind === "code" ? step.sentTo : next, code);
     setBusy(false);
     if (result.data === null) return setError(result.error);
     setCurrent(result.data);

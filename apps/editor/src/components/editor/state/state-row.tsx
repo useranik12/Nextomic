@@ -18,8 +18,7 @@ import { TypePicker, useTypeRegistry } from "../data-types/type-picker";
 import { ValueControl } from "../data-types/value-control";
 
 export type StateRowVariable =
-  | { kind: "app"; variable: AppStateVariable }
-  | { kind: "const"; variable: Constant };
+  { kind: "app"; variable: AppStateVariable } | { kind: "const"; variable: Constant };
 
 export const ROW_GRID = {
   app: "grid-cols-[minmax(10rem,1.2fr)_minmax(13rem,1.4fr)_6.5rem_minmax(10rem,1.6fr)_4.5rem_2rem_2rem]",

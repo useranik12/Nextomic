@@ -189,8 +189,8 @@ describe("layout resolution", () => {
 
   it("finds the 404 template, or none so a default is generated", () => {
     expect(resolveNotFound([t("h", "header")], ctx)).toBeNull();
-    expect(resolveNotFound([t("n", "error-404", { status: "draft" })], ctx)).toBeNull();
-    expect(resolveNotFound([t("n", "error-404")], ctx)?.id).toBe("n");
+    expect(resolveNotFound([t("n", "error", { status: "draft" })], ctx)).toBeNull();
+    expect(resolveNotFound([t("n", "error")], ctx)?.id).toBe("n");
   });
 });
 

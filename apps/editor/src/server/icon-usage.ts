@@ -50,7 +50,7 @@ export async function iconLibraryUsage(projectId: string, key: string): Promise<
   return [
     ...pageRows.map((r): IconUsage => ({ kind: "page", id: r.id, name: r.name })),
     ...templateRows.map((r): IconUsage => ({ kind: "template", id: r.id, name: r.name })),
-    ...flowRows.map((r): IconUsage => ({ kind: "action", id: r.id, name: "Action flow" })),
+    ...flowRows.map((r): IconUsage => ({ kind: "action", id: String(r.id), name: "Action flow" })),
     ...blockRows.map((r): IconUsage => ({ kind: "action", id: r.id, name: "Action block" }))
   ];
 }

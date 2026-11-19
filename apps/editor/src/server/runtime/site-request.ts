@@ -1,6 +1,6 @@
 import type { NextApiRequest } from "next";
 import type { NextomicUser } from "@nextomic/schema";
-import { auth } from "@/lib/auth";
+import { getSessionFromHeaders } from "@/lib/session";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { nextomicUserOf } from "@/server/nextomic-user";
 
@@ -34,7 +34,7 @@ export async function previewMember(
   projectId: string,
   headers: Headers
 ): Promise<NextomicUser | null> {
-  const session = await auth.api.getSession({ headers });
+  const session = await getSessionFromHeaders(headers);
   if (!session) return null;
   try {
     await requireProjectAccess(session.user.id, projectId);

@@ -89,7 +89,7 @@ function ChipPopover({
         )
       : null;
   const matching =
-    isTemplate && doc?.template && page?.templateType !== "error-404"
+    isTemplate && doc?.template && page?.templateType !== "error"
       ? pages.filter((p) =>
           evaluateRules(
             doc.template!.rules,
@@ -111,7 +111,7 @@ function ChipPopover({
             <ChipFact
               label="Applies to"
               value={
-                page?.templateType === "error-404"
+                page?.templateType === "error"
                   ? "Addresses that match no page"
                   : matching.length === 0
                     ? "No pages"

@@ -1,6 +1,6 @@
 "use client";
 
-import { TEMPLATE_TYPES, TEMPLATE_TYPE_LABELS, type Taxonomy } from "@nextomic/schema";
+import { CREATABLE_TEMPLATE_TYPES, TEMPLATE_TYPE_LABELS, type Taxonomy } from "@nextomic/schema";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { Icon } from "@/lib/icons/Icon";
 import { compactFieldClass } from "../right-panel/setting-row";
@@ -166,7 +166,7 @@ export function LibraryToolbar({
             onValueChange={(type) => onQuery({ type })}
             options={[
               { value: "all", label: "All types" },
-              ...TEMPLATE_TYPES.map((t) => ({ value: t, label: TEMPLATE_TYPE_LABELS[t] }))
+              ...CREATABLE_TEMPLATE_TYPES.map((t) => ({ value: t, label: TEMPLATE_TYPE_LABELS[t] }))
             ]}
           />
         ) : null}

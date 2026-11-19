@@ -5,7 +5,6 @@ const nextConfig: NextConfig = {
   // Font uploads travel through server actions; the default limit is 1 MB.
   experimental: { serverActions: { bodySizeLimit: "30mb" } },
   transpilePackages: [
-    "@nextomic/auth",
     "@nextomic/db",
     "@nextomic/integrations",
     "@nextomic/renderer",

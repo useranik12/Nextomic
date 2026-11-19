@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
 import { ActionButton, FormInput } from "@/components/ui/controls";
-import { authClient } from "@/lib/auth-client";
+import { requestPasswordReset } from "@/server/auth/actions";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,13 +15,10 @@ export default function ForgotPasswordPage() {
     event.preventDefault();
     setError(null);
     setIsPending(true);
-    const { error: requestError } = await authClient.requestPasswordReset({
-      email,
-      redirectTo: "/reset-password"
-    });
+    const { error: requestError } = await requestPasswordReset(email);
     setIsPending(false);
     if (requestError) {
-      setError(requestError.message ?? "Could not request a reset link.");
+      setError(requestError);
       return;
     }
     setSent(true);

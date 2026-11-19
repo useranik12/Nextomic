@@ -13,9 +13,10 @@ import {
   MEDIA_ID,
   MEDIA_LARGE_BYTES,
   MEDIA_MAX_BYTES,
-  MEDIA_NEEDS_ALT,
   MEDIA_PAGE_SIZE,
   isUuid,
+  mediaKindOf,
+  mimeTopLevel,
   imageSize,
   mediaEditSchema,
   mediaFileName,
@@ -29,6 +30,7 @@ import {
   sniffMedia,
   SvgError,
   type MediaAsset,
+  type MediaKind,
   type MediaCounts,
   type MediaEdit,
   type MediaFolder,
@@ -65,6 +67,22 @@ const storageKey = (projectId: string, id: string) => `media/${projectId}/${id}`
 
 type Row = typeof mediaAssets.$inferSelect;
 
+/** SQL for one library kind. SVG is an image whose mime type says so; "other" is everything but images and video. */
+function kindCondition(kind: MediaKind): SQL {
+  switch (kind) {
+    case "svg":
+      return eq(mediaAssets.mime, "image/svg+xml");
+    case "image":
+      return sql`${mediaAssets.kind} = 'image' and ${mediaAssets.mime} <> 'image/svg+xml'`;
+    case "video":
+      return eq(mediaAssets.kind, "video");
+    case "audio":
+      return eq(mediaAssets.kind, "audio");
+    case "other":
+      return sql`${mediaAssets.kind} not in ('image', 'video', 'audio')`;
+  }
+}
+
 function toAsset(row: Row): MediaAsset {
   return {
     id: row.id,
@@ -72,7 +90,7 @@ function toAsset(row: Row): MediaAsset {
     title: row.title,
     originalName: row.originalName,
     fileName: row.fileName,
-    kind: row.kind,
+    kind: mediaKindOf(row.mime),
     mime: row.mime,
     size: row.size,
     width: row.width,
@@ -122,7 +140,7 @@ function filterConditions(projectId: string, q: MediaQuery): SQL[] {
   if (q.folderId) where.push(eq(mediaAssets.folderId, q.folderId));
   switch (q.filter) {
     case "missing-alt":
-      where.push(inArray(mediaAssets.kind, [...MEDIA_NEEDS_ALT]), eq(mediaAssets.alt, ""));
+      where.push(eq(mediaAssets.kind, "image"), eq(mediaAssets.alt, ""));
       break;
     case "missing-title":
       where.push(eq(mediaAssets.title, ""));
@@ -137,11 +155,12 @@ function filterConditions(projectId: string, q: MediaQuery): SQL[] {
       where.push(isNotNull(mediaAssets.replacedAt));
       break;
   }
-  if (q.kinds && q.kinds.length > 0) where.push(inArray(mediaAssets.kind, q.kinds));
-  if (q.type === "image") where.push(eq(mediaAssets.kind, "image"));
-  else if (q.type === "svg") where.push(eq(mediaAssets.kind, "svg"));
-  else if (q.type === "video") where.push(eq(mediaAssets.kind, "video"));
-  else if (q.type === "other") where.push(inArray(mediaAssets.kind, ["audio", "other"]));
+  if (q.kinds && q.kinds.length > 0) {
+    const any = or(...q.kinds.map(kindCondition));
+    if (any) where.push(any);
+  }
+  if (q.type === "other") where.push(sql`${mediaAssets.kind} not in ('image', 'video')`);
+  else if (q.type !== "all") where.push(kindCondition(q.type));
   if (q.search) {
     const like = `%${escapeLike(q.search.toLowerCase())}%`;
     where.push(
@@ -196,7 +215,7 @@ export async function mediaCounts(projectId: string): Promise<MediaCounts> {
     db
       .select({
         all: sql<number>`count(*) filter (where ${live})::int`,
-        missingAlt: sql<number>`count(*) filter (where ${live} and ${mediaAssets.kind} in ('image','svg') and ${mediaAssets.alt} = '')::int`,
+        missingAlt: sql<number>`count(*) filter (where ${live} and ${mediaAssets.kind} = 'image' and ${mediaAssets.alt} = '')::int`,
         missingTitle: sql<number>`count(*) filter (where ${live} and ${mediaAssets.title} = '')::int`,
         untagged: sql<number>`count(*) filter (where ${live} and jsonb_array_length(${mediaAssets.tags}) = 0)::int`,
         large: sql<number>`count(*) filter (where ${live} and ${mediaAssets.size} > ${MEDIA_LARGE_BYTES})::int`,
@@ -343,7 +362,7 @@ export async function storeMedia(
         folderId: file.folderId ?? null,
         originalName: file.name.replace(/[\r\n\t]+/g, " ").slice(0, 200) || fileName,
         fileName,
-        kind: format.kind,
+        kind: mimeTopLevel(format.mime),
         mime: format.mime,
         size: data.length,
         width: dims?.width ?? null,
@@ -581,7 +600,7 @@ export async function mediaUsage(projectId: string, id: string): Promise<MediaUs
       id: projectId,
       name: "Design system and settings"
     })),
-    ...flowRows.map((r): MediaUsage => ({ kind: "action", id: r.id, name: "Action flow" })),
+    ...flowRows.map((r): MediaUsage => ({ kind: "action", id: String(r.id), name: "Action flow" })),
     ...blockRows.map((r): MediaUsage => ({ kind: "action", id: r.id, name: "Action block" }))
   ];
 }

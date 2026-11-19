@@ -15,7 +15,7 @@ import {
   type PublishedTemplate,
   type TemplateType
 } from "@nextomic/schema";
-import { getDb, pages, projects, templates, user } from "@nextomic/db";
+import { getDb, pages, projects, templates, users, userDisplayName } from "@nextomic/db";
 import { and, asc, eq, lte } from "drizzle-orm";
 import { projectBlocks, projectFlows } from "./action-flows";
 import { getProjectSettings } from "./pages";
@@ -281,10 +281,10 @@ export async function getPublishedView(
       createdAt: pages.createdAt,
       updatedAt: pages.updatedAt,
       publishedAt: pages.publishedAt,
-      creator: user.name
+      creator: userDisplayName
     })
     .from(pages)
-    .leftJoin(user, eq(user.id, pages.createdBy))
+    .leftJoin(users, eq(users.userUid, pages.createdBy))
     .where(eq(pages.projectId, projectId))
     .orderBy(asc(pages.createdAt));
   const now = Date.now();

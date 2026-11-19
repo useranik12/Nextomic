@@ -9,5 +9,8 @@ export default defineConfig({
   schema: "./src/schema.ts",
   out: "./migrations",
   dialect: "postgresql",
-  dbCredentials: { url: databaseUrl }
+  dbCredentials: { url: databaseUrl },
+  // Only our two schemas. Supabase owns auth, storage, realtime and the rest.
+  schemaFilter: ["public", "nextomic_builder"],
+  migrations: { schema: "nextomic_builder", table: "__drizzle_migrations" }
 });

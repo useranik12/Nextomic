@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { PasswordStrength } from "@/components/auth/password-strength";
 import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
-import { authClient } from "@/lib/auth-client";
-import { passwordProblem, type PasswordPolicy } from "@nextomic/auth/password-policy";
+import { passwordProblem, type PasswordPolicy } from "@/lib/password-policy";
+import { changePassword, sendPasswordCode } from "@/server/auth/actions";
 
 /** Change password: a code is emailed to the account, then code + new password are saved. */
 export function PasswordChange({ email, policy }: { email: string; policy: PasswordPolicy }) {
@@ -19,21 +19,18 @@ export function PasswordChange({ email, policy }: { email: string; policy: Passw
     setBusy("send");
     setError(null);
     setNotice(null);
-    const result = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "forget-password"
-    });
+    const result = await sendPasswordCode();
     setBusy(null);
-    if (result.error) return setError(result.error.message ?? "Could not send the code.");
+    if (result.error) return setError(result.error);
     setSent(true);
   }
 
   async function save() {
     setBusy("save");
     setError(null);
-    const result = await authClient.emailOtp.resetPassword({ email, otp: code.trim(), password });
+    const result = await changePassword({ code, password });
     setBusy(null);
-    if (result.error) return setError(result.error.message ?? "Could not change the password.");
+    if (result.error) return setError(result.error);
     setSent(false);
     setCode("");
     setPassword("");

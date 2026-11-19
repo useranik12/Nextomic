@@ -606,10 +606,7 @@ describe("flow edits", () => {
               kind: "table" as const,
               description: null,
               operations: ["select", "insert", "update", "delete"] as (
-                | "select"
-                | "insert"
-                | "update"
-                | "delete"
+                "select" | "insert" | "update" | "delete"
               )[],
               columns: [
                 col("id", false, true),

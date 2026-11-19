@@ -34,7 +34,7 @@ function pageMetaShape() {
 
 export const templateMetaSchema = z.object({
   name: z.string().max(200),
-  /** header, footer, error-404 or toast */
+  /** header, footer, error or toast */
   type: text(20),
   ...pageMetaShape()
 });

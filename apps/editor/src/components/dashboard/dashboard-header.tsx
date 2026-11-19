@@ -10,7 +10,7 @@ import { ActionButton } from "@/components/ui/controls";
 import { GlobalSearch } from "@/components/dashboard/global-search";
 import { Hint } from "@/components/ui/hint";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { authClient } from "@/lib/auth-client";
+import { signOut } from "@/server/auth/actions";
 
 export interface DashboardHeaderProps {
   userName: string;
@@ -29,9 +29,7 @@ export function DashboardHeader({ userName, userEmail, userImage }: DashboardHea
   const firstName = userName.trim().split(/\s+/)[0] || "User";
 
   async function handleSignOut() {
-    await authClient.signOut();
-    router.push("/sign-in");
-    router.refresh();
+    await signOut();
   }
 
   return (

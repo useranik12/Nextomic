@@ -80,7 +80,7 @@ export async function getTemplate(
 
 /** A template's root is a page-shaped node, so the same canvas and tree code edit it. */
 function templateTree(type: TemplateType): ElementNode {
-  return { ...emptyPageTree(), name: type === "error-404" ? "404 page" : "Template" };
+  return { ...emptyPageTree(), name: type === "error" ? "404 page" : "Template" };
 }
 
 export async function createTemplate(

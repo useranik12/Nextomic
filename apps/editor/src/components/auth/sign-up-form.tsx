@@ -5,7 +5,7 @@ import { signUpAction, type SignUpState } from "@/app/(builder)/(auth)/sign-up/a
 import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
 import { PasswordStrength } from "@/components/auth/password-strength";
 import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
-import { passwordProblem, type PasswordPolicy } from "@nextomic/auth/password-policy";
+import { passwordProblem, type PasswordPolicy } from "@/lib/password-policy";
 
 const initialState: SignUpState = { error: null, success: false };
 

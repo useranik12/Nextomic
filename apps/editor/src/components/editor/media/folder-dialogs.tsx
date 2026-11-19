@@ -7,9 +7,7 @@ import { Dialog } from "@/components/ui/dialog";
 import type { MediaModel } from "./use-media";
 
 type DialogState =
-  | { kind: "create" }
-  | { kind: "rename" | "delete"; id: string; name: string }
-  | null;
+  { kind: "create" } | { kind: "rename" | "delete"; id: string; name: string } | null;
 
 /** Create, rename and delete-folder dialogs of the folders panel. */
 export function FolderNameDialog({

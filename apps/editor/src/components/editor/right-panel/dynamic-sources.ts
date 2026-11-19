@@ -59,7 +59,7 @@ const BUILT_IN: DynamicGroup[] = [
       {
         token: "template.type",
         label: "Template type",
-        hint: "header, footer, error-404 or toast"
+        hint: "header, footer, error or toast"
       },
       { token: "template.id", label: "Template ID", hint: "text" },
       {

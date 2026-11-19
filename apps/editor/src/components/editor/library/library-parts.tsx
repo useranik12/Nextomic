@@ -64,14 +64,7 @@ export const itemSubtitle = (item: LibraryItem): string =>
   item.kind === "page" ? (item.route ?? "/") : item.type ? TEMPLATE_TYPE_LABELS[item.type] : "";
 
 export type RowAction =
-  | "edit"
-  | "rename"
-  | "duplicate"
-  | "preview"
-  | "preview-tab"
-  | "status"
-  | "screenshot"
-  | "delete";
+  "edit" | "rename" | "duplicate" | "preview" | "preview-tab" | "status" | "screenshot" | "delete";
 
 /** The status action reads as the thing it will do. */
 export const statusActionLabel = (item: LibraryItem): string => {

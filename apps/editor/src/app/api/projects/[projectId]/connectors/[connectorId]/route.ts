@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isUuid } from "@nextomic/schema";
-import { auth } from "@/lib/auth";
+import { getSessionFromHeaders } from "@/lib/session";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { proxyConnectorCall } from "@/server/connectors/proxy";
 
@@ -36,7 +36,7 @@ export async function POST(
   if (!sameOrigin(req)) return deny(403, "Cross-site requests are not allowed.");
   if (!(req.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json"))
     return deny(415, "Send JSON.");
-  const session = await auth.api.getSession({ headers: req.headers });
+  const session = await getSessionFromHeaders(req.headers);
   if (!session) return deny(401, "Sign in to continue.");
   const { projectId, connectorId } = await params;
   if (!isUuid(projectId) || !isUuid(connectorId)) return deny(404, "Not found.");

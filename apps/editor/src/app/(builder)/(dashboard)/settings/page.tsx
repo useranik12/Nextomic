@@ -18,7 +18,7 @@ export default async function SettingsPage() {
   const [preference] = await db
     .select()
     .from(userPreferences)
-    .where(eq(userPreferences.userId, sessionData.user.id))
+    .where(eq(userPreferences.userUid, sessionData.user.id))
     .limit(1);
 
   const manifest = getBuilderDependencies();
@@ -39,7 +39,7 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-5 rounded-2xl border border-separator bg-surface/40 p-5">
           <PasswordChange email={sessionData.user.email} policy={passwordPolicy} />
           <div className="border-t border-border pt-5">
-            <TwoFactorSettings enabled={Boolean(sessionData.user.twoFactorEnabled)} />
+            <TwoFactorSettings enabled={sessionData.user.twoFactorEnabled} />
           </div>
           <div className="border-t border-border pt-5">
             <PasskeySettings />

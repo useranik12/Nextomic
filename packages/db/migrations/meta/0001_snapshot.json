@@ -1,22 +1,969 @@
 {
-  "id": "0e73ddf8-5503-4f91-a814-cbb24539bfa9",
-  "prevId": "55599138-ec2a-4396-96e2-6e4beaa42ee8",
+  "id": "29a735d9-baa6-4112-973b-628233213b03",
+  "prevId": "5db1b2a1-192b-4c1e-bada-7d22b8d01778",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.page_versions": {
-      "name": "page_versions",
-      "schema": "",
+    "nextomic_builder.action_blocks": {
+      "name": "action_blocks",
+      "schema": "nextomic_builder",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block": {
+          "name": "block",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "action_blocks_project_idx": {
+          "name": "action_blocks_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "action_blocks_updated_by_idx": {
+          "name": "action_blocks_updated_by_idx",
+          "columns": [
+            {
+              "expression": "updated_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "action_blocks_project_id_projects_id_fk": {
+          "name": "action_blocks_project_id_projects_id_fk",
+          "tableFrom": "action_blocks",
+          "columnsFrom": ["project_id"],
+          "tableTo": "projects",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "action_blocks_updated_by_users_user_uid_fk": {
+          "name": "action_blocks_updated_by_users_user_uid_fk",
+          "tableFrom": "action_blocks",
+          "columnsFrom": ["updated_by"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.action_flows": {
+      "name": "action_flows",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "action_flows_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "nextomic_builder",
+            "type": "always"
+          }
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "page_id": {
           "name": "page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "template_id": {
+          "name": "template_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "node_id": {
+          "name": "node_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flows": {
+          "name": "flows",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "action_flows_page_node_idx": {
+          "name": "action_flows_page_node_idx",
+          "columns": [
+            {
+              "expression": "page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "node_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "action_flows_template_node_idx": {
+          "name": "action_flows_template_node_idx",
+          "columns": [
+            {
+              "expression": "template_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "node_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "action_flows_project_idx": {
+          "name": "action_flows_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "action_flows_updated_by_idx": {
+          "name": "action_flows_updated_by_idx",
+          "columns": [
+            {
+              "expression": "updated_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "action_flows_project_id_projects_id_fk": {
+          "name": "action_flows_project_id_projects_id_fk",
+          "tableFrom": "action_flows",
+          "columnsFrom": ["project_id"],
+          "tableTo": "projects",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "action_flows_page_id_pages_id_fk": {
+          "name": "action_flows_page_id_pages_id_fk",
+          "tableFrom": "action_flows",
+          "columnsFrom": ["page_id"],
+          "tableTo": "pages",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "action_flows_template_id_templates_id_fk": {
+          "name": "action_flows_template_id_templates_id_fk",
+          "tableFrom": "action_flows",
+          "columnsFrom": ["template_id"],
+          "tableTo": "templates",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "action_flows_updated_by_users_user_uid_fk": {
+          "name": "action_flows_updated_by_users_user_uid_fk",
+          "tableFrom": "action_flows",
+          "columnsFrom": ["updated_by"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "action_flows_one_owner": {
+          "name": "action_flows_one_owner",
+          "value": "(\"nextomic_builder\".\"action_flows\".\"page_id\" is null) <> (\"nextomic_builder\".\"action_flows\".\"template_id\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.connector_audit_log": {
+      "name": "connector_audit_log",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "connector_audit_log_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "nextomic_builder",
+            "type": "always"
+          }
+        },
+        "connector_id": {
+          "name": "connector_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_uid": {
+          "name": "user_uid",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "operation": {
+          "name": "operation",
+          "type": "connector_operation",
+          "typeSchema": "nextomic_builder",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resource_id": {
+          "name": "resource_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "connector_audit_connector_idx": {
+          "name": "connector_audit_connector_idx",
+          "columns": [
+            {
+              "expression": "connector_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "connector_audit_user_idx": {
+          "name": "connector_audit_user_idx",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "connector_audit_log_connector_id_connectors_id_fk": {
+          "name": "connector_audit_log_connector_id_connectors_id_fk",
+          "tableFrom": "connector_audit_log",
+          "columnsFrom": ["connector_id"],
+          "tableTo": "connectors",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "connector_audit_log_user_uid_users_user_uid_fk": {
+          "name": "connector_audit_log_user_uid_users_user_uid_fk",
+          "tableFrom": "connector_audit_log",
+          "columnsFrom": ["user_uid"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.connector_schemas": {
+      "name": "connector_schemas",
+      "schema": "nextomic_builder",
+      "columns": {
+        "connector_id": {
+          "name": "connector_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "structure": {
+          "name": "structure",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fetched_at": {
+          "name": "fetched_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "connector_schemas_connector_id_connectors_id_fk": {
+          "name": "connector_schemas_connector_id_connectors_id_fk",
+          "tableFrom": "connector_schemas",
+          "columnsFrom": ["connector_id"],
+          "tableTo": "connectors",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.connectors": {
+      "name": "connectors",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "connector_type",
+          "typeSchema": "nextomic_builder",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "config": {
+          "name": "config",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "secret_ciphertext": {
+          "name": "secret_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "secret_iv": {
+          "name": "secret_iv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "secret_tag": {
+          "name": "secret_tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "key_version": {
+          "name": "key_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "connectors_project_name_idx": {
+          "name": "connectors_project_name_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "connectors_created_by_idx": {
+          "name": "connectors_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "connectors_project_id_projects_id_fk": {
+          "name": "connectors_project_id_projects_id_fk",
+          "tableFrom": "connectors",
+          "columnsFrom": ["project_id"],
+          "tableTo": "projects",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "connectors_created_by_users_user_uid_fk": {
+          "name": "connectors_created_by_users_user_uid_fk",
+          "tableFrom": "connectors",
+          "columnsFrom": ["created_by"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.media_assets": {
+      "name": "media_assets",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "folder_id": {
+          "name": "folder_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "original_name": {
+          "name": "original_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "media_kind",
+          "typeSchema": "nextomic_builder",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mime": {
+          "name": "mime",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt": {
+          "name": "alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "caption": {
+          "name": "caption",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "tags": {
+          "name": "tags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "replaced_at": {
+          "name": "replaced_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trashed_at": {
+          "name": "trashed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_assets_project_idx": {
+          "name": "media_assets_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "media_assets_folder_idx": {
+          "name": "media_assets_folder_idx",
+          "columns": [
+            {
+              "expression": "folder_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "media_assets_created_by_idx": {
+          "name": "media_assets_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "media_assets_project_id_projects_id_fk": {
+          "name": "media_assets_project_id_projects_id_fk",
+          "tableFrom": "media_assets",
+          "columnsFrom": ["project_id"],
+          "tableTo": "projects",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "media_assets_folder_id_media_folders_id_fk": {
+          "name": "media_assets_folder_id_media_folders_id_fk",
+          "tableFrom": "media_assets",
+          "columnsFrom": ["folder_id"],
+          "tableTo": "media_folders",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
+        },
+        "media_assets_created_by_users_user_uid_fk": {
+          "name": "media_assets_created_by_users_user_uid_fk",
+          "tableFrom": "media_assets",
+          "columnsFrom": ["created_by"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.media_folders": {
+      "name": "media_folders",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "media_folders_project_name_idx": {
+          "name": "media_folders_project_name_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "media_folders_project_id_projects_id_fk": {
+          "name": "media_folders_project_id_projects_id_fk",
+          "tableFrom": "media_folders",
+          "columnsFrom": ["project_id"],
+          "tableTo": "projects",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.page_versions": {
+      "name": "page_versions",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "page_versions_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "nextomic_builder",
+            "type": "always"
+          }
+        },
+        "page_id": {
+          "name": "page_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -52,7 +999,7 @@
         },
         "saved_by": {
           "name": "saved_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -82,9 +1029,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "page_versions_page_created_idx": {
           "name": "page_versions_page_created_idx",
@@ -103,29 +1050,45 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
+        },
+        "page_versions_saved_by_idx": {
+          "name": "page_versions_saved_by_idx",
+          "columns": [
+            {
+              "expression": "saved_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "page_versions_page_id_pages_id_fk": {
           "name": "page_versions_page_id_pages_id_fk",
           "tableFrom": "page_versions",
-          "tableTo": "pages",
           "columnsFrom": ["page_id"],
+          "tableTo": "pages",
+          "schemaTo": "nextomic_builder",
           "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
         },
-        "page_versions_saved_by_user_id_fk": {
-          "name": "page_versions_saved_by_user_id_fk",
+        "page_versions_saved_by_users_user_uid_fk": {
+          "name": "page_versions_saved_by_users_user_uid_fk",
           "tableFrom": "page_versions",
-          "tableTo": "user",
           "columnsFrom": ["saved_by"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -134,19 +1097,20 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.pages": {
+    "nextomic_builder.pages": {
       "name": "pages",
-      "schema": "",
+      "schema": "nextomic_builder",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "project_id": {
           "name": "project_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -181,6 +1145,30 @@
           "notNull": true,
           "default": 1
         },
+        "published_snapshot": {
+          "name": "published_snapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screenshot_at": {
+          "name": "screenshot_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -214,20 +1202,45 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
+        },
+        "pages_created_by_idx": {
+          "name": "pages_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "pages_project_id_projects_id_fk": {
           "name": "pages_project_id_projects_id_fk",
           "tableFrom": "pages",
-          "tableTo": "projects",
           "columnsFrom": ["project_id"],
+          "tableTo": "projects",
+          "schemaTo": "nextomic_builder",
           "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "pages_created_by_users_user_uid_fk": {
+          "name": "pages_created_by_users_user_uid_fk",
+          "tableFrom": "pages",
+          "columnsFrom": ["created_by"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -236,19 +1249,20 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.projects": {
+    "nextomic_builder.projects": {
       "name": "projects",
-      "schema": "",
+      "schema": "nextomic_builder",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "workspace_id": {
           "name": "workspace_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -266,7 +1280,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -296,27 +1310,83 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_settings": {
+          "name": "published_settings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scheduled_publish_at": {
+          "name": "scheduled_publish_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_action_blocks": {
+          "name": "published_action_blocks",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "projects_workspace_idx": {
+          "name": "projects_workspace_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "projects_created_by_idx": {
+          "name": "projects_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
       "foreignKeys": {
         "projects_workspace_id_workspaces_id_fk": {
           "name": "projects_workspace_id_workspaces_id_fk",
           "tableFrom": "projects",
-          "tableTo": "workspaces",
           "columnsFrom": ["workspace_id"],
+          "tableTo": "workspaces",
+          "schemaTo": "nextomic_builder",
           "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
         },
-        "projects_created_by_user_id_fk": {
-          "name": "projects_created_by_user_id_fk",
+        "projects_created_by_users_user_uid_fk": {
+          "name": "projects_created_by_users_user_uid_fk",
           "tableFrom": "projects",
-          "tableTo": "user",
           "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -325,20 +1395,255 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.user_preferences": {
-      "name": "user_preferences",
+    "nextomic_builder.templates": {
+      "name": "templates",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "template_type",
+          "typeSchema": "nextomic_builder",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settings": {
+          "name": "settings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tree": {
+          "name": "tree",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "published_snapshot": {
+          "name": "published_snapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "screenshot_at": {
+          "name": "screenshot_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "templates_project_idx": {
+          "name": "templates_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "templates_created_by_idx": {
+          "name": "templates_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "templates_project_id_projects_id_fk": {
+          "name": "templates_project_id_projects_id_fk",
+          "tableFrom": "templates",
+          "columnsFrom": ["project_id"],
+          "tableTo": "projects",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "templates_created_by_users_user_uid_fk": {
+          "name": "templates_created_by_users_user_uid_fk",
+          "tableFrom": "templates",
+          "columnsFrom": ["created_by"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_meta": {
+      "name": "user_meta",
       "schema": "",
       "columns": {
+        "meta_id": {
+          "name": "meta_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "user_meta_meta_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "platform_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Customer'"
+        },
+        "account_status": {
+          "name": "account_status",
+          "type": "account_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Good'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_meta_user_id_users_user_id_fk": {
+          "name": "user_meta_user_id_users_user_id_fk",
+          "tableFrom": "user_meta",
+          "columnsFrom": ["user_id"],
+          "tableTo": "users",
+          "columnsTo": ["user_id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_meta_user_id_key": {
+          "name": "user_meta_user_id_key",
+          "columns": ["user_id"],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "nextomic_builder.user_preferences": {
+      "name": "user_preferences",
+      "schema": "nextomic_builder",
+      "columns": {
+        "user_uid": {
+          "name": "user_uid",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
         "color_mode": {
           "name": "color_mode",
           "type": "color_mode",
-          "typeSchema": "public",
+          "typeSchema": "nextomic_builder",
           "primaryKey": false,
           "notNull": true,
           "default": "'dark'"
@@ -346,14 +1651,14 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "user_preferences_user_id_user_id_fk": {
-          "name": "user_preferences_user_id_user_id_fk",
+        "user_preferences_user_uid_users_user_uid_fk": {
+          "name": "user_preferences_user_uid_users_user_uid_fk",
           "tableFrom": "user_preferences",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
+          "columnsFrom": ["user_uid"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -362,303 +1667,37 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.workspace_members": {
-      "name": "workspace_members",
+    "public.users": {
+      "name": "users",
       "schema": "",
       "columns": {
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "user_id": {
           "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "role": {
-          "name": "role",
-          "type": "workspace_role",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "workspace_members_workspace_id_workspaces_id_fk": {
-          "name": "workspace_members_workspace_id_workspaces_id_fk",
-          "tableFrom": "workspace_members",
-          "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "workspace_members_user_id_user_id_fk": {
-          "name": "workspace_members_user_id_user_id_fk",
-          "tableFrom": "workspace_members",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "workspace_members_workspace_id_user_id_pk": {
-          "name": "workspace_members_workspace_id_user_id_pk",
-          "columns": ["workspace_id", "user_id"]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.workspaces": {
-      "name": "workspaces",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
+          "type": "bigint",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "identity": {
+            "name": "users_user_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
         },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
+        "joined_at": {
+          "name": "joined_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.account": {
-      "name": "account",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "provider_id": {
-          "name": "provider_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "access_token": {
-          "name": "access_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "refresh_token": {
-          "name": "refresh_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "id_token": {
-          "name": "id_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "access_token_expires_at": {
-          "name": "access_token_expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "refresh_token_expires_at": {
-          "name": "refresh_token_expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "scope": {
-          "name": "scope",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "password": {
-          "name": "password",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "account_user_id_user_id_fk": {
-          "name": "account_user_id_user_id_fk",
-          "tableFrom": "account",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.session": {
-      "name": "session",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "token": {
-          "name": "token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "ip_address": {
-          "name": "ip_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_agent": {
-          "name": "user_agent",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "session_user_id_user_id_fk": {
-          "name": "session_user_id_user_id_fk",
-          "tableFrom": "session",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "session_token_unique": {
-          "name": "session_token_unique",
-          "nullsNotDistinct": false,
-          "columns": ["token"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.user": {
-      "name": "user",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
+        "user_uid": {
+          "name": "user_uid",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -668,28 +1707,51 @@
           "primaryKey": false,
           "notNull": true
         },
-        "email_verified": {
-          "name": "email_verified",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "image": {
-          "name": "image",
+        "phone": {
+          "name": "phone",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": false
         },
-        "updated_at": {
-          "name": "updated_at",
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gender": {
+          "name": "gender",
+          "type": "gender",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "country": {
+          "name": "country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profession": {
+          "name": "profession",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_image": {
+          "name": "user_image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_on": {
+          "name": "updated_on",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -697,44 +1759,77 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "users_user_uid_users_id_fk": {
+          "name": "users_user_uid_users_id_fk",
+          "tableFrom": "users",
+          "columnsFrom": ["user_uid"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "user_email_unique": {
-          "name": "user_email_unique",
-          "nullsNotDistinct": false,
-          "columns": ["email"]
+        "users_user_uid_key": {
+          "name": "users_user_uid_key",
+          "columns": ["user_uid"],
+          "nullsNotDistinct": false
+        },
+        "users_email_key": {
+          "name": "users_email_key",
+          "columns": ["email"],
+          "nullsNotDistinct": false
+        },
+        "users_phone_key": {
+          "name": "users_phone_key",
+          "columns": ["phone"],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
-    "public.verification": {
-      "name": "verification",
-      "schema": "",
+    "nextomic_builder.workspace_members": {
+      "name": "workspace_members",
+      "schema": "nextomic_builder",
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "bigint",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "identity": {
+            "name": "workspace_members_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "9223372036854775807",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "nextomic_builder",
+            "type": "always"
+          }
         },
-        "identifier": {
-          "name": "identifier",
-          "type": "text",
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "value": {
-          "name": "value",
-          "type": "text",
+        "user_uid": {
+          "name": "user_uid",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp with time zone",
+        "role": {
+          "name": "role",
+          "type": "workspace_role",
+          "typeSchema": "nextomic_builder",
           "primaryKey": false,
           "notNull": true
         },
@@ -742,14 +1837,89 @@
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "workspace_members_user_idx": {
+          "name": "workspace_members_user_idx",
+          "columns": [
+            {
+              "expression": "user_uid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "workspace_members_workspace_id_workspaces_id_fk": {
+          "name": "workspace_members_workspace_id_workspaces_id_fk",
+          "tableFrom": "workspace_members",
+          "columnsFrom": ["workspace_id"],
+          "tableTo": "workspaces",
+          "schemaTo": "nextomic_builder",
+          "columnsTo": ["id"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        },
+        "workspace_members_user_uid_users_user_uid_fk": {
+          "name": "workspace_members_user_uid_users_user_uid_fk",
+          "tableFrom": "workspace_members",
+          "columnsFrom": ["user_uid"],
+          "tableTo": "users",
+          "columnsTo": ["user_uid"],
+          "onUpdate": "cascade",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "workspace_members_workspace_user_key": {
+          "name": "workspace_members_workspace_user_key",
+          "columns": ["workspace_id", "user_uid"],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "nextomic_builder.workspaces": {
+      "name": "workspaces",
+      "schema": "nextomic_builder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
           "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "now()"
         }
       },
@@ -763,22 +1933,83 @@
     }
   },
   "enums": {
-    "public.color_mode": {
-      "name": "color_mode",
+    "public.account_status": {
+      "name": "account_status",
       "schema": "public",
+      "values": ["Good", "Warning", "Suspended"]
+    },
+    "nextomic_builder.color_mode": {
+      "name": "color_mode",
+      "schema": "nextomic_builder",
       "values": ["dark", "light", "system"]
     },
-    "public.workspace_role": {
-      "name": "workspace_role",
+    "nextomic_builder.connector_operation": {
+      "name": "connector_operation",
+      "schema": "nextomic_builder",
+      "values": ["test", "resources", "execute"]
+    },
+    "nextomic_builder.connector_type": {
+      "name": "connector_type",
+      "schema": "nextomic_builder",
+      "values": ["supabase", "rest"]
+    },
+    "public.gender": {
+      "name": "gender",
       "schema": "public",
-      "values": ["owner", "admin", "member"]
+      "values": ["Male", "Female", "Prefer Not To Say"]
+    },
+    "nextomic_builder.media_kind": {
+      "name": "media_kind",
+      "schema": "nextomic_builder",
+      "values": [
+        "application",
+        "audio",
+        "font",
+        "haptics",
+        "image",
+        "message",
+        "model",
+        "multipart",
+        "text",
+        "video",
+        "other"
+      ]
+    },
+    "public.platform_role": {
+      "name": "platform_role",
+      "schema": "public",
+      "values": [
+        "Admin",
+        "Developer",
+        "Senior Marketer",
+        "Junior Marketer",
+        "Affiliate Scout",
+        "Customer"
+      ]
+    },
+    "nextomic_builder.project_role": {
+      "name": "project_role",
+      "schema": "nextomic_builder",
+      "values": ["owner", "editor", "designer", "content_editor", "viewer"]
+    },
+    "nextomic_builder.template_type": {
+      "name": "template_type",
+      "schema": "nextomic_builder",
+      "values": ["header", "footer", "error", "modal", "bottom-sheet", "section"]
+    },
+    "nextomic_builder.workspace_role": {
+      "name": "workspace_role",
+      "schema": "nextomic_builder",
+      "values": ["owner", "editor", "member", "viewer"]
     }
   },
-  "schemas": {},
+  "schemas": {
+    "nextomic_builder": "nextomic_builder"
+  },
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

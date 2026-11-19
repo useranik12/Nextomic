@@ -35,7 +35,7 @@ export async function GET(request: Request, { params }: { params: Params }) {
     "X-Content-Type-Options": "nosniff",
     "Accept-Ranges": "bytes",
     "Content-Security-Policy":
-      asset.kind === "svg"
+      asset.mime === "image/svg+xml"
         ? "sandbox; default-src 'none'; style-src 'unsafe-inline'"
         : "sandbox; default-src 'none'"
   };

@@ -3,20 +3,17 @@
 import { Chip } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { renderSVG } from "uqr";
 import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
-import { authClient } from "@/lib/auth-client";
+import {
+  disableTotp,
+  startTotpEnrollment,
+  verifyTotp,
+  type TotpEnrollment
+} from "@/server/auth/actions";
 
-type Step =
-  | { kind: "idle" }
-  | { kind: "password"; action: "enable" | "disable" | "codes" }
-  | { kind: "scan"; uri: string; backupCodes: string[] }
-  | { kind: "codes"; backupCodes: string[] };
+type Step = { kind: "idle" } | { kind: "scan"; enrollment: TotpEnrollment } | { kind: "disable" };
 
-const qrSource = (uri: string) =>
-  `data:image/svg+xml;utf8,${encodeURIComponent(renderSVG(uri, { border: 2 }))}`;
-
-/** Two-factor sign-in with an authenticator app (TOTP) and backup codes. */
+/** Two-factor sign-in with an authenticator app (TOTP). */
 export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
   const router = useRouter();
   const [on, setOn] = useState(enabled);
@@ -33,46 +30,36 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
     setError(null);
   };
 
-  async function withPassword(action: "enable" | "disable" | "codes") {
+  async function start() {
     setBusy(true);
     setError(null);
-    if (action === "enable") {
-      const result = await authClient.twoFactor.enable({ password, method: "totp" });
-      setBusy(false);
-      if (result.error || !result.data)
-        return setError(result.error?.message ?? "Could not start two-factor setup.");
-      if (result.data.method !== "totp") return setError("Authenticator setup is not available.");
-      setPassword("");
-      return setStep({
-        kind: "scan",
-        uri: result.data.totpURI,
-        backupCodes: result.data.backupCodes
-      });
-    }
-    if (action === "disable") {
-      const result = await authClient.twoFactor.disable({ password });
-      setBusy(false);
-      if (result.error) return setError(result.error.message ?? "Could not turn off two-factor.");
-      setOn(false);
-      reset();
-      return router.refresh();
-    }
-    const result = await authClient.twoFactor.generateBackupCodes({ password });
+    const result = await startTotpEnrollment();
     setBusy(false);
-    if (result.error || !result.data)
-      return setError(result.error?.message ?? "Could not make new backup codes.");
-    setPassword("");
-    setStep({ kind: "codes", backupCodes: result.data.backupCodes });
+    if (result.error || !result.enrollment)
+      return setError(result.error ?? "Could not start two-factor setup.");
+    setStep({ kind: "scan", enrollment: result.enrollment });
   }
 
   async function verify() {
+    if (step.kind !== "scan") return;
     setBusy(true);
     setError(null);
-    const result = await authClient.twoFactor.verifyTotp({ code: code.replace(/\s/g, "") });
+    const result = await verifyTotp({ factorId: step.enrollment.factorId, code });
     setBusy(false);
-    if (result.error) return setError(result.error.message ?? "That code did not work.");
+    if (result.error) return setError(result.error);
     setOn(true);
-    if (step.kind === "scan") setStep({ kind: "codes", backupCodes: step.backupCodes });
+    reset();
+    router.refresh();
+  }
+
+  async function turnOff() {
+    setBusy(true);
+    setError(null);
+    const result = await disableTotp(password);
+    setBusy(false);
+    if (result.error) return setError(result.error);
+    setOn(false);
+    reset();
     router.refresh();
   }
 
@@ -91,38 +78,23 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
           </span>
         </div>
         {step.kind === "idle" ? (
-          <div className="flex gap-2">
-            {on ? (
-              <>
-                <ActionButton
-                  size="sm"
-                  tone="outline"
-                  onPress={() => setStep({ kind: "password", action: "codes" })}
-                >
-                  New backup codes
-                </ActionButton>
-                <ActionButton
-                  size="sm"
-                  tone="danger-ghost"
-                  onPress={() => setStep({ kind: "password", action: "disable" })}
-                >
-                  Turn off
-                </ActionButton>
-              </>
-            ) : (
-              <ActionButton
-                size="sm"
-                tone="outline"
-                onPress={() => setStep({ kind: "password", action: "enable" })}
-              >
-                Turn on
-              </ActionButton>
-            )}
-          </div>
+          on ? (
+            <ActionButton
+              size="sm"
+              tone="danger-ghost"
+              onPress={() => setStep({ kind: "disable" })}
+            >
+              Turn off
+            </ActionButton>
+          ) : (
+            <ActionButton size="sm" tone="outline" isLoading={busy} onPress={() => void start()}>
+              Turn on
+            </ActionButton>
+          )
         ) : null}
       </div>
 
-      {step.kind === "password" ? (
+      {step.kind === "disable" ? (
         <div className="flex flex-wrap items-end gap-2">
           <PasswordInput
             label="Confirm your password"
@@ -136,11 +108,12 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
           />
           <ActionButton
             size="sm"
+            tone="danger"
             isLoading={busy}
             isDisabled={!password}
-            onPress={() => void withPassword(step.action)}
+            onPress={() => void turnOff()}
           >
-            Continue
+            Turn off
           </ActionButton>
           <ActionButton size="sm" tone="ghost" onPress={reset}>
             Cancel
@@ -150,8 +123,9 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
 
       {step.kind === "scan" ? (
         <div className="flex flex-wrap items-start gap-5">
+          {/* The QR code is an SVG data link made by Auth. */}
           <img
-            src={qrSource(step.uri)}
+            src={step.enrollment.qrSvg}
             alt="QR code for your authenticator app"
             width={160}
             height={160}
@@ -163,7 +137,7 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
               enter this key:
             </p>
             <code className="break-all rounded-xl bg-default px-2 py-1 text-xs">
-              {new URL(step.uri).searchParams.get("secret")}
+              {step.enrollment.secret}
             </code>
             <div className="flex flex-wrap items-end gap-2">
               <FormInput
@@ -190,32 +164,6 @@ export function TwoFactorSettings({ enabled }: { enabled: boolean }) {
                 Cancel
               </ActionButton>
             </div>
-          </div>
-        </div>
-      ) : null}
-
-      {step.kind === "codes" ? (
-        <div className="flex max-w-md flex-col gap-2">
-          <p className="text-sm text-body">
-            Save these backup codes somewhere safe. Each works once if you lose your authenticator.
-            They are not shown again.
-          </p>
-          <ul className="grid grid-cols-2 gap-1 rounded-xl bg-default p-3 font-mono text-sm">
-            {step.backupCodes.map((c) => (
-              <li key={c}>{c}</li>
-            ))}
-          </ul>
-          <div className="flex gap-2">
-            <ActionButton
-              size="sm"
-              tone="outline"
-              onPress={() => void navigator.clipboard.writeText(step.backupCodes.join("\n"))}
-            >
-              Copy codes
-            </ActionButton>
-            <ActionButton size="sm" onPress={reset}>
-              Done
-            </ActionButton>
           </div>
         </div>
       ) : null}
