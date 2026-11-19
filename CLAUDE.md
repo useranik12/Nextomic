@@ -2,7 +2,7 @@
 
 A self-hosted, visual builder for reactive, responsive, dynamic, complex websites and web apps (output: Next.js and Astro). It combines Bricks-style design systems, themes, and dynamic data, FlutterFlow-style queries, app state, action flows, and authentication, and Instatic-style self-hosting.
 
-IMPORTANT: The builder itself does NOT run on Supabase. It runs on its own PostgreSQL database and Better Auth. Supabase and REST APIs are INTEGRATIONS that users connect to the apps they build.
+IMPORTANT: The builder runs on Supabase (self-hosted): Supabase Auth for sign-in, and Postgres with the `nextomic_builder` schema (builder data) and `public.users` / `public.user_meta` (accounts). Supabase and REST APIs are ALSO INTEGRATIONS that users connect to the apps they build; those are a separate layer (`packages/integrations`).
 
 ## Read the docs first
 
@@ -25,7 +25,7 @@ Design sources (`blueprint/`) and how to follow them: see `apps/editor/CLAUDE.md
 
 ## Separate layers (never mix)
 
-1. **Platform:** the builder app. Own Postgres, Better Auth, storage, projects, publishing. No Supabase code or keys.
+1. **Platform:** the builder app. Runs on the owner's Supabase (Auth + Postgres, server-side only: no browser Supabase client), storage, projects, publishing. Its keys never reach built sites.
 2. **Integrations:** Supabase and REST connectors and auth providers for built apps (`packages/integrations`).
 3. **Built sites:** generated output using the Nextomic CSS framework (CSS variables and classes). No Tailwind or HeroUI required in output.
    Builder UI styling (Tailwind + HeroUI + `blueprint/tokens.json`) must never leak into built-site CSS. Built sites use the project's own design system and themes.
@@ -40,7 +40,7 @@ Design sources (`blueprint/`) and how to follow them: see `apps/editor/CLAUDE.md
 - State: Zustand (with Immer), undo/redo history
 - Drag and drop: @dnd-kit
 - Database: PostgreSQL with Drizzle ORM and SQL migrations
-- Auth (builder): Better Auth (email/password, Google and other social, passkeys, rate limiting, roles)
+- Auth (builder): Supabase Auth through `@supabase/ssr` server clients (email/password, magic link, TOTP, passkeys, reset by link). Rate limits in `server/rate-limit`; roles in `public.user_meta` and workspace/project member tables
 - Storage: storage adapter (local volume, S3-compatible)
 - Validation: Zod (schema is the single source of truth)
 - CSS parsing: PostCSS or lightningcss (for bidirectional CSS)
@@ -90,7 +90,7 @@ Run lint, typecheck, and tests before declaring any task done.
 6. Dynamic data works EVERYWHERE: every element prop, attribute, style value, class toggle, condition operand, action parameter, route and SEO field accepts static text mixed with dynamic tokens via the bolt icon. A prop may opt out only with a written reason in the registry. Scope rules in `dynamic-data-and-actions.md` are enforced at save time.
 7. Supabase/REST schema is stored as STRUCTURE only. Never store row data from connected sources. Editor previews fetch live or use sample values the user wrote.
 8. Element IDs: `nxtomc-` + 8 random `a-z0-9` chars when "Generate element ID automatically" is on; unique per page.
-9. The platform never imports `@supabase/*`. Only `packages/integrations` and generated output of user apps may.
+9. The builder uses `@supabase/ssr` and `@supabase/supabase-js` only in `apps/editor/src/lib/supabase` and the auth server actions, never in the browser. Built sites and user connectors use `packages/integrations` and generated output only.
 10. Two dependency systems (see `dependencies.md`): builder dependencies are locked and read-only; project dependencies are per project. User-added npm packages are NEVER installed or executed in the builder runtime; only in isolated build containers (scripts disabled) and sandboxed previews.
 11. Custom HTML/JS/CSS and custom code run only in the sandboxed canvas iframe and in built output, never in the builder's own process.
 12. Secrets never reach the browser or exported files. Exports include `.env.example`, not credentials.
@@ -123,7 +123,7 @@ Run lint, typecheck, and tests before declaring any task done.
 - Never commit secrets. Use `.env.local`; keep `.env.example` updated.
 - Every query scoped by authenticated user and workspace/project membership; enforce permissions on the server for every route and action.
 - Parameterized queries only (Drizzle).
-- Better Auth: secure cookies, CSRF protection, rate limits on login/signup/reset; signup can be disabled by admin.
+- Builder auth (Supabase): httpOnly cookies, session checked with `getClaims()`, rate limits on login/signup/reset; `ALLOW_SIGNUP=false` disables signup server-side.
 - Built-app auth: httpOnly session cookies by default, server-side route guards, same-origin `next` redirects only.
 - Sanitize rich text, SVG, and user-supplied URLs. Validate uploads (type, size, magic bytes).
 - SSRF protections on every server-side outbound call (see `integrations.md`).
@@ -154,7 +154,7 @@ Run lint, typecheck, and tests before declaring any task done.
 
 - While iterating run only affected unit tests (`bun x vitest run <paths>`). Run the full `bun run test` and `bun run test:node` once at the end and read only the summary line.
 - Never run bare `bun test` at the repo root: it picks up Playwright e2e specs and hangs. Unit tests are `bun run test` (vitest).
-- e2e: run only the affected spec files with `--reporter=dot`; run the full suite only when shared code (shell, auth, store) changed. Use `E2E_BASE_URL=http://localhost:3000` (Better Auth rejects other origins as "Invalid origin"). Use `--workers=2` or 3 for full runs, since a few specs are flaky under heavy parallel load.
+- e2e: run only the affected spec files with `--reporter=dot`; run the full suite only when shared code (shell, auth, store) changed. Use `E2E_BASE_URL=http://localhost:3000`. Use `--workers=2` or 3 for full runs, since a few specs are flaky under heavy parallel load.
 - e2e selectors: BoltInput fields share their label with the bolt button, so use `getByRole("textbox", { name })`, not `getByLabel`. HeroUI v3 switches need `click({ force: true })`. Menu items are `getByRole("menuitem")`. Select options inside a modal are found with `page.locator("[role=option]", { hasText })`.
 - No screenshot probes unless a visual question needs one. Do not re-run gates that already passed.
 

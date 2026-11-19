@@ -1,48 +1,38 @@
 # Platform Spec
 
-Settings for the builder itself (admin) and for each project. Platform runs on its own Postgres + Better Auth. Runtime: Bun primary, Node LTS supported.
+Settings for the builder itself (admin) and for each project. Platform runs on the owner's Supabase (Auth + Postgres). Runtime: Bun primary, Node LTS supported.
 
 Builder authentication (this doc) is for people who use the builder. Authentication for the end users of built sites is a different system: see `app-auth.md`. Do not share tables, sessions, or code between them.
 
-## 1. Auth (Better Auth)
+## 1. Auth (Supabase Auth)
 
-- Email + password with email verification and password reset.
-- Social sign-in: Google first; others (GitHub, Microsoft, etc.) via the same provider config.
-- Passkeys (WebAuthn) as sign-in and as a second factor option.
-- Admin setting: allow or disallow public signup. When disabled, users join by invite only. First user becomes owner on a fresh install.
-- Sessions: secure, httpOnly cookies, configurable expiry, list/revoke sessions.
-- Use Better Auth's own plugins for passkey, organization/roles, and rate limiting. Verify plugin names and options against the current Better Auth docs before coding.
+The builder signs people in with the owner's self-hosted Supabase (GoTrue). Only server code talks to it, through `@supabase/ssr` clients (`apps/editor/src/lib/supabase`); there is no browser Supabase client, because published and preview sites share the builder origin and run custom JS.
+
+- Email + password, magic link, TOTP two-factor, passkeys, password reset by emailed link.
+- Admin setting: `ALLOW_SIGNUP=false` refuses signup on the server. First user becomes owner on a fresh install (`server/workspace.ts`, advisory lock).
+- Sessions: httpOnly cookies (prefix `nextomic-auth`), verified with `getClaims()`. With a verified TOTP factor a session counts only at aal2 or when the sign-in used a passkey. "Remember me" off adds the `nextomic-session-only` cookie.
+- Accounts live in `public.users` (bigint `user_id`, uuid `user_uid` referencing `auth.users`) and `public.user_meta` (platform role, account status; written only by the backend). Triggers in migration 0001 create the rows when an auth user is created or changed. Builder data lives in the `nextomic_builder` schema. RLS is on for `users` and `user_meta`; policies are the owner's to write.
+- Pages Router API routes read the session with `getSessionFromHeaders` (no `next/headers` there).
 
 ### 1.1 What is built (account security)
 
-- **Sign in:** email + password with a "Remember me" checkbox (checked by default). Unchecked, the session cookie lasts only for the browser session. Errors clear as soon as a field changes, and the Sign in button is never left disabled by an error.
-- **Magic link:** "Email me a link" (secondary, ghost button) emails a one-time sign-in link to an existing account (`magicLink` plugin, sign-up through links is off).
-- **Passkeys:** "Use a passkey" on the sign-in page; add, list and remove passkeys in Settings > Security (`passkey` plugin). The relying party ID is the host of `BETTER_AUTH_URL`, so passkeys only work on that domain.
-- **Two-factor (TOTP):** Settings > Security > Turn on asks for the password, shows a QR code, the key and backup codes, then turns on only after a valid 6-digit code. Sign-in then continues on `/two-factor` (authenticator code or backup code, optional "Trust this device"). Turning off and new backup codes need the password.
-- **Change email:** Settings > Profile > Change email sends a 6-digit code (10 minutes, 5 tries, 5 requests per 10 minutes) to the NEW address; the email changes only after the code is confirmed. The code is stored hashed.
-- **Change password:** Settings > Security > Password sends a 6-digit code to the account email (`emailOTP` plugin, type `forget-password`); code + new password save it.
-- **Profile:** name and image change only when Save is pressed; Discard drops the pending change.
-- **Password policy:** `AUTH_PASSWORD_POLICY` env variable, checked on the server for sign up, reset and change (a `hooks.before` check) and shown live as a strength meter:
+- **Sign in:** email + password with "Remember me" (checked by default). Errors clear when a field changes.
+- **Magic link:** "Email me a link" signs in an existing account; the link returns through `/auth/callback?code=` (PKCE, same-origin `next` only).
+- **Passkeys:** "Use a passkey" on sign-in; add, rename, list, remove in Settings > Security (auth-js `auth.passkey.*`; browser runs `navigator.credentials`). The relying party ID is a GoTrue setting.
+- **Two-factor (TOTP):** Settings > Security > Turn on shows a QR code and key, then turns on after a valid 6-digit code. Sign-in continues on `/two-factor`. **Backup codes are dropped** (Supabase has none).
+- **Change email:** Settings > Profile sends a confirmation LINK to the new address; the email changes after the link is opened (`GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED=false`).
+- **Change password:** Settings > Security > Password emails a 6-digit code (`reauthenticate()`), then code + new password save it.
+- **Reset password:** emailed link, lands on `/reset-password` (its own layout, because the link signs the visitor in).
+- **Profile:** name (stored as first and last name) and image change only on Save.
+- **Password policy:** `AUTH_PASSWORD_POLICY` (`basic`, `medium` default, `strong`, `very-strong`), checked server-side and shown as a strength meter; keep GoTrue's `GOTRUE_PASSWORD_MIN_LENGTH` and required characters in step.
 
-| Value              | Rule                                                                       |
-| ------------------ | -------------------------------------------------------------------------- |
-| `basic`            | at least 8 characters                                                      |
-| `medium` (default) | at least 10 characters, a lowercase letter and a number                    |
-| `strong`           | at least 12 characters, upper and lowercase letters, a number and a symbol |
-| `very-strong`      | at least 16 characters, upper and lowercase letters, a number and a symbol |
+### 1.2 GoTrue settings the builder depends on (production)
 
-Maximum length is 128. Existing passwords keep working; the rule applies whenever a password is set.
-
-### 1.2 Auth dashboard (service `auth-studio`)
-
-- A second container, built from `apps/auth-studio`, runs Better Auth Studio on the builder's own accounts: users, sessions, linked accounts, plugin status and auth settings. It shares the database, the secret and the configuration (`packages/auth`) with the builder, and exposes only the dashboard at `/studio`.
-- **Access:** `STUDIO_ADMIN_EMAILS` (required) is the allowlist; `STUDIO_ALLOWED_IPS` optionally limits addresses. Sign-in there is email and password only, so give it its own hostname and add an IP allowlist or Traefik basic auth.
-- **Limits:** an account created in the dashboard has no password and no workspace yet (the builder creates the workspace on first use; the person sets a password with "forgot password"). Deleting an account that owns projects fails by design. Do not use its seed tools on a real database.
-- Deploy steps and variables: `dokploy/README.md`.
+`GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED=false`; `GOTRUE_PASSWORD_MIN_LENGTH` matching the policy; `GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION=true`; mail confirmation as production wants it; passkey RP ID and origin set; TOTP enroll and verify enabled; `DISABLE_SIGNUP` in step with `ALLOW_SIGNUP`; a redirect allow-list that includes the builder's `/auth/callback`.
 
 ## 2. Roles and project members
 
-- Workspace roles: owner, admin, member. Project roles: owner, editor, designer, content editor, viewer.
+- Workspace roles: owner, editor, member, viewer (enum `workspace_role`; what each may do is an open question, current behaviour kept). Project roles: owner, editor, designer, content editor, viewer.
 - Permission matrix is code (a typed map), enforced on every server route and action. Never rely on UI hiding.
 - Project settings > Members: invite by email (link expires), change role, remove, transfer ownership.
 - Multiple users on a project: presence indicators first; element-level locking or live co-editing is a later phase. Until then, use optimistic concurrency (version number on page saves) with conflict dialogs.

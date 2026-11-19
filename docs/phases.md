@@ -1,7 +1,7 @@
 # Build Phases
 
 Work one phase at a time. Do not start the next until approved. Reorder only with my approval.
-Platform = own Postgres + Better Auth. Supabase and REST are integrations for built apps only.
+Platform = owner's Supabase (Auth + Postgres, schema nextomic_builder). Supabase and REST are also integrations for built apps.
 Read the docs named in each phase before starting it.
 
 Priority side track (not a numbered phase, start only on the owner's word): CI/CD release pipeline, see `cicd-pipeline.md`.
@@ -21,7 +21,7 @@ Docs: `spec.md`, `ui-reference.md`, `platform.md`
 - [ ] Builder icons: `Icon` wrapper over locally bundled Iconify sets with a typed registry, lint for unused or unregistered icons, Material fallback flagged, `assets/icons/LICENSES.md`
 - [ ] Asset registry with brand assets from `assets/brandings`
 - [ ] Postgres + Drizzle, first migration, `.env.example`
-- [ ] Better Auth: signup/login/logout, sessions, email verification, reset; admin setting to allow/disallow signup
+- [x] Supabase Auth (replaced Better Auth 2026-11-20): signup/login/logout, sessions, email verification, reset; admin setting to allow/disallow signup
 - [ ] Workspaces and basic roles (owner, admin, member)
 - [ ] Storage adapter (local first, S3-compatible ready)
 - [ ] Dashboard shell and All Projects from the designs (header, nav, search, date range, grid/list, New Project, card menu); the Dashboard body stays an empty state until Phase 13
