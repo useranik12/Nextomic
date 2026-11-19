@@ -101,7 +101,7 @@ test("a profile image lands under the user's uuid and goes when the account is d
   const prefix = `${uid}/`;
   const names = await objectNames("customer-data", prefix);
   expect(names).toHaveLength(1);
-  expect(names[0]).toMatch(new RegExp(`^${uid}/user-image/[0-9a-f]{24}[.]png$`));
+  expect(names[0]).toMatch(new RegExp(`^${uid}/user-image/[0-9a-f]{24}[.]webp$`));
 
   const db = getDb();
   await db.execute(sql`delete from nextomic_builder.projects where created_by = ${uid}`);

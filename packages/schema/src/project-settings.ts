@@ -7,6 +7,7 @@ import { cssFileListSchema } from "./css-files";
 import { CLASS_NAME_PATTERN } from "./element";
 import { fontListSchema } from "./fonts";
 import { iconLibraryListSchema } from "./icons";
+import { defaultImageCompression, imageCompressionSchema } from "./image-compression";
 import { styleMapSchema } from "./style";
 import { mainFramework } from "./main-framework";
 import { newTheme, themeListSchema } from "./theme";
@@ -75,6 +76,8 @@ export const projectSettingsSchema = z.object({
   taxonomy: taxonomySchema.default(emptyTaxonomy()),
   // Generate a screenshot of each page and template for the grid view in Pages & Templates.
   generateScreenshots: z.boolean().default(false),
+  // Images uploaded to this project are shrunk to WebP in the browser before upload.
+  imageCompression: imageCompressionSchema.prefault({}),
   // Animations: GSAP timelines in folders (docs/design-system.md section 9).
   animations: animationSettingsSchema.default(emptyAnimationSettings()),
   // App state (global, changed by actions) and constants (fixed), see State Management.
@@ -101,6 +104,7 @@ export const defaultProjectSettings = (): ProjectSettings => ({
   showClock: false,
   taxonomy: emptyTaxonomy(),
   generateScreenshots: false,
+  imageCompression: defaultImageCompression(),
   versionControl: true,
   versionLimit: VERSION_LIMIT_MAX,
   classes: {},

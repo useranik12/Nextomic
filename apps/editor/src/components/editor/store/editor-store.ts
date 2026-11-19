@@ -346,6 +346,7 @@ export const useEditorStore = create<EditorState>((set, get) => {
       showClock: false,
       taxonomy: { pageCategories: [], pageTags: [], templateCategories: [], templateTags: [] },
       generateScreenshots: false,
+      imageCompression: { enabled: true, quality: 60 },
       versionControl: true,
       versionLimit: 50,
       classes: {},

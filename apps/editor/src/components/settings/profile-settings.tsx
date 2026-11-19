@@ -5,10 +5,14 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { saveProfileAction } from "@/app/(builder)/(dashboard)/settings/actions";
 import { ActionButton, FormInput } from "@/components/ui/controls";
 import { UserAvatar } from "@/components/ui/user-avatar";
+import { isHeicFile, toWebp } from "@/lib/image-compress";
 import { Icon } from "@/lib/icons/Icon";
+import { BUILDER_IMAGE_QUALITY } from "@nextomic/schema";
 import { EmailChange } from "./email-change";
 
-const ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
+const ACCEPT = "image/png,image/jpeg,image/webp,image/gif,.heic,.heif";
+// Profile images are shrunk to WebP in the browser before they are sent.
+const MAX_PICK_BYTES = 25 * 1024 * 1024;
 const MAX_BYTES = 2 * 1024 * 1024;
 
 /** Picked image waiting for Save: a new file, or removal of the current one. */
@@ -45,9 +49,16 @@ export function ProfileSettings({
     pending?.kind === "file" ? pending.preview : pending?.kind === "remove" ? null : savedImage;
   const dirty = draftName.trim() !== savedName || pending !== null;
 
-  function pick(file: File) {
+  async function pick(chosen: File) {
     setError(null);
     setNotice(null);
+    if (chosen.size > MAX_PICK_BYTES) return setError("Images can be up to 25 MB.");
+    const file = await toWebp(chosen, BUILDER_IMAGE_QUALITY, {
+      includeGif: true,
+      alwaysConvert: true
+    });
+    if (isHeicFile(file))
+      return setError("This HEIC photo could not be converted. Use a JPG or PNG.");
     if (file.size > MAX_BYTES) return setError("Images can be up to 2 MB.");
     setPending({ kind: "file", file, preview: URL.createObjectURL(file) });
   }
@@ -95,7 +106,7 @@ export function ProfileSettings({
             onChange={(e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
-              if (file) pick(file);
+              if (file) void pick(file);
             }}
           />
           <ActionButton size="sm" tone="outline" onPress={() => input.current?.click()}>

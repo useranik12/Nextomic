@@ -63,10 +63,10 @@ test("profile image, first letter fallback and the account menu", async ({ page 
   await expect(page.getByText("Profile saved.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Change image" })).toBeVisible();
   const src = await page.locator('header img[src^="/avatars/"]').getAttribute("src");
-  expect(src).toMatch(/^\/avatars\/[^/]+\/[a-f0-9]{24}\.png$/);
+  expect(src).toMatch(/^\/avatars\/[^/]+\/[a-f0-9]{24}[.]webp$/);
   const served = await page.request.get(src ?? "");
   expect(served.status()).toBe(200);
-  expect(served.headers()["content-type"]).toBe("image/png");
+  expect(served.headers()["content-type"]).toBe("image/webp");
 
   await page.getByRole("button", { name: "Remove" }).click();
   await expect(page.getByRole("button", { name: "Upload image" })).toBeVisible();

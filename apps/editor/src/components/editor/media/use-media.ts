@@ -22,6 +22,8 @@ import {
   restoreMediaAction,
   trashMediaAction
 } from "@/app/(builder)/editor/[id]/media-actions";
+import { prepareProjectImage } from "@/lib/image-compress";
+import { useEditorStore } from "../store/editor-store";
 import { uploadFile } from "./upload";
 
 export interface UploadItem {
@@ -215,7 +217,11 @@ export function useMedia(projectId: string, initial?: Partial<MediaQuery>) {
           const file = files[i]!;
           const item = items[i]!;
           try {
-            last = await uploadFile(projectId, file, {
+            const ready = await prepareProjectImage(
+              file,
+              useEditorStore.getState().project.imageCompression
+            );
+            last = await uploadFile(projectId, ready, {
               folderId: query.folderId,
               ...(replaceId ? { replaceId } : {}),
               onProgress: (f) => update(item.key, { progress: f })

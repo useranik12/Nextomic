@@ -22,7 +22,7 @@ const SORT_LABEL: Record<MediaSort, string> = {
   size: "Largest"
 };
 
-const FILE_ACCEPT = "image/*,video/*,audio/*,application/pdf,.svg";
+const FILE_ACCEPT = "image/*,video/*,audio/*,application/pdf,.svg,.heic,.heif";
 
 export function MediaToolbar({
   model,

@@ -152,6 +152,11 @@ test("an Image element picks its file from Media and the library shows where it 
 
 test("images are served resized, big uploads work and the cap holds", async ({ page }) => {
   await openMedia(page);
+  // Keep the original PNG: this test is about resizing and the size caps, not compression.
+  await page.getByRole("button", { name: "App Settings" }).click();
+  await page.getByRole("switch", { name: "Compress uploaded images" }).click({ force: true });
+  await expect(page.getByRole("switch", { name: "Compress uploaded images" })).not.toBeChecked();
+  await page.getByRole("button", { name: "Media", exact: true }).click();
   const big = await sharp({
     create: { width: 2000, height: 1000, channels: 3, background: "#336699" }
   })

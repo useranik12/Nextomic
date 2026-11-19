@@ -306,6 +306,8 @@ Opened from the element's Action tab (a trigger card, or "Add action"), from an 
 
 ### 4.9 App Settings (replicate `inspiration/flutterflow-app-settings.png`)
 
+The panel is grouped with dividers and a small title per group: General (Home page, Generate element ID), Media (Compress uploaded images switch and a five-step quality picker, 40 to 80 percent), Pages (Version control, Generate Screenshots), Editor (Hide edit border, Show time) and Authentication. Every control explains itself in an info tooltip instead of helper text. Components: `SettingsGroup`, `StepPicker`, `Toggle` with `tip`, `TipField`.
+
 Built so far (a panel, not yet the full-screen FlutterFlow structure): Home page select at the top, the app-wide switches, and the Authentication group (Use authentication, method Supabase or Custom with a user data type, New pages require authentication, Login page, After sign-in page). Target: full-screen view opened from the bottom of the left rail. Left: title, search field, grouped nav. Right: sections with a header, description, and form fields. Items and their mapping are in `platform.md`.
 
 ### 4.10 State Management page

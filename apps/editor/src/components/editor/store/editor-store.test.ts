@@ -16,6 +16,7 @@ const project: ProjectSettings = {
   showClock: false,
   taxonomy: { pageCategories: [], pageTags: [], templateCategories: [], templateTags: [] },
   generateScreenshots: false,
+  imageCompression: { enabled: true, quality: 60 },
   versionControl: true,
   versionLimit: 50,
   classes: {},
