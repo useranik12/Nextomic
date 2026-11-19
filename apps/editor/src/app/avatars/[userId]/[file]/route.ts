@@ -1,4 +1,5 @@
 import { getStorageAdapter } from "@/lib/storage";
+import { userImagePath } from "@/server/storage-paths";
 import { AVATAR_FILE, AVATAR_MIME, USER_SEGMENT, sniffAvatarFormat } from "@/server/avatar";
 
 export const dynamic = "force-dynamic";
@@ -6,12 +7,12 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ userId: string; file: string }>;
 
 // Avatar images. Keys are built from validated segments only, so a request never reaches outside
-// `avatars/<userId>/`. File names are random and change on every upload, so they cache forever.
+// the user's `user-image/` folder. File names are random and change on every upload, so they cache forever.
 export async function GET(_request: Request, { params }: { params: Params }) {
   const { userId, file } = await params;
   if (!USER_SEGMENT.test(userId) || !AVATAR_FILE.test(file))
     return new Response("Not found", { status: 404 });
-  const data = await getStorageAdapter().get(`avatars/${userId}/${file}`);
+  const data = await getStorageAdapter().get(userImagePath(userId, file));
   const format = data ? sniffAvatarFormat(data) : null;
   if (!data || !format) return new Response("Not found", { status: 404 });
   return new Response(Buffer.from(data), {

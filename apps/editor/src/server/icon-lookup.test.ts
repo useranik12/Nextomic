@@ -4,12 +4,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const stored = new Map<string, Uint8Array>();
 vi.mock("@/lib/storage", () => ({
   getStorageAdapter: () => ({
-    put: async (i: { key: string; data: Uint8Array }) => void stored.set(i.key, i.data),
-    get: async (k: string) => stored.get(k) ?? null,
-    delete: async (k: string) => void stored.delete(k),
-    getUrl: async (k: string) => k
+    put: async (i: { bucket: string; path: string; data: Uint8Array }) =>
+      void stored.set(`${i.bucket}/${i.path}`, i.data),
+    get: async (l: { bucket: string; path: string }) => stored.get(`${l.bucket}/${l.path}`) ?? null,
+    delete: async (l: { bucket: string; path: string }) =>
+      void stored.delete(`${l.bucket}/${l.path}`),
+    deleteMany: async (bucket: string, paths: string[]) =>
+      paths.forEach((p) => stored.delete(`${bucket}/${p}`))
   })
 }));
+vi.mock("./project-workspace", () => ({ workspaceIdOf: async () => "w1" }));
 
 import { iconLibraryKeys, pageIcons } from "./icon-lookup";
 import { importIconUpload } from "./icon-upload";

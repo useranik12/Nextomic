@@ -482,6 +482,26 @@ export const connectorAuditLog = builderSchema.table(
   ]
 );
 
+/**
+ * Folders waiting to be emptied in Supabase Storage. A database trigger adds a row when a user,
+ * workspace or project row is deleted (from the app or from Studio); the builder removes the
+ * objects through the Storage API and then the row. Objects are never deleted with SQL because
+ * that leaves the files behind.
+ */
+export const storageDeletions = builderSchema.table(
+  "storage_deletions",
+  {
+    id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+    bucket: text("bucket").notNull(),
+    /** Folder to empty, ending in a slash, e.g. "<workspace>/<project>/". */
+    prefix: text("prefix").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [uniqueIndex("storage_deletions_folder_key").on(table.bucket, table.prefix)]
+);
+
 export type MediaKindValue = (typeof MEDIA_KINDS)[number];
 
 /** SQL for a person's display name: first and last name, or the part of the email before the @. */

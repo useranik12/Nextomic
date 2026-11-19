@@ -14,7 +14,7 @@ pointing at the repo's `docker-compose.yml`; this records what to configure so a
    `packages/db` against the compose Postgres and exits. `app` starts only after it completes
    successfully, so a failed migration blocks the deploy instead of booting a mismatched app.
 3. **app** — built from the repo's `Dockerfile`. Persistent volumes:
-   - `/app/.data/storage` — local storage adapter target (when `STORAGE_ADAPTER=local`)
+   - Files live in Supabase Storage (set `SUPABASE_SECRET_KEY`); the volume is only used when `STORAGE_ADAPTER=local`. Set the Storage service's `FILE_SIZE_LIMIT` to at least 209715200 (200 MB)
    - `/app/.data/backups` — backup output (Phase 12)
 4. **pgadmin** — `elestio/pgadmin:9.19`, a web UI for the database. Volume `pgadmin-data` keeps its
    saved servers and settings. Needs `PGADMIN_DEFAULT_EMAIL` (a real-looking address) and
@@ -55,7 +55,7 @@ Each needs a DNS record and HTTPS (Let's Encrypt) in Dokploy. Protect `auth-stud
 Set every variable from `.env.example` in the Dokploy Compose service's Environment tab; compose
 interpolates them. `POSTGRES_PASSWORD` and `BETTER_AUTH_SECRET` are required (compose refuses to
 start without them), and the app's `DATABASE_URL` is built from the `POSTGRES_*` values. Set
-`BETTER_AUTH_URL` and `STORAGE_PUBLIC_BASE_URL` to the public https origin. Never commit a populated
+`APP_URL` to the public https origin. Never commit a populated
 `.env`; secrets are configured only in Dokploy (or the target host), per the project security rules.
 
 ### Email (SMTP)

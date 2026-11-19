@@ -1,9 +1,11 @@
 import { randomBytes } from "node:crypto";
 import { getDb, users } from "@nextomic/db";
 import { eq } from "drizzle-orm";
+import type { StorageLocation } from "@nextomic/storage";
 import { getStorageAdapter } from "@/lib/storage";
+import { userImagePath } from "./storage-paths";
 
-// Builder user avatars. Files live in storage under `avatars/<userId>/<random>.<ext>` and are
+// Builder user avatars. Files live in the customer-data bucket under `<user-uid>/user-image/<random>.<ext>` and are
 // served by app/avatars/[userId]/[file]; the user's row keeps the link in `image`.
 
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -41,11 +43,11 @@ export function sniffAvatarFormat(data: Uint8Array): AvatarFormat | null {
   return null;
 }
 
-const ownKey = (userId: string, image: string | null) => {
+const ownLocation = (userId: string, image: string | null) => {
   const prefix = `/avatars/${userId}/`;
   if (!image?.startsWith(prefix)) return null;
   const file = image.slice(prefix.length);
-  return AVATAR_FILE.test(file) ? `avatars/${userId}/${file}` : null;
+  return AVATAR_FILE.test(file) ? userImagePath(userId, file) : null;
 };
 
 async function currentImage(userId: string): Promise<string | null> {
@@ -64,10 +66,10 @@ async function setImage(userId: string, image: string | null) {
     .where(eq(users.userUid, userId));
 }
 
-async function deleteQuietly(key: string | null) {
-  if (!key) return;
+async function deleteQuietly(location: StorageLocation | null) {
+  if (!location) return;
   try {
-    await getStorageAdapter().delete(key);
+    await getStorageAdapter().delete(location);
   } catch {
     // The row no longer points at the old file; a leftover file is harmless.
   }
@@ -83,14 +85,14 @@ export async function saveAvatar(userId: string, file: File): Promise<string> {
   if (!format) throw new AvatarError("Use a PNG, JPG, WebP or GIF image.");
   const name = `${randomBytes(12).toString("hex")}.${format}`;
   await getStorageAdapter().put({
-    key: `avatars/${userId}/${name}`,
+    ...userImagePath(userId, name),
     data,
     contentType: AVATAR_MIME[format]
   });
   const previous = await currentImage(userId);
   const link = `/avatars/${userId}/${name}`;
   await setImage(userId, link);
-  await deleteQuietly(ownKey(userId, previous));
+  await deleteQuietly(ownLocation(userId, previous));
   return link;
 }
 
@@ -98,5 +100,5 @@ export async function saveAvatar(userId: string, file: File): Promise<string> {
 export async function removeAvatar(userId: string): Promise<void> {
   const previous = await currentImage(userId);
   await setImage(userId, null);
-  await deleteQuietly(ownKey(userId, previous));
+  await deleteQuietly(ownLocation(userId, previous));
 }

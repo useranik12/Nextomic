@@ -1,53 +1,50 @@
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join, normalize, relative, resolve } from "node:path";
-import type { StorageAdapter, StoragePutInput } from "./adapter";
+import { dirname, normalize, relative, resolve } from "node:path";
+import {
+  assertStoragePath,
+  type StorageAdapter,
+  type StorageLocation,
+  type StoragePutInput
+} from "./adapter";
 
+/** Files on disk: `<root>/<bucket>/<path>`. Used by unit tests. */
 export class LocalStorageAdapter implements StorageAdapter {
   private readonly root: string;
-  private readonly publicBaseUrl: string;
 
-  constructor(options: { root: string; publicBaseUrl: string }) {
+  constructor(options: { root: string }) {
     this.root = resolve(options.root);
-    this.publicBaseUrl = options.publicBaseUrl.replace(/\/+$/, "");
   }
 
-  private resolveKey(key: string): string {
-    const normalizedKey = normalize(key);
-    const resolved = resolve(this.root, normalizedKey);
+  private resolveLocation({ bucket, path }: StorageLocation): string {
+    assertStoragePath(path);
+    assertStoragePath(bucket);
+    const resolved = resolve(this.root, normalize(`${bucket}/${path}`));
     const rel = relative(this.root, resolved);
-    // Reject any key that escapes the storage root (path traversal).
-    if (rel.startsWith("..") || resolve(this.root, rel) !== resolved) {
-      throw new Error(`Invalid storage key: ${key}`);
-    }
+    if (rel.startsWith("..") || resolve(this.root, rel) !== resolved)
+      throw new Error(`Invalid storage path: ${bucket}/${path}`);
     return resolved;
   }
 
   async put(input: StoragePutInput): Promise<void> {
-    const path = this.resolveKey(input.key);
-    await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, input.data);
+    const file = this.resolveLocation(input);
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, input.data);
   }
 
-  async get(key: string): Promise<Uint8Array | null> {
+  async get(location: StorageLocation): Promise<Uint8Array | null> {
     try {
-      const path = this.resolveKey(key);
-      return await readFile(path);
+      return await readFile(this.resolveLocation(location));
     } catch (error) {
-      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-        return null;
-      }
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") return null;
       throw error;
     }
   }
 
-  async delete(key: string): Promise<void> {
-    const path = this.resolveKey(key);
-    await rm(path, { force: true });
+  async delete(location: StorageLocation): Promise<void> {
+    await rm(this.resolveLocation(location), { force: true });
   }
 
-  async getUrl(key: string): Promise<string> {
-    // Validate the key the same way put/get do, even though we don't read the file here.
-    this.resolveKey(key);
-    return `${this.publicBaseUrl}/${join(key).replace(/\\/g, "/")}`;
+  async deleteMany(bucket: string, paths: readonly string[]): Promise<void> {
+    for (const path of paths) await this.delete({ bucket, path });
   }
 }

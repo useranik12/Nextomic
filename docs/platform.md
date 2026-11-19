@@ -61,7 +61,7 @@ Owner decision (2026-11-08): there are no SMTP settings in the builder. SMTP liv
 
 - Automatic scheduled backups of: projects (JSON + assets), builder settings, design systems.
 - Schedule (daily/weekly), retention count, encryption option.
-- Targets: local storage (zip on the server volume) and S3-compatible storage (AWS S3, R2, MinIO, etc.).
+- Targets: Supabase Storage and S3-compatible storage (AWS S3, R2, MinIO, etc.); the builder's own file store is separate (see spec.md decisions log, 2026-11-20).
 - Manual backup and one-click restore (full or per project). Restore validates the manifest and version, and offers dry run.
 - Backup status and failures surfaced in the dashboard and by email.
 

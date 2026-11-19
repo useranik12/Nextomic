@@ -1,3 +1,9 @@
-export type { StorageAdapter, StoragePutInput } from "./adapter";
+export {
+  assertStoragePath,
+  STORAGE_DELETE_BATCH,
+  type StorageAdapter,
+  type StorageLocation,
+  type StoragePutInput
+} from "./adapter";
 export { LocalStorageAdapter } from "./local";
-export { S3StorageAdapter, type S3StorageAdapterOptions } from "./s3";
+export { SupabaseStorageAdapter, type SupabaseStorageOptions } from "./supabase";

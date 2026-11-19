@@ -5,12 +5,16 @@ import type { MediaAsset } from "@nextomic/schema";
 const stored = new Map<string, Uint8Array>();
 vi.mock("@/lib/storage", () => ({
   getStorageAdapter: () => ({
-    put: async (i: { key: string; data: Uint8Array }) => void stored.set(i.key, i.data),
-    get: async (k: string) => stored.get(k) ?? null,
-    delete: async (k: string) => void stored.delete(k),
-    getUrl: async (k: string) => k
+    put: async (i: { bucket: string; path: string; data: Uint8Array }) =>
+      void stored.set(`${i.bucket}/${i.path}`, i.data),
+    get: async (l: { bucket: string; path: string }) => stored.get(`${l.bucket}/${l.path}`) ?? null,
+    delete: async (l: { bucket: string; path: string }) =>
+      void stored.delete(`${l.bucket}/${l.path}`),
+    deleteMany: async (bucket: string, paths: string[]) =>
+      paths.forEach((p) => stored.delete(`${bucket}/${p}`))
   })
 }));
+vi.mock("./project-workspace", () => ({ workspaceIdOf: async () => "w1" }));
 
 import { deleteVariants, isVariantWidth, variantBytes, wantsVariant } from "./media-variants";
 
@@ -72,7 +76,7 @@ describe("variantBytes", () => {
     const meta = await sharp(first!).metadata();
     expect([meta.format, meta.width, meta.height]).toEqual(["webp", 640, 320]);
     expect([...stored.keys()]).toEqual([
-      "media-variants/p1/a1b2c3d4e5f60718293a4b5c/01234567-640.webp"
+      "app-uploads/w1/p1/media-assets/a1b2c3d4e5f60718293a4b5c/variants/01234567-640.webp"
     ]);
     await variantBytes("p1", a, 640, load);
     expect(load).toHaveBeenCalledTimes(1);

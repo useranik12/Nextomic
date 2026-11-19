@@ -23,7 +23,7 @@ Docs: `spec.md`, `ui-reference.md`, `platform.md`
 - [ ] Postgres + Drizzle, first migration, `.env.example`
 - [x] Supabase Auth (replaced Better Auth 2026-11-20): signup/login/logout, sessions, email verification, reset; admin setting to allow/disallow signup
 - [ ] Workspaces and basic roles (owner, admin, member)
-- [ ] Storage adapter (local first, S3-compatible ready)
+- [x] Storage adapter (Supabase Storage; local disk for tests)
 - [ ] Dashboard shell and All Projects from the designs (header, nav, search, date range, grid/list, New Project, card menu); the Dashboard body stays an empty state until Phase 13
 - [ ] `bun run deps:manifest` generates `builder-dependencies.json`; CI fails if outdated; read-only view in Settings
 - [ ] Docker (Bun) + Dokploy config (app + Postgres)

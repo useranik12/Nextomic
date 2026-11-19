@@ -41,7 +41,7 @@ Design sources (`blueprint/`) and how to follow them: see `apps/editor/CLAUDE.md
 - Drag and drop: @dnd-kit
 - Database: PostgreSQL with Drizzle ORM and SQL migrations
 - Auth (builder): Supabase Auth through `@supabase/ssr` server clients (email/password, magic link, TOTP, passkeys, reset by link). Rate limits in `server/rate-limit`; roles in `public.user_meta` and workspace/project member tables
-- Storage: storage adapter (local volume, S3-compatible)
+- Storage: Supabase Storage (REST API, server-side secret key) behind the storage adapter; buckets `nextomic-builder-assets`, `customer-data`, `app-uploads`; paths built only in `server/storage-paths.ts`. Local disk adapter for unit tests
 - Validation: Zod (schema is the single source of truth)
 - CSS parsing: PostCSS or lightningcss (for bidirectional CSS)
 - Hosting: Dokploy on Ubuntu 24.04 VPS (Docker, Bun image)
@@ -68,7 +68,7 @@ Design sources (`blueprint/`) and how to follow them: see `apps/editor/CLAUDE.md
 - `packages/runtime` client runtime shipped with built apps (actions, state, queries, auth client)
 - `packages/db` Drizzle schema, migrations (platform DB only)
 - `packages/integrations` connector interface, Supabase and REST connectors, auth providers
-- `packages/storage` storage adapter (local, S3-compatible)
+- `packages/storage` storage adapter (Supabase Storage, local disk for tests)
 
 ## Commands
 

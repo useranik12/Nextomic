@@ -1,5 +1,6 @@
-import { MEDIA_WIDTHS, mediaVariantKey, type MediaAsset } from "@nextomic/schema";
+import { MEDIA_WIDTHS, mediaVariantFile, type MediaAsset } from "@nextomic/schema";
 import { getStorageAdapter } from "@/lib/storage";
+import { BUCKETS, mediaVariantPath } from "./storage-paths";
 
 // Resized copies of uploaded images (docs/ui-reference.md 4.6). Made on the first request for a
 // width, stored under `media-variants/...`, and served from storage after that. The original is
@@ -60,9 +61,10 @@ export async function variantBytes(
   width: VariantWidth,
   loadOriginal: () => Promise<Uint8Array | null>
 ): Promise<Uint8Array | null> {
-  const key = mediaVariantKey(projectId, asset.id, asset.hash, width);
+  const location = await mediaVariantPath(projectId, asset.id, mediaVariantFile(asset.hash, width));
+  const key = `${location.bucket}/${location.path}`;
   const storage = getStorageAdapter();
-  const stored = await storage.get(key).catch(() => null);
+  const stored = await storage.get(location).catch(() => null);
   if (stored) return stored;
   const running = inflight.get(key);
   if (running) return running;
@@ -71,7 +73,9 @@ export async function variantBytes(
     if (!original) return null;
     const made = await resize(original, width);
     if (made)
-      await storage.put({ key, data: made, contentType: "image/webp" }).catch(() => undefined);
+      await storage
+        .put({ ...location, data: made, contentType: "image/webp" })
+        .catch(() => undefined);
     return made;
   }).finally(() => inflight.delete(key));
   inflight.set(key, job);
@@ -81,9 +85,13 @@ export async function variantBytes(
 /** Removes every resized copy of one version of an asset (after Replace file or deleting it). */
 export async function deleteVariants(projectId: string, id: string, hash: string): Promise<void> {
   const storage = getStorageAdapter();
-  await Promise.all(
-    MEDIA_WIDTHS.map((w) =>
-      storage.delete(mediaVariantKey(projectId, id, hash, w)).catch(() => undefined)
-    )
+  const paths = await Promise.all(
+    MEDIA_WIDTHS.map((w) => mediaVariantPath(projectId, id, mediaVariantFile(hash, w)))
   );
+  await storage
+    .deleteMany(
+      BUCKETS.appUploads,
+      paths.map((p) => p.path)
+    )
+    .catch(() => undefined);
 }

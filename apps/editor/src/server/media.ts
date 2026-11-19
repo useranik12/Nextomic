@@ -39,6 +39,8 @@ import {
 } from "@nextomic/schema";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { getStorageAdapter } from "@/lib/storage";
+import { mediaAssetFolder, mediaOriginalPath } from "./storage-paths";
+import { queueFolderDeletion } from "./storage-cleanup";
 import { deleteVariants } from "./media-variants";
 import { createRateLimiter } from "./rate-limit";
 
@@ -62,8 +64,6 @@ export function takeMediaWrite(userId: string, kind: "write" | "upload" = "write
   const r = (kind === "upload" ? UPLOADS : WRITES).take(`${kind}:${userId}`);
   if (!r.ok) throw new MediaError("Too many requests. Wait a moment and try again.");
 }
-
-const storageKey = (projectId: string, id: string) => `media/${projectId}/${id}`;
 
 type Row = typeof mediaAssets.$inferSelect;
 
@@ -256,7 +256,7 @@ export async function getMedia(projectId: string, id: string): Promise<MediaAsse
 
 /** The stored bytes of an asset; null when they are gone from storage. */
 export async function readMediaBytes(projectId: string, id: string): Promise<Uint8Array | null> {
-  return getStorageAdapter().get(storageKey(projectId, id));
+  return getStorageAdapter().get(await mediaOriginalPath(projectId, id));
 }
 
 // ---------------------------------------------------------------- folders
@@ -340,6 +340,12 @@ export function prepareUpload(
   return { data, format, fileName: mediaFileName(name, format.ext) };
 }
 
+/** Empties an asset's storage folder (original and resized copies); failures are retried later. */
+const dropAssetFolder = async (projectId: string, id: string): Promise<void> => {
+  const { bucket, prefix } = await mediaAssetFolder(projectId, id);
+  await queueFolderDeletion(bucket, prefix).catch(() => undefined);
+};
+
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
 
 export async function storeMedia(
@@ -352,7 +358,11 @@ export async function storeMedia(
   const { data, format, fileName } = prepareUpload(file.name, file.data);
   const dims = format.kind === "image" ? imageSize(data) : null;
   const id = randomUUID();
-  await getStorageAdapter().put({ key: storageKey(projectId, id), data, contentType: format.mime });
+  await getStorageAdapter().put({
+    ...(await mediaOriginalPath(projectId, id)),
+    data,
+    contentType: format.mime
+  });
   try {
     const [row] = await getDb()
       .insert(mediaAssets)
@@ -373,9 +383,7 @@ export async function storeMedia(
       .returning();
     return toAsset(row!);
   } catch (error) {
-    await getStorageAdapter()
-      .delete(storageKey(projectId, id))
-      .catch(() => undefined);
+    await dropAssetFolder(projectId, id);
     throw error;
   }
 }
@@ -394,7 +402,11 @@ export async function replaceMedia(
       `Replace it with another ${current.kind === "svg" ? "SVG" : current.kind} file.`
     );
   const dims = format.kind === "image" ? imageSize(data) : null;
-  await getStorageAdapter().put({ key: storageKey(projectId, id), data, contentType: format.mime });
+  await getStorageAdapter().put({
+    ...(await mediaOriginalPath(projectId, id)),
+    data,
+    contentType: format.mime
+  });
   await deleteVariants(projectId, id, current.hash);
   const [row] = await getDb()
     .update(mediaAssets)
@@ -485,15 +497,8 @@ async function purgeWhere(projectId: string, where: SQL | undefined): Promise<nu
   const rows = await getDb()
     .delete(mediaAssets)
     .where(and(eq(mediaAssets.projectId, projectId), where))
-    .returning({ id: mediaAssets.id, hash: mediaAssets.hash });
-  await Promise.all(
-    rows.map(async (r) => {
-      await getStorageAdapter()
-        .delete(storageKey(projectId, r.id))
-        .catch(() => undefined);
-      await deleteVariants(projectId, r.id, r.hash);
-    })
-  );
+    .returning({ id: mediaAssets.id });
+  await Promise.all(rows.map((r) => dropAssetFolder(projectId, r.id)));
   return rows.length;
 }
 
@@ -509,23 +514,6 @@ export function purgeMedia(projectId: string, ids: readonly string[]): Promise<n
 export function emptyMediaTrash(projectId: string): Promise<number> {
   assertProjectId(projectId);
   return purgeWhere(projectId, isNotNull(mediaAssets.trashedAt));
-}
-
-/** Removes every stored byte of a project's media; call before deleting the project. */
-export async function deleteProjectMediaFiles(projectId: string): Promise<void> {
-  assertProjectId(projectId);
-  const rows = await getDb()
-    .select({ id: mediaAssets.id, hash: mediaAssets.hash })
-    .from(mediaAssets)
-    .where(eq(mediaAssets.projectId, projectId));
-  await Promise.all(
-    rows.map(async (r) => {
-      await getStorageAdapter()
-        .delete(storageKey(projectId, r.id))
-        .catch(() => undefined);
-      await deleteVariants(projectId, r.id, r.hash);
-    })
-  );
 }
 
 // ---------------------------------------------------------------- usage

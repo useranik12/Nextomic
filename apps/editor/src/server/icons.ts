@@ -19,6 +19,7 @@ import {
 import { z } from "zod";
 import { getStorageAdapter } from "@/lib/storage";
 import { fetchHttps } from "./remote-fetch";
+import { iconLibraryPath } from "./storage-paths";
 
 // Icon libraries. Sets come from the `@iconify-json/<prefix>` npm packages through jsDelivr, the
 // same allowlisted, redirect-free fetch the fonts use. The package listing carries a sha256 per
@@ -62,19 +63,19 @@ const sha256Base64 = (data: Uint8Array): string =>
   createHash("sha256").update(data).digest("base64");
 
 /**
- * Storage key of a library's data file. The file is named by its content (`<key>-<sha8>.json`),
+ * Storage location of a library's data file. The file is named by its content (`<key>-<sha8>.json`),
  * so an update never overwrites the release a saved or published project still points at.
  */
-export const iconSetKey = (projectId: string, file: string): string => {
+export const iconSetLocation = (projectId: string, file: string) => {
   if (!isUuid(projectId)) throw new IconError("Invalid project.");
-  return `icons/${projectId}/${iconFileSchema.parse(file)}`;
+  return iconLibraryPath(projectId, iconFileSchema.parse(file));
 };
 
-/** Storage key of an uploaded icon font file (served by app/icons/[projectId]/[file]). */
-export const iconFontKey = (projectId: string, file: string): string => {
+/** Storage location of an uploaded icon font file (served by app/icons/[projectId]/[file]). */
+export const iconFontLocation = (projectId: string, file: string) => {
   if (!isUuid(projectId) || !ICON_FONT_FILE_PATTERN.test(file))
     throw new IconError("Invalid icon font file.");
-  return `icons/${projectId}/${file}`;
+  return iconLibraryPath(projectId, file);
 };
 
 const catalogEntry = (prefix: string) => {
@@ -184,7 +185,7 @@ export async function installIconSet(
   const sha = sha256Hex(release.data);
   const file = `${prefix}-${sha.slice(0, 8)}.json`;
   await getStorageAdapter().put({
-    key: iconSetKey(projectId, file),
+    ...(await iconSetLocation(projectId, file)),
     data: release.data,
     contentType: "application/json"
   });
@@ -278,7 +279,7 @@ export async function previewIconUpdate(
 export async function loadSet(projectId: string, library: LibraryData): Promise<IconifySet> {
   const hit = setCache.get(cacheKey(projectId, library));
   if (hit) return hit;
-  const data = await getStorageAdapter().get(iconSetKey(projectId, library.file));
+  const data = await getStorageAdapter().get(await iconSetLocation(projectId, library.file));
   if (!data) throw new IconError("The icons of this library are missing from storage.");
   let set: IconifySet;
   try {
@@ -300,7 +301,7 @@ export async function loadGlyphs(
   const id = cacheKey(projectId, library);
   const hit = glyphCache.get(id);
   if (hit) return hit;
-  const data = await getStorageAdapter().get(iconSetKey(projectId, library.file));
+  const data = await getStorageAdapter().get(await iconSetLocation(projectId, library.file));
   if (!data) throw new IconError("The icons of this library are missing from storage.");
   let glyphs: IconFontData["glyphs"];
   try {

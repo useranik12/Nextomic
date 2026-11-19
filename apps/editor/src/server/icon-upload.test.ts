@@ -3,12 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const stored = new Map<string, Uint8Array>();
 vi.mock("@/lib/storage", () => ({
   getStorageAdapter: () => ({
-    put: async (i: { key: string; data: Uint8Array }) => void stored.set(i.key, i.data),
-    get: async (k: string) => stored.get(k) ?? null,
-    delete: async (k: string) => void stored.delete(k),
-    getUrl: async (k: string) => k
+    put: async (i: { bucket: string; path: string; data: Uint8Array }) =>
+      void stored.set(`${i.bucket}/${i.path}`, i.data),
+    get: async (l: { bucket: string; path: string }) => stored.get(`${l.bucket}/${l.path}`) ?? null,
+    delete: async (l: { bucket: string; path: string }) =>
+      void stored.delete(`${l.bucket}/${l.path}`),
+    deleteMany: async (bucket: string, paths: string[]) =>
+      paths.forEach((p) => stored.delete(`${bucket}/${p}`))
   })
 }));
+vi.mock("./project-workspace", () => ({ workspaceIdOf: async () => "w1" }));
 
 import { strToU8, zipSync } from "fflate";
 import { MAX_ZIP_ENTRIES, importIconUpload } from "./icon-upload";
@@ -86,7 +90,9 @@ describe("SVG files", () => {
     expect(skipped.join("\n")).toMatch(/notes.txt.*not an SVG/);
     const data = JSON.parse(
       new TextDecoder().decode(
-        stored.get(`icons/00000000-0000-4000-8000-0000000000a1/${library.file}`)
+        stored.get(
+          `app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${library.file}`
+        )
       )
     );
     expect(Object.keys(data.icons)).toEqual(["arrow-left", "arrow-left-2"]);
@@ -147,7 +153,9 @@ describe("Iconify JSON", () => {
     expect(skipped[0]).toMatch(/1 icons/);
     const data = JSON.parse(
       new TextDecoder().decode(
-        stored.get(`icons/00000000-0000-4000-8000-0000000000a1/${library.file}`)
+        stored.get(
+          `app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${library.file}`
+        )
       )
     );
     expect(data.prefix).toBe("my-icons");
@@ -188,7 +196,9 @@ describe("icon fonts", () => {
     expect(library.glyphSamples).toEqual(["e900", "e901"]);
     const data = JSON.parse(
       new TextDecoder().decode(
-        stored.get(`icons/00000000-0000-4000-8000-0000000000a1/${library.file}`)
+        stored.get(
+          `app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${library.file}`
+        )
       )
     );
     expect(data).toEqual({ prefix: "brand-font", glyphs: { home: "e900", star: "e901" } });
@@ -292,7 +302,9 @@ describe("zip uploads", () => {
     expect(library.count).toBe(2);
     const data = JSON.parse(
       new TextDecoder().decode(
-        stored.get(`icons/00000000-0000-4000-8000-0000000000a1/${library.file}`)
+        stored.get(
+          `app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${library.file}`
+        )
       )
     );
     expect(Object.keys(data.icons).sort()).toEqual(["a", "b"]);
@@ -319,12 +331,16 @@ describe("zip uploads", () => {
     ]);
     const data = JSON.parse(
       new TextDecoder().decode(
-        stored.get(`icons/00000000-0000-4000-8000-0000000000a1/${library.file}`)
+        stored.get(
+          `app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${library.file}`
+        )
       )
     );
     expect(Object.keys(data.icons)).toEqual(["up"]);
     expect(
-      [...stored.keys()].every((k) => k.startsWith("icons/00000000-0000-4000-8000-0000000000a1/"))
+      [...stored.keys()].every((k) =>
+        k.startsWith("app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/")
+      )
     ).toBe(true);
   });
 

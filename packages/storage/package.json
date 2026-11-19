@@ -8,9 +8,6 @@
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@aws-sdk/client-s3": "3.1171.0"
-  },
   "devDependencies": {
     "@types/node": "22.10.5"
   }

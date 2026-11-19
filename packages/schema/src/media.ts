@@ -194,14 +194,9 @@ export function mediaSrcSet(src: string): string | null {
   return MEDIA_WIDTHS.map((w) => `${src}?w=${w} ${w}w`).join(", ");
 }
 
-/** Storage key of a resized copy. Apart from the original's key so both can exist. */
-export function mediaVariantKey(
-  projectId: string,
-  assetId: string,
-  hash: string,
-  width: number
-): string {
-  return `media-variants/${projectId}/${assetId}/${hash.slice(0, 8)}-${width}.webp`;
+/** File name of a resized copy inside the asset's "variants" folder; the hash tells versions apart. */
+export function mediaVariantFile(hash: string, width: number): string {
+  return `${hash.slice(0, 8)}-${width}.webp`;
 }
 
 export const mediaTagSchema = z

@@ -13,6 +13,7 @@ import {
 import { z } from "zod";
 import { getStorageAdapter } from "@/lib/storage";
 import { fetchHttps } from "./remote-fetch";
+import { fontFilePath } from "./storage-paths";
 
 // Font import. Everything fetched from the network goes through `fetchAllowed`: https only, a fixed
 // host allowlist, no redirects, a timeout and a size cap (docs/integrations.md SSRF rules).
@@ -202,7 +203,7 @@ async function storeFiles(
       throw new FontError(`${file.name} is not a valid font file.`);
     }
     await storage.put({
-      key: `fonts/${projectId}/${fontId}/${file.name}`,
+      ...(await fontFilePath(projectId, fontId, file.name)),
       data: file.data,
       contentType: FONT_MIME[format]
     });

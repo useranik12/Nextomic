@@ -6,7 +6,7 @@ import {
   mediaFileName,
   mediaIdFromPath,
   mediaSrcSet,
-  mediaVariantKey,
+  mediaVariantFile,
   mediaPath,
   mediaTagsSchema,
   mediaTitleFromName,
@@ -153,9 +153,7 @@ describe("responsive images", () => {
     expect(mediaSrcSet("https://example.com/hero.jpg")).toBeNull();
     expect(mediaSrcSet("")).toBeNull();
   });
-  it("keeps variants apart from the original key", () => {
-    expect(mediaVariantKey("p1", id, "0123456789abcdef", 640)).toBe(
-      `media-variants/p1/${id}/01234567-640.webp`
-    );
+  it("names a resized copy by version and width", () => {
+    expect(mediaVariantFile("0123456789abcdef", 640)).toBe("01234567-640.webp");
   });
 });

@@ -4,12 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const stored = new Map<string, Uint8Array>();
 vi.mock("@/lib/storage", () => ({
   getStorageAdapter: () => ({
-    put: async (i: { key: string; data: Uint8Array }) => void stored.set(i.key, i.data),
-    get: async (k: string) => stored.get(k) ?? null,
-    delete: async (k: string) => void stored.delete(k),
-    getUrl: async (k: string) => k
+    put: async (i: { bucket: string; path: string; data: Uint8Array }) =>
+      void stored.set(`${i.bucket}/${i.path}`, i.data),
+    get: async (l: { bucket: string; path: string }) => stored.get(`${l.bucket}/${l.path}`) ?? null,
+    delete: async (l: { bucket: string; path: string }) =>
+      void stored.delete(`${l.bucket}/${l.path}`),
+    deleteMany: async (bucket: string, paths: string[]) =>
+      paths.forEach((p) => stored.delete(`${bucket}/${p}`))
   })
 }));
+vi.mock("./project-workspace", () => ({ workspaceIdOf: async () => "w1" }));
 
 import {
   checkIconUpdates,
@@ -70,7 +74,9 @@ describe("installIconSet", () => {
       enabled: true
     });
     expect(lib.sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(stored.has(`icons/00000000-0000-4000-8000-0000000000a1/${lib.file}`)).toBe(true);
+    expect(
+      stored.has(`app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${lib.file}`)
+    ).toBe(true);
     expect(stored.size).toBe(1);
   });
 
@@ -186,8 +192,12 @@ describe("update keeps earlier releases", () => {
     );
     expect(v1.file).not.toBe(v2.file);
     expect(v1.file).toMatch(/^svg-spinners-[0-9a-f]{8}.json$/);
-    expect(stored.has(`icons/00000000-0000-4000-8000-0000000000a1/${v1.file}`)).toBe(true);
-    expect(stored.has(`icons/00000000-0000-4000-8000-0000000000a1/${v2.file}`)).toBe(true);
+    expect(
+      stored.has(`app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${v1.file}`)
+    ).toBe(true);
+    expect(
+      stored.has(`app-uploads/w1/00000000-0000-4000-8000-0000000000a1/icon-libraries/${v2.file}`)
+    ).toBe(true);
     // Discarding the update brings back the v1 entry; it must still find v1's icons.
     const old = await searchIcons("00000000-0000-4000-8000-0000000000a1", [v1], {
       query: "",

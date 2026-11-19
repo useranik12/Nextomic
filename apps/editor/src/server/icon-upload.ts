@@ -22,7 +22,7 @@ import {
 import { unzipSync } from "fflate";
 import { z } from "zod";
 import { getStorageAdapter } from "@/lib/storage";
-import { IconError, iconFontKey, iconSetKey } from "./icons";
+import { IconError, iconFontLocation, iconSetLocation } from "./icons";
 
 // Custom icon libraries. Uploaded files are read, never served or executed: icon fonts keep only
 // their font files and a glyph map (the uploaded CSS is parsed and dropped, the builder writes its
@@ -94,8 +94,10 @@ async function storeContentFile(
 ): Promise<{ file: string; sha: string }> {
   const sha = sha256(data);
   const file = `${key}-${sha.slice(0, 8)}.${suffix}`;
-  const storageKey = suffix === "json" ? iconSetKey(projectId, file) : iconFontKey(projectId, file);
-  await getStorageAdapter().put({ key: storageKey, data, contentType });
+  const location = await (suffix === "json"
+    ? iconSetLocation(projectId, file)
+    : iconFontLocation(projectId, file));
+  await getStorageAdapter().put({ ...location, data, contentType });
   return { file, sha };
 }
 

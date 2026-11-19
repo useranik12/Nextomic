@@ -15,6 +15,13 @@
       "when": 1795118644699,
       "tag": "0001_auth_sync_and_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795122788033,
+      "tag": "0002_storage_deletions",
+      "breakpoints": true
     }
   ]
 }

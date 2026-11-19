@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { AccessDeniedError, requireProjectAccess } from "@/lib/permissions";
 import { getServerSession } from "@/lib/session";
 import { getStorageAdapter } from "@/lib/storage";
+import { screenshotPath } from "@/server/storage-paths";
 
 export const dynamic = "force-dynamic";
 
@@ -11,9 +12,9 @@ const MAX_BYTES = 1_500_000;
 
 type Params = Promise<{ projectId: string; kind: string; id: string }>;
 
-/** One screenshot per page or template, at a fixed key, so a new one replaces the old file. */
-const keyOf = (projectId: string, kind: string, id: string) =>
-  `screenshots/${projectId}/${kind}-${id}.webp`;
+/** One screenshot per page or template, at a fixed path, so a new one replaces the old file. */
+const locationOf = (projectId: string, kind: string, id: string) =>
+  screenshotPath(projectId, kind, id);
 
 async function authorized(params: Params) {
   const { projectId, kind, id } = await params;
@@ -39,7 +40,9 @@ function isWebp(bytes: Uint8Array): boolean {
 export async function GET(_request: Request, { params }: { params: Params }) {
   const target = await authorized(params);
   if (!target) return new Response("Not found", { status: 404 });
-  const data = await getStorageAdapter().get(keyOf(target.projectId, target.kind, target.id));
+  const data = await getStorageAdapter().get(
+    await locationOf(target.projectId, target.kind, target.id)
+  );
   if (!data) return new Response("Not found", { status: 404 });
   return new Response(Buffer.from(data), {
     headers: {
@@ -57,7 +60,7 @@ export async function PUT(request: Request, { params }: { params: Params }) {
   if (bytes.length === 0 || bytes.length > MAX_BYTES || !isWebp(bytes))
     return new Response("Send a WebP image up to 1.5 MB.", { status: 400 });
   await getStorageAdapter().put({
-    key: keyOf(target.projectId, target.kind, target.id),
+    ...(await locationOf(target.projectId, target.kind, target.id)),
     data: bytes,
     contentType: "image/webp"
   });
@@ -72,6 +75,6 @@ export async function PUT(request: Request, { params }: { params: Params }) {
 export async function DELETE(_request: Request, { params }: { params: Params }) {
   const target = await authorized(params);
   if (!target) return new Response("Not found", { status: 404 });
-  await getStorageAdapter().delete(keyOf(target.projectId, target.kind, target.id));
+  await getStorageAdapter().delete(await locationOf(target.projectId, target.kind, target.id));
   return Response.json({ ok: true });
 }
