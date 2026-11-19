@@ -37,6 +37,19 @@ pointing at the repo's `docker-compose.yml`; this records what to configure so a
    that owns projects fails by design (projects are not deleted with their creator). The dashboard's
    "seed" tools create fake users: do not use them on a real database.
 
+## Domains
+
+Domains are assigned in Dokploy (Domains tab of the Compose service), not in the environment. The only
+domain variable is `BETTER_AUTH_URL`: the builder's public https origin, without a path or trailing slash.
+
+| Service       | Example domain                 | Container port | Opens at  |
+| ------------- | ------------------------------ | -------------- | --------- |
+| `app`         | `nextomic.example.com`         | 3000           | `/`       |
+| `auth-studio` | `auth.nextomic.example.com`    | 3002           | `/studio` |
+| `pgadmin`     | `pgadmin.nextomic.example.com` | 80             | `/`       |
+
+Each needs a DNS record and HTTPS (Let's Encrypt) in Dokploy. Protect `auth-studio` and `pgadmin` as described above.
+
 ## Environment variables
 
 Set every variable from `.env.example` in the Dokploy Compose service's Environment tab; compose
