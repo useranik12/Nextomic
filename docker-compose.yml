@@ -17,6 +17,9 @@ services:
     restart: "no"
     working_dir: /app/packages/db
     command: ["bun", "run", "migrate"]
+    networks:
+      - default
+      - dokploy-network
     environment:
       DATABASE_URL: ${DATABASE_URL_INTERNAL:-${DATABASE_URL:?set DATABASE_URL (Supabase pooler, session mode)}}
 
