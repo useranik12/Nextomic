@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { StorageExistsError } from "./adapter";
 import { LocalStorageAdapter } from "./local";
 
 const bucket = "app-uploads";
@@ -21,6 +22,23 @@ describe("LocalStorageAdapter", () => {
     await adapter.put({ bucket, path: "a/b/c.txt", data, contentType: "text/plain" });
     const read = await adapter.get({ bucket, path: "a/b/c.txt" });
     expect(Buffer.from(read ?? []).toString()).toBe("hello");
+  });
+
+  it("refuses to replace an object when overwrite is false", async () => {
+    const put = (text: string, overwrite?: boolean) =>
+      adapter.put({
+        bucket,
+        path: "a/x.txt",
+        data: new TextEncoder().encode(text),
+        contentType: "text/plain",
+        overwrite
+      });
+    await put("one");
+    await expect(put("two", false)).rejects.toBeInstanceOf(StorageExistsError);
+    await put("three");
+    expect(Buffer.from((await adapter.get({ bucket, path: "a/x.txt" })) ?? []).toString()).toBe(
+      "three"
+    );
   });
 
   it("keeps buckets apart", async () => {

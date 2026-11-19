@@ -1,0 +1,2 @@
+ALTER TABLE "nextomic_builder"."media_assets" ADD COLUMN "object_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "nextomic_builder"."media_assets" ADD CONSTRAINT "media_assets_object_id_unique" UNIQUE("object_id");

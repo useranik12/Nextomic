@@ -34,16 +34,37 @@ async function openMedia(page: Page) {
 const upload = (page: Page, name: string, mimeType: string, buffer: Buffer) =>
   page.getByTestId("media-file-input").setInputFiles({ name, mimeType, buffer });
 
+/** Uploads a file and returns the public path the server gave it (the panel does not show paths). */
+async function uploadForPath(
+  page: Page,
+  name: string,
+  mimeType: string,
+  buffer: Buffer
+): Promise<string> {
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.request().method() === "POST" &&
+        /^[/]api[/]projects[/][^/]+[/]media$/.test(new URL(r.url()).pathname)
+    ),
+    upload(page, name, mimeType, buffer)
+  ]);
+  return ((await response.json()) as { asset: { path: string } }).asset.path;
+}
+
 test("upload, serve safely, add alt text, folder, trash and restore", async ({ page }) => {
   await openMedia(page);
 
-  await upload(page, "Team Photo.png", "image/png", PNG);
+  const path = await uploadForPath(page, "Team Photo.png", "image/png", PNG);
+  expect(path).toMatch(/[/]Team%20Photo[.](png|webp)$/);
   await expect(page.getByRole("button", { name: "Open Team Photo" })).toBeVisible();
   await expect(page.getByRole("button", { name: /^Missing alt text\s*1$/ })).toBeVisible();
 
   // Served from its stored path with the locked-down headers.
   await page.getByRole("button", { name: "Open Team Photo" }).click();
-  const path = (await page.locator("dd", { hasText: /^\/media\// }).textContent()) ?? "";
+  await expect(page.getByText("Resolution")).toBeVisible();
+  await expect(page.getByText("Path", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Name", exact: true })).toHaveValue("Team Photo");
   const res = await page.request.get(path);
   expect(res.status()).toBe(200);
   expect(res.headers()["content-type"]).toBe("image/png");
@@ -91,9 +112,8 @@ test("SVG is sanitized, disguised HTML is refused and strangers cannot upload", 
 }) => {
   await openMedia(page);
 
-  await upload(page, "icon.svg", "image/svg+xml", Buffer.from(EVIL_SVG));
+  const path = await uploadForPath(page, "icon.svg", "image/svg+xml", Buffer.from(EVIL_SVG));
   await page.getByRole("button", { name: "Open icon" }).click();
-  const path = (await page.locator("dd", { hasText: /^\/media\// }).textContent()) ?? "";
   const svg = await page.request.get(path);
   const body = await svg.text();
   expect(body).toContain("<rect");
@@ -132,7 +152,7 @@ test("an Image element picks its file from Media and the library shows where it 
   await page.getByRole("button", { name: "Choose Hero" }).click();
   await page.getByRole("button", { name: "Use file" }).click();
   await expect(page.getByPlaceholder("https://...")).toHaveValue(
-    /^\/media\/[^/]+\/[0-9a-f-]{36}\/hero\.png$/
+    /^[/]media[/][^/]+[/][0-9a-f-]{36}[/]Hero[.]png$/
   );
   await expect(page.getByRole("note").filter({ hasText: "Missing alt text" })).toHaveCount(0);
   // The file's alt text came along.
@@ -162,9 +182,7 @@ test("images are served resized, big uploads work and the cap holds", async ({ p
   })
     .png()
     .toBuffer();
-  await upload(page, "wide.png", "image/png", big);
-  await page.getByRole("button", { name: "Open wide" }).click();
-  const path = (await page.locator("dd", { hasText: /^\/media\// }).textContent()) ?? "";
+  const path = await uploadForPath(page, "wide.png", "image/png", big);
 
   const small = await page.request.get(`${path}?w=640`);
   expect(small.headers()["content-type"]).toBe("image/webp");

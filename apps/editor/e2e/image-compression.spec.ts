@@ -41,10 +41,15 @@ async function photoPng(): Promise<Buffer> {
 }
 
 async function uploadAndRead(page: Page, name: string, buffer: Buffer) {
-  await page.getByTestId("media-file-input").setInputFiles({ name, mimeType: "image/png", buffer });
-  const base = name.replace(/\.png$/, "");
-  await page.getByRole("button", { name: `Open ${base}` }).click();
-  const path = (await page.locator("dd", { hasText: /^\/media\// }).textContent()) ?? "";
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (r) =>
+        r.request().method() === "POST" &&
+        /^[/]api[/]projects[/][^/]+[/]media$/.test(new URL(r.url()).pathname)
+    ),
+    page.getByTestId("media-file-input").setInputFiles({ name, mimeType: "image/png", buffer })
+  ]);
+  const path = ((await response.json()) as { asset: { path: string } }).asset.path;
   const res = await page.request.get(path);
   const body = await res.body();
   const meta = await sharp(body).metadata();

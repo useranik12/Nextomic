@@ -672,7 +672,7 @@ describe("PageRenderer", () => {
           breakpoints={DEFAULT_BREAKPOINTS}
         />
       );
-    const id = "a1b2c3d4e5f60718293a4b5c";
+    const id = "a1b2c3d4-e5f6-4718-893a-4b5c6d7e8f90";
     const stored = render(`/media/p1/${id}/hero.png`);
     expect(stored).toContain(`src="/media/p1/${id}/hero.png"`);
     expect(stored).toContain(`srcSet="/media/p1/${id}/hero.png?w=320 320w`);

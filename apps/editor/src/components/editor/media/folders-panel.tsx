@@ -52,7 +52,6 @@ const LIBRARY: {
 }[] = [
   { filter: "all", label: "All files", count: (c) => c.all },
   { filter: "missing-alt", label: "Missing alt text", count: (c) => c.missingAlt },
-  { filter: "missing-title", label: "Missing title", count: (c) => c.missingTitle },
   { filter: "untagged", label: "Untagged", count: (c) => c.untagged },
   { filter: "large", label: "Large files", count: (c) => c.large },
   { filter: "replaced", label: "Recently replaced", count: (c) => c.replaced }

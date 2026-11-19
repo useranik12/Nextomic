@@ -79,22 +79,31 @@ describe("sniffMedia", () => {
 });
 
 describe("names and paths", () => {
-  it("builds a safe stored name with the proven extension", () => {
-    expect(mediaFileName("My Photo (1).JPEG", "jpg")).toBe("my-photo-1.jpg");
-    expect(mediaFileName("../../etc/passwd", "png")).toBe("etc-passwd.png");
-    expect(mediaFileName("日本語.png", "png")).toBe("file.png");
-    expect(mediaFileName("a".repeat(200) + ".png", "png").length).toBeLessThanOrEqual(64);
+  it("keeps the uploaded name and falls back to the asset id", () => {
+    const id = "a1b2c3d4-e5f6-4718-893a-4b5c6d7e8f90";
+    expect(mediaFileName("My Photo (1).JPEG", "jpg", id)).toBe("My Photo (1).jpg");
+    expect(mediaFileName("IMG_0042.heic", "webp", id)).toBe("IMG_0042.webp");
+    expect(mediaFileName("../../etc/passwd", "png", id)).toBe(`${id}.png`);
+    expect(mediaFileName("日本語.png", "png", id)).toBe(`${id}.png`);
+    expect(mediaFileName(".png", "png", id)).toBe(`${id}.png`);
+    expect(mediaFileName("a".repeat(200) + ".png", "png", id)).toBe(`${id}.png`);
+    expect(mediaFileName("v1.2.final.png", "png", id)).toBe("v1.2.final.png");
   });
-  it("keeps a readable title", () => {
+  it("keeps a readable title without dots", () => {
     expect(mediaTitleFromName("Team photo.png")).toBe("Team photo");
+    expect(mediaTitleFromName("v1.2 logo.svg")).toBe("v1 2 logo");
     expect(mediaTitleFromName("   ")).toBe("Untitled");
+    expect(mediaEditSchema.safeParse({ title: "a.b" }).success).toBe(false);
+    expect(mediaEditSchema.safeParse({ title: "a b" }).success).toBe(true);
   });
   it("round-trips the asset id through the stored path", () => {
-    const id = "a1b2c3d4e5f60718293a4b5c";
-    const p = mediaPath("proj_1", id, "logo.svg");
-    expect(p).toBe(`/media/proj_1/${id}/logo.svg`);
+    const id = "a1b2c3d4-e5f6-4718-893a-4b5c6d7e8f90";
+    const p = mediaPath("0f0f0f0f-0f0f-4f0f-8f0f-0f0f0f0f0f0f", id, "logo.svg");
+    expect(p).toBe(`/media/0f0f0f0f-0f0f-4f0f-8f0f-0f0f0f0f0f0f/${id}/logo.svg`);
     expect(mediaIdFromPath(p)).toBe(id);
     expect(mediaIdFromPath(`${p}?w=300`)).toBe(id);
+    expect(mediaPath("p", id, "My Photo (1).jpg")).toContain("/My%20Photo%20(1).jpg");
+    expect(mediaIdFromPath(mediaPath("p", id, "My Photo (1).jpg"))).toBe(id);
     expect(mediaIdFromPath("/other/x.png")).toBeNull();
     expect(mediaIdFromPath("https://x.com/media/p/" + id + "/a.png")).toBeNull();
   });
@@ -142,7 +151,7 @@ describe("imageSize", () => {
 });
 
 describe("responsive images", () => {
-  const id = "a1b2c3d4e5f60718293a4b5c";
+  const id = "a1b2c3d4-e5f6-4718-893a-4b5c6d7e8f90";
   it("builds a srcset for stored raster images only", () => {
     const set = mediaSrcSet(`/media/p1/${id}/hero.jpg`);
     expect(set).toContain(`/media/p1/${id}/hero.jpg?w=320 320w`);

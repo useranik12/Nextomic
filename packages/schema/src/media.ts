@@ -141,25 +141,27 @@ export function refuseReason(data: Uint8Array): string {
   return "This file type is not supported. Use an image, SVG, video, audio file or PDF.";
 }
 
-/** Stored file name: a safe slug of the original name with the extension the bytes prove. */
-export function mediaFileName(original: string, ext: string): string {
-  const base = original
-    .replace(/\.[A-Za-z0-9]{1,8}$/, "")
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-  return `${base || "file"}.${ext}`;
+// A file name the bucket and the public URL keep as it is: ASCII letters, digits, spaces and . _ - ( ).
+const SUPPORTED_BASE = /^[A-Za-z0-9][A-Za-z0-9 ._()-]{0,99}$/;
+
+/**
+ * The name a file is stored under: the uploaded name, with the extension the bytes prove. A name
+ * that cannot be kept as it is (blank, other characters, too long, a path trick) becomes
+ * `<asset-uuid>.<ext>`.
+ */
+export function mediaFileName(original: string, ext: string, assetId: string): string {
+  const base = original.replace(/[.][A-Za-z0-9]{1,8}$/, "").trim();
+  const ok = SUPPORTED_BASE.test(base) && !base.includes("..") && !/[. ]$/.test(base);
+  return `${ok ? base : assetId}.${ext}`;
 }
 
-/** Name shown in the library: the original file name without the extension. */
+/** Name shown in the library: the file name without its extension. Dots are not part of a name. */
 export function mediaTitleFromName(original: string): string {
   return (
     original
-      .replace(/\.[A-Za-z0-9]{1,8}$/, "")
-      .replace(/[\r\n\t]+/g, " ")
+      .replace(/[.][A-Za-z0-9]{1,8}$/, "")
+      .replace(/[.\r\n\t]+/g, " ")
+      .replace(/ {2,}/g, " ")
       .trim()
       .slice(0, 120) || "Untitled"
   );
@@ -167,17 +169,20 @@ export function mediaTitleFromName(original: string): string {
 
 // A media asset id is a lowercase uuid (older 24-character ids no longer exist).
 export const MEDIA_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-export const MEDIA_FILE = /^[a-z0-9][a-z0-9._-]{0,80}\.[a-z0-9]{2,5}$/;
+export const MEDIA_FILE = /^[A-Za-z0-9][A-Za-z0-9 ._()-]{0,120}[.][A-Za-z0-9]{2,5}$/;
 export const MEDIA_SEGMENT = /^[A-Za-z0-9_-]{1,100}$/;
 
 /** The path stored in element props: stable for the asset's life, even after Replace file. */
 export function mediaPath(projectId: string, assetId: string, file: string): string {
-  return `/media/${projectId}/${assetId}/${file}`;
+  return `/media/${projectId}/${assetId}/${encodeURIComponent(file)}`;
 }
 
 /** The asset id inside a stored media path, or null when the text is not a media path. */
 export function mediaIdFromPath(path: string): string | null {
-  const m = /^\/media\/[A-Za-z0-9_-]{1,100}\/([a-f0-9]{24})\/[^/?#]+(?:[?#].*)?$/.exec(path);
+  const m =
+    /^\/media\/[A-Za-z0-9_-]{1,100}\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/[^/?#]+(?:[?#].*)?$/.exec(
+      path
+    );
   return m?.[1] ?? null;
 }
 
@@ -223,7 +228,14 @@ export const mediaFolderNameSchema = z
 
 export const mediaEditSchema = z
   .object({
-    title: z.string().trim().max(120),
+    title: z
+      .string()
+      .trim()
+      .max(120)
+      .refine(
+        (t) => !t.includes("."),
+        "A name cannot contain dots; the file type is not part of it."
+      ),
     alt: z.string().trim().max(300),
     caption: z.string().trim().max(500),
     tags: mediaTagsSchema,
@@ -235,7 +247,6 @@ export type MediaEdit = z.infer<typeof mediaEditSchema>;
 export const MEDIA_FILTERS = [
   "all",
   "missing-alt",
-  "missing-title",
   "untagged",
   "large",
   "replaced",
@@ -267,9 +278,8 @@ export const MEDIA_NEEDS_ALT: ReadonlySet<MediaKind> = new Set(["image", "svg"])
 export interface MediaAsset {
   id: string;
   folderId: string | null;
-  /** Empty until named; show `originalName` then. */
+  /** The library name: the file name without its extension unless changed. */
   title: string;
-  originalName: string;
   fileName: string;
   kind: MediaKind;
   mime: string;
@@ -295,7 +305,6 @@ export interface MediaFolder {
 export interface MediaCounts {
   all: number;
   missingAlt: number;
-  missingTitle: number;
   untagged: number;
   large: number;
   replaced: number;

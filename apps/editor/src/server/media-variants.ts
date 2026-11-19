@@ -1,9 +1,10 @@
 import { MEDIA_WIDTHS, mediaVariantFile, type MediaAsset } from "@nextomic/schema";
 import { getStorageAdapter } from "@/lib/storage";
-import { BUCKETS, mediaVariantPath } from "./storage-paths";
+import { mediaVariantFolder, mediaVariantPath } from "./storage-paths";
+import { queueFolderDeletion } from "./storage-cleanup";
 
 // Resized copies of uploaded images (docs/ui-reference.md 4.6). Made on the first request for a
-// width, stored under `media-variants/...`, and served from storage after that. The original is
+// width, stored under `media-variants/<asset>/`, and served from storage after that. The original is
 // always the fallback: a failed resize never breaks an image.
 
 const MAX_INPUT_PIXELS = 60_000_000;
@@ -82,16 +83,8 @@ export async function variantBytes(
   return job;
 }
 
-/** Removes every resized copy of one version of an asset (after Replace file or deleting it). */
-export async function deleteVariants(projectId: string, id: string, hash: string): Promise<void> {
-  const storage = getStorageAdapter();
-  const paths = await Promise.all(
-    MEDIA_WIDTHS.map((w) => mediaVariantPath(projectId, id, mediaVariantFile(hash, w)))
-  );
-  await storage
-    .deleteMany(
-      BUCKETS.appUploads,
-      paths.map((p) => p.path)
-    )
-    .catch(() => undefined);
+/** Removes every resized copy of an asset (after Replace file or deleting it); retried if it fails. */
+export async function deleteVariants(projectId: string, id: string): Promise<void> {
+  const { bucket, prefix } = await mediaVariantFolder(projectId, id);
+  await queueFolderDeletion(bucket, prefix).catch(() => undefined);
 }

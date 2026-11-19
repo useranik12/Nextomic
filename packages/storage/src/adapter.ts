@@ -8,6 +8,16 @@ export interface StorageLocation {
 export interface StoragePutInput extends StorageLocation {
   data: Uint8Array | Buffer;
   contentType: string;
+  /** Replace an object that already exists (default true). False throws StorageExistsError instead. */
+  overwrite?: boolean;
+}
+
+/** Thrown by `put` with `overwrite: false` when the path is taken. */
+export class StorageExistsError extends Error {
+  constructor(location: StorageLocation) {
+    super(`Storage object already exists: ${location.bucket}/${location.path}`);
+    this.name = "StorageExistsError";
+  }
 }
 
 export interface StorageAdapter {

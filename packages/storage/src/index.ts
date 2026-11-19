@@ -1,5 +1,6 @@
 export {
   assertStoragePath,
+  StorageExistsError,
   STORAGE_DELETE_BATCH,
   type StorageAdapter,
   type StorageLocation,

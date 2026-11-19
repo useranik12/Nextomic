@@ -1,9 +1,10 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
   actionBlocks,
   actionFlows,
   getDb,
   mediaAssets,
+  mediaLibrary,
   mediaFolders,
   pages,
   projects,
@@ -24,6 +25,7 @@ import {
   mediaPath,
   mediaQuerySchema,
   mediaTagsSchema,
+  mediaTitleFromName,
   formatBytes,
   refuseReason,
   sanitizeSvg,
@@ -38,16 +40,18 @@ import {
   type MediaUsage
 } from "@nextomic/schema";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
+import { StorageExistsError } from "@nextomic/storage";
 import { getStorageAdapter } from "@/lib/storage";
-import { mediaAssetFolder, mediaOriginalPath } from "./storage-paths";
-import { queueFolderDeletion } from "./storage-cleanup";
+import { BUCKETS, mediaObjectPath } from "./storage-paths";
+import { isQueuedForDeletion, queueObjectDeletion } from "./storage-cleanup";
 import { deleteVariants } from "./media-variants";
 import { createRateLimiter } from "./rate-limit";
 
 // Media library persistence. Callers MUST have passed authorizeProject for the project; every query
-// is also scoped by projectId, so an id from another project never matches. Bytes live in storage
-// under `media/<projectId>/<assetId>` (one fixed key per asset, so Replace file leaves nothing
-// behind) and are served by app/media/[projectId]/[assetId]/[file].
+// is also scoped by projectId, so an id from another project never matches. A row holds only what
+// storage does not know (name, alt text, tags, folder, resolution) and links to its storage object;
+// the file name, type, size and ETag are read from storage.objects through the media_library view.
+// Bytes are served by app/media/[projectId]/[assetId]/[file].
 
 export class MediaError extends Error {
   constructor(message: string) {
@@ -65,21 +69,24 @@ export function takeMediaWrite(userId: string, kind: "write" | "upload" = "write
   if (!r.ok) throw new MediaError("Too many requests. Wait a moment and try again.");
 }
 
-type Row = typeof mediaAssets.$inferSelect;
+type Row = typeof mediaLibrary.$inferSelect;
+
+/** The mime top level (image, video, ...) of a library row, read from the storage object's type. */
+const topLevel = sql`split_part(${mediaLibrary.mime}, '/', 1)`;
 
 /** SQL for one library kind. SVG is an image whose mime type says so; "other" is everything but images and video. */
 function kindCondition(kind: MediaKind): SQL {
   switch (kind) {
     case "svg":
-      return eq(mediaAssets.mime, "image/svg+xml");
+      return eq(mediaLibrary.mime, "image/svg+xml");
     case "image":
-      return sql`${mediaAssets.kind} = 'image' and ${mediaAssets.mime} <> 'image/svg+xml'`;
+      return sql`${topLevel} = 'image' and ${mediaLibrary.mime} <> 'image/svg+xml'`;
     case "video":
-      return eq(mediaAssets.kind, "video");
+      return sql`${topLevel} = 'video'`;
     case "audio":
-      return eq(mediaAssets.kind, "audio");
+      return sql`${topLevel} = 'audio'`;
     case "other":
-      return sql`${mediaAssets.kind} not in ('image', 'video', 'audio')`;
+      return sql`${topLevel} not in ('image', 'video', 'audio')`;
   }
 }
 
@@ -88,7 +95,6 @@ function toAsset(row: Row): MediaAsset {
     id: row.id,
     folderId: row.folderId,
     title: row.title,
-    originalName: row.originalName,
     fileName: row.fileName,
     kind: mediaKindOf(row.mime),
     mime: row.mime,
@@ -133,42 +139,39 @@ async function assertFolder(projectId: string, folderId: string | null | undefin
 // ---------------------------------------------------------------- reading
 
 function filterConditions(projectId: string, q: MediaQuery): SQL[] {
-  const where: SQL[] = [eq(mediaAssets.projectId, projectId)];
+  const where: SQL[] = [eq(mediaLibrary.projectId, projectId)];
   where.push(
-    q.filter === "trash" ? isNotNull(mediaAssets.trashedAt) : isNull(mediaAssets.trashedAt)
+    q.filter === "trash" ? isNotNull(mediaLibrary.trashedAt) : isNull(mediaLibrary.trashedAt)
   );
-  if (q.folderId) where.push(eq(mediaAssets.folderId, q.folderId));
+  if (q.folderId) where.push(eq(mediaLibrary.folderId, q.folderId));
   switch (q.filter) {
     case "missing-alt":
-      where.push(eq(mediaAssets.kind, "image"), eq(mediaAssets.alt, ""));
-      break;
-    case "missing-title":
-      where.push(eq(mediaAssets.title, ""));
+      where.push(sql`${topLevel} = 'image'`, eq(mediaLibrary.alt, ""));
       break;
     case "untagged":
-      where.push(sql`jsonb_array_length(${mediaAssets.tags}) = 0`);
+      where.push(sql`jsonb_array_length(${mediaLibrary.tags}) = 0`);
       break;
     case "large":
-      where.push(sql`${mediaAssets.size} > ${MEDIA_LARGE_BYTES}`);
+      where.push(sql`${mediaLibrary.size} > ${MEDIA_LARGE_BYTES}`);
       break;
     case "replaced":
-      where.push(isNotNull(mediaAssets.replacedAt));
+      where.push(isNotNull(mediaLibrary.replacedAt));
       break;
   }
   if (q.kinds && q.kinds.length > 0) {
     const any = or(...q.kinds.map(kindCondition));
     if (any) where.push(any);
   }
-  if (q.type === "other") where.push(sql`${mediaAssets.kind} not in ('image', 'video')`);
+  if (q.type === "other") where.push(sql`${topLevel} not in ('image', 'video')`);
   else if (q.type !== "all") where.push(kindCondition(q.type));
   if (q.search) {
     const like = `%${escapeLike(q.search.toLowerCase())}%`;
     where.push(
       or(
-        sql`lower(${mediaAssets.title}) like ${like}`,
-        sql`lower(${mediaAssets.originalName}) like ${like}`,
-        sql`lower(${mediaAssets.alt}) like ${like}`,
-        sql`lower(${mediaAssets.tags}::text) like ${like}`
+        sql`lower(${mediaLibrary.title}) like ${like}`,
+        sql`lower(${mediaLibrary.fileName}) like ${like}`,
+        sql`lower(${mediaLibrary.alt}) like ${like}`,
+        sql`lower(${mediaLibrary.tags}::text) like ${like}`
       )!
     );
   }
@@ -184,24 +187,24 @@ export async function listMedia(
   const where = and(...filterConditions(projectId, q));
   const order =
     q.sort === "oldest"
-      ? asc(mediaAssets.createdAt)
+      ? asc(mediaLibrary.createdAt)
       : q.sort === "name"
-        ? asc(sql`lower(coalesce(nullif(${mediaAssets.title}, ''), ${mediaAssets.originalName}))`)
+        ? asc(sql`lower(coalesce(nullif(${mediaLibrary.title}, ''), ${mediaLibrary.fileName}))`)
         : q.sort === "size"
-          ? desc(mediaAssets.size)
-          : desc(mediaAssets.createdAt);
+          ? desc(mediaLibrary.size)
+          : desc(mediaLibrary.createdAt);
   const db = getDb();
   const [rows, [count]] = await Promise.all([
     db
       .select()
-      .from(mediaAssets)
+      .from(mediaLibrary)
       .where(where)
-      .orderBy(order, asc(mediaAssets.id))
+      .orderBy(order, asc(mediaLibrary.id))
       .limit(MEDIA_PAGE_SIZE)
       .offset(q.offset),
     db
       .select({ n: sql<number>`count(*)::int` })
-      .from(mediaAssets)
+      .from(mediaLibrary)
       .where(where)
   ]);
   return { assets: rows.map(toAsset), total: count?.n ?? 0 };
@@ -210,32 +213,30 @@ export async function listMedia(
 export async function mediaCounts(projectId: string): Promise<MediaCounts> {
   assertProjectId(projectId);
   const db = getDb();
-  const live = isNull(mediaAssets.trashedAt);
+  const live = isNull(mediaLibrary.trashedAt);
   const [[row], folders] = await Promise.all([
     db
       .select({
         all: sql<number>`count(*) filter (where ${live})::int`,
-        missingAlt: sql<number>`count(*) filter (where ${live} and ${mediaAssets.kind} = 'image' and ${mediaAssets.alt} = '')::int`,
-        missingTitle: sql<number>`count(*) filter (where ${live} and ${mediaAssets.title} = '')::int`,
-        untagged: sql<number>`count(*) filter (where ${live} and jsonb_array_length(${mediaAssets.tags}) = 0)::int`,
-        large: sql<number>`count(*) filter (where ${live} and ${mediaAssets.size} > ${MEDIA_LARGE_BYTES})::int`,
-        replaced: sql<number>`count(*) filter (where ${live} and ${mediaAssets.replacedAt} is not null)::int`,
-        trash: sql<number>`count(*) filter (where ${mediaAssets.trashedAt} is not null)::int`
+        missingAlt: sql<number>`count(*) filter (where ${live} and ${topLevel} = 'image' and ${mediaLibrary.alt} = '')::int`,
+        untagged: sql<number>`count(*) filter (where ${live} and jsonb_array_length(${mediaLibrary.tags}) = 0)::int`,
+        large: sql<number>`count(*) filter (where ${live} and ${mediaLibrary.size} > ${MEDIA_LARGE_BYTES})::int`,
+        replaced: sql<number>`count(*) filter (where ${live} and ${mediaLibrary.replacedAt} is not null)::int`,
+        trash: sql<number>`count(*) filter (where ${mediaLibrary.trashedAt} is not null)::int`
       })
-      .from(mediaAssets)
-      .where(eq(mediaAssets.projectId, projectId)),
+      .from(mediaLibrary)
+      .where(eq(mediaLibrary.projectId, projectId)),
     db
-      .select({ id: mediaAssets.folderId, n: sql<number>`count(*)::int` })
-      .from(mediaAssets)
-      .where(and(eq(mediaAssets.projectId, projectId), live, isNotNull(mediaAssets.folderId)))
-      .groupBy(mediaAssets.folderId)
+      .select({ id: mediaLibrary.folderId, n: sql<number>`count(*)::int` })
+      .from(mediaLibrary)
+      .where(and(eq(mediaLibrary.projectId, projectId), live, isNotNull(mediaLibrary.folderId)))
+      .groupBy(mediaLibrary.folderId)
   ]);
   const byFolder: Record<string, number> = {};
   for (const f of folders) if (f.id) byFolder[f.id] = f.n;
   return {
     all: row?.all ?? 0,
     missingAlt: row?.missingAlt ?? 0,
-    missingTitle: row?.missingTitle ?? 0,
     untagged: row?.untagged ?? 0,
     large: row?.large ?? 0,
     replaced: row?.replaced ?? 0,
@@ -248,15 +249,26 @@ export async function getMedia(projectId: string, id: string): Promise<MediaAsse
   if (!isUuid(projectId) || !MEDIA_ID.test(id)) return null;
   const [row] = await getDb()
     .select()
-    .from(mediaAssets)
-    .where(and(eq(mediaAssets.id, id), eq(mediaAssets.projectId, projectId)))
+    .from(mediaLibrary)
+    .where(and(eq(mediaLibrary.id, id), eq(mediaLibrary.projectId, projectId)))
     .limit(1);
   return row ? toAsset(row) : null;
 }
 
+/** The storage path of an asset's file, read through the link to storage.objects. */
+async function objectNameOf(projectId: string, id: string): Promise<string | null> {
+  const [row] = await getDb()
+    .select({ name: mediaLibrary.objectName })
+    .from(mediaLibrary)
+    .where(and(eq(mediaLibrary.id, id), eq(mediaLibrary.projectId, projectId)))
+    .limit(1);
+  return row?.name ?? null;
+}
+
 /** The stored bytes of an asset; null when they are gone from storage. */
 export async function readMediaBytes(projectId: string, id: string): Promise<Uint8Array | null> {
-  return getStorageAdapter().get(await mediaOriginalPath(projectId, id));
+  const path = await objectNameOf(projectId, id);
+  return path ? getStorageAdapter().get({ bucket: BUCKETS.appUploads, path }) : null;
 }
 
 // ---------------------------------------------------------------- folders
@@ -319,7 +331,8 @@ export async function deleteFolder(projectId: string, id: string): Promise<void>
 /** The bytes the library stores for an upload: validated from their own content, SVG cleaned. */
 export function prepareUpload(
   name: string,
-  input: Uint8Array
+  input: Uint8Array,
+  assetId: string
 ): { data: Uint8Array; format: NonNullable<ReturnType<typeof sniffMedia>>; fileName: string } {
   if (input.length === 0) throw new MediaError("This file is empty.");
   const format = sniffMedia(input);
@@ -337,16 +350,53 @@ export function prepareUpload(
     throw new MediaError(
       `This file is ${formatBytes(data.length)}. The limit for this type is ${formatBytes(cap)}.`
     );
-  return { data, format, fileName: mediaFileName(name, format.ext) };
+  return { data, format, fileName: mediaFileName(name, format.ext, assetId) };
 }
 
-/** Empties an asset's storage folder (original and resized copies); failures are retried later. */
-const dropAssetFolder = async (projectId: string, id: string): Promise<void> => {
-  const { bucket, prefix } = await mediaAssetFolder(projectId, id);
-  await queueFolderDeletion(bucket, prefix).catch(() => undefined);
+/** Removes an asset's file and its resized copies; failures are retried by the periodic cleanup. */
+const dropAssetFiles = async (projectId: string, id: string, objectName: string): Promise<void> => {
+  await queueObjectDeletion(BUCKETS.appUploads, objectName).catch(() => undefined);
+  await deleteVariants(projectId, id);
 };
 
-const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
+/** `photo.png` -> `photo-2.png`, `photo-3.png`, ... */
+const numbered = (fileName: string, n: number): string => {
+  if (n === 1) return fileName;
+  const dot = fileName.lastIndexOf(".");
+  return `${fileName.slice(0, dot)}-${n}${fileName.slice(dot)}`;
+};
+
+const MAX_NAME_TRIES = 100;
+
+/**
+ * Uploads the file under its own name in the project's type folder. A name that is taken (by
+ * another file, or by one waiting to be removed) gets `-2`, `-3`, ... before the extension.
+ */
+async function putUnique(
+  projectId: string,
+  mime: string,
+  fileName: string,
+  data: Uint8Array
+): Promise<{ objectName: string; objectId: string }> {
+  const storage = getStorageAdapter();
+  for (let n = 1; n <= MAX_NAME_TRIES; n++) {
+    const location = await mediaObjectPath(projectId, mimeTopLevel(mime), numbered(fileName, n));
+    if (await isQueuedForDeletion(location.bucket, location.path)) continue;
+    try {
+      await storage.put({ ...location, data, contentType: mime, overwrite: false });
+    } catch (error) {
+      if (error instanceof StorageExistsError) continue;
+      throw error;
+    }
+    const found = await getDb().execute<{ id: string }>(
+      sql`select id from storage.objects where bucket_id = ${location.bucket} and name = ${location.path} limit 1`
+    );
+    const objectId = found.rows[0]?.id;
+    if (!objectId) throw new MediaError("The file was uploaded but storage did not list it.");
+    return { objectName: location.path, objectId };
+  }
+  throw new MediaError("Too many files share this name. Rename the file and try again.");
+}
 
 export async function storeMedia(
   projectId: string,
@@ -355,35 +405,28 @@ export async function storeMedia(
 ): Promise<MediaAsset> {
   assertProjectId(projectId);
   await assertFolder(projectId, file.folderId);
-  const { data, format, fileName } = prepareUpload(file.name, file.data);
-  const dims = format.kind === "image" ? imageSize(data) : null;
   const id = randomUUID();
-  await getStorageAdapter().put({
-    ...(await mediaOriginalPath(projectId, id)),
-    data,
-    contentType: format.mime
-  });
+  const { data, format, fileName } = prepareUpload(file.name, file.data, id);
+  const dims = format.kind === "image" ? imageSize(data) : null;
+  const stored = await putUnique(projectId, format.mime, fileName, data);
   try {
-    const [row] = await getDb()
+    await getDb()
       .insert(mediaAssets)
       .values({
         id,
         projectId,
         folderId: file.folderId ?? null,
-        originalName: file.name.replace(/[\r\n\t]+/g, " ").slice(0, 200) || fileName,
-        fileName,
-        kind: mimeTopLevel(format.mime),
-        mime: format.mime,
-        size: data.length,
+        objectId: stored.objectId,
+        title: mediaTitleFromName(file.name),
         width: dims?.width ?? null,
         height: dims?.height ?? null,
-        hash: sha256(data),
         createdBy: userId
-      })
-      .returning();
-    return toAsset(row!);
+      });
+    const created = await getMedia(projectId, id);
+    if (!created) throw new MediaError("The file was uploaded but could not be read back.");
+    return created;
   } catch (error) {
-    await dropAssetFolder(projectId, id);
+    await dropAssetFiles(projectId, id, stored.objectName);
     throw error;
   }
 }
@@ -395,33 +438,33 @@ export async function replaceMedia(
   file: { name: string; data: Uint8Array }
 ): Promise<MediaAsset> {
   const current = await getMedia(projectId, id);
-  if (!current) throw new MediaError("That file no longer exists.");
-  const { data, format } = prepareUpload(file.name, file.data);
+  const objectName = current ? await objectNameOf(projectId, id) : null;
+  if (!current || !objectName) throw new MediaError("That file no longer exists.");
+  const { data, format } = prepareUpload(file.name, file.data, id);
   if (format.kind !== current.kind)
     throw new MediaError(
       `Replace it with another ${current.kind === "svg" ? "SVG" : current.kind} file.`
     );
   const dims = format.kind === "image" ? imageSize(data) : null;
   await getStorageAdapter().put({
-    ...(await mediaOriginalPath(projectId, id)),
+    bucket: BUCKETS.appUploads,
+    path: objectName,
     data,
     contentType: format.mime
   });
-  await deleteVariants(projectId, id, current.hash);
-  const [row] = await getDb()
+  await deleteVariants(projectId, id);
+  await getDb()
     .update(mediaAssets)
     .set({
-      mime: format.mime,
-      size: data.length,
       width: dims?.width ?? null,
       height: dims?.height ?? null,
-      hash: sha256(data),
       replacedAt: new Date(),
       updatedAt: new Date()
     })
-    .where(and(eq(mediaAssets.id, id), eq(mediaAssets.projectId, projectId)))
-    .returning();
-  return toAsset(row!);
+    .where(and(eq(mediaAssets.id, id), eq(mediaAssets.projectId, projectId)));
+  const replaced = await getMedia(projectId, id);
+  if (!replaced) throw new MediaError("That file no longer exists.");
+  return replaced;
 }
 
 export async function editMedia(
@@ -433,13 +476,14 @@ export async function editMedia(
   if (!MEDIA_ID.test(id)) throw new MediaError("Invalid file.");
   const edit: MediaEdit = mediaEditSchema.parse(input);
   await assertFolder(projectId, edit.folderId);
-  const [row] = await getDb()
+  const done = await getDb()
     .update(mediaAssets)
     .set({ ...edit, updatedAt: new Date() })
     .where(and(eq(mediaAssets.id, id), eq(mediaAssets.projectId, projectId)))
-    .returning();
-  if (!row) throw new MediaError("That file no longer exists.");
-  return toAsset(row);
+    .returning({ id: mediaAssets.id });
+  const edited = done.length > 0 ? await getMedia(projectId, id) : null;
+  if (!edited) throw new MediaError("That file no longer exists.");
+  return edited;
 }
 
 /** Moves files to a folder (null = library root) and adds tags in one go. */
@@ -459,7 +503,10 @@ export async function bulkEditMedia(
   const scope = and(eq(mediaAssets.projectId, projectId), inArray(mediaAssets.id, list));
   if (input.addTags !== undefined) {
     const add = mediaTagsSchema.parse(input.addTags);
-    const rows = await db.select().from(mediaAssets).where(scope);
+    const rows = await db
+      .select({ id: mediaAssets.id, tags: mediaAssets.tags })
+      .from(mediaAssets)
+      .where(scope);
     for (const r of rows) {
       const tags = mediaTagsSchema.parse([...r.tags, ...add]);
       await db
@@ -494,11 +541,22 @@ export async function restoreMedia(projectId: string, ids: readonly string[]): P
 }
 
 async function purgeWhere(projectId: string, where: SQL | undefined): Promise<number> {
-  const rows = await getDb()
-    .delete(mediaAssets)
-    .where(and(eq(mediaAssets.projectId, projectId), where))
-    .returning({ id: mediaAssets.id });
-  await Promise.all(rows.map((r) => dropAssetFolder(projectId, r.id)));
+  const db = getDb();
+  const rows = await db
+    .select({ id: mediaLibrary.id, objectName: mediaLibrary.objectName })
+    .from(mediaLibrary)
+    .where(and(eq(mediaLibrary.projectId, projectId), where));
+  if (rows.length === 0) return 0;
+  await db.delete(mediaAssets).where(
+    and(
+      eq(mediaAssets.projectId, projectId),
+      inArray(
+        mediaAssets.id,
+        rows.map((r) => r.id)
+      )
+    )
+  );
+  await Promise.all(rows.map((r) => dropAssetFiles(projectId, r.id, r.objectName)));
   return rows.length;
 }
 
@@ -507,13 +565,13 @@ export function purgeMedia(projectId: string, ids: readonly string[]): Promise<n
   assertProjectId(projectId);
   return purgeWhere(
     projectId,
-    and(inArray(mediaAssets.id, assertIds(ids)), isNotNull(mediaAssets.trashedAt))
+    and(inArray(mediaLibrary.id, assertIds(ids)), isNotNull(mediaLibrary.trashedAt))
   );
 }
 
 export function emptyMediaTrash(projectId: string): Promise<number> {
   assertProjectId(projectId);
-  return purgeWhere(projectId, isNotNull(mediaAssets.trashedAt));
+  return purgeWhere(projectId, isNotNull(mediaLibrary.trashedAt));
 }
 
 // ---------------------------------------------------------------- usage

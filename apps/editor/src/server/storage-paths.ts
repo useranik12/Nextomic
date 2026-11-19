@@ -8,8 +8,8 @@ import { workspaceIdOf } from "./project-workspace";
  *   nextomic-builder-assets   the builder's own files (reserved; nothing writes here yet)
  *   customer-data             <user-uid>/user-image/<file>
  *   app-uploads               <workspace-uuid>/<project-uuid>/
- *                               media-assets/<asset-uuid>/original
- *                               media-assets/<asset-uuid>/variants/<hash>-<width>.webp
+ *                               media-assets/<type>/<file>            type = image, video, audio, ...
+ *                               media-variants/<asset-uuid>/<etag>-<width>.webp
  *                               fonts/<font-id>/<file>
  *                               icon-libraries/<file>
  *                               screenshots/<kind>/<id>.webp
@@ -33,11 +33,12 @@ export const userImagePath = (userUid: string, file: string): StorageLocation =>
   path: `${userUid}/user-image/${file}`
 });
 
-export const mediaOriginalPath = (projectId: string, assetId: string) =>
-  inProject(projectId, "media-assets", assetId, "original");
+/** An uploaded file: its type folder (the mime top level, such as "image") and its own name. */
+export const mediaObjectPath = (projectId: string, mimeTop: string, fileName: string) =>
+  inProject(projectId, "media-assets", mimeTop, fileName);
 
 export const mediaVariantPath = (projectId: string, assetId: string, variantFile: string) =>
-  inProject(projectId, "media-assets", assetId, "variants", variantFile);
+  inProject(projectId, "media-variants", assetId, variantFile);
 
 export const fontFilePath = (projectId: string, fontId: string, file: string) =>
   inProject(projectId, "fonts", fontId, file);
@@ -48,8 +49,8 @@ export const iconLibraryPath = (projectId: string, file: string) =>
 export const screenshotPath = (projectId: string, kind: string, id: string) =>
   inProject(projectId, "screenshots", kind, `${id}.webp`);
 
-/** The folder holding an asset's original and all its resized copies (ends in a slash). */
-export const mediaAssetFolder = async (projectId: string, assetId: string) => {
-  const { bucket, path } = await inProject(projectId, "media-assets", assetId);
+/** The folder holding the resized copies of one asset (ends in a slash). */
+export const mediaVariantFolder = async (projectId: string, assetId: string) => {
+  const { bucket, path } = await inProject(projectId, "media-variants", assetId);
   return { bucket, prefix: `${path}/` };
 };

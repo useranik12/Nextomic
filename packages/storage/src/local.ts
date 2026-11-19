@@ -2,6 +2,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, normalize, relative, resolve } from "node:path";
 import {
   assertStoragePath,
+  StorageExistsError,
   type StorageAdapter,
   type StorageLocation,
   type StoragePutInput
@@ -28,7 +29,13 @@ export class LocalStorageAdapter implements StorageAdapter {
   async put(input: StoragePutInput): Promise<void> {
     const file = this.resolveLocation(input);
     await mkdir(dirname(file), { recursive: true });
-    await writeFile(file, input.data);
+    try {
+      await writeFile(file, input.data, { flag: input.overwrite === false ? "wx" : "w" });
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "EEXIST")
+        throw new StorageExistsError(input);
+      throw error;
+    }
   }
 
   async get(location: StorageLocation): Promise<Uint8Array | null> {

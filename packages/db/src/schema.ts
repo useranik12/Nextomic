@@ -295,20 +295,16 @@ export const mediaAssets = builderSchema.table(
       onUpdate: "cascade",
       onDelete: "set null"
     }),
-    // Empty until someone names the file; the library then shows the original name.
+    // The library name: the file name without its extension, until someone changes it.
     title: text("title").notNull().default(""),
-    originalName: text("original_name").notNull(),
-    fileName: text("file_name").notNull(),
-    kind: mediaKindEnum("kind").notNull(),
-    mime: text("mime").notNull(),
-    size: integer("size").notNull(),
     width: integer("width"),
     height: integer("height"),
+    // The file in Supabase Storage (storage.objects.id; the foreign key is added by hand in
+    // migration 0005). Name, type, size and ETag are read from there through media_library.
+    objectId: uuid("object_id").notNull().unique(),
     alt: text("alt").notNull().default(""),
     caption: text("caption").notNull().default(""),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
-    // SHA-256 of the stored bytes; the public route's ETag.
-    hash: text("hash").notNull(),
     replacedAt: timestamp("replaced_at", { withTimezone: true }),
     trashedAt: timestamp("trashed_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => users.userUid, {
@@ -324,6 +320,35 @@ export const mediaAssets = builderSchema.table(
     index("media_assets_created_by_idx").on(table.createdBy)
   ]
 );
+
+/**
+ * Media rows joined with their storage object (view created in migration 0005). Read-only: the
+ * file name, type, size and ETag come from storage.objects, so nothing is stored twice.
+ */
+export const mediaLibrary = builderSchema
+  .view("media_library", {
+    id: uuid("id").notNull(),
+    projectId: uuid("project_id").notNull(),
+    folderId: uuid("folder_id"),
+    objectId: uuid("object_id").notNull(),
+    title: text("title").notNull(),
+    alt: text("alt").notNull(),
+    caption: text("caption").notNull(),
+    tags: jsonb("tags").$type<string[]>().notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    replacedAt: timestamp("replaced_at", { withTimezone: true }),
+    trashedAt: timestamp("trashed_at", { withTimezone: true }),
+    createdBy: uuid("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+    objectName: text("object_name").notNull(),
+    fileName: text("file_name").notNull(),
+    mime: text("mime").notNull(),
+    size: integer("size").notNull(),
+    hash: text("hash").notNull()
+  })
+  .existing();
 
 export const pageVersions = builderSchema.table(
   "page_versions",

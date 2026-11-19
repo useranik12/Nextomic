@@ -69,10 +69,62 @@ test("project media lands under workspace/project folders and goes when the proj
   const prefix = `${workspace.rows[0]?.workspace_id}/${projectId}/`;
   const names = await objectNames("app-uploads", prefix);
   expect(names).toHaveLength(1);
-  expect(names[0]).toMatch(new RegExp(`^${prefix}media-assets/[0-9a-f-]{36}/original$`));
+  expect(names[0]).toBe(`${prefix}media-assets/image/dot.png`);
 
   await getDb().execute(sql`delete from nextomic_builder.projects where id = ${projectId}`);
   await expect.poll(() => objectNames("app-uploads", prefix), { timeout: 60_000 }).toEqual([]);
+});
+
+test("uploads keep their own name, a repeated name gets a number and an odd name uses the asset id", async ({
+  page
+}) => {
+  await signUp(page, `storage-names-${Date.now()}@example.com`);
+  await page.getByRole("link", { name: "All Projects", exact: true }).click();
+  await page
+    .getByRole("button", { name: /New Project/i })
+    .first()
+    .click();
+  await page.getByLabel("Name").fill("Names project");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
+  await expect(page).toHaveURL(/[/]editor[/][^/]+$/);
+  const projectId = page.url().split("/").pop() ?? "";
+  await page.getByRole("button", { name: "Media", exact: true }).click();
+  const input = page.getByTestId("media-file-input");
+  await input.setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByRole("button", { name: "Open dot", exact: true })).toBeVisible();
+  await input.setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByRole("button", { name: "Open dot", exact: true })).toHaveCount(2);
+  await input.setInputFiles({ name: "日本語.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByRole("button", { name: /^Open 日本語/ })).toBeVisible();
+
+  process.env.DATABASE_URL = url ?? "";
+  const workspace = await getDb().execute<{ workspace_id: string }>(
+    sql`select workspace_id from nextomic_builder.projects where id = ${projectId}`
+  );
+  const prefix = `${workspace.rows[0]?.workspace_id}/${projectId}/media-assets/image/`;
+  const names = (await objectNames("app-uploads", prefix)).map((n) => n.slice(prefix.length));
+  expect(names.filter((n) => /^dot[.](png|webp)$/.test(n))).toHaveLength(1);
+  expect(names.filter((n) => /^dot-2[.](png|webp)$/.test(n))).toHaveLength(1);
+  expect(names.filter((n) => /^[0-9a-f-]{36}[.](png|webp)$/.test(n))).toHaveLength(1);
+
+  // The library row holds no copy of what storage knows: name, type, size and ETag come from the view.
+  const view = await getDb().execute<{
+    file_name: string;
+    mime: string;
+    size: number;
+    hash: string;
+  }>(
+    sql`select file_name, mime, size, hash from nextomic_builder.media_library where project_id = ${projectId} and file_name like 'dot.%'`
+  );
+  expect(view.rows[0]?.mime).toMatch(/^image[/](png|webp)$/);
+  expect(view.rows[0]?.size).toBeGreaterThan(0);
+  expect(view.rows[0]?.hash).toMatch(/^[0-9a-f]{32}$/);
+  const cols = await getDb().execute<{ column_name: string }>(
+    sql`select column_name from information_schema.columns where table_schema = 'nextomic_builder' and table_name = 'media_assets'`
+  );
+  const have = cols.rows.map((c) => c.column_name);
+  for (const dropped of ["mime", "size", "hash", "file_name", "original_name", "kind"])
+    expect(have).not.toContain(dropped);
 });
 
 test("a profile image lands under the user's uuid and goes when the account is deleted", async ({

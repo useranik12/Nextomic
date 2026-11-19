@@ -1,5 +1,6 @@
 import {
   assertStoragePath,
+  StorageExistsError,
   STORAGE_DELETE_BATCH,
   type StorageAdapter,
   type StorageLocation,
@@ -37,10 +38,24 @@ export class SupabaseStorageAdapter implements StorageAdapter {
   async put(input: StoragePutInput): Promise<void> {
     const response = await fetch(this.objectUrl(input), {
       method: "POST",
-      headers: { ...this.headers, "content-type": input.contentType, "x-upsert": "true" },
+      headers: {
+        ...this.headers,
+        "content-type": input.contentType,
+        "x-upsert": String(input.overwrite !== false)
+      },
       body: Buffer.from(input.data)
     });
-    if (!response.ok) await this.fail("upload", response);
+    if (response.ok) return;
+    // Storage answers 409 (or 400 with "Duplicate") for a path that is taken.
+    if (input.overwrite === false && (response.status === 409 || response.status === 400)) {
+      const text = await response
+        .clone()
+        .text()
+        .catch(() => "");
+      if (response.status === 409 || /duplicate|already exists/i.test(text))
+        throw new StorageExistsError(input);
+    }
+    await this.fail("upload", response);
   }
 
   async get(location: StorageLocation): Promise<Uint8Array | null> {

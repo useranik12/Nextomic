@@ -14,15 +14,20 @@ vi.mock("@/lib/storage", () => ({
       paths.forEach((p) => stored.delete(`${bucket}/${p}`))
   })
 }));
+vi.mock("./storage-cleanup", () => ({
+  queueFolderDeletion: async (bucket: string, prefix: string) => {
+    for (const key of [...stored.keys()])
+      if (key.startsWith(`${bucket}/${prefix}`)) stored.delete(key);
+  }
+}));
 vi.mock("./project-workspace", () => ({ workspaceIdOf: async () => "w1" }));
 
 import { deleteVariants, isVariantWidth, variantBytes, wantsVariant } from "./media-variants";
 
 const asset = (over: Partial<MediaAsset> = {}): MediaAsset => ({
-  id: "a1b2c3d4e5f60718293a4b5c",
+  id: "a1b2c3d4-e5f6-4718-893a-4b5c6d7e8f90",
   folderId: null,
   title: "",
-  originalName: "pic.png",
   fileName: "pic.png",
   kind: "image",
   mime: "image/png",
@@ -32,7 +37,7 @@ const asset = (over: Partial<MediaAsset> = {}): MediaAsset => ({
   alt: "",
   caption: "",
   tags: [],
-  path: "/media/p1/a1b2c3d4e5f60718293a4b5c/pic.png",
+  path: "/media/p1/a1b2c3d4-e5f6-4718-893a-4b5c6d7e8f90/pic.png",
   hash: "0123456789abcdef",
   replacedAt: null,
   trashedAt: null,
@@ -76,7 +81,7 @@ describe("variantBytes", () => {
     const meta = await sharp(first!).metadata();
     expect([meta.format, meta.width, meta.height]).toEqual(["webp", 640, 320]);
     expect([...stored.keys()]).toEqual([
-      "app-uploads/w1/p1/media-assets/a1b2c3d4e5f60718293a4b5c/variants/01234567-640.webp"
+      "app-uploads/w1/p1/media-variants/a1b2c3d4-e5f6-4718-893a-4b5c6d7e8f90/01234567-640.webp"
     ]);
     await variantBytes("p1", a, 640, load);
     expect(load).toHaveBeenCalledTimes(1);
@@ -97,13 +102,13 @@ describe("variantBytes", () => {
     expect(stored.size).toBe(0);
   });
 
-  it("deleteVariants removes every width of one version", async () => {
+  it("deleteVariants removes every resized copy of an asset", async () => {
     const original = await png();
     const a = asset();
     await variantBytes("p1", a, 320, async () => original);
     await variantBytes("p1", a, 640, async () => original);
     expect(stored.size).toBe(2);
-    await deleteVariants("p1", a.id, a.hash);
+    await deleteVariants("p1", a.id);
     expect(stored.size).toBe(0);
   });
 });

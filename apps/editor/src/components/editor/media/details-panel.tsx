@@ -198,8 +198,8 @@ export function DetailsPanel({
         <FormInput
           label="Name"
           value={draft.title}
-          onValueChange={(v) => set({ title: v })}
-          placeholder={asset.originalName}
+          onValueChange={(v) => set({ title: v.replace(/[.]/g, "") })}
+          placeholder={asset.fileName}
           maxLength={120}
           isDisabled={trashed}
         />
@@ -252,14 +252,12 @@ export function DetailsPanel({
           <dd className="text-body">{formatBytes(asset.size)}</dd>
           {asset.width && asset.height ? (
             <>
-              <dt className="text-muted">Dimensions</dt>
+              <dt className="text-muted">Resolution</dt>
               <dd className="text-body">
                 {asset.width} × {asset.height}
               </dd>
             </>
           ) : null}
-          <dt className="text-muted">Path</dt>
-          <dd className="break-all text-body">{asset.path}</dd>
           <dt className="text-muted">Added</dt>
           <dd className="text-body">{new Date(asset.createdAt).toLocaleString()}</dd>
           {asset.replacedAt ? (

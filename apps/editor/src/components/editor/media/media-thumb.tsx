@@ -7,9 +7,9 @@ import { Icon } from "@/lib/icons/Icon";
 export const mediaSrc = (asset: Pick<MediaAsset, "path" | "hash">) =>
   `${asset.path}?v=${asset.hash.slice(0, 8)}`;
 
-/** What to show for a file's own name: its title, else the name it was uploaded with. */
-export const mediaLabel = (asset: Pick<MediaAsset, "title" | "originalName">) =>
-  asset.title || asset.originalName;
+/** What to show for a file's own name: its title, else its file name. */
+export const mediaLabel = (asset: Pick<MediaAsset, "title" | "fileName">) =>
+  asset.title || asset.fileName;
 
 function KindIcon({ kind }: { kind: MediaAsset["kind"] }) {
   const props = { width: 28, height: 28, className: "text-muted" };
