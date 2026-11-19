@@ -1,4 +1,4 @@
-import type { EmailKind } from "@nextomic/db";
+import type { AuthEmail } from "@nextomic/auth";
 import { smtpFromEnv } from "@/server/mail/accounts";
 import { enqueueEmail } from "@/server/mail/queue";
 
@@ -8,13 +8,6 @@ import { enqueueEmail } from "@/server/mail/queue";
 /** Email verification is enforced only when SMTP is configured, so a fresh deploy can register. */
 export function isSmtpConfigured(): boolean {
   return Boolean(process.env.SMTP_HOST);
-}
-
-export interface AuthEmail {
-  kind: EmailKind;
-  to: string;
-  /** Template values: name, url, code, purpose, newEmail as the kind needs. */
-  vars: Record<string, string>;
 }
 
 export async function sendAuthEmail({ kind, to, vars }: AuthEmail): Promise<void> {

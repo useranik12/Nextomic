@@ -6,7 +6,7 @@ import {
   passwordScore,
   SCORE_LABELS,
   type PasswordPolicy
-} from "@/lib/password-policy";
+} from "@nextomic/auth/password-policy";
 
 const SCORE_COLOR = ["bg-default-hover", "bg-danger", "bg-warning", "bg-accent", "bg-success"];
 const SCORE_TEXT = ["text-muted", "text-danger", "text-warning", "text-accent", "text-success"];

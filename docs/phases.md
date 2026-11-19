@@ -273,4 +273,6 @@ A third export target, `flutter`, next to Next.js and Astro. Same editor, same p
 - Rough order: (1) element, style and action support matrix, (2) Dart runtime and design-system generator, (3) codegen for the first ~10 elements with a `flutter analyze` golden test, (4) build container, job queue, storage upload, download UI, (5) remaining elements, signing, Play upload, (6) iOS.
 - Main risks: style parity, Dart runtime parity, build server resources.
 
+**Done (2026-11-19):** shared auth package (`packages/auth`) and the standalone auth dashboard service (`apps/auth-studio`, compose service `auth-studio`); see spec.md decisions and platform.md 1.2.
+
 **Next priority (owner, 2026-11-19), after the pending Docker build changes:** Conditional values (docs: dynamic-data-and-actions.md 7b, ui-reference.md 4.7). Order: schema and resolvers, save-time and output, form-field redraw patching plus disabled-skips-validation, shared adornment component (bolt, condition icon, clear X, tooltips), content-sized condition popover, canvas preview and markers, gates. Not started.

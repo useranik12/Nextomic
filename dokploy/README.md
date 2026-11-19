@@ -22,6 +22,20 @@ pointing at the repo's `docker-compose.yml`; this records what to configure so a
    without a domain it is not reachable. It can run any SQL as the database user you connect with,
    so use a strong password or leave it without a domain. First use: Add New Server, host
    `postgres`, port `5432`, the `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` values.
+5. **auth-studio** — the auth dashboard, [Better Auth Studio](https://github.com/Kinfe123/better-auth-studio)
+   (beta software, pinned to 1.1.5). Built from `apps/auth-studio/Dockerfile` (a small image, no Next.js
+   build) and reads the same Postgres with the same `BETTER_AUTH_SECRET` and the same Better Auth
+   configuration as the builder (shared in `packages/auth`), so what you see and change there is the
+   builder's real accounts. It serves only the dashboard: no sign-up or sign-in endpoints are exposed.
+   Required: `STUDIO_ADMIN_EMAILS` (comma-separated emails of existing builder accounts; the service
+   refuses to start without it). Optional: `STUDIO_ALLOWED_IPS` and `STUDIO_BASE_PATH` (default
+   `/studio`). In Dokploy, assign a domain to service `auth-studio`, container port 3002, and open
+   `https://<domain>/studio`. Sign in there with an allowlisted account's email and password.
+   **Security:** the dashboard checks the password only, not passkey or two-factor, and can edit or
+   delete any account, so protect the domain too: set `STUDIO_ALLOWED_IPS` (your office or VPN
+   addresses) or add Traefik basic auth in Dokploy, and give it its own hostname. Deleting an account
+   that owns projects fails by design (projects are not deleted with their creator). The dashboard's
+   "seed" tools create fake users: do not use them on a real database.
 
 ## Environment variables
 
@@ -69,6 +83,6 @@ One-time: `docker network create dokploy-network` (the base file joins it, as on
 root `.env` copied from `.env.example`. Always layer the dev file locally:
 
 - Full stack: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build`
-  (app on `127.0.0.1:3000`, Postgres on `127.0.0.1:5432`, pgAdmin on `127.0.0.1:5050`, or `PGADMIN_PORT`).
+  (app on `127.0.0.1:3000`, Postgres on `127.0.0.1:5432`, pgAdmin on `127.0.0.1:5050` or `PGADMIN_PORT`, the auth dashboard on `127.0.0.1:3002/studio` or `STUDIO_PORT`).
 - Host dev (`bun run dev`): same command ending in `up -d postgres`; copy `.env` to
   `apps/editor/.env.local`.

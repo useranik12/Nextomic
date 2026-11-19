@@ -4,7 +4,7 @@ There are TWO separate dependency systems. Never mix them.
 
 ## A. Builder dependencies (the platform itself)
 
-- Packages the builder app needs to run (Next.js, React, HeroUI, Zustand, dnd-kit, Drizzle, Better Auth, Zod, Tailwind, and so on). HeroUI and Tailwind are builder-only and must never appear in a built site's dependencies.
+- Packages the builder app needs to run (Next.js, React, HeroUI, Zustand, dnd-kit, Drizzle, Better Auth, Zod, Tailwind, and so on). The auth dashboard service (`apps/auth-studio`) adds Better Auth Studio and Express, listed in the manifest's auth group. HeroUI and Tailwind are builder-only and must never appear in a built site's dependencies.
 - Source of truth: the workspace `package.json` files and `bun.lock`.
 - Mirrored in `builder-dependencies.json` at the repo root, which is GENERATED, committed, and READ-ONLY.
 - Generate with `bun run deps:manifest`. Never hand-edit. CI fails if the manifest is out of date.

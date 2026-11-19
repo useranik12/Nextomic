@@ -1,0 +1,20 @@
+{
+  "name": "auth-studio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nextomic/auth": "workspace:*",
+    "@nextomic/db": "workspace:*",
+    "better-auth-studio": "1.1.5",
+    "express": "4.22.3"
+  },
+  "devDependencies": {
+    "@types/express": "4.17.25",
+    "@types/node": "22.10.5"
+  }
+}

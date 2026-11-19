@@ -1,10 +1,12 @@
 # syntax=docker/dockerfile:1
-FROM oven/bun:1 AS base
+FROM oven/bun:1.4.4 AS base
 WORKDIR /app
 
 FROM base AS deps
 COPY package.json bun.lock* ./
 COPY apps/editor/package.json apps/editor/package.json
+COPY apps/auth-studio/package.json apps/auth-studio/package.json
+COPY packages/auth/package.json packages/auth/package.json
 COPY packages/schema/package.json packages/schema/package.json
 COPY packages/renderer/package.json packages/renderer/package.json
 COPY packages/css-framework/package.json packages/css-framework/package.json

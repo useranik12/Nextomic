@@ -3,7 +3,7 @@
 #
 # Ports: no host ports are published, so nothing can collide with other apps on the server.
 # Dokploy's Traefik reaches the app over the shared external `dokploy-network`; assign the domain
-# in Dokploy (Domains tab: service `app`, container port 3000; optionally `pgadmin`, port 80).
+# in Dokploy (Domains tab: service `app`, container port 3000; optionally `auth-studio`, port 3002, and `pgadmin`, port 80).
 # Postgres and migrate stay on the stack's private default network and are never exposed.
 #
 # Variables come from Dokploy's Environment tab (see .env.example). Locally they come from a
@@ -92,6 +92,53 @@ services:
     volumes:
       - storage-data:/app/.data/storage
       - backups-data:/app/.data/backups
+    networks:
+      - default
+      - dokploy-network
+
+  # Auth dashboard: Better Auth Studio on the builder's own accounts (same database, same secret,
+  # same Better Auth configuration through packages/auth). Users, sessions, accounts, plugins and
+  # settings of the builder's auth can be viewed and edited there. It serves only the dashboard
+  # (no sign-up or sign-in endpoints). Only the emails in STUDIO_ADMIN_EMAILS can open it, and it
+  # signs in with email and password only (not passkey or 2FA), so put it behind an IP allowlist
+  # (STUDIO_ALLOWED_IPS) or Traefik basic auth, and give the domain its own hostname.
+  # Dokploy: assign a domain to service `auth-studio`, container port 3002.
+  auth-studio:
+    image: nextomic-auth-studio:latest
+    build:
+      context: .
+      dockerfile: apps/auth-studio/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-nextomic}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nextomic}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https origin}
+      BETTER_AUTH_TRUSTED_ORIGINS: ${BETTER_AUTH_TRUSTED_ORIGINS:-}
+      AUTH_PASSWORD_POLICY: ${AUTH_PASSWORD_POLICY:-medium}
+      SMTP_HOST: ${SMTP_HOST:-}
+      STUDIO_ADMIN_EMAILS: ${STUDIO_ADMIN_EMAILS:?set STUDIO_ADMIN_EMAILS (comma-separated admin emails)}
+      STUDIO_ALLOWED_IPS: ${STUDIO_ALLOWED_IPS:-}
+      STUDIO_BASE_PATH: ${STUDIO_BASE_PATH:-/studio}
+      PORT: "3002"
+    expose:
+      - "3002"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:3002/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - default
       - dokploy-network

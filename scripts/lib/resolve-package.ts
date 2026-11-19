@@ -9,6 +9,8 @@ const repoRoot = join(import.meta.dirname, "..", "..");
 const SEARCH_ROOTS = [
   repoRoot,
   join(repoRoot, "apps/editor"),
+  join(repoRoot, "apps/auth-studio"),
+  join(repoRoot, "packages/auth"),
   join(repoRoot, "packages/schema"),
   join(repoRoot, "packages/renderer"),
   join(repoRoot, "packages/css-framework"),

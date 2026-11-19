@@ -9,6 +9,9 @@ services:
   pgadmin:
     ports:
       - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+  auth-studio:
+    ports:
+      - "127.0.0.1:${STUDIO_PORT:-3002}:3002"
   app:
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"

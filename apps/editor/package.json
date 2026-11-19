@@ -19,6 +19,7 @@
     "@heroui/styles": "3.2.7",
     "@iconify/react": "6.0.4",
     "@internationalized/date": "3.12.4",
+    "@nextomic/auth": "workspace:*",
     "@nextomic/db": "workspace:*",
     "@nextomic/integrations": "workspace:*",
     "@nextomic/renderer": "workspace:*",

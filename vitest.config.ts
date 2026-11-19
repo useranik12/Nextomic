@@ -6,7 +6,11 @@ export default defineConfig({
   oxc: { jsx: { runtime: "automatic" } },
   resolve: { alias: { "@": fileURLToPath(new URL("./apps/editor/src", import.meta.url)) } },
   test: {
-    include: ["packages/*/src/**/*.test.{ts,tsx}", "apps/editor/src/**/*.test.{ts,tsx}"],
+    include: [
+      "packages/*/src/**/*.test.{ts,tsx}",
+      "apps/editor/src/**/*.test.{ts,tsx}",
+      "apps/auth-studio/src/**/*.test.ts"
+    ],
     exclude: ["**/node_modules/**", "**/.next/**", "**/graphify-out/**"]
   }
 });

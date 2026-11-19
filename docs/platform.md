@@ -33,6 +33,13 @@ Builder authentication (this doc) is for people who use the builder. Authenticat
 
 Maximum length is 128. Existing passwords keep working; the rule applies whenever a password is set.
 
+### 1.2 Auth dashboard (service `auth-studio`)
+
+- A second container, built from `apps/auth-studio`, runs Better Auth Studio on the builder's own accounts: users, sessions, linked accounts, plugin status and auth settings. It shares the database, the secret and the configuration (`packages/auth`) with the builder, and exposes only the dashboard at `/studio`.
+- **Access:** `STUDIO_ADMIN_EMAILS` (required) is the allowlist; `STUDIO_ALLOWED_IPS` optionally limits addresses. Sign-in there is email and password only, so give it its own hostname and add an IP allowlist or Traefik basic auth.
+- **Limits:** an account created in the dashboard has no password and no workspace yet (the builder creates the workspace on first use; the person sets a password with "forgot password"). Deleting an account that owns projects fails by design. Do not use its seed tools on a real database.
+- Deploy steps and variables: `dokploy/README.md`.
+
 ## 2. Roles and project members
 
 - Workspace roles: owner, admin, member. Project roles: owner, editor, designer, content editor, viewer.

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PasswordStrength } from "@/components/auth/password-strength";
 import { ActionButton, FormInput, PasswordInput } from "@/components/ui/controls";
 import { authClient } from "@/lib/auth-client";
-import { passwordProblem, type PasswordPolicy } from "@/lib/password-policy";
+import { passwordProblem, type PasswordPolicy } from "@nextomic/auth/password-policy";
 
 /** Change password: a code is emailed to the account, then code + new password are saved. */
 export function PasswordChange({ email, policy }: { email: string; policy: PasswordPolicy }) {

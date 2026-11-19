@@ -6,7 +6,7 @@ import { AuthCard, AuthError, AuthLink } from "@/components/auth/auth-ui";
 import { PasswordStrength } from "@/components/auth/password-strength";
 import { ActionButton, PasswordInput } from "@/components/ui/controls";
 import { authClient } from "@/lib/auth-client";
-import { passwordProblem, type PasswordPolicy } from "@/lib/password-policy";
+import { passwordProblem, type PasswordPolicy } from "@nextomic/auth/password-policy";
 
 export function ResetPasswordView({ policy }: { policy: PasswordPolicy }) {
   return (

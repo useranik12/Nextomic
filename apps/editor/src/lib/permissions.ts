@@ -1,3 +1,4 @@
+import { ensureWorkspaceForUser } from "@nextomic/auth";
 import { getDb, projects, workspaceMembers } from "@nextomic/db";
 import { isUuid } from "@nextomic/schema";
 import { and, eq } from "drizzle-orm";
@@ -12,9 +13,8 @@ export class AccessDeniedError extends Error {
 
 /** Every route/action that touches a workspace's data must call this first. */
 export async function requireWorkspaceMembership(userId: string) {
-  const membership = await getUserWorkspace(userId);
-  if (!membership) throw new AccessDeniedError("No workspace membership found.");
-  return membership;
+  // An account created outside Better Auth (the auth dashboard) has no workspace until first use.
+  return (await getUserWorkspace(userId)) ?? (await ensureWorkspaceForUser(userId));
 }
 
 /** Workspace owner/admin can manage members, billing, etc. Members can only use projects. */
