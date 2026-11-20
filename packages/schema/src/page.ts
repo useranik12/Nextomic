@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { ElementNode } from "./element";
 import { pageTreeSchema } from "./loop-names";
 import { flowsByNodeSchema, type FlowsByNode } from "./actions/storage";
-import { propValueSchema } from "./value";
+import { plainValueSchema } from "./value";
 import { stateTypeSchema } from "./state";
 import { pageParamSchema } from "./params";
 import { versionLimitSchema } from "./project-settings";
@@ -19,7 +19,7 @@ export const pageStateVariableSchema = z.object({
   name: z.string().regex(IDENTIFIER).max(64),
   type: pageVariableTypeSchema,
   isList: z.boolean().default(false),
-  defaultValue: propValueSchema.optional(),
+  defaultValue: plainValueSchema.optional(),
   /** The enum id, data type id or Supabase table, for those types. */
   ref: z.string().max(200).default(""),
   description: z.string().max(300).optional()

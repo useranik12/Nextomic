@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { propValueSchema, dynamicTextOf, type PropValue } from "./value";
+import { plainValueSchema, dynamicTextOf, type PlainValue } from "./value";
 
 // Rules decide where a template (and later a theme, popup or element) applies. A rule compares one
 // piece of data (a field) with a value. Rules join in groups with all (AND) or any (OR), and a
@@ -175,7 +175,7 @@ export const ruleSchema = z.object({
   /** Excluding: the rule must NOT match. */
   exclude: z.boolean().default(false),
   /** Static text mixed with dynamic tags; tags are resolved before comparing. */
-  value: propValueSchema.default("")
+  value: plainValueSchema.default("")
 });
 export type Rule = z.infer<typeof ruleSchema>;
 
@@ -409,7 +409,7 @@ export function readField(field: string, key: string, ctx: RuleContext): string 
   }
 }
 
-const valueText = (value: PropValue | undefined, ctx: RuleContext): string =>
+const valueText = (value: PlainValue | undefined, ctx: RuleContext): string =>
   resolveTagText(dynamicTextOf(value), ctx);
 
 const list = (text: string) =>

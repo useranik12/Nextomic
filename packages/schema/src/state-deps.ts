@@ -1,6 +1,7 @@
 import { elementConditionRefs, hasConditions } from "./condition";
 import { walkElements, type ElementNode } from "./element";
 import { activeQuery } from "./query";
+import { conditionalElementRefs } from "./value";
 
 // Which elements read which state (docs/dynamic-data-and-actions.md section 5): built pages redraw
 // only those elements when an action changes app or page state.
@@ -40,6 +41,8 @@ export function stateDependencies(root: ElementNode): Record<string, string[]> {
       node.query
     ]);
     const refs = [...stateRefs(own), ...loopRefs(node)];
+    for (const value of Object.values(node.props))
+      refs.push(...conditionalElementRefs(value, node.id));
     if (hasConditions(node.visibility))
       refs.push(...elementConditionRefs(node.visibility.group, node.id));
     if (refs.length > 0) out[node.id] = refs;

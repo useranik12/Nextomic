@@ -165,6 +165,7 @@ const EMPTY_NEXTOMIC_USER: NextomicUser = {
 function flatten(value: PropValue | undefined): string {
   if (value === undefined || value === null) return "";
   if (typeof value !== "object") return String(value);
+  if (value.kind === "conditional") return flatten(value.otherwise);
   return value.parts.map((part) => (typeof part === "string" ? part : "")).join("");
 }
 

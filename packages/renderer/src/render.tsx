@@ -7,11 +7,16 @@ import {
   URL_ATTRIBUTES,
   createTokenResolver,
   expressionScope,
+  groupHolds,
   hasConditions,
   iconFontClass,
   isAllowedAttribute,
+  isConditionalValue,
   isVisible,
+  operandValue,
+  pickValue,
   walkElements,
+  type ConditionGroup,
   type ElementFacts,
   withLoopScope,
   type DynamicContext,
@@ -107,6 +112,8 @@ export interface RenderOptions {
    * condition passes. Its content never reaches the browser before then.
    */
   liveSlots?: boolean;
+  /** Editor only: a conditional value forced to case N (0 based) or "else", by "<node id>:<prop>". */
+  valuePreview?: Readonly<Record<string, number | "else">>;
   /** Icon libraries the page uses (see IconLookup). Without it library icons render empty. */
   icons?: IconLookup;
   /** CSS of the icon-font libraries in use (@font-face and glyph rules), written with the fonts. */
@@ -271,6 +278,37 @@ function passes(node: ElementNode, options: RenderOptions, scope: RenderScope): 
   return forced ? forced === "show" : holds;
 }
 
+/**
+ * The node with every conditional prop replaced by the value its conditions pick, so elements and
+ * the helpers below read plain values. Conditions see the loop rows around the element, like
+ * Conditional visibility. A node with no conditional prop is returned as it is.
+ */
+function withPickedProps(
+  node: ElementNode,
+  options: RenderOptions,
+  scope: RenderScope
+): ElementNode {
+  if (!Object.values(node.props).some(isConditionalValue)) return node;
+  const index = options.tree ? nodeIndex(options.tree) : undefined;
+  const dynamic = options.dynamic;
+  const exprScope = dynamic ? withLoopScope(expressionScope(dynamic), scope.frames) : undefined;
+  const holds = (group: ConditionGroup) =>
+    exprScope !== undefined &&
+    groupHolds(
+      group,
+      (text) => operandValue(text, exprScope),
+      (target) => {
+        const checked = target === undefined ? node : index?.get(target);
+        return checked ? factsOf(checked, scope.resolveToken) : undefined;
+      }
+    );
+  const props: ElementNode["props"] = {};
+  for (const [key, value] of Object.entries(node.props)) {
+    props[key] = pickValue(value, holds, options.valuePreview?.[`${node.id}:${key}`]) ?? "";
+  }
+  return { ...node, props };
+}
+
 function drawIcon(
   icons: IconLookup | undefined,
   library: string,
@@ -289,13 +327,14 @@ function renderScoped(node: ElementNode, options: RenderOptions, scope: RenderSc
   if (!passes(node, options, scope)) {
     return options.liveSlots ? <template key={node.id} data-nx-slot={node.id} /> : null;
   }
-  const attrs = elementAttrs(node, scope.resolveToken);
+  const flat = withPickedProps(node, options, scope);
+  const attrs = elementAttrs(flat, scope.resolveToken);
   return definition.render({
-    node,
-    text: (key) => resolveText(node.props[key], scope.resolveToken),
-    bool: (key) => resolveBoolean(node.props[key]),
+    node: flat,
+    text: (key) => resolveText(flat.props[key], scope.resolveToken),
+    bool: (key) => resolveBoolean(flat.props[key]),
     attrs: options.loopMarkers ? { ...attrs, ...loopMarkers(node, options, scope) } : attrs,
-    children: definition.canHaveChildren ? renderChildren(node, options, scope) : null,
+    children: definition.canHaveChildren ? renderChildren(flat, options, scope) : null,
     parent: scope.parent,
     mode: options.dynamic?.mode,
     icon: (library, name, opts) => drawIcon(options.icons, library, name, opts)

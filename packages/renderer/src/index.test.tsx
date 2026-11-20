@@ -1529,3 +1529,53 @@ describe("conditional visibility", () => {
     });
   });
 });
+
+describe("conditional values", () => {
+  const dynamic = buildDynamicContext({
+    page: { name: "Shop", route: "/", settings: defaultPageSettings() },
+    mode: "live"
+  });
+  const holdsWhen = (right: string) => ({
+    id: "g",
+    match: "all" as const,
+    items: [
+      { id: "c", kind: "value" as const, left: "{{ page.name }}", op: "equals" as const, right }
+    ]
+  });
+  const treeWith = (text: PropValue) => {
+    const root = emptyPageTree();
+    root.children = [node({ id: "t", type: "text", props: { text } })];
+    return root;
+  };
+  const conditional: PropValue = {
+    kind: "conditional",
+    cases: [
+      { id: "a", if: holdsWhen("blog"), then: "Blog text" },
+      { id: "b", if: holdsWhen("shop"), then: "Shop text" }
+    ],
+    otherwise: "Other text"
+  };
+  const render = (text: PropValue, valuePreview?: Record<string, number | "else">) =>
+    renderToStaticMarkup(
+      <PageRenderer
+        tree={treeWith(text)}
+        breakpoints={DEFAULT_BREAKPOINTS}
+        dynamic={dynamic}
+        valuePreview={valuePreview}
+      />
+    );
+
+  it("picks the first case that holds", () => {
+    expect(render(conditional)).toContain("Shop text");
+  });
+
+  it("falls back to otherwise when no case holds", () => {
+    const none: PropValue = { ...(conditional as object), cases: [] } as PropValue;
+    expect(render(none)).toContain("Other text");
+  });
+
+  it("lets the editor force a case or else", () => {
+    expect(render(conditional, { "t:text": 0 })).toContain("Blog text");
+    expect(render(conditional, { "t:text": "else" })).toContain("Other text");
+  });
+});
