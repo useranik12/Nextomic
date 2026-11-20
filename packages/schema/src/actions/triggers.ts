@@ -329,9 +329,9 @@ const ELEMENT_GROUPS: readonly ElementGroup[] = [
     ]
   },
   {
-    group: "Dropdown, Radio, Choice Chips",
-    types: ["dropdown", "radio", "choiceChips"],
-    disabled: "The Dropdown, Radio and Choice Chips elements are not built yet.",
+    group: "Select, Radio, Choice Chips",
+    types: ["select", "radio", "choiceChips"],
+    disabled: "Field events are not wired yet for Select, Radio and Choice Chips.",
     triggers: [["selected", "On Selected"]]
   },
   {

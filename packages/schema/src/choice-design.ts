@@ -17,6 +17,7 @@ import { COUNTER_PANEL_PARTS, COUNTER_PARTS } from "./counter-design";
 import { DATE_PANEL_PARTS, DATE_PARTS } from "./date-design";
 import { PIN_PANEL_PARTS, PIN_PARTS } from "./pin-design";
 import { RANGE_PANEL_PARTS, RANGE_PARTS } from "./range-design";
+import { SELECT_PANEL_PARTS, SELECT_PARTS } from "./select-design";
 
 const { p, TEXT, SPACING, BORDER, EFFECTS, SIZE, ORDER } = DESIGN_KIT;
 
@@ -325,7 +326,8 @@ export const FORM_DESIGN_PARTS: readonly InputPart[] = [
   ...PIN_PARTS,
   ...COUNTER_PARTS,
   ...RANGE_PARTS,
-  ...DATE_PARTS
+  ...DATE_PARTS,
+  ...SELECT_PARTS
 ];
 
 /** The parts of an element, in panel order; empty for elements without a Design > Form group. */
@@ -385,6 +387,8 @@ export function designPartsFor(type: string): readonly InputPart[] {
       return RANGE_PANEL_PARTS;
     case "dateTime":
       return DATE_PANEL_PARTS;
+    case "select":
+      return SELECT_PANEL_PARTS;
     default:
       return [];
   }
@@ -397,6 +401,7 @@ export function designGroupTitle(type: string): string {
   if (type === "counter") return "Form Counter";
   if (type === "rangeSlider") return "Form Range";
   if (type === "dateTime") return "Form Date and Time";
+  if (type === "select") return "Form Select";
   return type === "checkbox" ? "Form Checkbox" : "Form Options";
 }
 

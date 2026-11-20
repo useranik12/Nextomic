@@ -17,7 +17,8 @@ export const QUERY_LOOP_TYPES: ReadonlySet<string> = new Set([
   "section",
   "radio",
   "checkboxGroup",
-  "choiceChips"
+  "choiceChips",
+  "select"
 ]);
 
 export const canHaveQuery = (type: string) => QUERY_LOOP_TYPES.has(type);

@@ -23,6 +23,7 @@ import {
   type HM,
   type YMD
 } from "@nextomic/schema";
+import { placePopover } from "./popover-place";
 
 // The Date and time field of a built page (elements.md "Date and time"). The page draws every part
 // (42 day cells, the time lists); this module only changes their text and attributes, opens and closes
@@ -246,18 +247,6 @@ function commit(field: Element, c: Config, text: string): void {
   if (changed) control.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function place(popover: HTMLElement, field: Element): void {
-  popover.removeAttribute("data-placement");
-  popover.removeAttribute("data-align");
-  const box = field.querySelector("[data-nxt-box]") ?? field;
-  const at = popover.getBoundingClientRect();
-  if (at.right > window.innerWidth) popover.setAttribute("data-align", "end");
-  const anchor = box.getBoundingClientRect();
-  const room = { below: window.innerHeight - anchor.bottom, above: anchor.top };
-  if (at.bottom > window.innerHeight && room.above > room.below)
-    popover.setAttribute("data-placement", "top");
-}
-
 function close(field: Element, giveFocusBack: boolean): void {
   const popover = popoverOf(field);
   if (!popover || popover.hasAttribute("hidden")) return;
@@ -278,7 +267,7 @@ function open(field: Element): void {
   popover.removeAttribute("hidden");
   trigger.setAttribute("aria-expanded", "true");
   openField = field;
-  place(popover, field);
+  placePopover(popover, field);
   // A long list (the hours) starts with the chosen time in view, without moving the page.
   for (const column of popover.querySelectorAll<HTMLElement>("[data-nxt-timecol]")) {
     const chosen = column.querySelector<HTMLElement>('[aria-selected="true"]');

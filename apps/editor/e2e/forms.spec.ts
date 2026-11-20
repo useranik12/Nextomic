@@ -651,3 +651,122 @@ test("date picker: a time of day with a minute step, 24-hour clock and the Today
   await preview.locator("[data-nxt-done]").click();
   await expect(preview.locator("[data-nxt-popover]")).toBeHidden();
 });
+
+test("select: panel on the canvas, search, keys and one choice in the preview", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Select");
+  await page.getByLabel("Field name", { exact: true }).fill("plan");
+  // A selected Select (or one of its options) shows its panel open so the options can be designed.
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nxt-popover]")).toBeVisible({ timeout: 15_000 });
+  await expect(canvas.locator('[role="option"]')).toHaveCount(3);
+
+  await page.getByRole("tab", { name: /design/i }).click();
+  const group = page.locator('[aria-label="Design settings"] > section').first();
+  for (const part of ["Dropdown panel", "Search box", "Option item", "Chip", "No results message"])
+    await expect(group.getByRole("button", { name: part, exact: true })).toBeVisible();
+
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const trigger = preview.locator("[data-nxt-trigger]");
+  const popover = preview.locator("[data-nxt-popover]");
+  const picked = preview.locator("input[data-nxt-control]:checked");
+  await expect(trigger).toHaveAttribute("data-empty", "");
+  await expect(popover).toBeHidden();
+
+  // Open with the keyboard: the search box takes the focus and every option shows.
+  await trigger.focus();
+  await preview.keyboard.press("Enter");
+  await expect(popover).toBeVisible();
+  const search = preview.locator("[data-nxt-search]");
+  await expect(search).toBeFocused();
+  await expect(preview.locator('[role="option"]:not([hidden])')).toHaveCount(3);
+
+  // Typing narrows the list (every word must match); no match shows the empty message.
+  await search.fill("option 3");
+  await expect(preview.locator('[role="option"]:not([hidden])')).toHaveCount(1);
+  await search.fill("nothing like it");
+  await expect(preview.locator("[data-nxt-empty]")).toBeVisible();
+  await search.fill("OPTION 2");
+  await expect(preview.locator('[role="option"]:not([hidden])')).toHaveText(/Option 2/);
+  // Enter chooses the active row, closes the panel and gives focus back to the field.
+  await preview.keyboard.press("Enter");
+  await expect(popover).toBeHidden();
+  await expect(picked).toHaveValue("option2");
+  await expect(trigger).toHaveText("Option 2");
+  await expect(trigger).toBeFocused();
+  await expect(trigger).not.toHaveAttribute("data-empty", "");
+
+  // Arrow keys move the active row; Escape closes without choosing.
+  await preview.keyboard.press("ArrowDown");
+  await expect(popover).toBeVisible();
+  await expect(preview.locator('[role="option"][data-active]')).toHaveText(/Option 2/);
+  await preview.keyboard.press("ArrowDown");
+  await expect(preview.locator('[role="option"][data-active]')).toHaveText(/Option 3/);
+  await preview.keyboard.press("Escape");
+  await expect(popover).toBeHidden();
+  await expect(picked).toHaveValue("option2");
+
+  // A click on a row chooses it; the Clear button empties the field.
+  await trigger.click();
+  await preview.getByRole("option", { name: "Option 1" }).click();
+  await expect(picked).toHaveValue("option1");
+  await expect(trigger).toHaveText("Option 1");
+  await preview.locator("[data-nxt-clear]").click();
+  await expect(picked).toHaveCount(0);
+  await expect(trigger).toHaveAttribute("data-empty", "");
+});
+
+test("select: several choices as chips, kept open, removed again", async ({ page }) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Select");
+  await page.getByLabel("Field name", { exact: true }).fill("tags");
+  await page.getByRole("switch", { name: "Choose several" }).click({ force: true });
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const trigger = preview.locator("[data-nxt-trigger]");
+  const popover = preview.locator("[data-nxt-popover]");
+  const picked = preview.locator("input[data-nxt-control]:checked");
+
+  await trigger.click();
+  await preview.getByRole("option", { name: "Option 1" }).click();
+  await preview.getByRole("option", { name: "Option 3" }).click();
+  // The panel stays open while choosing; each choice is a chip and the rows say what is chosen.
+  await expect(popover).toBeVisible();
+  await expect(picked).toHaveCount(2);
+  await expect(preview.locator("[data-nxt-chip]")).toHaveCount(2);
+  await expect(preview.getByRole("option", { name: "Option 1" })).toHaveAttribute(
+    "aria-selected",
+    "true"
+  );
+  // A chosen row is chosen again to remove it.
+  await preview.getByRole("option", { name: "Option 1" }).click();
+  await expect(picked).toHaveCount(1);
+  await expect(preview.locator("[data-nxt-chip]")).toHaveText(/Option 3/);
+  await preview.keyboard.press("Escape");
+  await expect(popover).toBeHidden();
+
+  // The chip's x removes it; Backspace on the field removes the last one.
+  await trigger.click();
+  await preview.getByRole("option", { name: "Option 2" }).click();
+  await preview.keyboard.press("Escape");
+  await expect(preview.locator("[data-nxt-chip]")).toHaveCount(2);
+  await preview.locator("[data-nxt-chip-x]").first().click();
+  await expect(picked).toHaveCount(1);
+  await trigger.focus();
+  await preview.keyboard.press("Backspace");
+  await expect(picked).toHaveCount(0);
+  await expect(trigger).toHaveAttribute("data-empty", "");
+});

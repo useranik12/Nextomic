@@ -12,6 +12,7 @@ import { CHOICE_BASE_CSS } from "./choice-css";
 import { COUNTER_BASE_CSS } from "./counter-css";
 import { DATE_BASE_CSS } from "./date-css";
 import { RANGE_BASE_CSS } from "./range-css";
+import { SELECT_BASE_CSS } from "./select-css";
 import { INPUT_BASE_CSS, inputPartCss } from "./input-css";
 import { PIN_BASE_CSS } from "./pin-css";
 import { getElementDefinition } from "./registry";
@@ -25,7 +26,8 @@ const FIELD_LOOKS: readonly { types: readonly string[]; css: string }[] = [
   { types: ["pinInput"], css: PIN_BASE_CSS },
   { types: ["counter"], css: COUNTER_BASE_CSS },
   { types: ["rangeSlider"], css: RANGE_BASE_CSS },
-  { types: ["dateTime"], css: DATE_BASE_CSS }
+  { types: ["dateTime"], css: DATE_BASE_CSS },
+  { types: ["select"], css: SELECT_BASE_CSS }
 ];
 
 const PSEUDO_SELECTOR: Record<PseudoState, string> = {

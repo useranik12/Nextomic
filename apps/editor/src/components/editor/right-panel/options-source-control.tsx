@@ -56,8 +56,9 @@ export function OptionsSourceControl({ node }: { node: ElementNode }) {
       {big ? (
         <p role="status" className="flex items-start gap-1.5 text-xs text-warning">
           <Icon name="ph:warning" width={14} height={14} className="mt-0.5 shrink-0" />
-          More than {FIELD_OPTION_WARN} options are hard to scan. A searchable Select suits long
-          lists.
+          {node.type === "select"
+            ? "The search box only filters the rows the query loads (its Limit), not the whole table."
+            : `More than ${FIELD_OPTION_WARN} options are hard to scan. A searchable Select suits long lists.`}
         </p>
       ) : null}
     </div>

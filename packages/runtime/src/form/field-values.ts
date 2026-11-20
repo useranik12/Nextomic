@@ -1,5 +1,6 @@
 import { writeDate } from "./date-field";
 import { writeNumber } from "./number-field";
+import { SELECT_FIELD, paintSelect } from "./select-field";
 import { OPTION_VALUE_TYPES, listText, parseList, type OptionValueType } from "@nextomic/schema";
 
 // How the runtime reads and writes the value of a form field (elements.md "Forms"). A field is the
@@ -61,10 +62,12 @@ export function writeField(field: Element, value: string): void {
       return;
     case "one":
       for (const c of controls) if (c instanceof HTMLInputElement) c.checked = c.value === value;
+      if (field.matches(SELECT_FIELD)) paintSelect(field);
       return;
     case "many": {
       const chosen = new Set(parseList(value));
       for (const c of controls) if (c instanceof HTMLInputElement) c.checked = chosen.has(c.value);
+      if (field.matches(SELECT_FIELD)) paintSelect(field);
       return;
     }
     case "pin": {
@@ -129,6 +132,8 @@ export function focusTarget(field: Element): HTMLElement | null {
       return field.querySelector<HTMLElement>("[data-nxt-trigger]") ?? controls[0] ?? null;
     case "one":
     case "many":
+      if (field.matches(SELECT_FIELD))
+        return field.querySelector<HTMLElement>("[data-nxt-trigger]");
       return checkedOf(controls)[0] ?? controls.find((c) => !c.disabled) ?? null;
     case "pin":
       return controls.find((c) => c.value === "") ?? controls[0] ?? null;

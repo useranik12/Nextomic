@@ -72,6 +72,7 @@ export * from "./number-field";
 export * from "./counter-design";
 export * from "./date-design";
 export * from "./date-field";
+export * from "./select";
 export * from "./range-design";
 export * from "./query-shape";
 export * from "./edit-state";

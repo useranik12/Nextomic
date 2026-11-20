@@ -337,12 +337,17 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       if (found && designPartsFor(found.node.type).length > 0)
         found.node.attributes = { ...found.node.attributes, "data-nxt-force": activeState };
     }
-    // A selected Date and time field shows its popover open, so its calendar parts can be designed.
+    // A selected Date and time field or Select shows its popover open, so its parts can be designed.
     if (selectedId) {
-      const picker = findNode(tree, selectedId);
-      if (picker?.node.type === "dateTime") {
+      const picked = findNode(tree, selectedId);
+      // An option of a Select is only visible while the panel is open, so selecting one opens it.
+      const picker =
+        picked?.node.type === "option" && picked.parent?.type === "select"
+          ? picked.parent
+          : picked?.node;
+      if (picker?.type === "dateTime" || picker?.type === "select") {
         if (tree === doc.tree) tree = structuredClone(doc.tree);
-        const found = findNode(tree, selectedId);
+        const found = findNode(tree, picker.id);
         if (found) found.node.attributes = { ...found.node.attributes, "data-nxt-open": "" };
       }
     }

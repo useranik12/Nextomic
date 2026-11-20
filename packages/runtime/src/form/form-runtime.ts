@@ -17,6 +17,7 @@ import {
   type Control
 } from "./field-values";
 import { startDateFields, syncDates } from "./date-field";
+import { startSelects, syncSelects } from "./select-field";
 import { startNumberFields, syncNumbers } from "./number-field";
 import { startPinCells } from "./pin-cells";
 
@@ -97,7 +98,12 @@ export function startFormRuntime(
     stops.push(() => root.removeEventListener(type, fn, capture));
   };
 
-  stops.push(startPinCells(root), startNumberFields(root), startDateFields(root));
+  stops.push(
+    startPinCells(root),
+    startNumberFields(root),
+    startDateFields(root),
+    startSelects(root)
+  );
   const forms = () => [...root.querySelectorAll<HTMLFormElement>(FORM)];
   const formNamed = (name: string) =>
     forms().find((f) => f.getAttribute("data-nxt-form") === name) ?? null;
@@ -112,6 +118,10 @@ export function startFormRuntime(
     }
     for (const control of controlsOf(field))
       control.setAttribute("aria-invalid", message ? "true" : "false");
+    // A Select shows its state on the field the visitor can reach, not on its hidden inputs.
+    field
+      .querySelector("[data-nxt-trigger]")
+      ?.setAttribute("aria-invalid", message ? "true" : "false");
     field.toggleAttribute("data-invalid", Boolean(message));
     // A checked, filled field that passes shows its success text (when it has any).
     const success = field.querySelector("[data-nxt-success]");
@@ -280,6 +290,7 @@ export function startFormRuntime(
       scope.querySelectorAll("[data-nxt-field]").forEach(syncButtons);
       syncNumbers(scope);
       syncDates(scope);
+      syncSelects(scope);
     },
     stop: () => stops.splice(0).forEach((stop) => stop())
   };

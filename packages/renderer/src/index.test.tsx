@@ -57,7 +57,8 @@ describe("registry", () => {
       "pinInput",
       "counter",
       "rangeSlider",
-      "dateTime"
+      "dateTime",
+      "select"
     ]);
   });
 
@@ -90,6 +91,9 @@ describe("registry", () => {
       ),
       ...["value", "min", "max", "required", "disabled", "clearable", "showToday"].map(
         (k) => `dateTime.${k}`
+      ),
+      ...["required", "disabled", "minSelected", "maxSelected", "clearable", "keepOpen"].map(
+        (k) => `select.${k}`
       ),
       ...["radio", "checkboxGroup", "choiceChips"].flatMap((t) =>
         ["required", "disabled", "minSelected", "maxSelected"].map((k) => `${t}.${k}`)
@@ -127,6 +131,9 @@ describe("registry", () => {
                 : {}),
               ...(def.type === "option" && /Icon$|^icon$/.test(key) ? { library: "ph" } : {}),
               ...(def.type === "dateTime" && key === "icon" ? { iconLibrary: "ph" } : {}),
+              ...(def.type === "select" && /Icon$|^icon$/.test(key)
+                ? { iconLibrary: "ph", caretLibrary: "ph", clearLibrary: "ph", clearable: true }
+                : {}),
               ...(def.type === "counter" && /Icon$/.test(key)
                 ? { decLibrary: "ph", incLibrary: "ph" }
                 : {}),
@@ -389,6 +396,75 @@ describe("forms", () => {
       expect(render([pin({ length: "40" })]).match(/data-nxt-cell=/g)).toHaveLength(6);
       expect(render([pin({ mask: true })])).toContain('type="password"');
       expect(render([pin({ charset: "any" })])).toContain('inputMode="text"');
+    });
+  });
+
+  describe("select field", () => {
+    const option = (id: string, props: Record<string, unknown> = {}) =>
+      node({ id, type: "option", props: { label: id, ...props } });
+    const field = (props: Record<string, unknown> = {}) =>
+      node({
+        id: "s",
+        type: "select",
+        props: {
+          name: "pick",
+          label: "Pick",
+          placeholder: "Choose one",
+          searchable: true,
+          ...props
+        },
+        children: [option("A", { selected: true }), option("B", { value: "bee" })]
+      });
+    const markup = (props: Record<string, unknown> = {}) =>
+      render([field(props)]).replace(/^[\s\S]*?(?=<form)/, "");
+
+    it("is one choice with a listbox of rows, each with its hidden input", () => {
+      const html = markup();
+      expect(html).toContain('data-nxt-variant="select"');
+      expect(html).toContain('data-nxt-kind="one"');
+      expect(html).toContain('role="listbox"');
+      expect(html.match(/role="option"/g)).toHaveLength(2);
+      expect(html.match(/type="radio"/g)).toHaveLength(2);
+      expect(html).toContain('aria-selected="true"');
+      expect(html).not.toContain("<label");
+      expect(html).toContain('role="button"');
+      expect(html).toContain("data-nxt-search");
+    });
+
+    it("draws the chosen option in the closed field, else the empty text", () => {
+      expect(markup()).toMatch(/data-nxt-value="">A</);
+      const none = render([
+        node({
+          id: "s",
+          type: "select",
+          props: { name: "pick", placeholder: "Choose one" },
+          children: [option("A")]
+        })
+      ]);
+      expect(none).toMatch(/data-nxt-placeholder="">Choose one</);
+    });
+
+    it("keeps a list and chips when several can be chosen", () => {
+      const html = markup({ multiple: true });
+      expect(html).toContain('data-nxt-kind="many"');
+      expect(html).toContain("data-nxt-multiple");
+      expect(html).toContain('aria-multiselectable="true"');
+      expect(html.match(/type="checkbox"/g)).toHaveLength(2);
+      expect(html).toMatch(/data-nxt-chip="" data-v="A"/);
+      expect(markup({ multiple: true, display: "count" })).toContain("1 selected");
+    });
+
+    it("is a plain combobox without a search box", () => {
+      const html = markup({ searchable: false });
+      expect(html).toContain('role="combobox"');
+      expect(html).not.toContain("data-nxt-search");
+    });
+
+    it("adds its built-in look only to a page that has a Select", () => {
+      expect(render([field()])).toContain('[data-nxt-variant="select"] [data-nxt-popover]');
+      expect(render([node({ id: "t", type: "text", props: { text: "x" } })])).not.toContain(
+        "[data-nxt-popover]"
+      );
     });
   });
 

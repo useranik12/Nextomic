@@ -18,6 +18,7 @@ import {
   numberTypeOf
 } from "./number-field";
 import { pinLengthProblem } from "./pin";
+import { SELECT_TYPE, selectProblems } from "./select";
 import { checkStateValue, type StateType } from "./state";
 
 // Forms (owner decisions 2026-11-16, elements.md "Forms"): a Form wrapper has a unique `name`, a
@@ -32,6 +33,7 @@ export const FORM_FIELD_TYPES = [
   "radio",
   "checkboxGroup",
   "choiceChips",
+  "select",
   "pinInput",
   "counter",
   "rangeSlider",
@@ -52,7 +54,7 @@ export type OptionValueType = (typeof OPTION_VALUE_TYPES)[number];
 
 /** Option elements sit directly inside these fields; a query loop on the field repeats them. */
 export const OPTION_TYPE = "option";
-export const OPTION_GROUP_TYPES = ["radio", "checkboxGroup", "choiceChips"] as const;
+export const OPTION_GROUP_TYPES = ["radio", "checkboxGroup", "choiceChips", "select"] as const;
 export const isOptionGroup = (node: ElementNode): boolean =>
   (OPTION_GROUP_TYPES as readonly string[]).includes(node.type);
 
@@ -112,12 +114,17 @@ const propText = (node: ElementNode, key: string): string => {
 /** How a field of this element holds its value (see `FIELD_VALUE_KINDS`). */
 export function valueKindOf(node: ElementNode): FieldValueKind {
   if (node.type === "checkbox") return "check";
-  return node.type === "checkboxGroup" || isMultiChips(node) ? "many" : "text";
+  return node.type === "checkboxGroup" || isMultiple(node) ? "many" : "text";
 }
 
-/** Choice chips take several options unless `multiple` is switched off (a fixed choice, not data). */
-export const isMultiChips = (node: ElementNode): boolean =>
-  node.type === "choiceChips" && node.props.multiple !== false && node.props.multiple !== "false";
+/**
+ * Choice chips take several options unless `multiple` is switched off; a Select takes one unless
+ * `multiple` is switched on (a fixed choice, not data, because it decides how the value is kept).
+ */
+export const isMultiple = (node: ElementNode): boolean =>
+  node.type === "choiceChips"
+    ? node.props.multiple !== false && node.props.multiple !== "false"
+    : node.type === SELECT_TYPE && (node.props.multiple === true || node.props.multiple === "true");
 
 const isOn = (value: unknown): boolean => value === true || value === "true";
 
@@ -226,6 +233,7 @@ export function formProblems(root: ElementNode): string[] {
   walkElements(root, (node) => {
     if (isNumberField(node.type)) problems.push(...numberFieldProblems(node));
     if (node.type === DATE_TYPE) problems.push(...dateFieldProblems(node));
+    problems.push(...selectProblems(node));
     if (node.type === "pinInput") {
       const unfit = pinLengthProblem(node);
       if (unfit) problems.push(unfit);
@@ -607,6 +615,7 @@ export const ICON_LIBRARY_PROPS: readonly string[] = [
   "decLibrary",
   "incLibrary",
   "iconLibrary",
+  "caretLibrary",
   ...INPUT_ICON_SLOTS.slice(1).map((slot) => slot.library)
 ];
 
@@ -623,7 +632,9 @@ export function iconLibrariesOf(node: ElementNode): string[] {
             ? [node.props.decLibrary, node.props.incLibrary]
             : node.type === DATE_TYPE
               ? [node.props.iconLibrary]
-              : [];
+              : node.type === SELECT_TYPE
+                ? [node.props.iconLibrary, node.props.caretLibrary, node.props.clearLibrary]
+                : [];
   return keys.filter((key): key is string => typeof key === "string" && key !== "");
 }
 

@@ -5,6 +5,7 @@ import {
   STATE_TYPE_LABELS,
   optionValueProblem,
   optionValueTypeOf,
+  SELECT_TYPE,
   valueKindOf
 } from "@nextomic/schema";
 import { createElement } from "react";
@@ -53,23 +54,62 @@ function renderOption(ctx: RenderContext) {
   if (problem && ctx.mode === "live") return null;
   const subtext = ctx.text("subtext");
   const sides = iconSides(ctx.text("iconPosition"));
+  const inSelect = ctx.parent?.node.type === SELECT_TYPE;
   const slot = () => {
     const name = ctx.text("icon");
     const drawn = name ? ctx.icon(ctx.text("library"), name, { size: "1em", label: "" }) : null;
     return drawn === null ? null : iconWrapper({ "data-nxt-ico": "" }, "", iconInner(drawn));
   };
+  const chosen = !problem && on(ctx, "selected");
+  const invalid = problem ? `"${value}" is not valid: ${problem}` : undefined;
+  if (inSelect) {
+    // An option of a Select is a row of the list, not a label around a visible input: focus stays on
+    // the field (or its search box), so the runtime marks the active row and toggles the hidden
+    // input. A disabled option is marked on the row only, so it never greys the whole field.
+    const off = on(ctx, "disabled");
+    return createElement(
+      "div",
+      {
+        ...ctx.attrs,
+        role: "option",
+        "aria-selected": chosen ? "true" : "false",
+        "aria-disabled": off || problem !== null ? "true" : undefined,
+        "data-nxt-choice": "",
+        "data-nxt-invalid": invalid
+      },
+      createElement("input", {
+        type: group.type,
+        name: group.name,
+        value,
+        defaultChecked: chosen || undefined,
+        disabled: group.disabled || undefined,
+        tabIndex: -1,
+        "aria-hidden": "true",
+        "data-nxt-control": ""
+      }),
+      createElement("span", { "data-nxt-mark": "", "aria-hidden": "true" }),
+      sides.before ? slot() : null,
+      createElement(
+        "span",
+        { "data-nxt-text": "" },
+        createElement("span", { "data-nxt-name": "" }, label),
+        subtext ? createElement("span", { "data-nxt-sub": "" }, subtext) : null
+      ),
+      sides.after ? slot() : null
+    );
+  }
   return createElement(
     "label",
     {
       ...ctx.attrs,
       "data-nxt-choice": "",
-      "data-nxt-invalid": problem ? `"${value}" is not valid: ${problem}` : undefined
+      "data-nxt-invalid": invalid
     },
     createElement("input", {
       type: group.type,
       name: group.name,
       value,
-      defaultChecked: (!problem && on(ctx, "selected")) || undefined,
+      defaultChecked: chosen || undefined,
       disabled: group.disabled || problem !== null || on(ctx, "disabled") || undefined,
       "data-nxt-control": ""
     }),

@@ -7,6 +7,7 @@ import "./form-pin";
 import "./form-counter";
 import "./form-range";
 import "./form-date";
+import "./form-select";
 
 export * from "./css";
 export * from "./registry";
