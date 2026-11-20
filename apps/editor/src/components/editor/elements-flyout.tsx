@@ -42,6 +42,15 @@ function Tile({ definition, onInsert }: { definition: ElementDefinition; onInser
 
 export function ElementsFlyout({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
+  // Every group starts open; a closed group keeps its place in the list.
+  const [closed, setClosed] = useState<ReadonlySet<ElementCategory>>(new Set());
+  const toggleGroup = (id: ElementCategory) =>
+    setClosed((now) => {
+      const next = new Set(now);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   // Hidden (not unmounted) while a tile is dragged, so the canvas is clear and the drag survives.
   const dragging = useDragActive();
   const insert = useEditorStore((s) => s.insertElement);
@@ -84,6 +93,31 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
         (dragging ? " pointer-events-none opacity-0" : "")
       }
     >
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-medium text-foreground">Elements</h2>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            aria-label="Open all groups"
+            title="Open all groups"
+            disabled={closed.size === 0}
+            onClick={() => setClosed(new Set())}
+            className="rounded-xl p-1.5 text-body transition-colors duration-300 hover:bg-default hover:text-foreground disabled:opacity-40"
+          >
+            <Icon name="ph:arrows-out-line-vertical" width={16} height={16} />
+          </button>
+          <button
+            type="button"
+            aria-label="Shrink all groups"
+            title="Shrink all groups"
+            disabled={closed.size === GROUPS.length}
+            onClick={() => setClosed(new Set(GROUPS.map((g) => g.id)))}
+            className="rounded-xl p-1.5 text-body transition-colors duration-300 hover:bg-default hover:text-foreground disabled:opacity-40"
+          >
+            <Icon name="ph:arrows-in-line-vertical" width={16} height={16} />
+          </button>
+        </div>
+      </div>
       <div className="relative mb-3">
         <Icon
           name="ph:magnifying-glass"
@@ -107,21 +141,40 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
           GROUPS.map((group) => {
             const items = definitions.filter((d) => d.category === group.id);
             if (items.length === 0) return null;
+            // A search shows every match, even in a group that is shrunk.
+            const open = query.trim() !== "" || !closed.has(group.id);
             return (
               <section key={group.id} className="mb-4">
-                <h3 className="mb-2 text-sm font-semibold text-foreground">{group.label}</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {items.map((definition) => (
-                    <Tile
-                      key={definition.type}
-                      definition={definition}
-                      onInsert={() => {
-                        insert(definition.type);
-                        onClose();
-                      }}
+                <h3 className="mb-2 text-sm font-semibold text-foreground">
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    onClick={() => toggleGroup(group.id)}
+                    className="flex w-full items-center gap-1.5 rounded-lg py-0.5 text-left outline-none transition-colors duration-300 hover:text-accent focus-visible:ring-1 focus-visible:ring-focus/30"
+                  >
+                    <Icon
+                      name="ph:caret-right"
+                      width={12}
+                      height={12}
+                      className={"transition-transform duration-300 " + (open ? "rotate-90" : "")}
                     />
-                  ))}
-                </div>
+                    {group.label}
+                  </button>
+                </h3>
+                {open ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {items.map((definition) => (
+                      <Tile
+                        key={definition.type}
+                        definition={definition}
+                        onInsert={() => {
+                          insert(definition.type);
+                          onClose();
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </section>
             );
           })

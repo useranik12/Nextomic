@@ -1864,3 +1864,20 @@ test("elements list closes on an outside click and the + turns into an X", async
   await expect(list).toHaveCount(0);
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
 });
+
+test("elements list: groups open by default, shrink and open all", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  const list = page.getByRole("dialog", { name: "Elements" });
+  const layout = list.getByRole("button", { name: "Layout", exact: true });
+  await expect(layout).toHaveAttribute("aria-expanded", "true");
+  await expect(list.getByRole("button", { name: "Heading", exact: true })).toBeVisible();
+  await layout.click();
+  await expect(layout).toHaveAttribute("aria-expanded", "false");
+  await expect(list.getByRole("button", { name: "Container", exact: true })).toHaveCount(0);
+  await list.getByRole("button", { name: "Shrink all groups" }).click();
+  await expect(list.getByRole("button", { name: "Heading", exact: true })).toHaveCount(0);
+  await list.getByRole("button", { name: "Open all groups" }).click();
+  await expect(list.getByRole("button", { name: "Heading", exact: true })).toBeVisible();
+  await expect(list.getByRole("button", { name: "Container", exact: true })).toBeVisible();
+});
