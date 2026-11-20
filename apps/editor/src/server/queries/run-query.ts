@@ -132,7 +132,12 @@ async function runSupabase(input: RunQueryInput): Promise<QueryRows> {
   const { schema, table: name } = input.query.supabase;
   const table = findTable(structure.success ? structure.data : null, schema, name);
   if (!table) throw new ConnectorError("invalid_request", `Fetch the schema that has "${name}".`);
-  const request = supabaseQueryRequest(input.query.supabase, table, input.fill, input.offset);
+  const request = supabaseQueryRequest(
+    input.query.supabase,
+    table,
+    input.fill,
+    input.query.supabase.offset + (input.offset ?? 0)
+  );
   const result = await input.execute(row, request);
   return supabaseRows(input.query.supabase, result.data);
 }
@@ -159,7 +164,7 @@ async function runRest(input: RunQueryInput): Promise<QueryRows> {
   const response = result.data as RestCallResult;
   if (!response.ok) throw new ConnectorError("upstream", `The API answered ${response.status}.`);
   const json = response.body.trim() === "" ? [] : response.json;
-  return restRows(input.query.rest, call, json, input.offset);
+  return restRows(input.query.rest, call, json, input.query.rest.offset + (input.offset ?? 0));
 }
 
 /** The rows of a query loop. Bad filled values become a request error, not a crash. */

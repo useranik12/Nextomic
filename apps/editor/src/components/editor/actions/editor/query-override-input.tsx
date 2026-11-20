@@ -3,19 +3,21 @@
 import {
   activeQuery,
   findNode,
+  BIND_KEYS,
   PARAM_TEXT_MAX,
   parseRefreshQuery,
   QUERY_SOURCE_LABELS,
   queryProblems,
   type ElementNode,
+  type BindKey,
   type ElementQuery,
   type ParamField,
   type Params
 } from "@nextomic/schema";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ActionButton, SelectField } from "@/components/ui/controls";
 import { LocalQueryForm } from "../../query/local-query-form";
-import { QueryFormModeProvider } from "../../query/query-form-mode";
+import { QueryFormModeProvider, type BindControls } from "../../query/query-form-mode";
 import { RestQueryForm } from "../../query/rest-query-form";
 import { SupabaseQueryForm } from "../../query/supabase-query-form";
 import { useQuerySources } from "../../query/use-query-sources";
@@ -57,6 +59,10 @@ export function QueryOverrideInput({
   const typeChanged = !!saved && !!loop && saved.source !== loop.source;
   const query = saved && !typeChanged ? saved : loop;
   const [tooLarge, setTooLarge] = useState(false);
+  // The text last written, so two changes made by one edit (a bound setting cleared, then its
+  // number set) both land instead of the second one overwriting the first.
+  const latest = useRef(value);
+  latest.current = value;
 
   const body = () => {
     if (!loopId) return <p className={note}>Choose a query loop to edit its settings.</p>;
@@ -81,10 +87,30 @@ export function QueryOverrideInput({
           Loading data sources...
         </p>
       );
-    const update = (next: ElementQuery) => {
-      const text = JSON.stringify({ ...next, name: loop.name, enabled: true });
+    const bindNow = () => parseRefreshQuery(latest.current)?.bind ?? {};
+    const commit = (next: ElementQuery, bind: Partial<Record<BindKey, string>>) => {
+      const kept = BIND_KEYS.filter((key) => bind[key]);
+      // `next` may come from a saved query that holds its old bound settings: they are replaced.
+      const plain: Record<string, unknown> = { ...next };
+      delete plain.bind;
+      const text = JSON.stringify({
+        ...plain,
+        name: loop.name,
+        enabled: true,
+        ...(kept.length > 0
+          ? { bind: Object.fromEntries(kept.map((key) => [key, bind[key]])) }
+          : {})
+      });
       setTooLarge(text.length > PARAM_TEXT_MAX);
-      if (text.length <= PARAM_TEXT_MAX) onChange(text);
+      if (text.length > PARAM_TEXT_MAX) return;
+      latest.current = text;
+      onChange(text);
+    };
+    const update = (next: ElementQuery) => commit(next, bindNow());
+    const bind: BindControls = {
+      get: (key) => bindNow()[key] ?? "",
+      set: (key, text) =>
+        commit(parseRefreshQuery(latest.current) ?? query, { ...bindNow(), [key]: text })
     };
     const problems = queryProblems(query, {
       supabase: data.supabase?.active ? data.supabase.structure : null,
@@ -92,7 +118,7 @@ export function QueryOverrideInput({
     });
     const tip = refreshTips(loop, data.rest);
     return (
-      <QueryFormModeProvider value={{ serverRun: false, refresh: true, field: false, tip }}>
+      <QueryFormModeProvider value={{ serverRun: false, refresh: true, field: false, bind, tip }}>
         <SelectField
           compact
           isDisabled

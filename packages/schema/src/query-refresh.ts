@@ -12,11 +12,60 @@ import { activeQuery, elementQuerySchema, type ElementQuery } from "./query";
 
 export const REFRESH_ACTION = "query.refresh";
 
+/**
+ * Settings of a refreshed query that take dynamic data besides the filter and REST variable values
+ * (owner decision 2026-11-21): rows per page, rows skipped (where a page starts), the sort column
+ * and its direction. They live on the action, never on the loop: a loop keeps plain numbers.
+ */
+export const BIND_KEYS = ["limit", "offset", "orderColumn", "orderDirection"] as const;
+export type BindKey = (typeof BIND_KEYS)[number];
+
+const bindText = z.string().max(2000).optional();
+export const refreshBindSchema = z.object({
+  limit: bindText,
+  offset: bindText,
+  orderColumn: bindText,
+  orderDirection: bindText
+});
+
+/** The query a Refresh Query action saves: the loop's settings plus the templates of its bound settings. */
+export const refreshQuerySchema = elementQuerySchema.extend({
+  bind: refreshBindSchema.prefault({})
+});
+export type RefreshQuery = z.infer<typeof refreshQuerySchema>;
+
+const bindOf = (query: ElementQuery | RefreshQuery): z.infer<typeof refreshBindSchema> =>
+  "bind" in query ? query.bind : {};
+
+const COLUMN = /^[A-Za-z_][A-Za-z0-9_]{0,62}$/;
+const wholeNumber = (text: string, min: number, max: number): number | null => {
+  const n = Number(text.trim());
+  return text.trim() !== "" && Number.isInteger(n) && n >= min && n <= max ? n : null;
+};
+
+/** What a filled bound value must look like, or null when it is fine (an empty value keeps the saved setting). */
+function bindValueProblem(key: BindKey, text: string): string | null {
+  if (text.trim() === "") return null;
+  if (key === "limit")
+    return wholeNumber(text, 1, 1000) === null
+      ? `Rows must be a whole number from 1 to 1000 (got "${text}").`
+      : null;
+  if (key === "offset")
+    return wholeNumber(text, 0, 100_000) === null
+      ? `Skip must be a whole number from 0 to 100000 (got "${text}").`
+      : null;
+  if (key === "orderColumn")
+    return COLUMN.test(text.trim()) ? null : `"${text}" is not a column name.`;
+  return /^(asc|desc)$/i.test(text.trim())
+    ? null
+    : `Direction must be asc or desc (got "${text}").`;
+}
+
 /** The saved query of a Refresh Query action, or null when it is empty or not a query. */
-export function parseRefreshQuery(text: unknown): ElementQuery | null {
+export function parseRefreshQuery(text: unknown): RefreshQuery | null {
   if (typeof text !== "string" || text.trim() === "") return null;
   try {
-    const parsed = elementQuerySchema.safeParse(JSON.parse(text));
+    const parsed = refreshQuerySchema.safeParse(JSON.parse(text));
     return parsed.success ? parsed.data : null;
   } catch {
     return null;
@@ -25,15 +74,42 @@ export function parseRefreshQuery(text: unknown): ElementQuery | null {
 
 const restNames = (query: ElementQuery) => Object.keys(query.rest.values).sort();
 
+const ownSlots = (query: ElementQuery | RefreshQuery): string[] =>
+  query.source === "supabase"
+    ? query.supabase.filters.map((f) => f.value)
+    : query.source === "rest"
+      ? restNames(query).map((name) => query.rest.values[name] ?? "")
+      : [];
+
 /**
  * The templates the browser fills before asking for a refresh, in a fixed order: the Supabase
  * filter values, or the REST variable values by variable name. Other Loops read page data on the
  * server, so they have none.
  */
-export function refreshSlots(query: ElementQuery): string[] {
-  if (query.source === "supabase") return query.supabase.filters.map((f) => f.value);
-  if (query.source === "rest") return restNames(query).map((name) => query.rest.values[name] ?? "");
-  return [];
+export function refreshSlots(query: ElementQuery | RefreshQuery): string[] {
+  const bind = bindOf(query);
+  // The bound settings come last, and only when one is set, so an action saved before them keeps
+  // its positions and sends nothing extra.
+  const tail = BIND_KEYS.some((key) => bind[key]) ? BIND_KEYS.map((key) => bind[key] ?? "") : [];
+  return [...ownSlots(query), ...tail];
+}
+
+/**
+ * The first problem with the filled values of a refresh (a limit that is not a number ...), as a
+ * readable message, or null. The server ignores such a value; the browser reports it instead.
+ */
+export function bindProblem(
+  query: ElementQuery | RefreshQuery,
+  values: readonly string[]
+): string | null {
+  const start = ownSlots(query).length;
+  const bind = bindOf(query);
+  for (const [at, key] of BIND_KEYS.entries()) {
+    if (!bind[key]?.includes("{{")) continue;
+    const problem = bindValueProblem(key, values[start + at] ?? "");
+    if (problem) return problem;
+  }
+  return null;
 }
 
 /**
@@ -41,8 +117,13 @@ export function refreshSlots(query: ElementQuery): string[] {
  * a slot that holds a {{ tag }} takes a value: fixed text stays as saved, so a visitor cannot
  * change it.
  */
-export function withSlotValues(query: ElementQuery, values: readonly string[]): ElementQuery {
-  const next = structuredClone(query);
+export function withSlotValues(
+  query: ElementQuery | RefreshQuery,
+  values: readonly string[]
+): ElementQuery {
+  const { bind, ...rest } = structuredClone({ bind: bindOf(query), ...query });
+  const next: ElementQuery = rest;
+  const start = ownSlots(query).length;
   if (next.source === "supabase") {
     next.supabase.filters.forEach((filter, at) => {
       const value = values[at];
@@ -54,6 +135,30 @@ export function withSlotValues(query: ElementQuery, values: readonly string[]): 
       if (value !== undefined && next.rest.values[name]?.includes("{{"))
         next.rest.values[name] = value;
     });
+  }
+  // A bound setting takes its filled value only when the owner wrote a {{ tag }} for it and the
+  // value is valid; otherwise the saved setting stays.
+  const bound = (key: BindKey): string | null => {
+    const text = values[start + BIND_KEYS.indexOf(key)];
+    if (text === undefined || !bind[key]?.includes("{{")) return null;
+    return text.trim() === "" || bindValueProblem(key, text) ? null : text.trim();
+  };
+  const limit = bound("limit");
+  const offset = bound("offset");
+  const target =
+    next.source === "supabase" ? next.supabase : next.source === "rest" ? next.rest : next.local;
+  if (limit !== null) target.limit = Number(limit);
+  if (offset !== null) target.offset = Number(offset);
+  if (next.source === "supabase") {
+    const column = bound("orderColumn");
+    const direction = bound("orderDirection");
+    if (column !== null) {
+      const first = next.supabase.order[0];
+      if (first) first.column = column;
+      else next.supabase.order.push({ id: "refresh-order", column, ascending: true });
+    }
+    const first = next.supabase.order[0];
+    if (direction !== null && first) first.ascending = direction.toLowerCase() === "asc";
   }
   return next;
 }
@@ -118,7 +223,8 @@ export function applyRefreshes(
     if (!refresh || !current) return;
     const saved = savedQuery(refresh.node, node.id);
     if (!saved || saved.source !== current.source) return;
-    const filled = refresh.values ? withSlotValues(saved, refresh.values) : saved;
+    // Without values the saved templates stay (filled on the server); the bound settings are applied either way.
+    const filled = withSlotValues(saved, refresh.values ?? []);
     // Realtime and infinite scroll are wired by the page render, so they stay the loop's own.
     const supabase = {
       ...filled.supabase,

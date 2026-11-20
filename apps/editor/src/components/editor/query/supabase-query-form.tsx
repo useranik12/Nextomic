@@ -149,10 +149,11 @@ export function SupabaseQueryForm({
             "Order by"
           )}
         </legend>
-        {value.order.map((order) => (
+        {value.order.map((order, at) => (
           <QueryOrderRow
             key={order.id}
             order={order}
+            bindable={at === 0}
             columns={columns}
             onChange={(next) => setOrder(order.id, next)}
           />

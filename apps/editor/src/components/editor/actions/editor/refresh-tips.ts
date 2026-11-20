@@ -63,14 +63,14 @@ export function refreshTips(loop: ElementQuery, rest: RestConfig | null) {
         : loop.source === "rest"
           ? `The loop loads ${shape(r.single, r.limit)}.`
           : `The loop loads ${shape(l.single, l.limit)}.`,
-    limit: `The loop loads ${loop.source === "supabase" ? s.limit : loop.source === "rest" ? r.limit : l.limit} rows at a time.`,
+    limit: `The loop loads ${loop.source === "supabase" ? s.limit : loop.source === "rest" ? r.limit : l.limit} rows at a time. A {{ tag }} is read when the action runs.`,
     infiniteScroll: `The loop has infinite scroll ${s.infiniteScroll ? "on" : "off"}. ${KEPT}`,
     realtime: `The loop has realtime ${s.realtime ? "on" : "off"}. ${KEPT}`,
     table: s.table
       ? `The loop reads ${tableRef(s.schema, s.table)}.`
       : "The loop has no table yet.",
     filters: listText(s.filters.map(filterText), "The loop has no filters."),
-    order: listText(s.order.map(orderText), "The loop has no order."),
+    order: `${listText(s.order.map(orderText), "The loop has no order.")} In a refresh, the first row's column and direction can take a {{ tag }}.`,
     call: call ? `The loop calls ${call.name}.` : "The loop has no API call yet.",
     variables: listText(
       Object.entries(r.values).map(([name, value]) => `${name} = ${quoted(value)}`),
@@ -87,7 +87,7 @@ export function refreshTips(loop: ElementQuery, rest: RestConfig | null) {
     field: `The loop reads the field ${quoted(l.field)}.`,
     json: l.json ? "The loop has its own static JSON." : "The loop has no static JSON yet.",
     expression: `The loop uses ${quoted(l.expression)}.`,
-    offset: `The loop skips ${l.offset} rows.`
+    offset: `The loop skips ${loop.source === "supabase" ? s.offset : loop.source === "rest" ? r.offset : l.offset} rows. A {{ tag }} is read when the action runs.`
   };
 
   return (key: string): string | undefined => {

@@ -5,6 +5,7 @@ import { findNode } from "./tree";
 import { activeQuery, elementQuerySchema, type ElementQuery } from "./query";
 import {
   applyRefreshes,
+  bindProblem,
   findRefreshQuery,
   parseRefreshQuery,
   refreshRequestSchema,
@@ -82,6 +83,99 @@ describe("refreshSlots and withSlotValues", () => {
     expect(filled.supabase.filters.map((f) => f.value)).toEqual(["published", "%news%"]);
     const restFilled = withSlotValues(rest, ["99", "shoes"]);
     expect(restFilled.rest.values).toEqual({ page: "1", q: "shoes" });
+  });
+});
+
+describe("bound settings", () => {
+  const bound = (bind: Record<string, string>) =>
+    ({ ...structuredClone(edited), bind }) as ElementQuery;
+  const all = bound({
+    limit: "{{ queries.posts.limit + 10 }}",
+    offset: "{{ queries.posts.offset }}",
+    orderColumn: "{{ form.f.sort }}",
+    orderDirection: "{{ form.f.dir }}"
+  });
+
+  it("puts the bound slots after the filter values, and adds none when nothing is bound", () => {
+    expect(refreshSlots(edited)).toHaveLength(2);
+    expect(refreshSlots(all)).toHaveLength(6);
+    expect(refreshSlots(all).slice(0, 2)).toEqual(["published", "%{{ state.search }}%"]);
+    expect(refreshSlots(all)[2]).toBe("{{ queries.posts.limit + 10 }}");
+  });
+
+  it("applies limit, offset, sort column and direction from the filled values", () => {
+    const filled = withSlotValues(all, ["x", "y", "30", "60", "created_at", "DESC"]);
+    expect(filled.supabase).toMatchObject({ limit: 30, offset: 60 });
+    expect(filled.supabase.order).toEqual([
+      { id: "refresh-order", column: "created_at", ascending: false }
+    ]);
+    expect("bind" in filled).toBe(false);
+  });
+
+  it("changes an existing first sort row and keeps the others", () => {
+    const base = bound({ orderColumn: "{{ x }}", orderDirection: "{{ y }}" });
+    base.supabase.order = [
+      { id: "o1", column: "title", ascending: true },
+      { id: "o2", column: "id", ascending: true }
+    ];
+    const filled = withSlotValues(base, ["", "", "", "", "views", "desc"]);
+    expect(filled.supabase.order.map((o) => [o.column, o.ascending])).toEqual([
+      ["views", false],
+      ["id", true]
+    ]);
+  });
+
+  it("keeps the saved setting for an invalid or empty value", () => {
+    const filled = withSlotValues(all, ["", "", "0", "-5", "a b;--", "sideways"]);
+    expect(filled.supabase).toMatchObject({ limit: 5, offset: 0 });
+    expect(filled.supabase.order).toEqual([]);
+    expect(withSlotValues(all, ["", "", "", "", "", ""]).supabase.limit).toBe(5);
+    expect(withSlotValues(all, ["", "", "1001", "", "", ""]).supabase.limit).toBe(5);
+  });
+
+  it("never lets a visitor change a setting the owner fixed", () => {
+    const fixed = bound({ limit: "10" });
+    expect(withSlotValues(fixed, ["", "", "500", "", "", ""]).supabase.limit).toBe(5);
+  });
+
+  it("applies limit and offset to REST and Other Loops, and ignores the sort for them", () => {
+    const r = withSlotValues(
+      { ...rest, bind: { limit: "{{ a }}", offset: "{{ b }}" } } as ElementQuery,
+      ["1", "q", "8", "16", "", ""]
+    );
+    expect(r.rest).toMatchObject({ limit: 8, offset: 16 });
+    const l = withSlotValues(
+      { ...local, bind: { limit: "{{ a }}", orderColumn: "{{ c }}" } } as ElementQuery,
+      ["7", "", "", ""]
+    );
+    expect(l.local.limit).toBe(7);
+  });
+
+  it("reports a bad filled value in words", () => {
+    expect(bindProblem(all, ["", "", "12", "0", "created_at", "desc"])).toBeNull();
+    expect(bindProblem(all, ["", "", "abc", "0", "c", "asc"])).toMatch(
+      /Rows must be a whole number/
+    );
+    expect(bindProblem(all, ["", "", "5", "-1", "c", "asc"])).toMatch(/Skip must be/);
+    expect(bindProblem(all, ["", "", "5", "0", "a;b", "asc"])).toMatch(/not a column name/);
+    expect(bindProblem(all, ["", "", "5", "0", "c", "up"])).toMatch(/asc or desc/);
+    expect(bindProblem(edited, ["a", "b"])).toBeNull();
+  });
+
+  it("is saved with the action and found again with its bound settings stripped from the run", () => {
+    const flows = [[refreshNode({ query: "list", override: JSON.stringify(all) })]];
+    const saved = findRefreshQuery(flows, "n1", "list");
+    expect(saved && "bind" in saved ? saved.bind.limit : null).toBe(
+      "{{ queries.posts.limit + 10 }}"
+    );
+    const out = applyRefreshes(
+      tree,
+      { list: { node: "n1", values: ["a", "b", "25", "", "", ""] } },
+      (n, l) => findRefreshQuery(flows, n, l)
+    );
+    const run = queryOf(out, "list");
+    expect(run?.supabase.limit).toBe(25);
+    expect(run && "bind" in run).toBe(false);
   });
 });
 

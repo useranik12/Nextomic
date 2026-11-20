@@ -37,9 +37,24 @@ function toNumber(text: string, column: string): number {
   return value;
 }
 
+/** The items of a JSON array of text and numbers (what a Checkbox group or Choice chips hold), or null. */
+function jsonItems(text: string): string[] | null {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("[")) return null;
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.every((v) => typeof v === "string" || typeof v === "number")
+      ? parsed.map(String)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A list value: comma-separated text (`a, b`) or a JSON array (`["a","b"]` from a multi-choice field). */
 const listOf = (text: string, column: SupabaseColumn) =>
-  text
-    .split(",")
+  (jsonItems(text) ?? text.split(","))
     .map((v) => v.trim())
     .filter((v) => v !== "")
     .map((v) => (isNumeric(column) ? toNumber(v, column.name) : v));
@@ -105,6 +120,10 @@ export function supabaseQueryRequest(
     const value = filterInput(column, filter.operator, text);
     if (Array.isArray(value) && value.length === 0) continue;
     filters.push({ column: filter.column, operator: filter.operator, value });
+  }
+  // A sort column can come from a visitor (Refresh Query), so it must be a column of the table.
+  for (const order of query.order) {
+    if (!columns.has(order.column)) throw new QueryInputError(`No column "${order.column}".`);
   }
   return {
     resourceId: `${table.kind}:${table.name}`,

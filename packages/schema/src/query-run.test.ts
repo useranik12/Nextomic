@@ -50,6 +50,35 @@ describe("query requests", () => {
     expect(() => filterInput(col("n", { type: "int" }), "eq", "abc")).toThrow("not a number");
   });
 
+  it("takes a JSON list (a multi-choice field's value) for in and list columns", () => {
+    expect(filterInput(col("t"), "in", '["red","blue"]')).toEqual(["red", "blue"]);
+    expect(filterInput(col("n", { type: "int" }), "in", "[1, 2]")).toEqual([1, 2]);
+    expect(filterInput(col("l", { isList: true }), "overlaps", '["a"]')).toEqual(["a"]);
+    expect(filterInput(col("t"), "in", "[]")).toEqual([]);
+    // Text that only starts like a list stays comma-separated text.
+    expect(filterInput(col("t"), "in", "[a, b")).toEqual(["[a", "b"]);
+    expect(filterInput(col("t"), "in", '[{"a":1}]')).toEqual(['[{"a":1}]']);
+  });
+
+  it("refuses a sort column the table does not have", () => {
+    const query = { ...newElementQuery().supabase, table: "posts" };
+    const fill = fillWith({});
+    expect(
+      supabaseQueryRequest(
+        { ...query, order: [{ id: "o", column: "title", ascending: true }] },
+        table,
+        fill
+      )
+    ).toBeTruthy();
+    expect(() =>
+      supabaseQueryRequest(
+        { ...query, order: [{ id: "o", column: "secret", ascending: true }] },
+        table,
+        fill
+      )
+    ).toThrow('No column "secret"');
+  });
+
   it("builds a Supabase select, leaving out filters whose value is empty", () => {
     const query = {
       ...newElementQuery().supabase,

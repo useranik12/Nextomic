@@ -5,6 +5,7 @@ import {
   rowColumns,
   MAX_LOOP_ITERATIONS,
   operandValue,
+  bindProblem,
   parseRefreshQuery,
   refreshSlots,
   toText,
@@ -90,7 +91,12 @@ function resolveField(field: ParamField, value: unknown, scope: Record<string, u
   // A saved query is JSON holding templates: only its value slots are filled (never the JSON).
   if (field.kind === "queryOverride") {
     const query = parseRefreshQuery(value);
-    return query ? refreshSlots(query).map((slot) => toText(operandValue(slot, scope))) : null;
+    if (!query) return null;
+    const filled = refreshSlots(query).map((slot) => toText(operandValue(slot, scope)));
+    // The server ignores a bad bound value; say what is wrong here instead of refreshing quietly.
+    const problem = bindProblem(query, filled);
+    if (problem) throw new FlowError("bad-value", problem);
+    return filled;
   }
   if (isRowsField(field)) {
     const rows = Array.isArray(value) ? (value as Record<string, string>[]) : [];

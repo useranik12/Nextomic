@@ -119,6 +119,8 @@ const column = z.string().max(63).default("");
 /** Static text mixed with {{ }} dynamic data. */
 const template = z.string().max(10_000).default("");
 const limit = z.number().int().min(1).max(1000).default(20);
+/** Rows skipped from the start of the list (where a page begins). */
+const offset = z.number().int().min(0).max(100_000).default(0);
 
 export const queryFilterSchema = z.object({
   id,
@@ -140,6 +142,7 @@ export const supabaseLoopQuerySchema = z.object({
   /** One row (the first match) instead of a list. */
   single: z.boolean().default(false),
   limit,
+  offset,
   filters: z.array(queryFilterSchema).max(50).default([]),
   order: z.array(queryOrderSchema).max(10).default([]),
   /** Streams inserts, updates and deletes to the page (Supabase Realtime, anon key). */
@@ -155,7 +158,8 @@ export const restLoopQuerySchema = z.object({
   /** The id of a saved JSON path whose value is the list, or "" for the whole response. */
   listPath: z.string().max(64).default(""),
   single: z.boolean().default(false),
-  limit
+  limit,
+  offset
 });
 
 /** A loop name: an identifier, read in expressions as `%name` (empty only on pages saved before names). */
@@ -222,7 +226,7 @@ export const localLoopQuerySchema = z.object({
   single: z.boolean().default(false),
   limit,
   /** Rows to skip from the start of the list. */
-  offset: z.number().int().min(0).max(100_000).default(0)
+  offset
 });
 
 export type LocalLoopQuery = z.infer<typeof localLoopQuerySchema>;

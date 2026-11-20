@@ -15,7 +15,7 @@ import {
   rowFields
 } from "@nextomic/schema";
 import { useId, useMemo } from "react";
-import { FormInput, SelectField, type SelectOption } from "@/components/ui/controls";
+import { SelectField, type SelectOption } from "@/components/ui/controls";
 import { SearchSelect } from "@/components/ui/search-select";
 import { InfoTip } from "@/components/ui/info-tip";
 import { AutoTextarea } from "../right-panel/auto-textarea";
@@ -232,19 +232,6 @@ export function LocalQueryForm({
         />
       ) : null}
       <RowSettings value={value} onChange={patch} />
-      <FormInput
-        compact
-        type="number"
-        label="Offset"
-        tip={mode.tip("offset")}
-        description="Rows to skip from the start of the list."
-        min={0}
-        value={String(value.offset)}
-        onValueChange={(text) => {
-          const offset = Math.round(Number(text));
-          if (Number.isFinite(offset)) patch({ offset: Math.min(100_000, Math.max(0, offset)) });
-        }}
-      />
     </>
   );
 }
