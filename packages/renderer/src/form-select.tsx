@@ -249,7 +249,6 @@ registerElement({
     }),
     only("multiple", text("maxChips", "Chips shown", GROUP.options, "3")),
     only("multiple", text("countText", "Count text", GROUP.options, DEFAULT_COUNT_TEXT)),
-    only("multiple", toggle("keepOpen", "Stay open while choosing", GROUP.behavior)),
     toggle("required", "Required", GROUP.validation),
     only("multiple", text("minSelected", "Fewest chosen", GROUP.validation)),
     only("multiple", text("maxSelected", "Most chosen", GROUP.validation)),
@@ -281,6 +280,7 @@ registerElement({
       libraryKey: "clearLibrary",
       group: GROUP.icons
     },
+    only("multiple", toggle("keepOpen", "Stay open while choosing", GROUP.behavior)),
     toggle("clearable", "Clear button", GROUP.behavior),
     toggle("disabled", "Disabled", GROUP.behavior)
   ],

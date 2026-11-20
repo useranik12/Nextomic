@@ -165,6 +165,7 @@ registerElement({
       group: GROUP.content
     },
     { key: "placeholder", label: "Empty text", kind: "text", group: GROUP.content },
+    { key: "helpText", label: "Help text", kind: "text", group: GROUP.content },
     {
       key: "min",
       label: "Earliest",
@@ -186,7 +187,6 @@ registerElement({
       { key: "rangeMessage", label: "Range message", message: "range" }
     ]),
     { key: "successMessage", label: "Success message", kind: "text", group: GROUP.messages },
-    { key: "helpText", label: "Help text", kind: "text", group: GROUP.content },
     {
       key: "displayStyle",
       label: "Shown as",

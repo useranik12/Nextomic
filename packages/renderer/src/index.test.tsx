@@ -399,6 +399,18 @@ describe("forms", () => {
     });
   });
 
+  it("lists each General group once, never split by another group", () => {
+    for (const def of listElementDefinitions()) {
+      const seen: string[] = [];
+      for (const control of def.controls) {
+        const group = control.group ?? "";
+        if (seen[seen.length - 1] === group) continue;
+        expect(seen, `${def.type}: ${group}`).not.toContain(group);
+        seen.push(group);
+      }
+    }
+  });
+
   describe("select field", () => {
     const option = (id: string, props: Record<string, unknown> = {}) =>
       node({ id, type: "option", props: { label: id, ...props } });
