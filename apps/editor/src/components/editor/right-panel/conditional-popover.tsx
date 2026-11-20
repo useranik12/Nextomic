@@ -17,6 +17,7 @@ import { ConditionGroupEditor, newCondition } from "../conditions/condition-grou
 import { useEditorStore } from "../store/editor-store";
 import { BoltInput } from "./bolt-input";
 import {
+  conditionalProblem,
   fixedValueOf,
   MAX_CONDITIONAL_CASES,
   totalConditions,
@@ -90,9 +91,9 @@ export function ConditionalPopover({
   label,
   kind,
   options,
-  value,
-  anchor,
-  onChange,
+  initial,
+  anchorKey,
+  onCommit,
   onFixed,
   onClose
 }: {
@@ -101,12 +102,31 @@ export function ConditionalPopover({
   label: string;
   kind: ValueKind;
   options: Option[];
-  value: ConditionalValue;
-  anchor: HTMLElement;
-  onChange: (next: ConditionalValue) => void;
+  /** The conditional value to edit: the saved one, or a new empty one. */
+  initial: ConditionalValue;
+  /** Finds the field this panel sits beside (it can be redrawn while the panel is open). */
+  anchorKey: string;
+  /** Saves a value that passed the safety check. An invalid draft is never saved. */
+  onCommit: (next: ConditionalValue) => void;
   onFixed: (next: PlainValue) => void;
   onClose: () => void;
 }) {
+  const [value, setValue] = useState(initial);
+  const problem = conditionalProblem(value, kind, options);
+  const anchorOf = () =>
+    document.querySelector<HTMLElement>(`[data-cond-anchor="${CSS.escape(anchorKey)}"]`);
+  // Pointer events that start inside the panel, even in a menu or dialog it opened (those are
+  // portals, but React still bubbles their events to the panel), never count as outside.
+  const inside = useRef(false);
+  const closeRef = useRef<() => void>(() => {});
+  // A select of the panel with its list open takes the Escape key first.
+  const menuOpen = () => box.current?.querySelector("[aria-expanded=true]") != null;
+  const menuOpenRef = useRef(menuOpen);
+  menuOpenRef.current = menuOpen;
+  const onChange = (next: ConditionalValue) => {
+    setValue(next);
+    if (conditionalProblem(next, kind, options) === null) onCommit(next);
+  };
   const box = useRef<HTMLDivElement>(null);
   const [place, setPlace] = useState<{ left: number; top: number } | null>(null);
   const previewKey = `${node.id}:${propKey}`;
@@ -118,9 +138,11 @@ export function ConditionalPopover({
     const el = box.current;
     if (!el) return;
     const position = () => {
+      const target = anchorOf();
+      if (!target) return;
       const rect = el.getBoundingClientRect();
       const next = placeBeside(
-        anchor.getBoundingClientRect(),
+        target.getBoundingClientRect(),
         { width: rect.width, height: rect.height },
         { width: window.innerWidth, height: window.innerHeight }
       );
@@ -131,27 +153,48 @@ export function ConditionalPopover({
       );
     };
     position();
+    // The field can be redrawn (or the panel grow) after the first paint: place it again.
+    const frame = requestAnimationFrame(position);
     const observer = new ResizeObserver(position);
     observer.observe(el);
     window.addEventListener("resize", position);
     return () => {
+      cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("resize", position);
     };
-  }, [anchor]);
+    // Only on mount: it follows its own size and the window after that.
+  }, []);
 
   useEffect(() => {
     box.current?.focus({ preventScroll: true });
     const outside = (event: PointerEvent) => {
+      const startedInside = inside.current;
+      inside.current = false;
       const target = event.target instanceof Element ? event.target : null;
-      if (!target || box.current?.contains(target) || anchor.contains(target)) return;
+      if (startedInside || !target || box.current?.contains(target)) return;
+      // The field's own icon toggles the panel itself.
+      if (anchorOf()?.contains(target) || target.closest("[data-conditional-icon]")) return;
       // Dialogs and menus opened from inside the panel (the bolt, a select) are not outside.
       if (target.closest("[role=dialog], [role=listbox], [role=menu], [data-overlay]")) return;
       onClose();
     };
-    document.addEventListener("pointerdown", outside, true);
-    return () => document.removeEventListener("pointerdown", outside, true);
-  }, [anchor, onClose]);
+    // Escape closes the panel wherever the focus is, unless a menu or dialog opened from it is
+    // open (that one takes the key first).
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (menuOpenRef.current()) return;
+      const from = event.target instanceof Element ? event.target.closest("[role=dialog]") : null;
+      if (from && from !== box.current) return;
+      closeRef.current();
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [onClose]);
 
   const setCase = (index: number, next: ConditionalCase) =>
     onChange({ ...value, cases: value.cases.map((c, i) => (i === index ? next : c)) });
@@ -175,14 +218,16 @@ export function ConditionalPopover({
         {
           id: crypto.randomUUID(),
           if: { id: crypto.randomUUID(), match: "all", items: [newCondition()] },
-          then: kind === "switch" ? true : ""
+          then: kind === "switch" ? true : kind === "select" ? (options[0]?.value ?? "") : ""
         }
       ]
     });
   const close = () => {
     onClose();
-    anchor.focus();
+    document.querySelector<HTMLElement>(`[data-cond-icon-key="${CSS.escape(anchorKey)}"]`)?.focus();
   };
+
+  closeRef.current = close;
 
   const previewOptions = [
     { value: "auto", label: "Auto" },
@@ -191,7 +236,8 @@ export function ConditionalPopover({
   ];
 
   const onKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Escape" && !event.defaultPrevented) {
+    // Escape inside a menu the panel opened belongs to that menu.
+    if (event.key === "Escape" && !menuOpen() && box.current?.contains(event.target as Node)) {
       event.stopPropagation();
       close();
     } else if (event.key === "Tab") {
@@ -219,6 +265,9 @@ export function ConditionalPopover({
       tabIndex={-1}
       data-conditional-popover
       onKeyDown={onKeyDown}
+      onPointerDown={() => {
+        inside.current = true;
+      }}
       style={{
         left: place?.left ?? 0,
         top: place?.top ?? 0,
@@ -318,16 +367,23 @@ export function ConditionalPopover({
           setPreview(previewKey, next === "auto" ? null : next === "else" ? "else" : Number(next))
         }
       />
+      {problem ? (
+        <p role="status" className="text-xs text-warning">
+          {problem} Closing now keeps the previous value.
+        </p>
+      ) : null}
       <ActionButton
-        tone="ghost"
+        tone="danger-ghost"
         size="sm"
+        className="mt-2"
+        startContent={<Icon name="ph:trash" width={14} height={14} />}
         onPress={() => {
           setPreview(previewKey, null);
           onFixed(fixedValueOf(value));
           close();
         }}
       >
-        Use a fixed value
+        Remove condition
       </ActionButton>
     </div>,
     document.body

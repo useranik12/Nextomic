@@ -299,6 +299,7 @@ export function EditorShell({
               <>
                 <Navigator
                   onOpenElements={() => setFlyout((v) => !v)}
+                  elementsOpen={flyout}
                   onResetSizes={() => {
                     navigatorWidth.reset();
                     rightWidth.reset();

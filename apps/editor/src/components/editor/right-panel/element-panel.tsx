@@ -47,7 +47,11 @@ import { FormInputGroup, formInputMatches } from "./form-input-group";
 import { FORM_INPUT_GROUP } from "./form-input-part";
 import { DynamicBolt } from "./dynamic-bolt";
 import { ClearAdornment, FloatingAdornments } from "@/components/ui/floating-adornments";
-import { canBeConditional, useConditionalControl } from "./conditional-control";
+import {
+  canBeConditional,
+  useConditionalControl,
+  type ConditionalControl
+} from "./conditional-control";
 import { IdentityField } from "./identity-field";
 import { optionIcon } from "./option-icons";
 import { SettingRow, compactFieldClass } from "./setting-row";
@@ -55,6 +59,24 @@ import { SettingRow, compactFieldClass } from "./setting-row";
 type Tab = "element" | "design" | "action";
 
 function ControlField({ node, control }: { node: ElementNode; control: ControlDef }) {
+  const conditional = useConditionalControl(node, control);
+  return (
+    <>
+      <ControlFieldBody node={node} control={control} conditional={conditional} />
+      {conditional.popover}
+    </>
+  );
+}
+
+function ControlFieldBody({
+  node,
+  control,
+  conditional
+}: {
+  node: ElementNode;
+  control: ControlDef;
+  conditional: ConditionalControl;
+}) {
   const id = useId();
   const setProp = useEditorStore((s) => s.setElementProp);
   const setTag = useEditorStore((s) => s.setElementTag);
@@ -65,7 +87,6 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
   const onChange = (next: string) =>
     isTag ? setTag(node.id, next) : setProp(node.id, control.key, parseDynamicText(next));
   const insertToken = (token: string) => onChange(`${value}${tagText(token)}`);
-  const conditional = useConditionalControl(node, control);
   const canCondition = canBeConditional(node, control);
   const projectId = useEditorStore((s) => s.projectId);
   const [picking, setPicking] = useState(false);
@@ -87,15 +108,10 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
     return <OptionsSourceControl node={node} />;
   if (control.kind === "icon") return <IconControl node={node} control={control} />;
   if (conditional.value && canCondition)
-    return (
-      <SettingRow label={control.label}>
-        {conditional.chip}
-        {conditional.popover}
-      </SettingRow>
-    );
+    return <SettingRow label={control.label}>{conditional.chip}</SettingRow>;
   if (control.kind === "switch") {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" data-cond-anchor={conditional.anchorKey}>
         <Toggle
           label={control.label}
           isSelected={node.props[control.key] === true}
@@ -107,7 +123,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
   }
   if (control.kind === "select") {
     return (
-      <>
+      <div data-cond-anchor={conditional.anchorKey}>
         <SelectField
           compact
           label={control.label}
@@ -116,7 +132,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
           onValueChange={onChange}
           adornments={canCondition ? conditional.button : undefined}
         />
-      </>
+      </div>
     );
   }
 
@@ -135,13 +151,13 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
           {valueProblem} The field expects {field ? optionValueTypeOf(field) : "text"} values.
         </p>
       ) : null}
-      <div className="relative" data-adorn-box>
+      <div className="relative" data-adorn-box data-cond-anchor={conditional.anchorKey}>
         {control.kind === "textarea" ? (
           <AutoTextarea
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full resize-none rounded-2xl border border-border bg-transparent py-2 pl-3 pr-3 text-sm text-foreground outline-none transition-colors hover:border-default-400 focus:border-focus"
+            className="w-full resize-none rounded-2xl border border-border bg-transparent py-2 pl-3 pr-9 text-sm text-foreground outline-none transition-colors hover:border-default-400 focus:border-focus"
           />
         ) : (
           <input
@@ -149,7 +165,7 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
             value={value}
             placeholder={control.placeholder}
             onChange={(e) => onChange(e.target.value)}
-            className={compactFieldClass + (control.pick ? " pr-10" : "")}
+            className={compactFieldClass + (control.pick ? " pr-16" : " pr-9")}
           />
         )}
         {control.pick ? (
@@ -159,7 +175,10 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
               aria-label={`Choose ${control.label} from Media`}
               title="Choose from Media"
               onClick={() => setPicking(true)}
-              className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-default hover:text-foreground"
+              className={
+                "absolute top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted hover:bg-default hover:text-foreground " +
+                (value !== "" ? "right-8" : "right-2")
+              }
             >
               <Icon name="ph:image-square" width={14} height={14} />
             </button>
@@ -179,16 +198,24 @@ function ControlField({ node, control }: { node: ElementNode; control: ControlDe
           </>
         ) : null}
         {isTag ? null : (
-          <FloatingAdornments>
-            {canCondition ? conditional.button : null}
-            <DynamicBolt label={control.label} onInsert={insertToken} />
+          <>
+            <FloatingAdornments>
+              {canCondition ? conditional.button : null}
+              <DynamicBolt label={control.label} onInsert={insertToken} />
+            </FloatingAdornments>
             {value !== "" ? (
-              <ClearAdornment label={control.label} onClear={() => onChange("")} />
+              <div
+                className={
+                  "absolute right-2 " +
+                  (control.kind === "textarea" ? "top-2" : "top-1/2 -translate-y-1/2")
+                }
+              >
+                <ClearAdornment label={control.label} onClear={() => onChange("")} />
+              </div>
             ) : null}
-          </FloatingAdornments>
+          </>
         )}
       </div>
-      {conditional.popover}
     </SettingRow>
   );
 }

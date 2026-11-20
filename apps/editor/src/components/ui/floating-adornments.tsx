@@ -20,7 +20,7 @@ export function FloatingAdornments({ children }: { children: ReactNode }) {
 export const ADORNMENT_BUTTON =
   "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-focus";
 
-/** The clear X: shown by the caller only while the field holds a value. */
+/** The clear X: it sits inside the field, not up on the border. Shown only while there is a value. */
 export function ClearAdornment({ onClear, label }: { onClear: () => void; label?: string }) {
   return (
     <Hint content="Clear the value">
@@ -29,7 +29,7 @@ export function ClearAdornment({ onClear, label }: { onClear: () => void; label?
         data-field-clear
         aria-label={label ? `Clear ${label}` : "Clear value"}
         onClick={onClear}
-        className={ADORNMENT_BUTTON + " text-subtle hover:bg-default-hover hover:text-foreground"}
+        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-subtle outline-none transition-colors duration-300 hover:bg-default-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus"
       >
         <Icon name="ph:x" width={14} height={14} />
       </button>

@@ -163,9 +163,6 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
                 label={property.label}
                 onInsert={(token) => set(`${own ?? ""}${tagText(token)}`)}
               />
-              {own !== undefined ? (
-                <ClearAdornment label={property.label} onClear={() => set(null)} />
-              ) : null}
             </FloatingAdornments>
             {numeric ? (
               <div className="min-w-0 flex-1">
@@ -217,6 +214,9 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
               </div>
             )}
             <div className="flex h-9 shrink-0 items-center gap-0.5 pr-1">
+              {own !== undefined ? (
+                <ClearAdornment label={property.label} onClear={() => set(null)} />
+              ) : null}
               {kind === "color" ? (
                 <ColorPalette label={property.label} property={real} value={own} onPick={set} />
               ) : null}

@@ -7,7 +7,6 @@ import {
   expressionScope,
   firstExpressionProblem,
   hasConditions,
-  isConditionalValue,
   loopFrame,
   QUERY_SOURCE_LABELS,
   rawTokenProblem,
@@ -15,7 +14,7 @@ import {
   type ElementNode,
   type LoopFrame
 } from "@nextomic/schema";
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { useFlowStore } from "./actions/flow-store";
 import { ROOT_END_ID, useDropTarget } from "./dnd";
@@ -70,6 +69,7 @@ const NavigatorRow = memo(function NavigatorRow({
   const shift = useEditorStore((s) => s.shiftElement);
   const openContextMenu = useEditorStore((s) => s.openContextMenu);
   const [renaming, setRenaming] = useState(false);
+  const wasSelected = useRef(false);
   const drop = useDropTarget();
   const draggable = useDraggable({ id: node.id });
   const droppable = useDroppable({ id: node.id });
@@ -138,12 +138,24 @@ const NavigatorRow = memo(function NavigatorRow({
       ) : (
         <button
           type="button"
-          // A click selects; on a parent it also folds or unfolds it. Double click renames.
-          onClick={() => {
+          // A click selects. A click on the row that is already selected folds or unfolds a
+          // parent, so an unselected parent needs a double click. A double click on a selected
+          // row renames it.
+          onClick={(event) => {
+            if (event.detail > 1) return;
+            wasSelected.current = selected;
             select(node.id);
-            if (hasChildren) onToggle(node.id);
+            if (selected && hasChildren) onToggle(node.id);
           }}
-          onDoubleClick={() => setRenaming(true)}
+          onDoubleClick={() => {
+            if (!wasSelected.current && hasChildren) {
+              onToggle(node.id);
+              return;
+            }
+            // The first click of this double click already folded it: put it back, then rename.
+            if (hasChildren && wasSelected.current) onToggle(node.id);
+            setRenaming(true);
+          }}
           className="flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left outline-none focus-visible:ring-1 focus-visible:ring-focus/30"
           {...draggable.attributes}
           {...draggable.listeners}
@@ -165,16 +177,6 @@ const NavigatorRow = memo(function NavigatorRow({
               className={"shrink-0 " + (conditionHidden ? "text-warning" : "text-muted")}
             >
               <Icon name="ph:git-fork" width={12} height={12} />
-            </span>
-          ) : null}
-          {Object.values(node.props).some(isConditionalValue) ? (
-            <span
-              role="img"
-              aria-label="Has conditional values"
-              title="A setting of this element is chosen by conditions"
-              className="shrink-0 text-muted"
-            >
-              <Icon name="ph:git-branch" width={12} height={12} />
             </span>
           ) : null}
           {problem ? (
@@ -259,9 +261,11 @@ const NavigatorRow = memo(function NavigatorRow({
 
 export function Navigator({
   onOpenElements,
+  elementsOpen,
   onResetSizes
 }: {
   onOpenElements: () => void;
+  elementsOpen: boolean;
   onResetSizes: () => void;
 }) {
   const tree = useEditorStore((s) => s.doc?.tree ?? null);
@@ -351,10 +355,20 @@ export function Navigator({
           <button
             type="button"
             aria-label="Add element"
+            aria-expanded={elementsOpen}
+            title={elementsOpen ? "Close the elements list" : "Add element"}
+            data-elements-toggle
             onClick={onOpenElements}
             className="rounded-xl p-1.5 text-body hover:bg-default hover:text-foreground"
           >
-            <Icon name="ph:plus" width={16} height={16} />
+            <Icon
+              name="ph:plus"
+              width={16}
+              height={16}
+              className={
+                "transition-transform duration-300 " + (elementsOpen ? "rotate-45" : "rotate-0")
+              }
+            />
           </button>
         </div>
       </div>

@@ -1814,8 +1814,53 @@ test("conditional values: a text prop picks its value by conditions, with previe
     page.getByRole("button", { name: /Conditional value for Text: If 1 condition/ })
   ).toBeVisible();
 
-  // Use a fixed value brings back plain text (the Else value).
+  // Remove condition brings back plain text (the Else value).
   await page.getByRole("button", { name: /Conditional value for Text: If 1 condition/ }).click();
-  await page.getByRole("button", { name: "Use a fixed value" }).click();
+  await page
+    .getByRole("dialog", { name: "Conditional value for Text" })
+    .locator("button", { hasText: "Remove condition" })
+    .click();
   await expect(page.getByRole("textbox", { name: "Text", exact: true })).toHaveValue("Written");
+});
+
+test("conditional values: nothing is saved until a case is valid; selects keep the panel open", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const text = page.getByRole("textbox", { name: "Text", exact: true });
+  await text.fill("Kept");
+
+  // Opening and closing with no case leaves the written value alone.
+  await page.getByRole("button", { name: "Conditional value for Text" }).click();
+  const panel = page.getByRole("dialog", { name: "Conditional value for Text" });
+  await expect(panel.getByRole("status")).toContainText("Add a case");
+  await panel.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(text).toHaveValue("Kept");
+
+  // An incomplete condition is not saved either; opening a select does not close the panel.
+  await page.getByRole("button", { name: "Conditional value for Text" }).click();
+  await panel.getByRole("button", { name: "Add case" }).click();
+  await panel.getByLabel("Canvas preview").click();
+  await page.locator("[role=option]", { hasText: "Else" }).click();
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole("status")).toContainText("Fill in");
+  await expect(page.locator("[role=listbox]")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await expect(text).toHaveValue("Kept");
+});
+
+test("elements list closes on an outside click and the + turns into an X", async ({ page }) => {
+  await signUpAndCreateProject(page);
+  const toggle = page.getByRole("button", { name: "Add element" });
+  await toggle.click();
+  const list = page.getByRole("dialog", { name: "Elements" });
+  await expect(list).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("heading", { name: "Navigator" }).click();
+  await expect(list).toHaveCount(0);
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
 });

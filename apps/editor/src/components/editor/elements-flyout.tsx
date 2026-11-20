@@ -6,7 +6,7 @@ import {
   type ElementCategory,
   type ElementDefinition
 } from "@nextomic/renderer";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
 import { NEW_PREFIX, useDragActive } from "./dnd";
 import { ElementIcon } from "./icons";
@@ -45,6 +45,26 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
   // Hidden (not unmounted) while a tile is dragged, so the canvas is clear and the drag survives.
   const dragging = useDragActive();
   const insert = useEditorStore((s) => s.insertElement);
+  const panel = useRef<HTMLDivElement>(null);
+  // A click anywhere outside closes it (the + button toggles it itself); so does a click in the
+  // canvas, which is another document and so only moves the focus.
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target || panel.current?.contains(target) || target.closest("[data-elements-toggle]"))
+        return;
+      onClose();
+    };
+    const canvasFocus = () => {
+      if (document.activeElement instanceof HTMLIFrameElement) onClose();
+    };
+    document.addEventListener("pointerdown", outside, true);
+    window.addEventListener("blur", canvasFocus);
+    return () => {
+      document.removeEventListener("pointerdown", outside, true);
+      window.removeEventListener("blur", canvasFocus);
+    };
+  }, [onClose]);
   const definitions = useMemo(
     () =>
       listElementDefinitions().filter(
@@ -55,6 +75,7 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
 
   return (
     <div
+      ref={panel}
       role="dialog"
       aria-label="Elements"
       onKeyDown={(event) => event.key === "Escape" && onClose()}

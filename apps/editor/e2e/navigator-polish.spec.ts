@@ -40,8 +40,12 @@ test("navigator: fold on click, rename on double click, unwrap", async ({ page }
   const container = tree.getByRole("treeitem", { name: /Container/ });
   await expect(heading).toBeVisible();
 
-  // Clicking the parent's name folds it, and again unfolds it.
-  await container.getByRole("button", { name: "Container", exact: true }).click();
+  // A click on an unselected parent only selects it; a click on the selected parent folds it,
+  // and again unfolds it. A double click on an unselected parent folds it at once.
+  const parentName = container.getByRole("button", { name: "Container", exact: true });
+  await parentName.click();
+  await expect(heading).toBeVisible();
+  await parentName.click();
   await expect(heading).toHaveCount(0);
   await container.getByRole("button", { name: "Container", exact: true }).click();
   await expect(heading).toBeVisible();

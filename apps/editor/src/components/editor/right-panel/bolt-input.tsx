@@ -30,16 +30,16 @@ export function BoltInput({
       value={value}
       onValueChange={onValueChange}
       adornments={
-        <>
-          <DynamicBolt
-            label={label}
-            serverRun={serverRun}
-            onInsert={(token) => onValueChange(`${value}${tagText(token)}`)}
-          />
-          {value !== "" && !rest.isDisabled && !rest.isReadOnly ? (
-            <ClearAdornment label={label} onClear={() => onValueChange("")} />
-          ) : null}
-        </>
+        <DynamicBolt
+          label={label}
+          serverRun={serverRun}
+          onInsert={(token) => onValueChange(`${value}${tagText(token)}`)}
+        />
+      }
+      endContent={
+        value !== "" && !rest.isDisabled && !rest.isReadOnly ? (
+          <ClearAdornment label={label} onClear={() => onValueChange("")} />
+        ) : undefined
       }
       {...rest}
     />

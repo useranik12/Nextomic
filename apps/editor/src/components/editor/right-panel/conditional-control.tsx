@@ -29,6 +29,8 @@ export interface ConditionalControl {
   value: ConditionalValue | null;
   /** The condition icon button for the adornments row. */
   button: ReactNode;
+  /** Marks the element the panel sits beside (spread on the field box). */
+  anchorKey: string;
   /** A read-only summary chip that opens the popover (for a conditional prop). */
   chip: ReactNode;
   /** The open popover, if any. */
@@ -45,16 +47,11 @@ export function useConditionalControl(node: ElementNode, control: ControlDef): C
   const value = isConditionalValue(raw) ? raw : null;
   const kind = valueKindOf(control);
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const anchorKey = `${node.id}:${control.key}`;
 
-  const toggle = (from: HTMLElement) => {
-    if (open) return setOpen(false);
-    const box = from.closest<HTMLElement>("[data-adorn-box]") ?? from;
-    setAnchor(box);
-    if (!value) setProp(node.id, control.key, startConditional(raw, kind));
-    setOpen(true);
-  };
+  // Opening only shows the panel. The value is saved once it passes the safety check.
+  const toggle = () => setOpen((now) => !now);
 
   const iconButton = (
     <Hint content="Conditional value: choose the value by conditions">
@@ -62,9 +59,10 @@ export function useConditionalControl(node: ElementNode, control: ControlDef): C
         ref={button}
         type="button"
         data-conditional-icon
+        data-cond-icon-key={anchorKey}
         aria-label={`Conditional value for ${control.label}`}
         aria-pressed={value !== null}
-        onClick={(event) => toggle(event.currentTarget)}
+        onClick={toggle}
         className={
           ADORNMENT_BUTTON +
           " hover:bg-default-hover " +
@@ -80,8 +78,10 @@ export function useConditionalControl(node: ElementNode, control: ControlDef): C
     <button
       type="button"
       data-conditional-chip
+      data-cond-anchor={anchorKey}
+      data-cond-icon-key={anchorKey}
       aria-label={`Conditional value for ${control.label}: ${conditionalSummary(value, kind)}`}
-      onClick={(event) => toggle(event.currentTarget)}
+      onClick={toggle}
       className="flex min-h-8 w-full items-center gap-2 rounded-full bg-default px-3 text-left text-xs text-foreground transition-colors duration-300 hover:bg-default-hover"
     >
       <Icon name="ph:git-fork" width={14} height={14} className="shrink-0 text-accent" />
@@ -89,21 +89,20 @@ export function useConditionalControl(node: ElementNode, control: ControlDef): C
     </button>
   ) : null;
 
-  const popover =
-    open && value && anchor ? (
-      <ConditionalPopover
-        node={node}
-        propKey={control.key}
-        label={control.label}
-        kind={kind}
-        options={(control.options ?? []).map((o) => ({ value: o.value, label: o.label }))}
-        value={value}
-        anchor={anchor}
-        onChange={(next) => setProp(node.id, control.key, next)}
-        onFixed={(next) => setProp(node.id, control.key, next)}
-        onClose={() => setOpen(false)}
-      />
-    ) : null;
+  const popover = open ? (
+    <ConditionalPopover
+      node={node}
+      propKey={control.key}
+      label={control.label}
+      kind={kind}
+      options={(control.options ?? []).map((o) => ({ value: o.value, label: o.label }))}
+      initial={value ?? startConditional(raw, kind)}
+      anchorKey={anchorKey}
+      onCommit={(next) => setProp(node.id, control.key, next)}
+      onFixed={(next) => setProp(node.id, control.key, next)}
+      onClose={() => setOpen(false)}
+    />
+  ) : null;
 
-  return { value, button: iconButton, chip, popover };
+  return { value, button: iconButton, chip, popover, anchorKey };
 }
