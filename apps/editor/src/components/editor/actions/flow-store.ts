@@ -38,7 +38,6 @@ interface FlowState {
   error: string | null;
   byNode: Record<string, NodeFlows>;
   /** Element ids in the last saved tree: only those can save flows. */
-  savedIds: ReadonlySet<string>;
   pending: FlowsByNode;
   /** Flows of the element subtree on the editor clipboard, by the copied (old) ids. */
   elementClipboard: FlowsByNode;
@@ -48,7 +47,7 @@ interface FlowState {
   /** The Action Block open in the editor: its id, "new", or none. */
   blockEditor: string | null;
   /** Starts showing a page or template; its flows arrive with `loaded` (see use-flow-sync). */
-  begin: (projectId: string, owner: FlowOwnerRef, savedTree: ElementNode) => void;
+  begin: (projectId: string, owner: FlowOwnerRef) => void;
   loading: () => void;
   loaded: (
     owner: FlowOwnerRef,
@@ -81,15 +80,13 @@ export const useFlowStore = create<FlowState>()((set, get) => ({
   status: "idle",
   error: null,
   byNode: {},
-  savedIds: new Set(),
   pending: {},
   elementClipboard: {},
   flowClipboard: null,
   editor: null,
   blockEditor: null,
 
-  begin: (projectId, owner, savedTree) =>
-    set({ projectId, owner, byNode: {}, pending: {}, editor: null, savedIds: idsOf(savedTree) }),
+  begin: (projectId, owner) => set({ projectId, owner, byNode: {}, pending: {}, editor: null }),
 
   loading: () => set({ status: "loading", error: null }),
 
@@ -111,7 +108,7 @@ export const useFlowStore = create<FlowState>()((set, get) => ({
     for (const [nodeId, flows] of Object.entries(pending)) {
       if (ids.has(nodeId) && !next[nodeId]) next[nodeId] = { flows, version: 1 };
     }
-    set({ byNode: next, pending: {}, savedIds: ids });
+    set({ byNode: next, pending: {} });
   },
 
   flowsOf: (nodeId) => get().pending[nodeId] ?? get().byNode[nodeId]?.flows ?? [],

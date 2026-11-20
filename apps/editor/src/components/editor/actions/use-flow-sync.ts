@@ -17,7 +17,7 @@ export async function fetchFlows(): Promise<void> {
   loaded(owner, { byNode });
 }
 
-/** Loads the flows of the open page or template, and marks its tree saved after each save. */
+/** Loads the flows of the open page or template, and settles pasted copies after each save. */
 export function useFlowSync(): void {
   const projectId = useEditorStore((s) => s.projectId);
   const pageId = useEditorStore((s) => s.page?.id ?? null);
@@ -27,7 +27,7 @@ export function useFlowSync(): void {
   useEffect(() => {
     const { doc } = useEditorStore.getState();
     if (!projectId || !pageId || !doc) return;
-    useFlowStore.getState().begin(projectId, { kind, id: pageId }, doc.tree);
+    useFlowStore.getState().begin(projectId, { kind, id: pageId });
     void fetchFlows();
   }, [projectId, pageId, kind]);
 

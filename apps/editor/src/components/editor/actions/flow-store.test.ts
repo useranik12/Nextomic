@@ -21,7 +21,7 @@ const owner = { kind: "page" as const, id: "p1" };
 
 beforeEach(() => {
   const store = useFlowStore.getState();
-  store.begin("proj", owner, tree());
+  store.begin("proj", owner);
   store.loaded(owner, { byNode: { child: { flows: [flow("f1")], version: 3 } } });
 });
 
@@ -29,7 +29,6 @@ describe("flow store", () => {
   it("knows saved elements and their flows", () => {
     const s = useFlowStore.getState();
     expect(s.status).toBe("ready");
-    expect(s.savedIds.has("child")).toBe(true);
     expect(s.flowsOf("child")).toHaveLength(1);
   });
 
@@ -53,7 +52,6 @@ describe("flow store", () => {
     const after = useFlowStore.getState();
     expect(after.pending).toEqual({});
     expect(after.byNode[newChild]?.version).toBe(1);
-    expect(after.savedIds.has(newChild)).toBe(true);
   });
 
   it("drops flows of elements removed by a save", () => {

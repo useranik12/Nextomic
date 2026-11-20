@@ -38,7 +38,7 @@ export function useSaveFlows(): {
         return true;
       }
       if (outcome.reason === "not-found") {
-        toast("Save the page first: this element is not saved yet.");
+        toast("This page or template no longer exists, so its actions cannot be saved.");
         return false;
       }
       setNodeFlows(nodeId, outcome.current ?? { flows: [], version: null });

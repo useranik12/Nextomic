@@ -17,7 +17,7 @@ import {
 } from "@nextomic/schema";
 import { getDb, pages, projects, templates, users, userDisplayName } from "@nextomic/db";
 import { and, asc, eq, lte } from "drizzle-orm";
-import { projectBlocks, projectFlows } from "./action-flows";
+import { flowsInTree, projectBlocks, projectFlows } from "./action-flows";
 import { getProjectSettings } from "./pages";
 import { assertLoopsPublishable } from "./loop-check";
 import { querySources } from "./queries/run-query";
@@ -91,12 +91,13 @@ export function snapshotOfPage(
 ) {
   const settings = pageSettingsSchema.parse(row.settings);
   if (settings.status === "draft") return null;
+  const tree = pageTreeSchema.parse(row.tree);
   return {
     name: row.name,
     route: row.route,
     settings,
-    tree: pageTreeSchema.parse(row.tree),
-    ...withFlows(flows)
+    tree,
+    ...withFlows(flowsInTree(tree, flows))
   };
 }
 
@@ -117,13 +118,14 @@ export function templateSnapshotOf(
 ): PublishedTemplate | null {
   const settings = templateSettingsSchema.parse(row.settings);
   if (settings.status !== "published") return null;
+  const tree = pageTreeSchema.parse(row.tree);
   return {
     id: row.id,
     type: row.type,
     name: row.name,
     settings,
-    tree: pageTreeSchema.parse(row.tree),
-    ...withFlows(flows)
+    tree,
+    ...withFlows(flowsInTree(tree, flows))
   };
 }
 
@@ -186,7 +188,7 @@ export async function publishProject(
       const snapshot: PublishedPage | null = snapshotOfPage(row, flows.pages.get(row.id));
       if (snapshot)
         assertLoopsPublishable(structure, [
-          { label: `Page "${row.name}"`, tree: snapshot.tree, flows: flows.pages.get(row.id) }
+          { label: `Page "${row.name}"`, tree: snapshot.tree, flows: snapshot.flows }
         ]);
       await tx
         .update(pages)

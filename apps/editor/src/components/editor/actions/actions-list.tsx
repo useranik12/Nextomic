@@ -28,7 +28,6 @@ const NO_FLOWS: TriggerFlow[] = [];
 export function ActionsList({ node }: { node: ElementNode }) {
   const status = useFlowStore((s) => s.status);
   const error = useFlowStore((s) => s.error);
-  const saved = useFlowStore((s) => s.savedIds.has(node.id));
   const flows = useFlowStore((s) => s.pending[node.id] ?? s.byNode[node.id]?.flows ?? NO_FLOWS);
   const clipboard = useFlowStore((s) => s.flowClipboard);
   const pageKind = useEditorStore((s) => s.page?.kind ?? "page");
@@ -50,9 +49,6 @@ export function ActionsList({ node }: { node: ElementNode }) {
         </ActionButton>
       </div>
     );
-  }
-  if (!saved) {
-    return <p className="text-sm text-muted">Save the page to add actions to this new element.</p>;
   }
 
   const run = async (flow: TriggerFlow, command: CardCommand) => {

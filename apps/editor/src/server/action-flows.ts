@@ -2,7 +2,6 @@ import {
   actionBlockSchema,
   compactFlows,
   ownerFlowsSchema,
-  pageTreeSchema,
   walkElements,
   type ActionBlock,
   type ElementNode,
@@ -111,14 +110,28 @@ export async function syncFlowsWithTree(
   if (rows.length > 0) await tx.insert(actionFlows).values(rows).onConflictDoNothing();
 }
 
-async function ownerTree(tx: Tx, projectId: string, owner: FlowOwnerRef) {
+async function ownerExists(tx: Tx, projectId: string, owner: FlowOwnerRef): Promise<boolean> {
   const table = owner.kind === "page" ? pages : templates;
   const [row] = await tx
-    .select({ tree: table.tree })
+    .select({ id: table.id })
     .from(table)
     .where(and(eq(table.id, owner.id), eq(table.projectId, projectId)))
     .limit(1);
-  return row ? pageTreeSchema.parse(row.tree) : null;
+  return row !== undefined;
+}
+
+/**
+ * The flows of the elements that are in the tree. Flows are saved apart from the page draft, so an
+ * element added and never saved (or removed again) can leave a record behind until the next page
+ * save clears it; nothing published or run for a visitor may read such a record.
+ */
+export function flowsInTree(
+  tree: ElementNode,
+  flows: FlowsByNode | undefined
+): FlowsByNode | undefined {
+  if (!flows) return flows;
+  const live = new Set(nodeIds(tree));
+  return Object.fromEntries(Object.entries(flows).filter(([nodeId]) => live.has(nodeId)));
 }
 
 export type SaveFlowsResult =
@@ -134,9 +147,9 @@ export async function saveFlows(
 ): Promise<SaveFlowsResult> {
   const owner = { kind: input.ownerKind, id: input.ownerId };
   return getDb().transaction(async (tx) => {
-    const tree = await ownerTree(tx, projectId, owner);
-    // The element must be in the saved tree; a new element is saved with the page first.
-    if (!tree || !nodeIds(tree).includes(input.nodeId)) return { ok: false, reason: "not-found" };
+    // The element may be new and not saved with the page yet: flows are saved on their own, and
+    // the next page save drops the records of elements that never made it into the tree.
+    if (!(await ownerExists(tx, projectId, owner))) return { ok: false, reason: "not-found" };
     const where = and(ownerWhere(projectId, owner), eq(actionFlows.nodeId, input.nodeId));
     const [row] = await tx.select().from(actionFlows).where(where).for("update").limit(1);
     if ((row?.version ?? null) !== input.baseVersion) {
