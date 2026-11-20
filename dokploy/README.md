@@ -20,11 +20,13 @@ service name or alias.
 
 ## Connecting the builder to Supabase
 
-### 1. Make the database reachable (internal network, not the internet)
+### 1. Make the database reachable
 
-The builder needs a SESSION-mode Postgres connection (Supavisor port 5432, never the transaction port
-6543). Supabase's Supavisor only exposes 5432 inside the Supabase project's own network, so attach it to
-`dokploy-network` in the Supabase compose (Dokploy: Supabase service, edit the compose):
+The builder needs a SESSION-mode Postgres connection (Supavisor session port, never the transaction
+port 6543). How to reach it depends on where the builder runs.
+
+**A. Builder and Supabase on the SAME Dokploy server (preferred, no published port).** Attach Supavisor
+to `dokploy-network` in the Supabase compose (Dokploy: Supabase service, edit the compose):
 
 ```yaml
 services:
@@ -40,7 +42,44 @@ networks:
     external: true
 ```
 
-Redeploy Supabase. Do not publish Postgres to the host.
+Redeploy Supabase and set `DATABASE_URL_INTERNAL` (see the table below). Do not publish Postgres.
+
+**B. Builder on a DIFFERENT server than Supabase (the current production-test setup).** The Docker
+network does not cross servers, so publish Supavisor's session port on the Supabase server. That server
+may already run other Supabase instances, each holding its own 5432, so pick a free host port
+(`ss -tlnp | grep :5434` prints nothing when it is free). In the Supabase compose, `supavisor` service,
+keep `expose` and add `ports` for the SESSION port only (container side stays 5432):
+
+```yaml
+expose:
+  - "5432"
+  - "6543"
+ports:
+  - "5434:5432"
+```
+
+Redeploy Supabase, then set `DATABASE_URL` (not `DATABASE_URL_INTERNAL`) in the builder:
+
+```
+DATABASE_URL=postgresql://postgres.<POOLER_TENANT_ID>:<POSTGRES_PASSWORD>@<supabase-server-ip>:5434/postgres
+```
+
+- The user `postgres.<POOLER_TENANT_ID>` selects this instance's tenant, so it never touches the other
+  instances' databases.
+- Leave `DATABASE_URL_INTERNAL` empty; if it holds the alias the builder tries a host that does not exist.
+- A hostname instead of the IP must be DNS only (not Cloudflare proxied); TCP 5434 does not pass the proxy.
+- Test from the builder server first: `nc -zv <supabase-server-ip> 5434`.
+- Docker-published ports bypass `ufw`. Lock the port to the builder server's IP (and any other client,
+  such as n8n) in the provider's cloud firewall. Without a rule, anyone can try the database login.
+- The Postgres traffic is not encrypted (Supavisor has no TLS here). Where that matters, put a
+  WireGuard or Tailscale link between the servers and publish the port on the tunnel address only
+  (`"10.0.0.1:5434:5432"`).
+- Reaching the pooler through Traefik (TCP route with TLS) is a later improvement, not done yet.
+
+**Other clients (for example n8n):** use the same host, port and `postgres.<tenant>` user form with SSL
+set to disable, and allow their IP in the firewall. Prefer a dedicated limited role (created with
+`create role ... login`, granted only the schemas it needs, connected as `<role>.<tenant>`) over the
+superuser login.
 
 ### 2. Raise the Storage file size limit
 
@@ -49,23 +88,23 @@ go up to 200 MB, so change it to `209715200` (and redeploy). Per-bucket limits a
 
 ### 3. Environment variables (builder compose, Environment tab)
 
-| Variable                   | Value                                                                                         |
-| -------------------------- | --------------------------------------------------------------------------------------------- |
-| `DATABASE_URL_INTERNAL`    | `postgres://postgres.<POOLER_TENANT_ID>:<POSTGRES_PASSWORD>@nextomic-supavisor:5432/postgres` |
-| `SUPABASE_URL`             | Supabase public URL, e.g. `https://platform-nextomic.kovidaa.com`                             |
-| `SUPABASE_PUBLISHABLE_KEY` | the Supabase publishable (anon) key                                                           |
-| `SUPABASE_SECRET_KEY`      | the Supabase secret (service role) key. Server only; Storage uses it                          |
-| `APP_URL`                  | the builder's public https origin, no path, no trailing slash                                 |
-| `ENCRYPTION_KEY`           | `openssl rand -base64 32`. Losing it makes saved connector secrets unreadable                 |
-| `ALLOW_SIGNUP`             | `true` for the first account, then `false` if only invited people should join                 |
-| `AUTH_PASSWORD_POLICY`     | `medium` (default); match GoTrue's password settings                                          |
+| Variable                   | Value                                                                                                                |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL_INTERNAL`    | Same server only (1A): `postgres://postgres.<POOLER_TENANT_ID>:<POSTGRES_PASSWORD>@nextomic-supavisor:5432/postgres` |
+| `DATABASE_URL`             | Separate servers (1B): `postgresql://postgres.<POOLER_TENANT_ID>:<POSTGRES_PASSWORD>@<server-ip>:5434/postgres`      |
+| `SUPABASE_URL`             | Supabase public URL, e.g. `https://platform-nextomic.kovidaa.com`                                                    |
+| `SUPABASE_PUBLISHABLE_KEY` | the `sb_publishable_...` key (`SUPABASE_PUBLISHABLE_KEY` in Supabase's env), never the service-role JWT              |
+| `SUPABASE_SECRET_KEY`      | the `sb_secret_...` key (`SUPABASE_SECRET_KEY` in Supabase's env). Server only; Storage uses it                      |
+| `APP_URL`                  | the builder's public https origin, no path, no trailing slash                                                        |
+| `ENCRYPTION_KEY`           | `openssl rand -base64 32`. Losing it makes saved connector secrets unreadable                                        |
+| `ALLOW_SIGNUP`             | `true` for the first account, then `false` if only invited people should join                                        |
+| `AUTH_PASSWORD_POLICY`     | `medium` (default); match GoTrue's password settings                                                                 |
 
 `SUPABASE_URL_INTERNAL` is optional (an internal gateway address); the public URL works without it.
 Everything else in the root `.env.example` has a default. Never commit a populated `.env`.
 
-If you cannot attach Supavisor to `dokploy-network`, publish its session port instead and use
-`DATABASE_URL=postgres://postgres.<tenant>:<password>@<server-ip>:<port>/postgres`, and firewall that
-port to the VPS only.
+Set exactly one of `DATABASE_URL` or `DATABASE_URL_INTERNAL` to the real address. The compose uses the
+internal one first when both are set. Never paste real keys or passwords into the repo or chat.
 
 ### 4. Supabase Auth settings the builder expects
 
