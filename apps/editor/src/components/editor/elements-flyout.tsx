@@ -44,6 +44,7 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   // Every group starts open; a closed group keeps its place in the list.
   const [closed, setClosed] = useState<ReadonlySet<ElementCategory>>(new Set());
+  const allClosed = closed.size === GROUPS.length;
   const toggleGroup = (id: ElementCategory) =>
     setClosed((now) => {
       const next = new Set(now);
@@ -95,28 +96,32 @@ export function ElementsFlyout({ onClose }: { onClose: () => void }) {
     >
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-medium text-foreground">Elements</h2>
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            aria-label="Open all groups"
-            title="Open all groups"
-            disabled={closed.size === 0}
-            onClick={() => setClosed(new Set())}
-            className="rounded-xl p-1.5 text-body transition-colors duration-300 hover:bg-default hover:text-foreground disabled:opacity-40"
-          >
-            <Icon name="ph:arrows-out-line-vertical" width={16} height={16} />
-          </button>
-          <button
-            type="button"
-            aria-label="Shrink all groups"
-            title="Shrink all groups"
-            disabled={closed.size === GROUPS.length}
-            onClick={() => setClosed(new Set(GROUPS.map((g) => g.id)))}
-            className="rounded-xl p-1.5 text-body transition-colors duration-300 hover:bg-default hover:text-foreground disabled:opacity-40"
-          >
-            <Icon name="ph:arrows-in-line-vertical" width={16} height={16} />
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label={allClosed ? "Open all groups" : "Shrink all groups"}
+          title={allClosed ? "Open all groups" : "Shrink all groups"}
+          onClick={() => setClosed(allClosed ? new Set() : new Set(GROUPS.map((g) => g.id)))}
+          className="relative h-8 w-8 rounded-xl text-body transition-colors duration-300 hover:bg-default hover:text-foreground"
+        >
+          <Icon
+            name="ph:arrows-in-line-vertical"
+            width={16}
+            height={16}
+            className={
+              "absolute inset-0 m-auto transition-all duration-300 " +
+              (allClosed ? "scale-50 rotate-90 opacity-0" : "scale-100 rotate-0 opacity-100")
+            }
+          />
+          <Icon
+            name="ph:arrows-out-line-vertical"
+            width={16}
+            height={16}
+            className={
+              "absolute inset-0 m-auto transition-all duration-300 " +
+              (allClosed ? "scale-100 rotate-0 opacity-100" : "scale-50 -rotate-90 opacity-0")
+            }
+          />
+        </button>
       </div>
       <div className="relative mb-3">
         <Icon
