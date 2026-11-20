@@ -59,7 +59,7 @@ Everything you build is stored as JSON. The editor edits the JSON, and the rende
 
 - Bolt-icon dynamic tokens on every prop, attribute, style value, condition, action parameter, route and SEO field, with scope rules enforced on save.
 - App state, page state, constants, custom data types and ENUMs, n8n-style `{{ }}` expressions with suggestions and highlighting.
-- Queries (element, loop and action-triggered), query loops on Container and Section, transforms, date formatting, conditional visibility.
+- Queries (element, loop and action-triggered), query loops on Container and Section, transforms, date formatting, conditional visibility, conditional values (a prop picks its value by conditions).
 - Action flow editor (triggers, flow canvas, conditions, parallel lanes) with core actions: queries, state, navigation, element and class actions, wait, theme actions, date and color pickers. Action results (`results.<name>`) with Action Result loops.
 
 **Data sources**

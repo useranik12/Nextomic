@@ -5,7 +5,8 @@ import {
   emptyPageTree,
   newElementQuery,
   newTheme,
-  type ElementNode
+  type ElementNode,
+  type PropValue
 } from "@nextomic/schema";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -1570,7 +1571,7 @@ describe("conditional values", () => {
   });
 
   it("falls back to otherwise when no case holds", () => {
-    const none: PropValue = { ...(conditional as object), cases: [] } as PropValue;
+    const none: PropValue = { kind: "conditional", cases: [], otherwise: "Other text" };
     expect(render(none)).toContain("Other text");
   });
 
