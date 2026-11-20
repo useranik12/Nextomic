@@ -98,6 +98,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
   const selectedId = useEditorStore((s) => s.selectedId);
   const hideSelection = useEditorStore((s) => s.hideSelection);
   const visibilityPreview = useEditorStore((s) => s.visibilityPreview);
+  const valuePreview = useEditorStore((s) => s.valuePreview);
   const setConditionsFailed = useEditorStore((s) => s.setConditionsFailed);
   const stylePreview = useEditorStore((s) => s.stylePreview);
   const withLayout = useLayoutComposer();
@@ -381,6 +382,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
       dynamic,
       loopRows,
       visibilityPreview,
+      valuePreview,
       icons
     });
   }, [
@@ -402,6 +404,7 @@ export const CanvasFrame = memo(function CanvasFrame({ mode }: { mode: string })
     selectedId,
     hideSelection,
     visibilityPreview,
+    valuePreview,
     stylePreview,
     activeClass,
     activeState,

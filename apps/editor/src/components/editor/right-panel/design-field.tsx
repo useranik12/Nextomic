@@ -1,5 +1,6 @@
 "use client";
 
+import { ClearAdornment, FloatingAdornments } from "@/components/ui/floating-adornments";
 import { tagText } from "@nextomic/schema";
 import { builtinStyle } from "@nextomic/renderer";
 import type { ElementNode } from "@nextomic/schema";
@@ -106,6 +107,7 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
         tip={property.tip}
         responsive={!property.half}
         icon={<PropertyIcon property={real} />}
+        showReset={property.options !== undefined}
       >
         {property.options && property.icons ? (
           <div
@@ -155,7 +157,16 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
             onValueChange={(next) => set(next === DEFAULT_OPTION ? null : next)}
           />
         ) : (
-          <div className={fieldShellClass}>
+          <div className={fieldShellClass + " relative"} data-adorn-box>
+            <FloatingAdornments>
+              <DynamicBolt
+                label={property.label}
+                onInsert={(token) => set(`${own ?? ""}${tagText(token)}`)}
+              />
+              {own !== undefined ? (
+                <ClearAdornment label={property.label} onClear={() => set(null)} />
+              ) : null}
+            </FloatingAdornments>
             {numeric ? (
               <div className="min-w-0 flex-1">
                 <LengthInput
@@ -221,10 +232,6 @@ export function DesignField({ node, property }: { node: ElementNode; property: D
                   onChange={set}
                 />
               ) : null}
-              <DynamicBolt
-                label={property.label}
-                onInsert={(token) => set(`${own ?? ""}${tagText(token)}`)}
-              />
             </div>
           </div>
         )}

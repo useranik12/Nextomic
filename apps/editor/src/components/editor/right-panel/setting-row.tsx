@@ -21,6 +21,7 @@ export function SettingRow({
   tip,
   actions,
   icon,
+  showReset = true,
   children
 }: {
   label: string;
@@ -37,6 +38,8 @@ export function SettingRow({
   actions?: ReactNode;
   /** A small icon before the label. */
   icon?: ReactNode;
+  /** False when the value field has its own clear X (the right-click reset stays). */
+  showReset?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -69,7 +72,7 @@ export function SettingRow({
         {tip ? <InfoTip text={tip} label={label} placement="left" /> : null}
         <div className="ml-auto flex items-center gap-1">
           {actions}
-          {changed && onReset ? (
+          {changed && onReset && showReset ? (
             <button
               type="button"
               aria-label={`Reset ${label}`}

@@ -1775,3 +1775,47 @@ test("turning the bolt off on a switch keeps its fixed value and fields", async 
   await expect(modal.getByRole("switch", { name: /Show action button/i })).toBeChecked();
   await expect(buttonText).toBeVisible();
 });
+
+test("conditional values: a text prop picks its value by conditions, with preview and clear", async ({
+  page
+}) => {
+  await signUpAndCreateProject(page);
+  await page.getByRole("button", { name: "Add element" }).click();
+  await page.getByRole("button", { name: "Heading", exact: true }).click();
+  const text = page.getByRole("textbox", { name: "Text", exact: true });
+  await text.fill("Written");
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.getByRole("heading", { name: "Written" })).toBeVisible();
+
+  // The clear X shows only while there is a value.
+  await expect(page.getByRole("button", { name: "Clear Text" })).toBeVisible();
+
+  // Choosing Conditional keeps the written value as Else and opens the panel.
+  await page.getByRole("button", { name: "Conditional value for Text" }).click();
+  const panel = page.getByRole("dialog", { name: "Conditional value for Text" });
+  await expect(panel).toBeVisible();
+  await panel.getByRole("button", { name: "Add case" }).click();
+  await panel.getByLabel("Value", { exact: true }).fill("{{ page.name }}");
+  await panel.getByLabel("Compare with", { exact: true }).fill("Blog");
+  await panel.getByRole("textbox", { name: "Then (case 1)" }).fill("Matched");
+  await expect(canvas.getByRole("heading", { name: "Written" })).toBeVisible();
+
+  // A matching case wins; the canvas preview can force a case or Else.
+  await panel.getByLabel("Compare with", { exact: true }).fill("home");
+  await expect(canvas.getByRole("heading", { name: "Matched" })).toBeVisible();
+  await panel.getByLabel("Canvas preview").click();
+  await page.locator("[role=option]", { hasText: "Else" }).click();
+  await expect(canvas.getByRole("heading", { name: "Written" })).toBeVisible();
+
+  // Escape closes the panel and the field shows a summary chip.
+  await panel.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Conditional value for Text: If 1 condition/ })
+  ).toBeVisible();
+
+  // Use a fixed value brings back plain text (the Else value).
+  await page.getByRole("button", { name: /Conditional value for Text: If 1 condition/ }).click();
+  await page.getByRole("button", { name: "Use a fixed value" }).click();
+  await expect(page.getByRole("textbox", { name: "Text", exact: true })).toHaveValue("Written");
+});

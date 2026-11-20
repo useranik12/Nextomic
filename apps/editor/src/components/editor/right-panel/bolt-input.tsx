@@ -2,6 +2,7 @@
 
 import { tagText } from "@nextomic/schema";
 import { FormInput, type FormInputProps } from "@/components/ui/controls";
+import { ClearAdornment } from "@/components/ui/floating-adornments";
 import { DynamicBolt } from "./dynamic-bolt";
 
 /** A compact text field with the dynamic bolt inside: static text mixed with {{tags}}. */
@@ -12,7 +13,7 @@ export function BoltInput({
   serverRun,
   tip,
   ...rest
-}: Omit<FormInputProps, "value" | "onValueChange" | "label" | "endContent"> & {
+}: Omit<FormInputProps, "value" | "onValueChange" | "label" | "endContent" | "adornments"> & {
   label: string;
   value: string;
   onValueChange: (value: string) => void;
@@ -28,12 +29,17 @@ export function BoltInput({
       tip={tip}
       value={value}
       onValueChange={onValueChange}
-      endContent={
-        <DynamicBolt
-          label={label}
-          serverRun={serverRun}
-          onInsert={(token) => onValueChange(`${value}${tagText(token)}`)}
-        />
+      adornments={
+        <>
+          <DynamicBolt
+            label={label}
+            serverRun={serverRun}
+            onInsert={(token) => onValueChange(`${value}${tagText(token)}`)}
+          />
+          {value !== "" && !rest.isDisabled && !rest.isReadOnly ? (
+            <ClearAdornment label={label} onClear={() => onValueChange("")} />
+          ) : null}
+        </>
       }
       {...rest}
     />

@@ -7,6 +7,7 @@ import {
   expressionScope,
   firstExpressionProblem,
   hasConditions,
+  isConditionalValue,
   loopFrame,
   QUERY_SOURCE_LABELS,
   rawTokenProblem,
@@ -164,6 +165,16 @@ const NavigatorRow = memo(function NavigatorRow({
               className={"shrink-0 " + (conditionHidden ? "text-warning" : "text-muted")}
             >
               <Icon name="ph:git-fork" width={12} height={12} />
+            </span>
+          ) : null}
+          {Object.values(node.props).some(isConditionalValue) ? (
+            <span
+              role="img"
+              aria-label="Has conditional values"
+              title="A setting of this element is chosen by conditions"
+              className="shrink-0 text-muted"
+            >
+              <Icon name="ph:git-branch" width={12} height={12} />
             </span>
           ) : null}
           {problem ? (

@@ -2,6 +2,7 @@
 
 import { parseTransformChain, splitTemplate, tagText, type TransformChain } from "@nextomic/schema";
 import { useRef, useState } from "react";
+import { Hint } from "@/components/ui/hint";
 import { Icon } from "@/lib/icons/Icon";
 import { asExpressionField, replaceInField, type TextField } from "../expression/expression-field";
 import { DynamicDataModal, type Exclude } from "./dynamic-data-modal";
@@ -83,23 +84,25 @@ export function DynamicBolt({
 
   return (
     <>
-      <button
-        type="button"
-        data-dynamic-bolt
-        aria-label={`Dynamic value for ${label}`}
-        onPointerDown={(event) => {
-          const field = fieldOf(event.currentTarget);
-          pending.current = field && document.activeElement === field ? tagAtCaret(field) : null;
-        }}
-        onClick={() => {
-          setTarget(pending.current);
-          pending.current = null;
-          setOpen(true);
-        }}
-        className={button}
-      >
-        <Icon name="ph:lightning" width={14} height={14} />
-      </button>
+      <Hint content="Dynamic data: insert a value from data">
+        <button
+          type="button"
+          data-dynamic-bolt
+          aria-label={`Dynamic value for ${label}`}
+          onPointerDown={(event) => {
+            const field = fieldOf(event.currentTarget);
+            pending.current = field && document.activeElement === field ? tagAtCaret(field) : null;
+          }}
+          onClick={() => {
+            setTarget(pending.current);
+            pending.current = null;
+            setOpen(true);
+          }}
+          className={button}
+        >
+          <Icon name="ph:lightning" width={14} height={14} />
+        </button>
+      </Hint>
       {open ? (
         <DynamicDataModal
           title={label}

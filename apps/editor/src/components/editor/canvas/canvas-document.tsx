@@ -387,6 +387,7 @@ export function CanvasDocument() {
         loopRows={payload.loopRows}
         loopPlaceholder
         visibilityPreview={payload.visibilityPreview}
+        valuePreview={payload.valuePreview}
         conditionsFailed={failed}
         conditionsHeld={held}
         icons={iconLookup}

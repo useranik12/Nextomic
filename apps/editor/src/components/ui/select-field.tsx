@@ -1,5 +1,6 @@
 "use client";
 
+import { FloatingAdornments } from "./floating-adornments";
 import { Description, Label, ListBox, Select } from "@heroui/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { InfoTip } from "./info-tip";
@@ -37,6 +38,8 @@ export interface SelectFieldProps {
   trailing?: ReactNode;
   /** Replaces the chosen item in the closed field (when options carry a `mark` of their own). */
   valueLabel?: ReactNode;
+  /** Icon buttons that float over the top border of the field (see FloatingAdornments). */
+  adornments?: ReactNode;
 }
 
 /**
@@ -139,7 +142,8 @@ export function SelectField({
   className,
   tip,
   trailing,
-  valueLabel
+  valueLabel,
+  adornments
 }: SelectFieldProps) {
   const markOpened = useIgnoreOpeningScroll();
   const known = options.some((option) => option.value === value);
@@ -157,7 +161,10 @@ export function SelectField({
       className={className}
     >
       {hideLabel ? null : <FieldLabel label={label} tip={tip} compact={compact} />}
-      <Trigger trailing={trailing} valueLabel={valueLabel} />
+      <div className="relative" data-adorn-box>
+        {adornments ? <FloatingAdornments>{adornments}</FloatingAdornments> : null}
+        <Trigger trailing={trailing} valueLabel={valueLabel} />
+      </div>
       {description ? <Description>{description}</Description> : null}
       <Select.Popover placement="bottom start" offset={6}>
         <ListBox>

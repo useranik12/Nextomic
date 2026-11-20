@@ -9,6 +9,7 @@ import {
   type ReactNode
 } from "react";
 import { Icon } from "@/lib/icons/Icon";
+import { FloatingAdornments } from "./floating-adornments";
 import { InfoTip } from "./info-tip";
 
 // The builder's one text field (HeroUI v3 TextField). Every field is the same 32px pill with one
@@ -48,6 +49,8 @@ export interface FormInputProps {
   validationBehavior?: "aria" | "native";
   startContent?: ReactNode;
   endContent?: ReactNode;
+  /** Icon buttons that float over the top border of the field (see FloatingAdornments). */
+  adornments?: ReactNode;
   /** Shows a clear button while the field has text; clearing empties it, then calls `onClear`. */
   isClearable?: boolean;
   onClear?: () => void;
@@ -80,6 +83,7 @@ export function FormInput({
   description,
   startContent,
   endContent,
+  adornments,
   isClearable,
   onClear,
   className,
@@ -124,23 +128,26 @@ export function FormInput({
           ) : null}
         </span>
       ) : null}
-      {startContent || endContent || isClearable ? (
-        <InputGroup fullWidth>
-          {startContent ? (
-            <InputGroup.Prefix className="border-0 ps-3 pe-2 text-subtle">
-              {startContent}
-            </InputGroup.Prefix>
-          ) : null}
-          <InputGroup.Input {...inputProps} />
-          {suffix ? (
-            <InputGroup.Suffix className="gap-1 border-0 ps-2 pe-1.5 text-subtle">
-              {suffix}
-            </InputGroup.Suffix>
-          ) : null}
-        </InputGroup>
-      ) : (
-        <Input {...inputProps} />
-      )}
+      <div className="relative" data-adorn-box>
+        {adornments ? <FloatingAdornments>{adornments}</FloatingAdornments> : null}
+        {startContent || endContent || isClearable ? (
+          <InputGroup fullWidth>
+            {startContent ? (
+              <InputGroup.Prefix className="border-0 ps-3 pe-2 text-subtle">
+                {startContent}
+              </InputGroup.Prefix>
+            ) : null}
+            <InputGroup.Input {...inputProps} />
+            {suffix ? (
+              <InputGroup.Suffix className="gap-1 border-0 ps-2 pe-1.5 text-subtle">
+                {suffix}
+              </InputGroup.Suffix>
+            ) : null}
+          </InputGroup>
+        ) : (
+          <Input {...inputProps} />
+        )}
+      </div>
       {description ? <Description>{description}</Description> : null}
       <FieldError>{errorMessage}</FieldError>
     </TextField>

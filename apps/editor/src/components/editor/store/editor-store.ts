@@ -177,6 +177,9 @@ interface EditorState {
   /** Canvas preview of conditional visibility per element (Auto = absent). Never saved. */
   visibilityPreview: Record<string, "show" | "hide">;
   setVisibilityPreview: (id: string, mode: "show" | "hide" | null) => void;
+  /** Canvas preview of a conditional value, by "<node id>:<prop>": case N (0 based) or else. Never saved. */
+  valuePreview: Record<string, number | "else">;
+  setValuePreview: (key: string, mode: number | "else" | null) => void;
   /** Elements whose visibility conditions fail on the canvas, as the canvas reports them. */
   conditionsFailed: ReadonlySet<string>;
   setConditionsFailed: (ids: readonly string[]) => void;
@@ -718,6 +721,14 @@ export const useEditorStore = create<EditorState>((set, get) => {
         if (mode) next[id] = mode;
         else delete next[id];
         return { visibilityPreview: next };
+      }),
+    valuePreview: {},
+    setValuePreview: (key, mode) =>
+      set((state) => {
+        const next = { ...state.valuePreview };
+        if (mode !== null) next[key] = mode;
+        else delete next[key];
+        return { valuePreview: next };
       }),
     conditionsFailed: new Set(),
     setConditionsFailed: (ids) =>
