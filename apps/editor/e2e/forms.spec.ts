@@ -770,3 +770,39 @@ test("select: several choices as chips, kept open, removed again", async ({ page
   await expect(picked).toHaveCount(0);
   await expect(trigger).toHaveAttribute("data-empty", "");
 });
+
+test("select: required check on blur, and dynamic options keep one locked template", async ({
+  page
+}) => {
+  const projectId = await signUpAndCreateProject(page);
+  await add(page, "Form");
+  await add(page, "Select");
+  await page.getByRole("switch", { name: "Required", exact: true }).click({ force: true });
+  await page.keyboard.press("Control+s");
+  await expect(page.getByRole("status").filter({ hasText: /^Saved$/ })).toBeVisible({
+    timeout: 10_000
+  });
+  const preview = await page.context().newPage();
+  await preview.goto(`/preview/${projectId}`);
+  const trigger = preview.locator("[data-nxt-trigger]");
+  const error = preview.locator("[data-nxt-error]");
+  await expect(error).toBeHidden();
+  // Open, leave with Tab without choosing: the required message shows.
+  await trigger.focus();
+  await preview.keyboard.press("Enter");
+  await expect(preview.locator("[data-nxt-popover]")).toBeVisible();
+  await preview.keyboard.press("Tab");
+  await expect(preview.locator("[data-nxt-popover]")).toBeHidden();
+  await expect(error).toBeVisible();
+
+  // Dynamic Query keeps one template option and shows ghost copies inside the list.
+  await page.bringToFront();
+  await selectRow(page, "Select");
+  await page.locator('button[aria-label="Options"]').click();
+  await page.locator("[role=option]", { hasText: "Dynamic Query" }).click();
+  await expect(page.getByRole("treeitem")).toHaveCount(3);
+  const canvas = page.frameLocator('iframe[title="Page canvas"]');
+  await expect(canvas.locator("[data-nxt-listbox] [data-nxt-ghost]")).toHaveCount(5, {
+    timeout: 15_000
+  });
+});

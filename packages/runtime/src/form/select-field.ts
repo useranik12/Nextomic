@@ -88,9 +88,11 @@ function closedContent(field: Element, chosen: Choice[]): HTMLElement[] {
 /** Makes the rows and the closed field agree with the inputs (the value is only ever in the inputs). */
 export function paintSelect(field: Element): void {
   const list = field.querySelector("[data-nxt-listbox]");
+  const seen = new Set<string>();
   rowsOf(field).forEach((row, i) => {
     // Rows of a query loop are copies of one option, so their element ids repeat: give each its own.
-    if (list?.id) row.id = `${list.id}-o${i}`;
+    if (list?.id && (!row.id || seen.has(row.id))) row.id = `${list.id}-o${i}`;
+    seen.add(row.id);
     row.setAttribute("aria-selected", inputOf(row)?.checked ? "true" : "false");
   });
   const box = trigger(field);

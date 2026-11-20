@@ -115,6 +115,12 @@ function closedContent(
   ];
 }
 
+/** Shown only while another switch is on (the panel compares the prop's text with `true`). */
+const only = (key: "multiple" | "searchable", def: ControlDef): ControlDef => ({
+  ...def,
+  when: { key, value: "true" }
+});
+
 const text = (key: string, label: string, group: string, placeholder?: string): ControlDef => ({
   key,
   label,
@@ -228,9 +234,9 @@ registerElement({
     },
     toggle("multiple", "Choose several", GROUP.options),
     toggle("searchable", "Searchable", GROUP.options),
-    text("searchPlaceholder", "Search hint", GROUP.options),
+    only("searchable", text("searchPlaceholder", "Search hint", GROUP.options)),
     text("noResultsText", "No results text", GROUP.options),
-    {
+    only("multiple", {
       key: "display",
       label: "Show several as",
       kind: "select",
@@ -240,17 +246,19 @@ registerElement({
         { value: "count", label: "A count" }
       ],
       group: GROUP.options
-    },
-    text("maxChips", "Chips shown", GROUP.options, "3"),
-    text("countText", "Count text", GROUP.options, DEFAULT_COUNT_TEXT),
-    toggle("keepOpen", "Stay open while choosing (several)", GROUP.behavior),
+    }),
+    only("multiple", text("maxChips", "Chips shown", GROUP.options, "3")),
+    only("multiple", text("countText", "Count text", GROUP.options, DEFAULT_COUNT_TEXT)),
+    only("multiple", toggle("keepOpen", "Stay open while choosing", GROUP.behavior)),
     toggle("required", "Required", GROUP.validation),
-    text("minSelected", "Fewest chosen", GROUP.validation),
-    text("maxSelected", "Most chosen", GROUP.validation),
+    only("multiple", text("minSelected", "Fewest chosen", GROUP.validation)),
+    only("multiple", text("maxSelected", "Most chosen", GROUP.validation)),
     ...messageControlsFor([
-      { key: "requiredMessage", label: "Required message", message: "required" },
-      { key: "selectionMessage", label: "Count message", message: "selection" }
+      { key: "requiredMessage", label: "Required message", message: "required" }
     ]),
+    ...messageControlsFor([
+      { key: "selectionMessage", label: "Count message", message: "selection" }
+    ]).map((def) => only("multiple", def)),
     text("successMessage", "Success message", GROUP.messages),
     {
       key: "icon",
@@ -394,12 +402,14 @@ registerElement({
               tabIndex: disabled ? -1 : 0,
               "aria-haspopup": "listbox",
               "aria-expanded": editing ? "true" : "false",
-              "aria-controls": popoverId,
-              "aria-labelledby": title ? labelId : undefined,
+              "aria-controls": searchable ? popoverId : listId,
+              // A button's name replaces its content, so the field names itself too: the screen
+              // reader then hears the label and the chosen value.
+              "aria-labelledby": title ? `${labelId} ${triggerId}` : undefined,
               "aria-label": title ? undefined : name,
               "aria-describedby": notes.describedBy,
               "aria-disabled": disabled || undefined,
-              "aria-required": required || undefined,
+              "aria-required": !searchable && required ? true : undefined,
               "data-nxt-trigger": "",
               "data-empty": chosen.length === 0 ? "" : undefined,
               "data-placeholder": placeholder || undefined
@@ -448,6 +458,7 @@ registerElement({
                   "aria-label": `Search ${title || name}`,
                   "aria-controls": listId,
                   "aria-expanded": "true",
+                  "aria-required": required || undefined,
                   "aria-autocomplete": "list",
                   "data-nxt-search": ""
                 })
@@ -469,7 +480,7 @@ registerElement({
             "p",
             {
               role: "status",
-              hidden: attrs["data-nxt-show"] === "empty" ? undefined : true,
+              hidden: true,
               "data-nxt-empty": ""
             },
             ctx.text("noResultsText")
