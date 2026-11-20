@@ -136,7 +136,14 @@ export function startFormRuntime(
   };
 
   const checkField = (form: Element, field: Element, show: boolean): string | null => {
-    if (controlsOf(field).length === 0) return null;
+    const controls = controlsOf(field);
+    if (controls.length === 0) return null;
+    // A disabled field keeps its value for actions but is never validated (a disabled Required
+    // field must not block the form), so a stale error is cleared too.
+    if (controls.every((c) => c.disabled)) {
+      if (show) showError(field, null, false);
+      return null;
+    }
     const { matchField, ...rest } = parseRules(field);
     const other = matchField
       ? fieldsOf(form).find((f) => fieldNameOf(f) === matchField)
