@@ -41,3 +41,6 @@ graphify-out/
 
 # TypeScript
 *.tsbuildinfo
+
+# Local self-hosted Supabase stack for development; Dokploy uses an external Supabase.
+/supabase-local/
