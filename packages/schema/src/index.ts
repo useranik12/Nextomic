@@ -79,3 +79,5 @@ export * from "./edit-state";
 export * from "./form-design-tips";
 export * from "./style-marks";
 export * from "./ids";
+export * from "./media-design";
+export * from "./media-player";

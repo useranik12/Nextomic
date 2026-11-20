@@ -215,7 +215,7 @@ Source of truth: `packages/schema/src/actions/catalog.ts` and `catalog-actions.t
 - **Alert/Notifications:** Off Canvas, Tooltip (disabled until their elements exist), Modal (Show / Close / Toggle), Play / Stop Sound, Toast (Show Toast, Dismiss Toast).
 - **Utilities:** Wait, Copy To Clipboard, Pick File(s) (single, or multiple with a maximum; store locally or upload to Supabase; the output feeds Upload File and Put Data To Presigned S3 Storage), Put Data To Presigned S3 Storage, Execute Custom Code (disabled until Phase 10), Debug Log (preview and Test only).
 - **Share:** Share (Web Share API), Launch URL, Send Email (mailto), Call Number (tel), Send SMS (sms).
-- **Media/Animation:** Gallery, Video Player, Audio Player and Lottie actions, all disabled until those elements exist.
+- **Media/Animation:** Video Player and Audio Player actions are built (play, pause, toggle, stop, seek, skip, volume, mute, speed, loop, show/hide controls, change source; video adds full screen, Picture in Picture, captions) with their triggers; the playlist actions stay greyed ("Playlists are not built yet."). Gallery and Lottie actions stay disabled until those elements exist.
 - **Accessibility:** Semantic Announce (polite or assertive live region).
 - Dynamic data: every field takes tags except fields that pick a structure item (element, page, variable, query loop, Supabase table, API Data call, GSAP timeline); their written reasons are in `UNBINDABLE_FIELD_REASONS`.
 

@@ -14,6 +14,7 @@ import { DATE_BASE_CSS } from "./date-css";
 import { RANGE_BASE_CSS } from "./range-css";
 import { SELECT_BASE_CSS } from "./select-css";
 import { INPUT_BASE_CSS, inputPartCss } from "./input-css";
+import { MEDIA_BASE_CSS } from "./media-css";
 import { PIN_BASE_CSS } from "./pin-css";
 import { getElementDefinition } from "./registry";
 
@@ -174,6 +175,7 @@ export function pageCss(
   const looks = FIELD_LOOKS.filter((look) => look.types.some((type) => types.has(type)));
   if (types.has("input") || looks.length > 0) chunks.push(INPUT_BASE_CSS);
   for (const look of looks) chunks.push(look.css);
+  if (types.has("video") || types.has("audio")) chunks.push(MEDIA_BASE_CSS);
   for (const [name, styles] of Object.entries(classes)) {
     const css = classCss(name, styles, breakpoints, resolve);
     if (css) chunks.push(css);

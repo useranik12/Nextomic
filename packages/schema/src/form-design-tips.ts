@@ -50,6 +50,19 @@ export const FORM_PROP_TIPS: Readonly<Record<string, string>> = {
   "margin-left": "Space between the label and the marker.",
   "max-width": "The part never grows wider than this.",
   right: "How far the part sits from the right edge of the field. Leave Left empty to use it.",
+  "aspect-ratio":
+    "Width to height of the box, for example 16 / 9 or 1 / 1. Leave empty to fit the content.",
+  overflow:
+    "What happens to content that does not fit: hidden cuts it off, visible lets it spill out.",
+  "object-fit":
+    "How the picture fills its box: contain shows all of it, cover fills the box and crops the edges.",
+  filter: "Changes how the picture looks, for example brightness(.8) or grayscale(1).",
+  flex: "Grow, shrink and starting size in one go. 1 1 auto fills the free space, 0 0 auto keeps its own size.",
+  position:
+    "Absolute places the part by Top, Right, Bottom and Left inside the player; static leaves it in the flow.",
+  bottom: "How far the part sits from the bottom edge of its parent.",
+  "backdrop-filter":
+    "Blurs what is behind the part, for example blur(8px). Needs a see-through background.",
   "z-index": "Which part is on top when parts overlap. A bigger number is nearer the visitor.",
   "flex-grow":
     "How much of the free space in the row this part takes. 1 fills it, 0 keeps its own size.",

@@ -228,14 +228,37 @@ interface ElementGroup {
 const notBuilt = (name: string) => `The ${name} element is not built yet.`;
 
 const MEDIA_TRIGGERS = (noun: string): ElementGroup["triggers"] => [
-  ["loaded", `On ${noun} Loaded`],
-  ["played", `On ${noun} Played`],
-  ["paused", `On ${noun} Paused`],
-  ["ended", `On ${noun} Ended`],
-  ["stopped", `On ${noun} Stopped`],
-  ["playedLength", `On ${noun} Played Length`, { fields: PLAYED_FIELDS }],
-  ["seeked", `On ${noun} Seeked`],
-  ["loadError", `On ${noun} Load Error`]
+  [
+    "loaded",
+    `On ${noun} Loaded`,
+    { description: "The file is ready: its length and first frame are known." }
+  ],
+  ["played", `On ${noun} Played`, { description: "Playing starts or continues after a pause." }],
+  [
+    "paused",
+    `On ${noun} Paused`,
+    { description: "Playing is paused, by the visitor or an action." }
+  ],
+  ["ended", `On ${noun} Ended`, { description: "It plays to the end (not when it loops)." }],
+  [
+    "stopped",
+    `On ${noun} Stopped`,
+    { description: "A Stop action ran: it paused and went back to the start." }
+  ],
+  [
+    "playedLength",
+    `On ${noun} Played Length`,
+    {
+      fields: PLAYED_FIELDS,
+      description: "The played time passes the number of seconds set, once per play."
+    }
+  ],
+  [
+    "seeked",
+    `On ${noun} Seeked`,
+    { description: "The visitor or an action jumped to another time." }
+  ],
+  ["loadError", `On ${noun} Load Error`, { description: "The file could not be loaded or played." }]
 ];
 
 const ELEMENT_GROUPS: readonly ElementGroup[] = [
@@ -273,13 +296,11 @@ const ELEMENT_GROUPS: readonly ElementGroup[] = [
   {
     group: "Video Player",
     types: ["video"],
-    disabled: notBuilt("Video"),
     triggers: MEDIA_TRIGGERS("Video")
   },
   {
     group: "Audio Player",
     types: ["audio"],
-    disabled: notBuilt("Audio"),
     triggers: MEDIA_TRIGGERS("Audio")
   },
   {

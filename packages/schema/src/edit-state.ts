@@ -20,7 +20,9 @@ const FIELD_STATES: Record<string, EditState[]> = {
   counter: ["error", "success"],
   rangeSlider: ["error", "success"],
   dateTime: ["checked", "error", "success"],
-  select: ["checked", "error", "success"]
+  select: ["checked", "error", "success"],
+  video: ["checked"],
+  audio: ["checked"]
 };
 
 /** The states an element can be edited in, in select order. */
@@ -30,6 +32,7 @@ export function editStatesFor(type: string): EditState[] {
 
 /** The word for a state. A single-choice field says Selected where the others say Checked. */
 export function editStateLabel(type: string, state: EditState): string {
+  if (state === "checked" && (type === "video" || type === "audio")) return "On";
   if (state === "checked" && type === "pinInput") return "Filled";
   if (state === "checked" && (type === "dateTime" || type === "select")) return "Selected";
   if (state === "checked")

@@ -8,6 +8,7 @@ import "./form-counter";
 import "./form-range";
 import "./form-date";
 import "./form-select";
+import "./media-player";
 
 export * from "./css";
 export * from "./registry";

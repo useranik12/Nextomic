@@ -6,6 +6,7 @@ import {
   stateDependencies,
   stateRefs,
   hasActiveForm,
+  hasPlayer,
   walkFlow,
   type ActionBlock,
   type DynamicContext,
@@ -85,10 +86,11 @@ function loopFreeDeps(tree: ElementNode): Record<string, string[]> {
   return Object.fromEntries(Object.entries(stateDependencies(tree)).filter(([id]) => free.has(id)));
 }
 
-/** The runtime payload, or null when the page has no flows and no active form (no runtime is shipped then). */
+/** The runtime payload, or null when the page has no flows, no active form and no player (no runtime is shipped then). */
 export function runtimePayload(input: PayloadInput): RuntimePayload | null {
-  // Forms need the runtime too (errors, clear and show/hide buttons, no browser submit).
-  if (!hasNodes(input.flows) && !hasActiveForm(input.tree)) return null;
+  // Forms need the runtime too (errors, clear and show/hide buttons, no browser submit), and so do
+  // the control bars of a Video or Audio element.
+  if (!hasNodes(input.flows) && !hasActiveForm(input.tree) && !hasPlayer(input.tree)) return null;
   const user = input.dynamic.user ? { ...input.dynamic.user, accessToken: "" } : null;
   return {
     projectId: input.projectId,

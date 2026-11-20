@@ -11,6 +11,7 @@ import { browserActionHandlers } from "./browser-actions";
 import { pickerHandlers, pickValue } from "./pickers";
 import { themeHandlers } from "./theme-actions";
 import { fileHandlers } from "./file-handlers";
+import { mediaHandlers } from "./media-handlers";
 import { chooseFiles, FileStore, type UploadedFile } from "./files";
 import { FlowError, numberParam, type ActionHandler, type RunLogEntry } from "./engine";
 import { htmlPropsHandlers, type ElementEditStore } from "./html-props";
@@ -176,6 +177,7 @@ export function starterHandlers(deps: HandlerDeps): Record<string, ActionHandler
     ...themeHandlers(deps.payload.themes, deps.setTheme),
     ...htmlPropsHandlers({ edits: deps.edits, touched: deps.touched }),
     ...browserActionHandlers(deps.navigation),
+    ...mediaHandlers(),
     "element.rebuild": async (p) => {
       const id = toText(p.element);
       if (!id) throw new FlowError("no-element", "Choose the element to rebuild.");

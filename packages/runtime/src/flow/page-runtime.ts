@@ -6,6 +6,8 @@ import { FlowError, runFlow, type ActionHandler, type RunLogEntry } from "./engi
 import { browserNavigation, starterHandlers, type Navigation } from "./handlers";
 import type { UploadedFile } from "./files";
 import { startFormRuntime } from "../form/form-runtime";
+import { startMediaRuntime } from "../media/media-runtime";
+import { bindMediaTriggers } from "./media-triggers";
 import { LiveState } from "./live-state";
 import { createOverlayLayer } from "./overlays";
 import { createToastStack } from "./toasts";
@@ -146,6 +148,8 @@ export function startActionRuntime(
   });
   live.formValues = () => forms.values(true);
   stops.push(forms.stop);
+  // Video and Audio players: the bar, the keys and the media triggers.
+  stops.push(startMediaRuntime());
 
   const overlays = createOverlayLayer((content) => bindInserted(content));
   const toasts = createToastStack();
@@ -318,6 +322,10 @@ export function startActionRuntime(
       true
     );
   }
+
+  stops.push(
+    bindMediaTriggers({ flowOf, fire, seconds: (settings) => num(settings, "seconds", 0) })
+  );
 
   // --- lifecycle and observer triggers ----------------------------------------------------
   const observers: (IntersectionObserver | ResizeObserver)[] = [];

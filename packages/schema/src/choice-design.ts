@@ -16,6 +16,7 @@ import {
 import { COUNTER_PANEL_PARTS, COUNTER_PARTS } from "./counter-design";
 import { DATE_PANEL_PARTS, DATE_PARTS } from "./date-design";
 import { PIN_PANEL_PARTS, PIN_PARTS } from "./pin-design";
+import { MEDIA_PARTS, mediaPartsFor } from "./media-design";
 import { RANGE_PANEL_PARTS, RANGE_PARTS } from "./range-design";
 import { SELECT_PANEL_PARTS, SELECT_PARTS } from "./select-design";
 
@@ -327,12 +328,16 @@ export const FORM_DESIGN_PARTS: readonly InputPart[] = [
   ...COUNTER_PARTS,
   ...RANGE_PARTS,
   ...DATE_PARTS,
-  ...SELECT_PARTS
+  ...SELECT_PARTS,
+  ...MEDIA_PARTS
 ];
 
 /** The parts of an element, in panel order; empty for elements without a Design > Form group. */
 export function designPartsFor(type: string): readonly InputPart[] {
   switch (type) {
+    case "video":
+    case "audio":
+      return mediaPartsFor(type);
     case "input":
       return INPUT_PARTS;
     case "checkbox":
@@ -396,6 +401,8 @@ export function designPartsFor(type: string): readonly InputPart[] {
 
 /** The title of the Design group that holds the parts of this element. */
 export function designGroupTitle(type: string): string {
+  if (type === "video") return "Video Player";
+  if (type === "audio") return "Audio Player";
   if (type === "input") return "Form Input";
   if (type === "pinInput") return "Form PIN";
   if (type === "counter") return "Form Counter";

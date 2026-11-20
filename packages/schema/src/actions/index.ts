@@ -11,3 +11,4 @@ export * from "./shape";
 export * from "./supabase-check";
 export * from "./target-check";
 export * from "./server-action";
+export * from "./media-actions";

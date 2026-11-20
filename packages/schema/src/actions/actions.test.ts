@@ -115,7 +115,7 @@ describe("trigger catalog", () => {
   it("explains unusable triggers", () => {
     expect(triggerProblem("click", "element", "text")).toBeNull();
     expect(triggerProblem("keyPress", "element", "text")).toMatch(/not available/);
-    expect(triggerProblem("video.played", "element", "video")).toMatch(/not built/);
+    expect(triggerProblem("video.played", "element", "video")).toBeNull();
     expect(triggerProblem("nope", "page", "page")).toBe("Unknown trigger.");
   });
 });
@@ -252,7 +252,8 @@ describe("action catalog", () => {
   });
 
   it("disables actions that need unbuilt parts, with a reason", () => {
-    expect(actionDisabledReason(getAction("video.play")!)).toMatch(/not built/);
+    expect(actionDisabledReason(getAction("video.step")!)).toMatch(/not built/);
+    expect(actionDisabledReason(getAction("video.play")!)).toBeNull();
     expect(actionDisabledReason(getAction("modal.show")!)).toBeNull();
     expect(actionDisabledReason(getAction("bottomSheet.show")!)).toBeNull();
     expect(getAction("confirm")).toBeUndefined();
@@ -397,7 +398,7 @@ describe("flow issues", () => {
     expect(flowIssues(flow([action("a", "", { disabled: true })]), ctx)).toEqual([]);
     expect(flowIssues({ ...flow([action("a", "")]), disabled: true }, ctx)).toEqual([]);
     const issues = flowIssues(
-      flow([action("v", "video.play"), { id: "k", kind: "block", blockId: "gone", params: {} }]),
+      flow([action("v", "video.step"), { id: "k", kind: "block", blockId: "gone", params: {} }]),
       ctx
     );
     expect(issues.map((i) => i.nodeId)).toEqual(["v", "k"]);

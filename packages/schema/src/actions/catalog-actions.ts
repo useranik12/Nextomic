@@ -1,6 +1,7 @@
 import { SUPABASE_OPERATORS, SUPABASE_OPERATOR_LABELS } from "../query";
 import type { ActionCategory, ActionDef } from "./catalog";
 import type { FieldOption, ParamField } from "./fields";
+import { PLAYER_ACTIONS } from "./media-actions";
 
 // Catalog data, in picker order. See `catalog.ts` for the shape and the rules.
 
@@ -1138,24 +1139,9 @@ const SHARE_ACTIONS: ActionDef[] = [
   ])
 ];
 
-const PLAYER = (noun: string): [string, string][] => {
-  const k = noun.toLowerCase();
-  return [
-    [`${k}.play`, `Play ${noun}`],
-    [`${k}.pause`, `Pause ${noun}`],
-    [`${k}.stop`, `Stop ${noun}`],
-    [`${k}.step`, "Play Previous/Next In Playlist"],
-    [`${k}.playlistAdd`, "Add To Playlist"],
-    [`${k}.playlistRemove`, "Remove From Playlist"],
-    [`${k}.shuffle`, "Set Shuffle Mode"],
-    [`${k}.loop`, "Set Loop Option"]
-  ];
-};
-
 const MEDIA_ACTIONS: ActionDef[] = [
   ...later("media", "Gallery", notBuilt("Gallery"), [["gallery.slideshow", "Start Slideshow"]]),
-  ...later("media", "Video Player", notBuilt("Video"), PLAYER("Video")),
-  ...later("media", "Audio Player", notBuilt("Audio"), PLAYER("Audio")),
+  ...PLAYER_ACTIONS,
   ...later("media", "Lottie", notBuilt("Lottie"), [
     ["lottie.play", "Play Lottie Animation"],
     ["lottie.pause", "Pause Lottie Animation"],

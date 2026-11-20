@@ -4,6 +4,7 @@ import {
   defaultPageSettings,
   emptyPageTree,
   newElementQuery,
+  PLAYER_SWITCHES,
   newTheme,
   type ElementNode,
   type PropValue
@@ -59,7 +60,9 @@ describe("registry", () => {
       "counter",
       "rangeSlider",
       "dateTime",
-      "select"
+      "select",
+      "video",
+      "audio"
     ]);
   });
 
@@ -95,6 +98,24 @@ describe("registry", () => {
       ),
       ...["required", "disabled", "minSelected", "maxSelected", "clearable", "keepOpen"].map(
         (k) => `select.${k}`
+      ),
+      // Players read their switches and numbers into the bar; media.test.tsx checks each of them.
+      ...["video", "audio"].flatMap((t) =>
+        [
+          ...PLAYER_SWITCHES.map((s) => s.prop),
+          "autoplay",
+          "loop",
+          "muted",
+          "autoHide",
+          "clickToPlay",
+          "keys",
+          "startAt",
+          "speed",
+          "speeds",
+          "skip",
+          "captionsLang",
+          "captionsLabel"
+        ].map((k) => `${t}.${k}`)
       ),
       ...["radio", "checkboxGroup", "choiceChips"].flatMap((t) =>
         ["required", "disabled", "minSelected", "maxSelected"].map((k) => `${t}.${k}`)

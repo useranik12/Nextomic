@@ -71,6 +71,8 @@ export interface InputPart {
    * reaches them; without it the state is a test on the field (Input parts).
    */
   stateTails?: Partial<Record<InputState, StateTail[]>>;
+  /** The element the part selectors start from; `[data-nxt-field]` (a form field) when absent. */
+  root?: string;
 }
 
 const p = (prop: string, label: string, extra: Partial<InputDesignProp> = {}): InputDesignProp => ({
@@ -500,7 +502,7 @@ export function inputPartSelectors(owner: string, part: InputPart, state: InputS
   const tails = part.stateTails?.[state];
   if (tails) {
     for (const { field, tail } of tails) {
-      const compound = `[data-nxt-field]${field}`;
+      const compound = `${part.root ?? "[data-nxt-field]"}${field}`;
       out.push(`${owner}${compound}${tail}`, `${owner} ${compound}${tail}`);
     }
     return out;
