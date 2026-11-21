@@ -31,10 +31,18 @@ export const colorOptionSchema = z.object({
   lightCount: z.number().int().min(1).max(MAX_SHADES).default(3),
   darkCount: z.number().int().min(1).max(MAX_SHADES).default(3),
   transparentCount: z.number().int().min(1).max(MAX_SHADES).default(5),
+  /** Give the light shades their own dark mode version (a mirror mix with black). */
+  lightDarkMode: z.boolean().default(false),
+  /** Give the dark shades their own dark mode version (a mirror mix with white). */
+  darkDarkMode: z.boolean().default(false),
   utility: z.array(z.enum(UTILITY_PROPERTY_NAMES)).max(6).default([]),
   /** Shades the user set by hand, by shade key (`l-1`, `d-2`, `t-20`); they replace the generated mix. */
   overrides: z
     .record(z.string().regex(/^(?:l|d)-\d{1,2}$|^t-\d{2}$/), z.string().trim().min(1).max(120))
+    .prefault({}),
+  /** Dark mode versions of shades set by hand, by shade key (`l-1`, `d-2`); used only when that group has its dark mode on. */
+  darkOverrides: z
+    .record(z.string().regex(/^(?:l|d)-\d{1,2}$/), z.string().trim().min(1).max(120))
     .prefault({})
 });
 export type ColorOptions = z.infer<typeof colorOptionSchema>;
@@ -49,8 +57,11 @@ export const NO_COLOR_OPTIONS: ColorOptions = {
   lightCount: 3,
   darkCount: 3,
   transparentCount: 5,
+  lightDarkMode: false,
+  darkDarkMode: false,
   utility: [],
-  overrides: {}
+  overrides: {},
+  darkOverrides: {}
 };
 
 /** Share of the base color kept in each shade (the rest is white, black or transparent). */
@@ -77,36 +88,61 @@ export function darkPercents(count: number): number[] {
 
 const SHADE_NAME = /-(?:l|d)-\d{1,2}$|-t-\d{2}$/;
 
+type MixTarget = "white" | "black" | "transparent";
+
 interface ShadeInfo {
   name: string;
+  /** The value in light mode (and in dark mode too when `dark` is not set). */
   value: string;
+  /** The dark mode value, when the shade has its own. */
+  dark?: string;
   /** The shade key within its group, for the class list: `l-1`, `d-2`, `t-20`. */
   suffix: string;
+  /** Share of the base color kept, and what it is mixed with (before any hand set value). */
+  pct: number;
+  to: MixTarget;
+  /** What the dark mode mix is made with when the group has its dark mode on. */
+  darkTo?: MixTarget;
 }
 
 /** A mix of a base color (a `var(--name)` reference or a literal color) with white, black or transparent. */
-export const colorMix = (
-  base: string,
-  pct: number,
-  to: "white" | "black" | "transparent"
-): string => `color-mix(in srgb, ${base} ${pct}%, ${to})`;
-const mix = (base: string, pct: number, to: "white" | "black" | "transparent"): string =>
+export const colorMix = (base: string, pct: number, to: MixTarget): string =>
+  `color-mix(in srgb, ${base} ${pct}%, ${to})`;
+const mix = (base: string, pct: number, to: MixTarget): string =>
   colorMix(`var(--${base})`, pct, to);
 
-/** The shade variables one color generates from its options. */
+/**
+ * The shade variables one color generates from its options. A group with its dark mode on gets a
+ * mirror mix in dark mode: light shades mix with black and dark shades with white, on top of the
+ * base color's own dark value, so a light shade is the opposite in dark mode.
+ */
 export function shadesOf(name: string, options: ColorOptions): ShadeInfo[] {
   const out: ShadeInfo[] = [];
-  const add = (suffix: string, value: string) =>
-    out.push({ name: `${name}-${suffix}`, suffix, value: options.overrides[suffix] ?? value });
+  const add = (suffix: string, pct: number, to: MixTarget, darkTo?: MixTarget) => {
+    const info: ShadeInfo = {
+      name: `${name}-${suffix}`,
+      suffix,
+      pct,
+      to,
+      value: options.overrides[suffix] ?? mix(name, pct, to)
+    };
+    if (darkTo) {
+      info.darkTo = darkTo;
+      info.dark = options.darkOverrides[suffix] ?? mix(name, pct, darkTo);
+    }
+    out.push(info);
+  };
   if (options.light)
     lightPercents(options.lightCount).forEach((pct, i) =>
-      add(`l-${i + 1}`, mix(name, pct, "white"))
+      add(`l-${i + 1}`, pct, "white", options.lightDarkMode ? "black" : undefined)
     );
   if (options.dark)
-    darkPercents(options.darkCount).forEach((pct, i) => add(`d-${i + 1}`, mix(name, pct, "black")));
+    darkPercents(options.darkCount).forEach((pct, i) =>
+      add(`d-${i + 1}`, pct, "black", options.darkDarkMode ? "white" : undefined)
+    );
   if (options.transparent)
     for (const pct of transparentPercents(options.transparentCount))
-      add(`t-${pct}`, mix(name, pct, "transparent"));
+      add(`t-${pct}`, pct, "transparent");
   return out;
 }
 
@@ -122,7 +158,12 @@ export function derivedColorVariables(fw: HasColors): FrameworkVariable[] {
   for (const [name, options] of Object.entries(fw.colorOptions)) {
     if (!names.has(name)) continue;
     for (const s of shadesOf(name, options))
-      if (!names.has(s.name)) out.push({ name: s.name, value: s.value });
+      if (!names.has(s.name))
+        out.push({
+          name: s.name,
+          value: s.value,
+          ...(s.dark !== undefined ? { dark: s.dark } : {})
+        });
   }
   return out;
 }

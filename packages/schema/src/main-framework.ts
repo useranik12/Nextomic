@@ -57,15 +57,19 @@ export function mainFrameworkCss(_fw: Framework): string {
   return "";
 }
 
-/** A new Main framework. */
-export function mainFramework(): Framework {
+/**
+ * A new Main framework. The first theme of a project starts with the starter colors; a theme
+ * the user creates later passes `colors: false` and starts with scales only.
+ */
+export function mainFramework(options: { colors?: boolean } = {}): Framework {
+  const withColors = options.colors !== false;
   let fw: Framework = frameworkSchema.parse({
     name: "Main framework",
     source: "main",
-    variables: [...colorVariables()],
+    variables: withColors ? colorVariables() : [],
     css: "",
     scales: [],
-    colorOptions: Object.fromEntries(COLORS.map((c) => [c.name, c.options]))
+    colorOptions: withColors ? Object.fromEntries(COLORS.map((c) => [c.name, c.options])) : {}
   });
   for (const scale of DEFAULT_SCALES) fw = applyScale(fw, scale);
   return fw;

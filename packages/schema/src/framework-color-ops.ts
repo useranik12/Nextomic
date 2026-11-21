@@ -194,7 +194,10 @@ export function renameInFramework(fw: Framework, pairs: CssVarPairs): Framework 
         name,
         {
           ...o,
-          overrides: Object.fromEntries(Object.entries(o.overrides).map(([k, v]) => [k, text(v)]))
+          overrides: Object.fromEntries(Object.entries(o.overrides).map(([k, v]) => [k, text(v)])),
+          darkOverrides: Object.fromEntries(
+            Object.entries(o.darkOverrides).map(([k, v]) => [k, text(v)])
+          )
         }
       ])
     )

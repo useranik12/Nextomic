@@ -118,9 +118,9 @@ export function RowSettings({
         />
       )}
       <CountField
-        label="Skip"
+        label="Offset"
         tip={mode.tip("offset")}
-        description="Rows to skip from the start of the list: the first row of a page is Skip + 1."
+        description="Rows to skip from the start of the list: the first row of a page is Offset + 1."
         min={0}
         max={100_000}
         value={value.offset}

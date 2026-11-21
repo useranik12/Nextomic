@@ -194,6 +194,18 @@ export function applyScale(fw: Framework, scale: ScaleSettings): Framework {
   return { ...fw, variables, scales };
 }
 
+/** Deletes a whole fluid scale: its settings and every step variable it made. */
+export function removeScale(fw: Framework, prefix: string): Framework {
+  const scale = fw.scales.find((s) => s.prefix === prefix);
+  if (!scale) return fw;
+  const made = new Set(scale.names.map((n) => `${scale.prefix}-${n}`));
+  return {
+    ...fw,
+    variables: fw.variables.filter((v) => !made.has(v.name)),
+    scales: fw.scales.filter((s) => s.prefix !== prefix)
+  };
+}
+
 const STEP_NAMES = [
   "4xs",
   "3xs",
@@ -598,13 +610,15 @@ export function resolvedVariables(fw: Framework): FrameworkVariable[] {
 export function frameworkVariablesCss(fw: Framework, slug: string, hasDark: boolean): string {
   const root = `:root[data-nxt-theme="${slug}"]`;
   const all = resolvedVariables(fw);
-  const dark = hasDark
-    ? varBlock(
-        `${root}[data-nxt-mode="dark"]`,
-        all.flatMap((v) => (v.dark !== undefined ? [{ name: v.name, value: v.dark }] : []))
-      )
-    : "";
-  return varBlock(root, all) + dark;
+  if (!hasDark) return varBlock(root, all);
+  // color-scheme makes light-dark() (inverse colors) follow the mode, and draws the browser's own
+  // controls (scrollbars, form fields) to match it.
+  const light = all.map((v) => `--${v.name}:${v.value}`);
+  const dark = all.flatMap((v) => (v.dark !== undefined ? [`--${v.name}:${v.dark}`] : []));
+  return (
+    `${root}{${[...light, "color-scheme:light"].join(";")}}` +
+    `${root}[data-nxt-mode="dark"]{${[...dark, "color-scheme:dark"].join(";")}}`
+  );
 }
 
 /** The framework as a stylesheet file: variables, dark variables, the settings plain CSS cannot hold, then the classes. */

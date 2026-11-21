@@ -1,4 +1,10 @@
-import { expressionScope, RESULT_LIMIT, RESULT_MAX, type DynamicContext } from "@nextomic/schema";
+import {
+  expressionScope,
+  RESULT_LIMIT,
+  RESULT_MAX,
+  type DynamicContext,
+  type QueryState
+} from "@nextomic/schema";
 import { FlowError } from "./engine";
 import { writePersisted, type PersistEnv } from "../persisted-state";
 import type { FragmentRequest, RuntimePayload } from "./payload";
@@ -20,6 +26,8 @@ export class LiveState {
   readonly state: Record<string, string>;
   /** Action results kept on the page, by name, as JSON text. Never saved anywhere. */
   readonly results: Record<string, string>;
+  /** What each query loop runs with now (`queries.<loop>.*`): the server's answer, kept after each redraw. */
+  private queries: Record<string, QueryState>;
   /** For results too large to send: the read-only action and values that made each. */
   private readonly sources = new Map<string, { node: string; values: string[] }>();
   private readonly initial: { app: Record<string, string>; state: Record<string, string> };
@@ -36,6 +44,7 @@ export class LiveState {
     this.app = { ...payload.dynamic.app, ...restoredApp };
     this.state = { ...payload.dynamic.state };
     this.results = { ...payload.dynamic.results };
+    this.queries = { ...payload.dynamic.queries };
     this.initial = { app: { ...payload.dynamic.app }, state: { ...payload.dynamic.state } };
   }
 
@@ -46,8 +55,16 @@ export class LiveState {
       app: { ...this.app },
       state: { ...this.state },
       results: { ...this.results },
+      queries: { ...this.queries },
       forms: this.formValues()
     };
+  }
+
+  /** Takes the loop states a redraw answered with. */
+  setQueries(next: Readonly<Record<string, QueryState>>): void {
+    if (Object.keys(next).length === 0) return;
+    this.queries = { ...this.queries, ...next };
+    this.scopeCache = null;
   }
 
   /** Drops the cached scope after something outside app and page state changed (form values). */

@@ -7,6 +7,7 @@ import type {
   ThemeChoice,
   Overlay,
   OverlayTemplateType,
+  QueryState,
   RefreshRequest,
   SheetEntry
 } from "@nextomic/schema";
@@ -80,4 +81,6 @@ export interface OverlayPart {
 export interface FragmentResponse {
   parts: FragmentPart[];
   overlay: OverlayPart | null;
+  /** What the loops of the redrawn elements ran with now, by loop name (`queries.<loop>.*`). */
+  queries?: Record<string, QueryState>;
 }

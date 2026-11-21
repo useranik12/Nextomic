@@ -23,6 +23,7 @@ import {
   themeBootScript,
   fontPreloads,
   fontsCss,
+  flipInverted,
   themeCss,
   usedClassNames,
   variablesCss,
@@ -394,7 +395,10 @@ export function PageRenderer({ tree, ...rest }: RenderOptions & { tree: ElementN
     (linkOthers ? "" : others.map((t) => themeCss(t, used, false)).join(""));
   const tail =
     (options.customCss ?? "") +
-    pageCss(tree, options.breakpoints, options.classes, options.resolveToken);
+    flipInverted(
+      pageCss(tree, options.breakpoints, options.classes, options.resolveToken),
+      options.theme?.framework
+    );
   const css = head + (linkTheme ? "" : tail);
   return (
     <>

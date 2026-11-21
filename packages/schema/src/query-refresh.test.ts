@@ -156,7 +156,7 @@ describe("bound settings", () => {
     expect(bindProblem(all, ["", "", "abc", "0", "c", "asc"])).toMatch(
       /Rows must be a whole number/
     );
-    expect(bindProblem(all, ["", "", "5", "-1", "c", "asc"])).toMatch(/Skip must be/);
+    expect(bindProblem(all, ["", "", "5", "-1", "c", "asc"])).toMatch(/Offset must be/);
     expect(bindProblem(all, ["", "", "5", "0", "a;b", "asc"])).toMatch(/not a column name/);
     expect(bindProblem(all, ["", "", "5", "0", "c", "up"])).toMatch(/asc or desc/);
     expect(bindProblem(edited, ["a", "b"])).toBeNull();
@@ -165,9 +165,7 @@ describe("bound settings", () => {
   it("is saved with the action and found again with its bound settings stripped from the run", () => {
     const flows = [[refreshNode({ query: "list", override: JSON.stringify(all) })]];
     const saved = findRefreshQuery(flows, "n1", "list");
-    expect(saved && "bind" in saved ? saved.bind.limit : null).toBe(
-      "{{ queries.posts.limit + 10 }}"
-    );
+    expect(saved?.bind.limit).toBe("{{ queries.posts.limit + 10 }}");
     const out = applyRefreshes(
       tree,
       { list: { node: "n1", values: ["a", "b", "25", "", "", ""] } },

@@ -142,7 +142,7 @@ export function FrameworkTab() {
               {theme.name} has no framework. Start from the Main framework or import your own.
             </p>
             <div className="flex gap-2">
-              <ActionButton size="sm" onPress={() => run(mainFramework())}>
+              <ActionButton size="sm" onPress={() => run(mainFramework({ colors: false }))}>
                 Use the Main framework
               </ActionButton>
               <ActionButton size="sm" tone="ghost" onPress={() => setView("import")}>

@@ -158,6 +158,13 @@ export function ColorRow({
     setOptions({ overrides });
   };
 
+  const darkOverride = (suffix: string, value: string | null) => {
+    const darkOverrides = { ...options.darkOverrides };
+    if (value === null) delete darkOverrides[suffix];
+    else darkOverrides[suffix] = value;
+    setOptions({ darkOverrides });
+  };
+
   const shadeCount = shadesOf(color.name, options).length;
   return (
     <li className="rounded-2xl border border-border">
@@ -308,8 +315,12 @@ export function ColorRow({
                 name={color.name}
                 kind="light"
                 base={color.value}
+                baseDark={color.dark}
                 options={options}
+                darkAvailable={darkMode}
+                onDarkMode={(on) => setOptions({ lightDarkMode: on })}
                 onOverride={override}
+                onDarkOverride={darkOverride}
               />
             }
           >
@@ -332,8 +343,12 @@ export function ColorRow({
                 name={color.name}
                 kind="dark"
                 base={color.value}
+                baseDark={color.dark}
                 options={options}
+                darkAvailable={darkMode}
+                onDarkMode={(on) => setOptions({ darkDarkMode: on })}
                 onOverride={override}
+                onDarkOverride={darkOverride}
               />
             }
           >
@@ -356,8 +371,12 @@ export function ColorRow({
                 name={color.name}
                 kind="transparent"
                 base={color.value}
+                baseDark={color.dark}
                 options={options}
+                darkAvailable={darkMode}
+                onDarkMode={() => undefined}
                 onOverride={override}
+                onDarkOverride={darkOverride}
               />
             }
           >

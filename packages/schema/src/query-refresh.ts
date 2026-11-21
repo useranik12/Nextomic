@@ -52,7 +52,7 @@ function bindValueProblem(key: BindKey, text: string): string | null {
       : null;
   if (key === "offset")
     return wholeNumber(text, 0, 100_000) === null
-      ? `Skip must be a whole number from 0 to 100000 (got "${text}").`
+      ? `Offset must be a whole number from 0 to 100000 (got "${text}").`
       : null;
   if (key === "orderColumn")
     return COLUMN.test(text.trim()) ? null : `"${text}" is not a column name.`;
@@ -192,8 +192,8 @@ export function findRefreshQuery(
   flows: readonly (readonly FlowNode[])[],
   nodeId: string,
   loopId: string
-): ElementQuery | null {
-  let found: ElementQuery | null = null;
+): RefreshQuery | null {
+  let found: RefreshQuery | null = null;
   for (const nodes of flows) {
     walkFlow(nodes, (node) => {
       if (found || node.id !== nodeId || node.kind !== "action") return;

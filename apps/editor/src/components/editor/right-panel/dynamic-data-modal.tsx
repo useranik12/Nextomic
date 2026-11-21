@@ -11,6 +11,7 @@ import { useQuerySourcesStore } from "../query/use-query-sources";
 import { useFlowDraft } from "../actions/editor/flow-draft";
 import { useEditorStore } from "../store/editor-store";
 import { actionGroups, resultGroups } from "./action-groups";
+import { queryStateGroups } from "./query-state-groups";
 import { useKeptResults } from "./use-kept-results";
 import { useRowShape } from "./use-row-shape";
 import { TagCard } from "./dynamic-tag-card";
@@ -19,6 +20,12 @@ import { dynamicGroups, formGroups, type DynamicGroup } from "./dynamic-sources"
 import { loopGroups } from "./loop-groups";
 
 export type Exclude = ("params" | "state")[];
+
+// One tag column width for every group, so the basic tags and the grouped ones (query, form,
+// actions) line up the same. A column is at least 20rem and stretches to fill the row, so a 1920px
+// screen fits 5 columns (the modal body is about 1850px), a 1536px laptop 4 and 1366px 3.
+const TAG_COLUMNS = "columns-[20rem]";
+const TAG_GRID = "grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]";
 
 const CHIP = "whitespace-nowrap rounded-full px-3 py-1.5 text-sm transition-colors duration-300 ";
 
@@ -94,11 +101,13 @@ export function DynamicDataModal({
   // Action results the page keeps: readable by every element, not only by later flow steps.
   const kept = useKeptResults();
   const results = useMemo(() => resultGroups(kept, shape), [kept, shape]);
+  // Loop state ({{ queries.<loop>.* }}) is read by actions, so only the Action Flow Editor lists it.
+  const queryState = useMemo(() => (flowNodes ? queryStateGroups(tree) : []), [flowNodes, tree]);
   const forms = useAvailableForms();
   const formTags = useMemo(() => formGroups(forms), [forms]);
   const allGroups = useMemo(
-    () => [...actions, ...results, ...loops, ...formTags, ...groups],
-    [actions, results, loops, formTags, groups]
+    () => [...actions, ...results, ...queryState, ...loops, ...formTags, ...groups],
+    [actions, results, queryState, loops, formTags, groups]
   );
   const q = query.trim().toLowerCase();
   const visible = allGroups
@@ -143,11 +152,8 @@ export function DynamicDataModal({
     ));
 
   return (
-    <Modal
-      isOpen
-      onClose={onClose}
-      classNames={{ base: "h-[80vh] w-[80vw] max-w-[80vw] sm:max-w-[80vw]" }}
-    >
+    // A long list of tags: the largest size the modal rule allows (screen minus 1.5rem).
+    <Modal isOpen onClose={onClose} size="full">
       <ModalContent>
         <ModalHeader className="flex flex-col gap-0.5">
           Dynamic data
@@ -222,7 +228,7 @@ export function DynamicDataModal({
                             <summary className="cursor-pointer text-xs font-semibold uppercase text-muted">
                               {g.label}
                             </summary>
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className={"mt-2 grid gap-x-6 gap-y-2 " + TAG_GRID}>
                               {g.tags.length === 0 ? (
                                 <p className="text-sm text-muted">
                                   Name this loop in its Query Loop settings to use its tags.
@@ -237,8 +243,8 @@ export function DynamicDataModal({
                     </details>
                   ))}
                   {plain.length > 0 ? (
-                    // Masonry columns about 14rem wide: as many as fit, groups pack with no blank space.
-                    <div className="columns-[14rem] gap-6">
+                    // Masonry columns of the same width as the tag grids: groups pack with no blank space.
+                    <div className={TAG_COLUMNS + " gap-6"}>
                       {plain.map((g) => (
                         <section
                           key={g.id}

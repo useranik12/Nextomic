@@ -1,5 +1,6 @@
 import { tokenTags, type AppAuthSettings } from "./app-auth";
 import { withLoopScope, type LoopFrame } from "./query-scope";
+import { queryStateSchema, sampleQueryStates } from "./query-state";
 import { z } from "zod";
 import { walkElements, type ElementNode } from "./element";
 import type { PageSettings } from "./page";
@@ -75,6 +76,11 @@ export const dynamicContextSchema = z.object({
    * (`{{ results.products }}`). Empty until the action has run; never stored with the project.
    */
   results: z.record(z.string(), z.string().max(100_000)).prefault({}),
+  /**
+   * What each query loop of the page runs with now, by loop name (`{{ queries.posts.limit }}`; see
+   * query-state.ts). Filled by the server and kept up to date by the browser after a refresh.
+   */
+  queries: z.record(z.string(), queryStateSchema).prefault({}),
   /** Constants by name: their fixed value as text. */
   constants: z.record(z.string(), z.string().max(100_000)).prefault({}),
   /**
@@ -261,6 +267,8 @@ export function buildDynamicContext(input: DynamicContextInput): DynamicContext 
     app,
     constants,
     results: {},
+    // The server and the browser fill the real states; the editor shows stand-ins.
+    queries: input.mode === "editor" && input.tree ? sampleQueryStates(input.tree) : {},
     forms: {},
     types,
     nowIso: input.nowIso ?? new Date().toISOString(),
@@ -354,6 +362,7 @@ export function expressionScope(
     app: typedGroup(context.app, context.types, "app"),
     const: typedGroup(context.constants, context.types, "const"),
     results: parsedResults(context.results),
+    queries: context.queries,
     form: typedForms(context.forms, context.types),
     ...nowValues(context.nowIso, context.timeZone)
   };

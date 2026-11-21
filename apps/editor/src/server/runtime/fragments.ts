@@ -3,10 +3,15 @@ import {
   applyElementEdits,
   applyRefreshes,
   createTokenResolver,
+  expressionScope,
+  flipInverted,
   findNode,
   isOverlayType,
   loopInstances,
+  resolveRenderTheme,
+  loopQueryStates,
   type DynamicContext,
+  type QueryState,
   type ElementEdits,
   type ElementNode,
   type LoopRows,
@@ -81,6 +86,11 @@ export async function renderParts(input: {
   refreshes?: RefreshRequest;
   savedQuery?: (nodeId: string, loopId: string) => ElementQuery | null;
   loopRows?: (node: ElementNode) => Promise<LoopRows>;
+  /**
+   * Called with the state of every named loop in a redrawn element (what it ran with, after any
+   * refresh), so the browser can keep `queries.<loop>.*` current. Filled without server-only data.
+   */
+  onQueryState?: (name: string, state: QueryState) => void;
   icons?: IconLookup;
 }): Promise<FragmentPart[]> {
   const tree = applyRefreshes(
@@ -90,6 +100,8 @@ export async function renderParts(input: {
   );
   // Form values the visitor sent count only for the fields and active forms the tree declares.
   const dynamic = withFormDefaults(input.dynamic, tree);
+  const framework = resolveRenderTheme(input.settings.themes, { pageId: "", route: "/" }).theme
+    ?.framework;
   const resolveToken = createTokenResolver(dynamic);
   const free = loopFreeIds(tree);
   const parts: FragmentPart[] = [];
@@ -98,6 +110,12 @@ export async function renderParts(input: {
     if (!node) continue;
     const hasLoops = loopInstances(node, {}, 1).length > 0;
     const loopRows = hasLoops ? await input.loopRows?.(node) : undefined;
+    if (loopRows && input.onQueryState) {
+      for (const [name, state] of Object.entries(
+        loopQueryStates(node, loopRows, expressionScope(dynamic))
+      ))
+        input.onQueryState(name, state);
+    }
     const html = renderToStaticMarkup(
       createElement(
         Fragment,
@@ -114,7 +132,11 @@ export async function renderParts(input: {
         })
       )
     );
-    parts.push({ id, html, css: pageCss(node, input.settings.breakpoints, {}, resolveToken) });
+    parts.push({
+      id,
+      html,
+      css: flipInverted(pageCss(node, input.settings.breakpoints, {}, resolveToken), framework)
+    });
   }
   return parts;
 }
@@ -151,7 +173,10 @@ export function renderOverlay(input: {
     )
   );
   // Class styles come along: the page may not use the template's classes.
-  const css = pageCss(template.tree, settings.breakpoints, settings.classes, resolveToken);
+  const css = flipInverted(
+    pageCss(template.tree, settings.breakpoints, settings.classes, resolveToken),
+    resolveRenderTheme(settings.themes, { pageId: "", route: "/" }).theme?.framework
+  );
   return {
     templateId: template.id,
     type: template.type,

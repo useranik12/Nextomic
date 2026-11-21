@@ -87,7 +87,7 @@ export function refreshTips(loop: ElementQuery, rest: RestConfig | null) {
     field: `The loop reads the field ${quoted(l.field)}.`,
     json: l.json ? "The loop has its own static JSON." : "The loop has no static JSON yet.",
     expression: `The loop uses ${quoted(l.expression)}.`,
-    offset: `The loop skips ${loop.source === "supabase" ? s.offset : loop.source === "rest" ? r.offset : l.offset} rows. A {{ tag }} is read when the action runs.`
+    offset: `The loop skips ${loop.source === "supabase" ? s.offset : loop.source === "rest" ? r.offset : l.offset} rows. A {{ tag }} is read when the action runs, for example {{ queries.${loop.name || "loop"}.offset + queries.${loop.name || "loop"}.limit }} for the next page.`
   };
 
   return (key: string): string | undefined => {

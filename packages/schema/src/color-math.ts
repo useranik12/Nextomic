@@ -73,23 +73,33 @@ export function oklchToRgb(color: Oklch, a = 1): Rgba {
   return { r, g, b, a };
 }
 
-/** The lightness a dark mode version of a color gets, always lower than the original. */
-export function darkLightness(l: number): number {
-  // Dark and mid colors keep their order but sit lower; light colors are turned over so white
-  // becomes a deep neutral. Both branches meet at 0.36 and the result is below `l` everywhere.
-  return l <= 0.6 ? l * 0.6 : 0.36 - (l - 0.6) * 0.5;
+/** Chroma at which a color counts as an accent (brand color) rather than a neutral. */
+const smooth = (x: number, lo: number, hi: number): number => {
+  const t = clamp((x - lo) / (hi - lo), 0, 1);
+  return t * t * (3 - 2 * t);
+};
+
+/**
+ * The lightness a dark mode version of a color gets (tonal inversion, as in Material and Radix).
+ * Dark colors turn light (near black text becomes near white), light colors turn deep (white
+ * becomes a dark neutral), and saturated accent colors are kept at 0.62 or more so they stay
+ * readable on a dark surface. Both halves meet at 0.36.
+ */
+export function darkLightness(l: number, c = 0): number {
+  const inverted = l <= 0.6 ? 0.93 - l * 0.95 : 0.36 - (l - 0.6) * 0.5;
+  return Math.max(inverted, 0.62 * smooth(c, 0.03, 0.1));
 }
 
 /**
  * The dark mode version of a color: same hue, a little less chroma (colors glare on dark
- * backgrounds) and a lower lightness, computed in OKLCH so the change looks even across hues.
+ * backgrounds) and an inverted lightness (dark colors get lighter, light colors darker), computed in OKLCH so the change looks even across hues.
  * Written in the same format as the input. Returns null when the value is not a color.
  */
 export function darkVariant(value: string): string | null {
   const rgba = parseColor(value);
   if (!rgba) return null;
   const { l, c, h } = rgbToOklch(rgba);
-  const dark = oklchToRgb({ l: darkLightness(l), c: c * 0.9, h }, rgba.a);
+  const dark = oklchToRgb({ l: darkLightness(l, c), c: c * 0.9, h }, rgba.a);
   const format = detectColorFormat(value);
   return formatColor(dark, format === "css" ? "hex" : format);
 }

@@ -122,6 +122,7 @@ export function startActionRuntime(
       edits: edits.snapshot(),
       refreshes
     });
+    live.setQueries(response.queries ?? {});
     const inserted = swapParts(response.parts);
     for (const el of inserted) bindInserted(el);
     return response.parts.map((part) => part.id);

@@ -65,7 +65,7 @@ export function FrameworkGate({
           {theme.name} has no framework. Start from the Main framework, or import your own in the
           Framework tab.
         </p>
-        <ActionButton size="sm" onPress={() => setFramework(mainFramework())}>
+        <ActionButton size="sm" onPress={() => setFramework(mainFramework({ colors: false }))}>
           Use the Main framework
         </ActionButton>
       </div>

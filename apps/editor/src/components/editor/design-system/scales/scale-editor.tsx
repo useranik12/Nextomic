@@ -7,6 +7,7 @@ import {
   RATIO_PRESETS,
   addScaleStep,
   applyScale,
+  removeScale,
   removeScaleStep,
   scaleKind,
   scaleSteps,
@@ -19,10 +20,10 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { Icon } from "@/lib/icons/Icon";
 import type { GateProps } from "../framework/framework-gate";
 
-const COPY: Record<ScaleKind, { title: string; size: string; sample: boolean }> = {
-  text: { title: "Typography", size: "Font size", sample: true },
-  space: { title: "Spacing", size: "Size", sample: false },
-  radius: { title: "Radius", size: "Radius", sample: false }
+const COPY: Record<ScaleKind, { title: string; size: string; sample: boolean; remove: string }> = {
+  text: { title: "Typography", size: "Font size", sample: true, remove: "Remove fluid text" },
+  space: { title: "Spacing", size: "Size", sample: false, remove: "Remove spacing set" },
+  radius: { title: "Radius", size: "Radius", sample: false, remove: "Remove radius set" }
 };
 
 const num = (v: string, fallback: number): number => {
@@ -319,6 +320,22 @@ export function ScaleEditor({
             onPress={() => void swapSteps(removeScaleStep(scale, "larger"))}
           >
             Remove largest
+          </ActionButton>
+          <ActionButton
+            size="sm"
+            tone="danger"
+            className="ml-auto"
+            startContent={<Icon name="ph:trash" width={14} height={14} />}
+            onPress={() => {
+              if (
+                window.confirm(
+                  `${copy.remove}? Every ${copy.title.toLowerCase()} variable of this theme is deleted.`
+                )
+              )
+                void update(removeScale(framework, scale.prefix));
+            }}
+          >
+            {copy.remove}
           </ActionButton>
         </div>
       </div>

@@ -111,3 +111,74 @@ describe("renderParts", () => {
     expect(open[1]?.html).toContain("is-open");
   });
 });
+
+describe("renderParts and loop state", () => {
+  const loop = node({
+    id: "grid",
+    type: "container",
+    query: {
+      enabled: true,
+      name: "posts",
+      source: "rest",
+      rest: { callId: "c1", limit: 10, values: { key: "{{ user.accessToken }}" } }
+    },
+    children: [{ id: "c", type: "text", props: { text: "row" } }]
+  });
+  const page = node({ id: "root", type: "section", children: [loop] });
+  const rows = async () => ({ grid: { rows: [{}, {}, {}], hasMore: true } });
+
+  it("reports what a redrawn loop ran with, after the refresh was applied", async () => {
+    const seen: Record<string, unknown> = {};
+    await renderParts({
+      tree: page,
+      dynamic: context(),
+      settings,
+      ids: ["grid"],
+      loopRows: rows,
+      onQueryState: (name, state) => {
+        seen[name] = state;
+      }
+    });
+    expect(seen.posts).toMatchObject({
+      source: "rest",
+      limit: 10,
+      offset: 0,
+      page: 1,
+      count: 3,
+      hasMore: true
+    });
+  });
+
+  it("never puts a value filled from server-only data into the state", async () => {
+    const seen: Record<string, unknown> = {};
+    const secret = node({
+      id: "grid",
+      type: "container",
+      query: {
+        enabled: true,
+        name: "posts",
+        source: "supabase",
+        supabase: {
+          table: "posts",
+          filters: [{ id: "f", column: "owner", operator: "eq", value: "{{ user.accessToken }}" }]
+        }
+      }
+    });
+    const withToken = {
+      ...context(),
+      user: { id: "u", accessToken: "SECRET-TOKEN" }
+    } as unknown as DynamicContext;
+    await renderParts({
+      tree: node({ id: "root", type: "section", children: [secret] }),
+      dynamic: withToken,
+      settings,
+      ids: ["grid"],
+      loopRows: rows,
+      onQueryState: (name, state) => {
+        seen[name] = state;
+      }
+    });
+    expect(seen.posts).toMatchObject({ filters: [{ column: "owner", value: "" }] });
+    expect(JSON.stringify(seen)).not.toContain("SECRET-TOKEN");
+  });
+});

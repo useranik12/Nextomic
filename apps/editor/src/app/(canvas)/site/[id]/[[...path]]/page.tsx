@@ -5,6 +5,8 @@ import {
   collectElementAnimations,
   customCssFor,
   elementAnimationCss,
+  expressionScope,
+  loopQueryStates,
   resolveRenderTheme,
   themeChoiceOf,
   themeSwitching,
@@ -149,9 +151,12 @@ export default async function PublishedPage({
     rules
   });
   const otherThemes = themeSwitching(settings.themes, theme, Boolean(page.settings.themeId));
+  // What each loop ran with, for `{{ queries.<loop>.* }}` in actions (never filled with server-only data).
+  const queries = loopQueryStates(tree, loopRows, expressionScope(dynamic));
   const runtime = actions
     ? {
         ...actions,
+        dynamic: { ...actions.dynamic, queries },
         themes: theme && otherThemes.length > 0 ? [theme, ...otherThemes].map(themeChoiceOf) : []
       }
     : null;

@@ -1,72 +1,32 @@
 "use client";
 
 import { ColorField } from "@/components/ui/color-field";
+import { InfoTip } from "@/components/ui/info-tip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SwitchField as Switch } from "@/components/ui/toggles";
+import {
+  flipInverted,
+  invertedRef,
+  isInverted,
+  plainRef,
+  resolveRenderTheme
+} from "@nextomic/schema";
 import { useMemo, useState } from "react";
 import { Icon } from "@/lib/icons/Icon";
-import { previewProps, useStylePreview } from "./design-field-tools";
-import { useDesignVariables, type DesignVariable } from "./use-design-variables";
-
-interface Swatch {
-  key: string;
-  name: string;
-  /** The color shown. */
-  color: string;
-  /** What gets stored when picked: a `var(--nxt-name)` reference, or the raw color. */
-  value: string;
-}
-
-// Shown as the "Utility" palette until the project makes one of its own.
-const UTILITY: [string, string][] = [
-  ["White", "#f5f5f5"],
-  ["Light gray", "#9a9a9a"],
-  ["Gray", "#6b6b6b"],
-  ["Black", "#050505"],
-  ["Charcoal", "#1b1b1b"],
-  ["Green", "#16a34a"],
-  ["Red", "#e5121c"],
-  ["Amber", "#eaa90c"],
-  ["Blue", "#0a6cff"],
-  ["Mint", "#e8fff0"],
-  ["Rose", "#ffecec"],
-  ["Cream", "#fff3d6"],
-  ["Sky", "#e7f0ff"],
-  ["Violet", "#3d0a7a"],
-  ["Pink", "#f5224f"]
-];
-
-const INNER = /var\(\s*(--[a-z][a-z0-9-]*)\s*\)/gi;
+import { useEditorStore } from "../store/editor-store";
+import { buildPalettes, rampSwatches, resolveColor, type Swatch } from "./color-ramps";
+import { ColorShades } from "./color-shades";
+import { CHECKER, ColorSwatch } from "./color-swatch";
+import { useStylePreview } from "./design-field-tools";
+import { useDesignVariables } from "./use-design-variables";
 
 /**
- * The color a value shows: a plain color as is, a `var(--name)` looked up in the project and theme
- * framework variables. References inside color-mix() and friends are resolved too.
- */
-export function resolveColor(
-  value: string | undefined,
-  variables: readonly DesignVariable[],
-  depth = 0
-): string | null {
-  if (!value) return null;
-  const text = value.trim();
-  if (depth > 6) return null;
-  if (!text.includes("var(")) return text;
-  let failed = false;
-  const out = text.replace(INNER, (_m, name: string) => {
-    const found = variables.find((v) => v.cssName === name);
-    const color = found ? resolveColor(found.value, variables, depth + 1) : null;
-    if (color === null) failed = true;
-    return color ?? "transparent";
-  });
-  return failed ? null : out;
-}
-
-const CHECKER =
-  "bg-[conic-gradient(#d4d4d8_25%,#fff_0_50%,#d4d4d8_0_75%,#fff_0)] bg-[length:8px_8px]";
-
-/**
- * The color field's palette button, like Bricks: choose a palette from a dropdown (the groups of
- * the project's color variables) and pick from a grid of swatches. Hovering a swatch shows it on
- * the element; a pick stores the variable so the color follows the design system.
+ * The color field's palette button: choose a palette from a dropdown (the groups of the colors in
+ * the Colors manager) and pick from its colors, each shown as a ramp with its darker and lighter
+ * shades. With dark mode on in the theme, colors that have a dark value are split in two (light
+ * left, dark right) and the Inverse switch uses the color the other way round: the dark value in
+ * light mode and the light value in dark mode. Hovering a swatch shows it on the element; a pick
+ * stores the variable so the color follows the design system.
  */
 export function ColorPalette({
   label,
@@ -81,37 +41,40 @@ export function ColorPalette({
 }) {
   const variables = useDesignVariables();
   const preview = useStylePreview(property);
+  const themes = useEditorStore((s) => s.project.themes);
+  const theme = useMemo(
+    () => resolveRenderTheme(themes, { pageId: "", route: "/" }).theme,
+    [themes]
+  );
+  const dual = theme?.darkMode ?? false;
+  const framework = theme?.framework ?? null;
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const [hovered, setHovered] = useState<Swatch | null>(null);
+  const [inverse, setInverse] = useState(false);
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  const palettes = useMemo(() => {
-    const map = new Map<string, Swatch[]>();
-    for (const v of variables) {
-      if (v.type !== "color") continue;
-      const list = map.get(v.group) ?? [];
-      list.push({
-        key: v.key,
-        name: v.name,
-        color: resolveColor(v.ref, variables) ?? v.value,
-        value: v.ref
-      });
-      map.set(v.group, list);
-    }
-    if (!map.has("Utility"))
-      map.set(
-        "Utility",
-        UTILITY.map(([name, color]) => ({ key: color, name, color, value: color }))
-      );
-    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
-  }, [variables]);
-
-  const owner = palettes.find(([, list]) => list.some((s) => s.value === value));
+  const palettes = useMemo(() => buildPalettes(variables, dual), [variables, dual]);
+  const plain = value === undefined ? undefined : plainRef(value);
+  const owner = palettes.find(([, ramps]) =>
+    ramps.some((r) => rampSwatches(r).some((s) => s.value === plain))
+  );
   const name = chosen ?? owner?.[0] ?? palettes[0]?.[0] ?? "";
-  const swatches = palettes.find(([g]) => g === name)?.[1] ?? [];
-  const shown = resolveColor(value, variables);
-  const footer = hovered ?? swatches.find((s) => s.value === value) ?? null;
+  const ramps = palettes.find(([g]) => g === name)?.[1] ?? [];
+  const selected =
+    palettes.flatMap(([, rs]) => rs.flatMap(rampSwatches)).find((s) => s.value === plain) ?? null;
+  const active =
+    ramps.find((r) => r.base.key === activeKey) ??
+    ramps.find((r) => rampSwatches(r).some((s) => s.value === plain)) ??
+    null;
+  const inverted = value !== undefined && isInverted(value);
+  const shown = resolveColor(plain, variables, inverted ? "dark" : "light");
+  const footer = hovered ?? selected;
+  const inverseOff = !dual || (selected !== null && selected.darkColor === undefined);
+
+  const storedFor = (s: Swatch, flip = inverse) =>
+    flip && s.darkColor !== undefined ? invertedRef(s.value) : s.value;
 
   function close() {
     preview.clear();
@@ -125,18 +88,40 @@ export function ColorPalette({
     close();
   }
 
+  /** A color or shade is applied at once and the popover stays open for the next one. */
+  function apply(s: Swatch) {
+    onPick(storedFor(s));
+  }
+
+  function hover(s: Swatch | null) {
+    setHovered(s);
+    if (!s) return preview.clear();
+    const stored = storedFor(s);
+    preview.show(isInverted(stored) ? flipInverted(stored, framework) : stored);
+  }
+
+  function toggleInverse(on: boolean) {
+    setInverse(on);
+    if (selected?.darkColor !== undefined) onPick(storedFor(selected, on));
+  }
+
   return (
     <Popover
       isOpen={open}
-      onOpenChange={(next) => (next ? setOpen(true) : close())}
+      onOpenChange={(next) => {
+        if (next) {
+          setInverse(inverted);
+          setOpen(true);
+        } else close();
+      }}
       placement="bottom-end"
     >
       <PopoverTrigger>
         <button
           type="button"
           aria-label={`Color palette for ${label}`}
-          title="Color palette"
-          className="flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-muted transition-colors duration-300 hover:bg-default-300 hover:text-foreground"
+          title={inverted ? "Color palette (inverse)" : "Color palette"}
+          className="relative flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-muted transition-colors duration-300 hover:bg-default-300 hover:text-foreground"
         >
           {shown ? (
             <span
@@ -149,6 +134,14 @@ export function ColorPalette({
           ) : (
             <Icon name="ph:palette" width={14} height={14} />
           )}
+          {inverted ? (
+            <Icon
+              name="ph:moon"
+              width={9}
+              height={9}
+              className="absolute -right-0.5 -top-0.5 rounded-full bg-surface text-foreground"
+            />
+          ) : null}
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[296px] items-stretch gap-3 rounded-2xl p-3">
@@ -183,6 +176,7 @@ export function ColorPalette({
                     type="button"
                     onClick={() => {
                       setChosen(g);
+                      setActiveKey(null);
                       setMenu(false);
                     }}
                     className={
@@ -201,59 +195,94 @@ export function ColorPalette({
           ) : null}
         </div>
 
-        <ul aria-label={`${name} colors`} className="grid grid-cols-7 gap-1.5">
-          {swatches.map((s) => {
-            const selected = s.value === value;
+        {ramps.length === 0 ? (
+          <p className="text-xs text-muted">
+            No theme colors yet. Add them in Design System, Colors, or type a custom color below.
+          </p>
+        ) : null}
+        <ul
+          aria-label={`${name} colors`}
+          className="grid max-h-44 grid-cols-7 gap-1.5 overflow-x-hidden overflow-y-auto p-0.5"
+        >
+          {ramps.map((r) => {
+            const hasShades = r.darker.length + r.lighter.length + r.clear.length > 0;
             return (
-              <li key={s.key}>
-                <button
-                  type="button"
-                  title={`${s.name} ${s.color}`}
-                  aria-label={`${s.name} ${s.color}`}
-                  aria-pressed={selected}
-                  onClick={() => pick(s.value)}
-                  {...previewProps(preview, s.value)}
-                  onMouseEnter={() => {
-                    preview.show(s.value);
-                    setHovered(s);
+              <li key={r.base.key} className="relative">
+                <ColorSwatch
+                  swatch={r.base}
+                  selected={r.base.value === plain}
+                  inverse={inverse}
+                  onPick={() => {
+                    setActiveKey(r.base.key);
+                    apply(r.base);
                   }}
-                  onMouseLeave={() => {
-                    preview.clear();
-                    setHovered(null);
-                  }}
-                  className={
-                    "relative block aspect-square w-full overflow-hidden rounded-lg border border-black/10 transition-transform hover:z-[1] hover:scale-110 focus-visible:ring-1 focus-visible:ring-focus/30 dark:border-white/15 " +
-                    CHECKER +
-                    (selected ? " ring-1 ring-focus/30 dark:ring-default-700" : "")
-                  }
-                >
-                  <span aria-hidden style={{ background: s.color }} className="absolute inset-0" />
-                  {selected ? (
-                    <Icon
-                      name="ph:check"
-                      width={12}
-                      height={12}
-                      className="absolute inset-0 m-auto text-white mix-blend-difference"
-                    />
-                  ) : null}
-                </button>
+                  onEnter={() => hover(r.base)}
+                  onLeave={() => hover(null)}
+                  className="aspect-square w-full"
+                />
+                {hasShades ? (
+                  <span
+                    aria-hidden
+                    title="Has shades"
+                    className="pointer-events-none absolute bottom-0.5 right-0.5 size-1.5 rounded-full bg-white shadow ring-1 ring-black/50"
+                  />
+                ) : null}
               </li>
             );
           })}
         </ul>
 
+        {active ? (
+          <ColorShades
+            ramp={active}
+            value={plain}
+            inverse={inverse}
+            onPick={apply}
+            onHover={hover}
+          />
+        ) : null}
+
         <p className="flex min-h-5 items-center justify-between gap-2 text-xs" aria-live="polite">
           <span className="truncate font-medium">
             {footer?.name ?? (value ? "Custom color" : "No color set")}
           </span>
-          <span className="shrink-0 font-mono text-muted">{footer?.color ?? shown ?? ""}</span>
+          <span className="shrink-0 font-mono text-muted">
+            {footer
+              ? footer.darkColor
+                ? `${footer.color} · ${footer.darkColor}`
+                : footer.color
+              : (shown ?? "")}
+          </span>
         </p>
+
+        {dual ? (
+          <div className="flex items-center justify-between gap-2 rounded-xl bg-default px-3 py-2">
+            <p className="flex items-center gap-1.5 text-xs font-medium">
+              <Icon name="ph:moon" width={14} height={14} />
+              Inverse
+              <InfoTip
+                text={
+                  inverseOff && selected !== null
+                    ? "This color has the same value in light and dark mode, so there is nothing to invert. Turn on dark mode for it in Design System, Colors."
+                    : "Uses the color the other way round on this element: its dark value in light mode and its light value in dark mode. Good for a section with a reversed design."
+                }
+              />
+            </p>
+            <Switch
+              size="sm"
+              isSelected={inverse}
+              isDisabled={inverseOff}
+              onValueChange={toggleInverse}
+              aria-label="Inverse color"
+            />
+          </div>
+        ) : null}
 
         <div className="flex items-center gap-2 border-t border-border pt-3">
           <ColorField
             className="min-w-0 flex-1"
             label="Custom color"
-            value={value ?? ""}
+            value={plain ?? ""}
             display={shown}
             onChange={(v) => onPick(v)}
           />

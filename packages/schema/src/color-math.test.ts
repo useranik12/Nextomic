@@ -24,20 +24,19 @@ describe("OKLCH", () => {
 });
 
 describe("dark variant", () => {
-  it("is always darker than the color it comes from", () => {
-    for (const hex of [
-      "#ffffff",
-      "#f8fafc",
-      "#4f46e5",
-      "#06b6d4",
-      "#f59e0b",
-      "#475569",
-      "#0f172a",
-      "#000000"
-    ]) {
-      const dark = darkVariant(hex);
-      expect(dark).not.toBeNull();
-      expect(lightness(dark as string)).toBeLessThanOrEqual(lightness(hex));
+  it("turns light colors darker and dark neutrals lighter", () => {
+    for (const hex of ["#ffffff", "#f8fafc", "#e2e8f0"])
+      expect(lightness(darkVariant(hex) as string)).toBeLessThan(lightness(hex));
+    for (const hex of ["#000000", "#0f172a", "#1e293b", "#475569"])
+      expect(lightness(darkVariant(hex) as string)).toBeGreaterThan(lightness(hex));
+  });
+
+  it("keeps saturated brand colors readable on a dark surface", () => {
+    for (const hex of ["#4f46e5", "#1d4ed8", "#7c2d12", "#166534", "#06b6d4"]) {
+      const l = rgbToOklch(
+        parseColor(darkVariant(hex) as string) as NonNullable<ReturnType<typeof parseColor>>
+      ).l;
+      expect(l).toBeGreaterThanOrEqual(0.55);
     }
   });
 

@@ -11,7 +11,7 @@ import {
   type UploadedFile
 } from "@nextomic/runtime";
 import { useEffect } from "react";
-import { overlaySchema, sheetEntrySchema } from "@nextomic/schema";
+import { overlaySchema, queryStateSchema, sheetEntrySchema } from "@nextomic/schema";
 import { z } from "zod";
 
 // Client side of action flows on /site and /preview (docs/dynamic-data-and-actions.md section 8).
@@ -30,7 +30,9 @@ const responseSchema = z.object({
       entry: sheetEntrySchema,
       rank: z.number().int().min(0)
     })
-    .nullable()
+    .nullable(),
+  /** What the loops of the redrawn elements run with now, by loop name. */
+  queries: z.record(z.string(), queryStateSchema).optional()
 });
 const errorSchema = z.object({ error: z.string() });
 

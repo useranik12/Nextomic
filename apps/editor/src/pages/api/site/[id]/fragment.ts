@@ -12,7 +12,8 @@ import {
   sharedResults,
   withActionValues,
   resolveOverlay,
-  type ElementQuery
+  type ElementQuery,
+  type QueryState
 } from "@nextomic/schema";
 import { ConnectorError } from "@nextomic/integrations";
 import { z } from "zod";
@@ -194,6 +195,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     savedQuery = (nodeId, loopId) => findRefreshQuery(lists, nodeId, loopId);
   }
   const pageDrawn = await pageIcons(id, laid.settings.iconLibraries, [laid.tree]);
+  const queries: Record<string, QueryState> = {};
   const parts = await renderParts({
     icons: pageDrawn.icons,
     tree: laid.tree,
@@ -203,7 +205,10 @@ export default async function handler(request: NextApiRequest, response: NextApi
     edits: body.edits,
     refreshes: body.refreshes,
     savedQuery,
-    loopRows: (node) => pageLoopRows({ projectId: id, tree: node, dynamic, execute })
+    loopRows: (node) => pageLoopRows({ projectId: id, tree: node, dynamic, execute }),
+    onQueryState: (name, state) => {
+      queries[name] = state;
+    }
   });
   let overlay: ReturnType<typeof renderOverlay> | null = null;
   if (body.overlay) {
@@ -230,7 +235,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
       params: body.overlay.params
     });
   }
-  return response.status(200).json({ parts, overlay });
+  return response.status(200).json({ parts, overlay, queries });
 }
 
 export const config = { api: { bodyParser: { sizeLimit: "256kb" } } };

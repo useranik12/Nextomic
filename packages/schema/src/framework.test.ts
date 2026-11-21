@@ -8,7 +8,8 @@ import {
   inferScales,
   scaleSteps,
   scopeFrameworkCss,
-  DEFAULT_SCALES
+  DEFAULT_SCALES,
+  removeScale
 } from "./framework";
 import { frameworkStylesheet, mainFramework } from "./main-framework";
 import { NO_COLOR_OPTIONS } from "./framework-colors";
@@ -169,5 +170,31 @@ describe("scale steps", () => {
     expect(
       removeScaleStep({ ...text, names: ["a", "b", "c"], baseIndex: 1 }, "larger").names
     ).toHaveLength(3);
+  });
+});
+
+describe("removeScale", () => {
+  it("deletes the scale and every step variable it made, and nothing else", () => {
+    const fw = mainFramework();
+    const before = fw.variables.length;
+    const next = removeScale(fw, "space");
+    expect(next.scales.some((s) => s.prefix === "space")).toBe(false);
+    expect(next.variables.some((v) => v.name.startsWith("space-"))).toBe(false);
+    expect(next.variables.some((v) => v.name.startsWith("text-"))).toBe(true);
+    expect(next.variables.length).toBeLessThan(before);
+  });
+
+  it("leaves a framework without that scale as it is", () => {
+    const fw = removeScale(mainFramework(), "space");
+    expect(removeScale(fw, "space")).toEqual(fw);
+  });
+});
+
+describe("mainFramework without colors", () => {
+  it("starts a new theme with scales only", () => {
+    const fw = mainFramework({ colors: false });
+    expect(fw.colorOptions).toEqual({});
+    expect(fw.variables.some((v) => v.name === "primary")).toBe(false);
+    expect(fw.scales.length).toBeGreaterThan(0);
   });
 });
